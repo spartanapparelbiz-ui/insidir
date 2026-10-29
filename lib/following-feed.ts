@@ -10,7 +10,7 @@ import { companyHref, fundHref, insiderHref } from "@/lib/profiles/name";
 import { followedTrades, fundOf, fundQuarters } from "@/lib/profiles/store";
 import { fundItem, tradeItems, type FilingItem } from "./follows";
 import { sql } from "drizzle-orm";
-import { trackerBySlug, type Tracker } from "./trackers";
+import { trackerBySlug, trackerWhere, type Tracker } from "./trackers";
 
 export const FOLLOWING_DAYS = 30;
 export const FOLLOWING_MAX = 40;
@@ -26,7 +26,7 @@ export async function followingFeed(db: Db, list: ReadonlyArray<{ kind: FollowKi
     Promise.all([
       wallets.length || marketIds.length ? listMoves(db, { followed: { wallets, marketIds }, since, until: now, limit: FOLLOWING_MAX }) : Promise.resolve([]),
       // A followed tracker's moves: any of its rules (lib/trackers.ts).
-      trackers.length ? listMoves(db, { where: sql`(${sql.join(trackers.map(t => t.where()), sql` or `)})`, since, until: now, limit: FOLLOWING_MAX }) : Promise.resolve([]),
+      trackers.length ? listMoves(db, { where: sql`(${sql.join(trackers.map(t => trackerWhere(t)), sql` or `)})`, since, until: now, limit: FOLLOWING_MAX }) : Promise.resolve([]),
     ]).then(([a, b]) => {
       const seen = new Set<string>();
       return [...a, ...b].filter(m => !seen.has(m.id) && Boolean(seen.add(m.id))).sort((x, y) => y.at - x.at).slice(0, FOLLOWING_MAX);

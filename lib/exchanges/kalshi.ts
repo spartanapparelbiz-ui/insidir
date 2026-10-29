@@ -185,6 +185,13 @@ export interface KalshiMarketContext {
 }
 
 /** One Kalshi market → VMarket. Null for non-binary markets or rows without a ticker. Pure. */
+/** The YES last price, 0..1: last_price_dollars, else last_price in cents. */
+export function kalshiYesPrice(m: JsonObject): number | null {
+  const d = num(m.last_price_dollars);
+  const p = d ?? (num(m.last_price) === null ? null : num(m.last_price)! / 100);
+  return p !== null && p >= 0 && p <= 1 ? p : null;
+}
+
 export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): VMarket | null {
   const ticker = str(m.ticker);
   const eventTicker = str(m.event_ticker) ?? ctx.event?.ticker ?? null;
@@ -238,6 +245,8 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
     active: status === undefined || TRADING_STATUSES.has(status),
     result: result(m.result) ?? (status !== undefined && VOID_STATUSES.has(status) ? "void" : null),
     volume24h: num(pick(m, "volume_24h_fp", "volume_24h")),
+    yesPrice: kalshiYesPrice(m),
+    startTime: null,
     openInterest: num(pick(m, "open_interest_fp", "open_interest")),
   };
 }
@@ -536,6 +545,13 @@ export class KalshiClient implements VenueClient {
   }
 
   /** One market in any status (GET /markets/{ticker} → {market}). Null when unknown. */
+  /** A market's candlesticks (GET /series/{series}/markets/{ticker}/candlesticks), `periodMin` minutes each, from
+   *  `startMs` to now. Raw; lib/markets/info.ts reads it. */
+  async getCandlesticks(series: string, ticker: string, startMs: number, endMs: number, periodMin: 1 | 60 | 1440, priority: Priority = "normal"): Promise<unknown> {
+    return this.http.json(`${this.base}/series/${encodeURIComponent(series)}/markets/${encodeURIComponent(ticker)}/candlesticks${qs({
+      start_ts: Math.floor(startMs / 1000), end_ts: Math.floor(endMs / 1000), period_interval: periodMin })}`, { priority });
+  }
+
   async getMarket(ticker: string, priority: Priority = "normal"): Promise<JsonObject | null> {
     const raw = await this.http.json(`${this.base}/markets/${encodeURIComponent(ticker)}`, { priority });
     return isObject(raw) ? (isObject(raw.market) ? raw.market : str(raw.ticker) ? raw : null) : null;

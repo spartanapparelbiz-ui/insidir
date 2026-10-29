@@ -34,13 +34,17 @@ test("home hero: Explore trackers is recorded and opens /trackers, every tracker
   await expect(page).toHaveURL(/\/trackers$/);
   await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
-  await expect(page.locator(".ttile")).toHaveCount(10);
+  // Every tracker but Crypto Prices (its tab isn't live), in four groups.
+  await expect(page.locator(".ttile")).toHaveCount(32);
+  for (const g of ["Styles", "Leagues", "Topics", "Stocks"]) await expect(page.getByRole("heading", { level: 2, name: g })).toBeVisible();
   // The seed has fewer than 20 settled moves in every tracker: each says New, never a made-up record.
   for (const pill of await page.locator(".ttile .rpill").allInnerTexts()) expect(pill).toBe("New");
   await page.locator(`.ttile a[href="/trackers/biggest-bets"]`).click();
   await expect(page).toHaveURL(/\/trackers\/biggest-bets$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Biggest Bets" })).toBeVisible();
-  await expect(page.getByText("A record shows once 20 of its moves have settled.")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Whales ($100K+)" })).toBeVisible();
+  // Fewer than 20 settled moves: every rate says so instead of a number.
+  await expect(page.getByText(/Not enough data yet: the chart starts at 20 settled moves/)).toBeVisible();
+  await expect(page.locator(".tile").filter({ has: page.locator("dt", { hasText: /^Win rate$/ }) })).toContainText("Not enough data yet");
   await expect(page.getByRole("button", { name: /Follow/ }).first()).toBeVisible();
 });
 

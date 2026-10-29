@@ -10,13 +10,17 @@ import { FollowButton } from "@/components/v2/FollowButton";
 import { Avatar } from "@/components/v2/Avatar";
 import { tickerMonogram } from "@/lib/moves/avatar";
 import { calDate, exactDollars, followState } from "@/components/v2/profiles/shared";
-import { OlderLocked, SecFrame, TradesTable } from "@/components/v2/sec/shared";
+import { OlderLocked, perShare, SecFrame, TradesTable } from "@/components/v2/sec/shared";
+import { LineChart, type ChartDot } from "@/components/charts/LineChart";
+import { Section } from "@/components/stats/Stats";
+import { closesFor, type Close } from "@/lib/stocks/prices";
+import { latestCluster } from "@/lib/stocks/returns";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { followList } from "@/lib/moves/store";
 import { BAND } from "@/lib/photos";
 import { isPaid } from "@/lib/plans";
-import { companyHref, parseTicker } from "@/lib/profiles/name";
+import { companyHref, parseTicker, personName } from "@/lib/profiles/name";
 import { boughtThisMonthLine, freeWindow, insidersBoughtThisMonth, insiderTotals, tradesByFiling } from "@/lib/profiles/sec";
 import { historyOf, issuerForTicker, issuerTradesFor } from "@/lib/profiles/store";
 
@@ -57,6 +61,13 @@ export default async function CompanyPage({ params }: { params: Promise<{ ticker
   const { shown, older } = paid ? { shown: all, older: 0 } : freeWindow(all, now);
   const month = insidersBoughtThisMonth(trades, now);
   const t = insiderTotals(freeWindow(trades, now).shown);
+  const date = (r: { tradeDate: string | null; filedAt: Date }) => r.tradeDate ?? r.filedAt.toISOString().slice(0, 10);
+  const cluster = latestCluster(shown.filter(r => r.code === "P").map(r => ({ ownerCik: r.ownerCik, ownerName: r.ownerName, date: date(r) })));
+  // The price (daily closes, lib/stocks/prices.ts) with every insider trade on it: a dot per filing, sized by value.
+  const closes: Close[] = (await closesFor(db, [co.ticker], new Date(now - 2 * 365 * 86_400_000).toISOString().slice(0, 10)).catch(() => new Map<string, Close[]>())).get(co.ticker) ?? [];
+  const maxV = Math.max(1, ...shown.map(r => r.value));
+  const dots: ChartDot[] = shown.filter(r => r.price > 0).map(r => ({ t: Date.parse(`${date(r)}T16:00:00Z`), v: r.price, r: 3 + 9 * Math.sqrt(r.value / maxV),
+    label: `${personName(r.ownerName)} ${r.code === "P" ? "bought" : "sold"} ${exactDollars(r.value)} at ${perShare(r.price)}`, tone: r.code === "P" ? "won" : "lost" }));
   return (
     <SecFrame viewer={viewer} current="/insider-trading">
       <header className="trader__head">
@@ -73,6 +84,15 @@ export default async function CompanyPage({ params }: { params: Promise<{ ticker
           <FollowButton kind="company" target={co.issuerCik} state={followState(viewer, following)} trialHref={unlockHref()} label="Follow company" />
         </div>
       </header>
+      {cluster ? (
+        <p className="cluster" data-testid="cluster-buy"><span className="rpill rpill--won">Cluster buy</span>
+          {cluster.owners.length} insiders bought between {calDate(cluster.from)} and {calDate(cluster.to)}: {cluster.owners.slice(0, 4).map(personName).join(", ")}{cluster.owners.length > 4 ? ` and ${cluster.owners.length - 4} more` : ""}.</p>
+      ) : null}
+      <Section id="price-h" title="Price" note="Daily closing price, with every insider trade we show on it: green buys, red sales, bigger for more money.">
+        <LineChart points={closes.map(c => ({ t: Date.parse(`${c.date}T21:00:00Z`), v: c.close }))} dots={dots} format="usd" baseline="first" label={`${co.ticker}, daily close`}
+          windows={[{ key: "1m", label: "1M", since: now - 30 * 86_400_000 }, { key: "3m", label: "3M", since: now - 91 * 86_400_000 }, { key: "1y", label: "1Y", since: now - 365 * 86_400_000 }, { key: "all", label: "All", since: null }]}
+          initial="1y" empty="No daily prices for this ticker yet." />
+      </Section>
       <dl className="record record--wide">
         <div><dt>Insiders bought, last 30 days</dt><dd className="money">{exactDollars(t.bought)}</dd><span className="record__sub">{t.buys} {t.buys === 1 ? "filing" : "filings"}</span></div>
         <div><dt>Insiders sold, last 30 days</dt><dd>{exactDollars(t.sold)}</dd><span className="record__sub">{t.sales} {t.sales === 1 ? "filing" : "filings"}</span></div>

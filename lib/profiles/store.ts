@@ -1,11 +1,12 @@
 /* Profiles in Postgres (terminal schema): a Polymarket trader's resolved positions, the /top ranking, an insider's
  * Form 4 trades and a fund's 13F holdings. Server only. */
-import { and, asc, desc, eq, gte, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { fundFilings, fundHoldings, funds, insiderTrades, moves, secHistory, trackedWallets, traderPositions, traderRecords } from "@/lib/db/schema";
 import type { Close } from "./sec";
 import { RECORD_MIN_RESOLVED } from "@/lib/moves/records";
-import type { TraderRecord } from "@/lib/moves/types";
+import type { Move, TraderRecord } from "@/lib/moves/types";
+import { fromRow, listMoves } from "@/lib/moves/store";
 import { categoryOf, type ClosedPosition, type MarketResult } from "./trader";
 
 /* ---------- Polymarket traders ---------- */
@@ -224,4 +225,33 @@ export async function fundQuarters(db: Db, cik: string, limit?: number): Promise
   const hs = await db.select().from(fundHoldings).where(and(eq(fundHoldings.fundCik, id), inArray(fundHoldings.accession, fs.map(f => f.accession))));
   return fs.map(f => ({ accession: f.accession, period: f.period, filedOn: f.filedOn, url: f.url,
     holdings: hs.filter(h => h.accession === f.accession).map(h => ({ cusip: h.cusip, company: h.company, shares: h.shares, value: h.value })) }));
+}
+
+/** Where a wallet ranks by all-time profit among wallets with a record (20+ resolved markets): 1 is the best. */
+export async function profitRank(db: Db, profit: number): Promise<{ rank: number; of: number } | null> {
+  const r = (await db.execute(sql`select (count(*) filter (where profit > ${profit}))::int + 1 as rank, count(*)::int as n
+    from terminal.trader_records where resolved >= ${RECORD_MIN_RESOLVED}`)).rows[0] as { rank: number; n: number } | undefined;
+  return r && Number(r.n) > 0 ? { rank: Number(r.rank), of: Number(r.n) } : null;
+}
+
+/** Every move by a wallet (newest first, a page at a time) and the first one we saw. */
+export async function walletMoves(db: Db, wallet: string, until: number, limit: number, offset: number): Promise<{ moves: Move[]; total: number; firstAt: number | null }> {
+  const [rows, agg] = await Promise.all([
+    listMoves(db, { wallet, until, limit, offset }),
+    db.execute(sql`select count(*)::int as n, min(at) as first from terminal.moves where wallet = ${wallet} and hidden_at is null and at <= ${new Date(until)}`),
+  ]);
+  const a = agg.rows[0] as { n: number; first: string | null } | undefined;
+  return { moves: rows, total: Number(a?.n ?? 0), firstAt: a?.first ? new Date(a.first).getTime() : null };
+}
+
+/** A wallet's settled big moves (for edge, favorite vs underdog), newest first. */
+export async function walletSettled(db: Db, wallet: string, limit = 2000): Promise<Move[]> {
+  const rs = await db.select().from(moves).where(and(eq(moves.wallet, wallet), isNull(moves.hiddenAt), isNotNull(moves.result))).orderBy(desc(moves.settledAt)).limit(limit);
+  return rs.map(fromRow);
+}
+
+/** A wallet's moves over the last year (activity heatmap). */
+export async function walletYear(db: Db, wallet: string, now: number): Promise<number[]> {
+  const rs = await db.select({ at: moves.at }).from(moves).where(and(eq(moves.wallet, wallet), isNull(moves.hiddenAt), gte(moves.at, new Date(now - 365 * 86_400_000)))).limit(20_000);
+  return rs.map(r => r.at.getTime());
 }

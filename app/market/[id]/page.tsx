@@ -1,6 +1,7 @@
-/* A market (docs/INSIDIR-V2.md §6): the event in plain words, the current price as a payout line, "Big money in the last 24h:
- * $1.2M on Yes, $300k on No" from our moves, a simple line of the prices big traders paid, and the big moves here.
- * The market link follows the location rules (lib/moves/links.ts). */
+/* A market: the question, the price now (or its result once settled) and Follow market; then the venue's price
+ * history with every big move plotted on it (a dot per move, sized by amount, green won, red lost), money by side
+ * (all big moves and the last 24 hours), the top traders on each side, and the big money of the last 24 hours. The
+ * market link follows the location rules (lib/moves/links.ts). */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -11,31 +12,40 @@ import { MoveCard } from "@/components/v2/MoveCard";
 import { requireMember } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
-import { dollars, payoutLine } from "@/lib/moves/copy";
+import { dollars } from "@/lib/moves/copy";
 import { feedItems } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { marketLink } from "@/lib/moves/links";
 import { currentPrice } from "@/lib/moves/pages";
-import { followList, kalshiMatches, listMoves, moneyBySide, storedMarket } from "@/lib/moves/store";
+import { followList, kalshiMatches, listMoves, storedMarket } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
-import { PageBand } from "@/components/PageBand";
-import { BAND } from "@/lib/photos";
+import Link from "next/link";
+import { LineChart, type ChartDot } from "@/components/charts/LineChart";
+import { Section, Table, Tiles } from "@/components/stats/Stats";
+import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
+import { infoFor, priceHistory } from "@/lib/markets/info";
+import { memo } from "@/lib/memo";
+import { walletLabel } from "@/lib/moves/records";
+import type { Move } from "@/lib/moves/types";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Market", robots: { index: false } };
 
-function PriceLine({ points }: { points: Array<{ at: number; price: number }> }) {
-  if (points.length < 2) return null;
-  const xs = points.map(p => p.at), t0 = Math.min(...xs), t1 = Math.max(...xs);
-  const path = points.map((p, i) => `${i ? "L" : "M"}${(((p.at - t0) / Math.max(1, t1 - t0)) * 300).toFixed(1)},${(100 - p.price * 100).toFixed(1)}`).join(" ");
-  return (
-    <figure className="pline">
-      <svg viewBox="0 0 300 100" preserveAspectRatio="none" role="img" aria-label={`Prices big traders paid, from ${Math.round(points[0]!.price * 100)}¢ to ${Math.round(points[points.length - 1]!.price * 100)}¢`}>
-        <path d={path} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
-      <figcaption className="pline__cap">Prices big traders paid for Yes, oldest to newest.</figcaption>
-    </figure>
-  );
+/** A dot per big move on the YES price line: a NO bet at 30¢ is plotted at YES 70¢. Sized by amount (3–12px). */
+function dotsOf(moves: readonly Move[]): ChartDot[] {
+  const max = Math.max(1, ...moves.map(m => m.amount));
+  return moves.filter(m => m.avgPrice > 0 && m.avgPrice < 1).map(m => ({
+    t: m.at, v: m.outcomeSide === "yes" ? m.avgPrice : 1 - m.avgPrice, r: 3 + 9 * Math.sqrt(m.amount / max),
+    label: `${dollars(m.amount)} on ${m.outcome} at ${Math.round(m.avgPrice * 100)}¢`, tone: m.result === "won" ? "won" as const : m.result === "lost" ? "lost" as const : "open" as const,
+  }));
+}
+
+/** Money and wallets on one side: total, and the biggest traders by money in. */
+function side(moves: readonly Move[], s: "yes" | "no") {
+  const l = moves.filter(m => m.outcomeSide === s);
+  const by = new Map<string, { wallet: string; name: string | null; amount: number; n: number }>();
+  for (const m of l) if (m.wallet) { const x = by.get(m.wallet) ?? { wallet: m.wallet, name: m.walletName, amount: 0, n: 0 }; x.amount += m.amount; x.n++; by.set(m.wallet, x); }
+  return { total: l.reduce((a, m) => a + m.amount, 0), n: l.length, top: [...by.values()].sort((a, b) => b.amount - a.amount).slice(0, 5) };
 }
 
 export default async function MarketPage({ params }: { params: Promise<{ id: string }> }) {
@@ -49,48 +59,85 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   if (!hasDatabase()) notFound();
   const db = getDb();
   const until = now - movePlan(viewer.plan).delayMs;
-  const [moves, market, bySide, follows, matches] = await Promise.all([
-    listMoves(db, { marketId: id, until, limit: 30 }), storedMarket(db, source, id), moneyBySide(db, id, new Date(now - 86_400_000)),
+  const [moves, market, follows, matches, infos] = await Promise.all([
+    listMoves(db, { marketId: id, until, limit: 200 }), storedMarket(db, source, id),
     viewer.user ? followList(db, viewer.user.id) : Promise.resolve([]),
     source === "polymarket" && viewer.region !== "non_us" ? kalshiMatches(db, [id]) : Promise.resolve(new Map<string, string>()),
+    infoFor(db, source, [id]).catch(() => new Map()),
   ]);
   if (!moves.length && !market) notFound();
+  const info = infos.get(id) ?? null;
   const title = market?.title ?? moves[0]!.marketTitle;
   const event = market?.eventTitle ?? moves[0]?.eventTitle ?? null;
   const yesLabel = market?.yesLabel ?? moves.find(m => m.outcomeSide === "yes")?.outcome ?? "Yes";
   const noLabel = market?.noLabel ?? moves.find(m => m.outcomeSide === "no")?.outcome ?? "No";
   const tab = moves[0]?.tab ?? (market?.category === "sports" ? "sports" : "markets");
-  const price = await currentPrice(source, market, id);
+  const clients = { polymarket: new PolymarketClient(), kalshi: new KalshiClient() };
+  const first = moves.length ? Math.min(...moves.map(m => m.at)) : now - 30 * 86_400_000;
+  const [price, history] = await Promise.all([
+    currentPrice(source, market, id),
+    memo(`history:${source}:${id}`, 5 * 60_000, () => priceHistory(clients, source, id, info ?? (market?.yesTokenId ? { source, marketId: id, yesPrice: null, startAt: null, closed: false, historyKey: market.yesTokenId, updatedAt: now } : null), first - 86_400_000, now)).catch(() => []),
+  ]);
   const link = marketLink({ source, url: market?.url ?? moves[0]?.url ?? null }, viewer.region, matches.get(id) ?? null);
-  const items = await feedItems(db, moves, viewer.plan, viewer.region, now);
+  const day = moves.filter(m => m.at >= now - 86_400_000);
+  const items = await feedItems(db, (day.length ? day : moves).slice(0, 12), viewer.plan, viewer.region, now);
   const trial = unlockHref();
   const following = follows.some(f => f.kind === "market" && f.target === id);
-  const big = bySide.filter(s => s.total > 0).sort((a, b) => b.total - a.total);
-  const points = [...moves].filter(m => m.outcomeSide === "yes").sort((a, b) => a.at - b.at).map(m => ({ at: m.at, price: m.avgPrice }));
+  const settled = moves.find(m => m.result)?.result ?? null;
+  const resultSide = settled ? moves.find(m => m.result === "won")?.outcomeSide ?? (moves.find(m => m.result === "lost")?.outcomeSide === "yes" ? "no" : "yes") : null;
+  const yes = side(moves, "yes"), no = side(moves, "no");
+  const yes24 = side(day, "yes"), no24 = side(day, "no");
+  // The venue's history; without it, the prices the big moves paid (on the YES scale), oldest first.
+  const fromVenue = history.length >= 2;
+  const points = fromVenue ? history.map(p => ({ t: p.t, v: p.p }))
+    : [...moves].filter(m => m.avgPrice > 0 && m.avgPrice < 1).sort((a, b) => a.at - b.at).map(m => ({ t: m.at, v: m.outcomeSide === "yes" ? m.avgPrice : 1 - m.avgPrice }));
+  const dots = dotsOf(moves);
+  const traderRows = (l: ReturnType<typeof side>["top"]) => l.map(x => [
+    paid ? <Link key="n" className="dtable__link" href={`/p/${x.wallet}`}>{walletLabel(x.wallet, x.name)}</Link> : walletLabel(x.wallet, x.name),
+    x.n.toLocaleString("en-US"), dollars(x.amount)]);
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/market" />
-      <main className="wrap app2 market dark">
-        <PageBand n={BAND.market[tab === "markets" || tab === "stocks" ? tab : "sports"]} title={title} kicker={event && event !== title ? event : undefined} />
-        <header className="market__head">
-          {price !== null ? (
-            <div className="market__pays">
-              <p>{payoutLine({ outcome: yesLabel, avgPrice: price, tab })}</p>
-              <p>{payoutLine({ outcome: noLabel, avgPrice: 1 - price, tab })}</p>
-            </div>
-          ) : null}
-          {big.length ? <p className="market__big">Big money in the last 24h: {big.map(b => `${dollars(b.total)} on ${b.outcome}`).join(", ")}</p> : null}
-          <div className="market__actions">
-            {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
+      <main className="wrap app2 market">
+        <header className="mhead">
+          {event && event !== title ? <p className="mhead__kicker">{event}</p> : null}
+          <h1 className="mhead__h">{title}</h1>
+          {settled && resultSide ? <p className="mhead__result"><span className="rpill rpill--won">Settled</span> {resultSide === "yes" ? yesLabel : noLabel} won.</p>
+            : price !== null ? <p className="mhead__now">{yesLabel} {Math.round(price * 100)}¢ · {noLabel} {Math.round((1 - price) * 100)}¢ <span>now</span></p> : null}
+          <div className="mhead__act">
             <FollowButton kind="market" target={id} label="Follow market" state={!isReady("follows") ? "soon" : !paid ? "locked" : following ? "on" : "off"} trialHref={trial} />
+            {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
           </div>
         </header>
-        <PriceLine points={points} />
-        <section className="block" aria-labelledby="mm-h">
-          <h2 id="mm-h" className="block__h">Big moves in this market</h2>
-          {items.length ? <ol className="feed2__list">{items.map(m => <li key={m.id}><MoveCard m={m} follow={!isReady("follows") ? "soon" : !paid ? "locked" : "off"} trialHref={trial} /></li>)}</ol>
-            : <p className="note">No big moves here{paid ? "" : " more than 30 minutes ago"} yet.</p>}
-        </section>
+
+        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The prices big moves paid for ${yesLabel} (the venue's full history isn't available right now)`}, with every big move on it: a dot per move, bigger for more money (a ${noLabel} bet sits at 100¢ minus its price). Green won, red lost, grey open.`}>
+          <LineChart points={points} dots={dots} format="cents" baseline="first" time label={`${yesLabel}, price`}
+            windows={[{ key: "1d", label: "1D", since: now - 86_400_000 }, { key: "1w", label: "1W", since: now - 7 * 86_400_000 }, { key: "1m", label: "1M", since: now - 30 * 86_400_000 }, { key: "all", label: "All", since: null }]}
+            empty="Not enough prices for a chart yet." />
+        </Section>
+
+        <Section id="side-h" title="Money by side" note="Every big move we've seen in this market.">
+          <Tiles cols={4} label="Money by side" tiles={[
+            { label: `On ${yesLabel}, all big moves`, value: dollars(yes.total) },
+            { label: `On ${noLabel}, all big moves`, value: dollars(no.total) },
+            { label: `On ${yesLabel}, last 24 hours`, value: dollars(yes24.total) },
+            { label: `On ${noLabel}, last 24 hours`, value: dollars(no24.total) },
+          ]} />
+        </Section>
+
+        {yes.top.length || no.top.length ? (
+          <Section id="top-h" title="Top traders on each side" note="By money in, from their big moves here.">
+            <div className="dgrid2">
+              <div><h3 className="dsub__h">{yesLabel}</h3>{yes.top.length ? <Table label={`Top traders on ${yesLabel}`} head={["Trader", "Moves", "Money in"]} numeric={[1, 2]} rows={traderRows(yes.top)} /> : <p className="dnote">No big money on {yesLabel} yet.</p>}</div>
+              <div><h3 className="dsub__h">{noLabel}</h3>{no.top.length ? <Table label={`Top traders on ${noLabel}`} head={["Trader", "Moves", "Money in"]} numeric={[1, 2]} rows={traderRows(no.top)} /> : <p className="dnote">No big money on {noLabel} yet.</p>}</div>
+            </div>
+          </Section>
+        ) : null}
+
+        <Section id="mm-h" title={day.length ? "Big money in the last 24 hours" : "Big moves in this market"} note={!paid ? "You're seeing moves 30 minutes late." : undefined}>
+          {items.length ? <ol className="feed2__list tmoves">{items.map(m => <li key={m.id}><MoveCard m={m} follow={!isReady("follows") ? "soon" : !paid ? "locked" : "off"} trialHref={trial} /></li>)}</ol>
+            : <p className="dnote">No big moves here{paid ? "" : " more than 30 minutes ago"} yet.</p>}
+        </Section>
       </main>
     </>
   );

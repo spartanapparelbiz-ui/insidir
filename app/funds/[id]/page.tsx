@@ -2,6 +2,9 @@
  * and new positions against the quarter before, and for members its top 10 holdings and every earlier quarter's adds
  * and cuts. Public: a 13F filed in the last 30 days is free; older ones and Follow are for members. A bare
  * /funds/<cik> or an old slug redirects to the canonical one. */
+import { LineChart } from "@/components/charts/LineChart";
+import { Section, Table } from "@/components/stats/Stats";
+import { quarterSummary } from "@/lib/stocks/quarters";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -11,7 +14,7 @@ import { SourceA } from "@/components/v2/MoveCard";
 import { Avatar } from "@/components/v2/Avatar";
 import { monogram } from "@/lib/moves/avatar";
 import { FollowButton } from "@/components/v2/FollowButton";
-import { calDate, exactDollars, followState, pct } from "@/components/v2/profiles/shared";
+import { calDate, exactDollars, followState, pct, signedPct } from "@/components/v2/profiles/shared";
 import { OlderLocked, SecFrame, shareCount } from "@/components/v2/sec/shared";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
@@ -120,6 +123,19 @@ export default async function FundPage({ params }: { params: Promise<{ id: strin
                   <li key={h.cusip} className="positions__row"><span className="positions__title">{h.company}</span><span className="positions__out">{pct(h.share)} of reported</span><span className="positions__val">{exactDollars(h.value)}</span></li>
                 ))}</ol>
               </section>
+              <Section id="qq-h" title="Quarter over quarter" note="Each 13F against the one before: the reported value and how many positions are new, added to, cut or sold out.">
+                {quarters.length > 1 ? <div className="dsub" style={{ marginTop: 0, marginBottom: 32 }}>
+                  <LineChart points={[...quarters].reverse().map(q => ({ t: Date.parse(`${q.period ?? q.filedOn}T12:00:00Z`), v: q.holdings.reduce((s, h) => s + h.value, 0) }))}
+                    format="usd" baseline="first" label="Reported value by quarter" empty="We chart the value once we hold two of their filings." />
+                </div> : null}
+                <Table label="Quarter over quarter" head={["Quarter ending", "Reported value", "Change", "Positions", "New", "Added", "Cut", "Sold out"]} numeric={[1, 2, 3, 4, 5, 6, 7]}
+                  rows={quarters.map((q, i) => {
+                    const s = quarterSummary(q.holdings, quarters[i + 1]?.holdings ?? null);
+                    return [q.period ? calDate(q.period) : `Filed ${calDate(q.filedOn)}`, exactDollars(s.value),
+                      s.change === null ? "—" : <span key="c" className={s.change >= 0 ? "money" : "loss"}>{signedPct(s.change)}</span>,
+                      s.positions.toLocaleString("en-US"), ...(s.prevValue === null ? ["—", "—", "—", "—"] : [s.new, s.added, s.cut, s.soldOut].map(x => x.toLocaleString("en-US")))];
+                  })} />
+              </Section>
               <section className="block" aria-labelledby="q-h">
                 <h2 id="q-h" className="block__h">Biggest adds and cuts, every quarter</h2>
                 {quarters.slice(0, -1).map((q, i) => {

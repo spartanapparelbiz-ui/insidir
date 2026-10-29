@@ -84,6 +84,10 @@ export interface VMarket {
   /** Settled result once resolved: which side paid out, or "void" (refunded / annulled). */
   result: Side | "void" | null;
   volume24h: number | null;
+  /** The YES side's last price, 0..1, when the venue sends it (market pages, Steam). */
+  yesPrice?: number | null;
+  /** When the game starts (sports: Polymarket gameStartTime), ms; null when the venue doesn't say. */
+  startTime?: number | null;
   /** Contracts held open (Kalshi), when the venue reports it. */
   openInterest?: number | null;
 }

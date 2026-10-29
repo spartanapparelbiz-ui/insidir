@@ -8,11 +8,11 @@ export function PeriodTabs({ tabs, initial }: { tabs: Array<{ key: string; label
     <div className="ptabs">
       <div className="seg seg--sm" role="tablist" aria-label="Time window">
         {tabs.map(t => (
-          <button key={t.key} type="button" role="tab" id={`pt-${t.key}`} aria-controls={`pp-${t.key}`} aria-selected={on === t.key} aria-pressed={on === t.key}
+          <button key={t.key} type="button" role="tab" id={`pt-${t.key}`} aria-controls={`pp-${t.key}`} aria-selected={on === t.key}
             className="seg__btn" onClick={() => setOn(t.key)}>{t.label}</button>
         ))}
       </div>
-      {tabs.map(t => <div key={t.key} id={`pp-${t.key}`} role="tabpanel" aria-labelledby={`pt-${t.key}`} hidden={on !== t.key}>{t.body}</div>)}
+      {tabs.map(t => <div key={t.key} id={`pp-${t.key}`} role="tabpanel" aria-labelledby={`pt-${t.key}`} className={on === t.key ? undefined : "ptabs__off"} hidden={on !== t.key}>{t.body}</div>)}
     </div>
   );
 }

@@ -206,7 +206,15 @@ export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, ve
       noTokenId !== null,
     result: gammaResult(m),
     volume24h: num(pick(m, "volume24hr", "volume24hrClob", "volume_24hr")),
+    yesPrice: gammaYesPrice(m),
+    startTime: epochMs(pick(m, "gameStartTime", "game_start_time")) ?? null,
   };
+}
+
+/** The first outcome's price now: outcomePrices[0], else lastTradePrice (a 0..1 number either way). */
+export function gammaYesPrice(m: JsonObject): number | null {
+  const p = list(m.outcomePrices).map(num)[0] ?? num(m.lastTradePrice);
+  return p !== null && p !== undefined && p >= 0 && p <= 1 ? p : null;
 }
 
 /** One Gamma event → VEvent + all its parsed markets (active or not). Pure.
@@ -622,6 +630,11 @@ export class PolymarketClient implements VenueClient {
   }
 
   /** Best price for a side as the CLOB defines it (GET /price?token_id=&side=BUY|SELL) → {price: "0.45"}. */
+  /** A token's price history (CLOB /prices-history), hourly points over its whole life. Raw; lib/markets/info.ts reads it. */
+  async getPriceHistory(tokenId: string, priority: Priority = "normal"): Promise<unknown> {
+    return this.clob.json(`${this.clobUrl}/prices-history${qs({ market: tokenId, interval: "max", fidelity: 60 })}`, { priority });
+  }
+
   async getPrice(tokenId: string, side: "BUY" | "SELL", priority: Priority = "normal"): Promise<number | null> {
     const raw = await this.clob.json(`${this.clobUrl}/price${qs({ token_id: tokenId, side })}`, { priority });
     return isObject(raw) ? num(raw.price) : null;

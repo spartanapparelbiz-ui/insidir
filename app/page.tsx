@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
+import { Discover } from "@/components/home/Discover";
 import { HeroCta } from "@/components/home/HeroCta";
 import { Phones, type PhoneData } from "@/components/home/Phones";
 import { PeriodTabs } from "@/components/trackers/PeriodTabs";
@@ -29,7 +30,8 @@ import { listMoves } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
-import { FEATURED, PERIODS, popular, topPerformers, trackerBySlug, TRACKERS, type TrackerSlug } from "@/lib/trackers";
+import { FEATURED, PERIODS, popular, topPerformers, trackerBySlug, visibleTrackers, type TrackerSlug } from "@/lib/trackers";
+import { isReady } from "@/lib/features";
 import { trackerMoves, trackerStats, type TrackerStats } from "@/lib/trackers-store";
 import type { Plan, Region } from "@/lib/types";
 
@@ -71,8 +73,9 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
   ]);
   const short = (l: FeedItem[]) => l.map(fi => homeItem(fi, byId.get(fi.id)));
   const leadShort = short(leadItems);
-  const ranked = topPerformers(TRACKERS.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records["1m"] ?? null })));
-  const list = [...ranked, ...TRACKERS.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))];
+  const shown = visibleTrackers(isReady);
+  const ranked = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records["1m"] ?? null })));
+  const list = [...ranked, ...shown.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))];
   return {
     stats,
     phones: {
@@ -88,6 +91,15 @@ export default async function Home() {
   const now = Date.now();
   const [jar, viewer] = await Promise.all([cookies(), getViewer()]);
   const paid = isPaid(viewer.plan);
+  // Members land on Discover.
+  if (paid) {
+    return (
+      <>
+        <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/discover" trialHref={unlockHref()} />
+        <Discover db={hasDatabase() ? getDb() : null} viewer={viewer} now={now} />
+      </>
+    );
+  }
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
   // Every visitor on the same plan and region sees the same home page: computed once per 15 seconds.
@@ -98,7 +110,7 @@ export default async function Home() {
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined));
   const trial = unlockHref();
 
-  const rows = TRACKERS.map(t => ({ t, s: stats.get(t.slug) }));
+  const rows = visibleTrackers(isReady).map(t => ({ t, s: stats.get(t.slug) }));
   const periodTabs = PERIODS.map(p => {
     const ranked = topPerformers(rows.map(({ t, s }) => ({ t, slug: t.slug, record: s?.records[p.key] ?? null })));
     return {

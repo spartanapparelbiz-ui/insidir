@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { Cover, Thumb } from "@/components/Photo";
 import { dollars, signedShort } from "@/lib/moves/copy";
-import { hasTrackerRecord, recordPill, trackerHref, winPct, type Tracker, type TrackerRecord } from "@/lib/trackers";
+import { coverVariant, hasTrackerRecord, recordPill, trackerHref, winPct, type Tracker, type TrackerRecord } from "@/lib/trackers";
 
 export const BY = "by Insidir";
 
@@ -29,7 +29,7 @@ const Chevron = () => (
 export function TrackerFeature({ t, eager = false, i = 0 }: { t: Tracker; eager?: boolean; i?: number }) {
   return (
     <Link className="tfeat rv" style={{ ["--i" as string]: i }} href={trackerHref(t.slug)}>
-      <Cover n={t.photo} className="tfeat__photo" eager={eager} sizes="(min-width: 900px) 560px, 86vw" />
+      <Cover n={t.photo} className={`tfeat__photo ${coverVariant(t.slug)}`} eager={eager} sizes="(min-width: 900px) 290px, 72vw" />
       <span className="tfeat__copy">
         <span className="tfeat__name">{t.name}</span>
         <span className="tfeat__by">{BY}</span>
@@ -44,7 +44,7 @@ export function TrackerRow({ t, r, figure, rank }: { t: Tracker; r?: TrackerReco
     <li>
       <Link className="trow" href={trackerHref(t.slug)}>
         {rank !== undefined ? <span className="trow__rank">{rank}</span> : null}
-        <Thumb n={t.photo} className="trow__thumb" />
+        <Thumb n={t.photo} className={`trow__thumb ${coverVariant(t.slug)}`} />
         <span className="trow__who">
           <span className="trow__name">{t.name}</span>
           <span className="trow__by">{BY}</span>
@@ -57,11 +57,11 @@ export function TrackerRow({ t, r, figure, rank }: { t: Tracker; r?: TrackerReco
 }
 
 /** /trackers: the cover, name, "by Insidir", the line and its record. */
-export function TrackerTile({ t, r, tracked30d, i = 0 }: { t: Tracker; r: TrackerRecord | null; tracked30d: number; i?: number }) {
+export function TrackerTile({ t, r, tracked30d, i = 0, eager = false }: { t: Tracker; r: TrackerRecord | null; tracked30d: number; i?: number; eager?: boolean }) {
   return (
     <li className="ttile rv" style={{ ["--i" as string]: i }}>
       <Link className="ttile__link" href={trackerHref(t.slug)}>
-        <span className="ttile__cover"><Cover n={t.photo} sizes="(min-width: 1100px) 380px, (min-width: 700px) 46vw, 100vw" /></span>
+        <span className="ttile__cover"><Cover n={t.photo} className={coverVariant(t.slug)} eager={eager} sizes="(min-width: 1100px) 380px, (min-width: 700px) 46vw, 100vw" /></span>
         <span className="ttile__body">
           <span className="ttile__top"><span className="ttile__name">{t.name}</span>{t.kind === "bets" ? <RecordPill r={r} /> : null}</span>
           <span className="ttile__by">{BY}</span>

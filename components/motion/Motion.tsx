@@ -58,6 +58,8 @@ export function Motion() {
         // The real value stays in the page until it counts up (from 0, once it enters view): never a placeholder 0,
         // whether or not the animation ever runs (screenshots, a page read without scrolling, a slow observer).
         if (el.dataset.count !== undefined) el.dataset.final = el.textContent ?? "";
+        // Only what starts below the screen waits to fade up as it enters: the first screen paints at once.
+        if (el.classList.contains("rv") && el.getBoundingClientRect().top > innerHeight) el.classList.add("rv--wait");
         io.observe(el);
       });
       if (!scrollDriven) scope.querySelectorAll<HTMLElement>("[data-par]").forEach(el => parallax.add(el));

@@ -390,9 +390,15 @@ export const moves = terminal.table("moves", {
   pnl: doublePrecision("pnl"),
   soldShare: doublePrecision("sold_share"),
   realizedAt: timestamp("realized_at", { withTimezone: true }),
+  /** The trackers whose fixed rule this move meets (lib/trackers.ts, tagged by the worker), and the rules' version it
+   *  was tagged with; null until tagged. Trackers that depend on live data (records, prices, start times) aren't stored. */
+  trackers: text("trackers").array(),
+  trackersV: integer("trackers_v"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   index("moves_at_idx").on(t.at),
+  index("moves_trackers_idx").using("gin", t.trackers),
+  index("moves_trackers_v_idx").on(t.trackersV),
   index("moves_tab_at_idx").on(t.tab, t.at),
   index("moves_wallet_idx").on(t.wallet),
   index("moves_market_idx").on(t.marketId),
@@ -503,15 +509,29 @@ export const insiderTrades = terminal.table("insider_trades", {
   index("insider_trades_filed_idx").on(t.filedAt),
 ]);
 
-/** A stock's daily closing price, when we have one (ticker upper-case, date "YYYY-MM-DD"). Nothing fills it yet: we
- *  found no free daily price source licensed for display. The insider page's "how the stock did after their buys"
- *  line reads it and is left out when a ticker has no recent close (lib/profiles/sec.ts afterBuys). */
+/** A stock's daily closing price (ticker upper-case, date "YYYY-MM-DD"), from a free daily price source
+ *  (lib/stocks/prices.ts), for the tickers insiders bought and SPY (the S&P 500). Insider and company pages read it;
+ *  a ticker without closes leaves its lines out. */
 export const stockCloses = terminal.table("stock_closes", {
   ticker: text("ticker").notNull(),
   date: text("date").notNull(),
   close: doublePrecision("close").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.ticker, t.date] })]);
+
+/** A market we hold moves in, as its venue says now (lib/markets/info.ts, refreshed by the worker): the YES price,
+ *  when the game starts (sports, when the venue says), and the ids needed for its price history. */
+export const marketInfo = terminal.table("market_info", {
+  source: text("source").$type<"polymarket" | "kalshi">().notNull(),
+  marketId: text("market_id").notNull(),
+  /** 0..1, the YES side (Polymarket outcome 0). */
+  yesPrice: doublePrecision("yes_price"),
+  startAt: timestamp("start_at", { withTimezone: true }),
+  closed: boolean("closed").notNull().default(false),
+  /** Polymarket: the YES token (CLOB price history); Kalshi: the series ticker (candlesticks). */
+  historyKey: text("history_key"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.source, t.marketId] })]);
 
 /** EDGAR history reads for an insider ("owner") or a company ("issuer"): which Form 4s are left to read, and from
  *  which date the history is complete. */
