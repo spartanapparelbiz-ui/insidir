@@ -158,3 +158,30 @@ export function trackerPage(db: Db, t: Tracker, until: number, now: number): Pro
     };
   });
 }
+
+/* ---------- what each tracker holds now (the members' home, the home page's live portfolio) ---------- */
+
+export interface TrackerHolding {
+  /** Open positions in the last 60 days, and the money in them. */
+  open: number;
+  amount: number;
+  /** The largest of them. */
+  top: Move | null;
+}
+
+/** Every visible tracker's open positions on the viewer's clock, shared for a minute. */
+export function trackerHoldings(db: Db, until: number, now: number): Promise<Map<TrackerSlug, TrackerHolding>> {
+  return memo(`trackers:holdings:${Math.floor(until / 60_000)}`, 60_000, async () => {
+    const shown = TRACKERS.filter(t => !t.needs || isReady(t.needs));
+    const all = await Promise.all(shown.map(async t => {
+      const base = and(isNull(movesT.hiddenAt), notComboSql, tabsIn(), trackerWhere(t), isNull(movesT.result),
+        gte(movesT.at, new Date(now - 60 * DAY)), lte(movesT.at, new Date(until)));
+      const [agg, top] = await Promise.all([
+        db.select({ n: sql<number>`count(*)::int`, amount: sql<number>`coalesce(sum(${movesT.amount}), 0)::float` }).from(movesT).where(base),
+        db.select().from(movesT).where(base).orderBy(desc(movesT.amount)).limit(1),
+      ]);
+      return [t.slug, { open: n(agg[0]?.n), amount: n(agg[0]?.amount), top: top[0] ? fromRow(top[0]) : null }] as const;
+    }).map(p => p.catch(() => null)));
+    return new Map(all.filter((x): x is NonNullable<typeof x> => x !== null));
+  });
+}

@@ -82,51 +82,51 @@ const style = (slug: string, name: string, line: string, photo: PhotoN, rule: Tr
 
 export const TRACKERS: readonly Tracker[] = [
   /* Styles */
-  style("biggest-bets", "Whales ($100K+)", "Every single bet of $100K or more, on any market.", 7, { fixed: m => isBet(m) && m.amount >= BIG_BET }),
-  style("top-traders", "Top Traders", "Big moves by wallets with 20+ settled markets and a profit.", 10, {
+  style("biggest-bets", "Whales ($100K+)", "Every position of $100K or more, on any market.", 7, { fixed: m => isBet(m) && m.amount >= BIG_BET }),
+  style("top-traders", "Top Traders", "Large positions from accounts with 20+ settled markets and a positive net P&L.", 10, {
     live: (m, c) => m.source === "polymarket" && Boolean(m.wallet) && c.topTrader(m.wallet!),
     sql: () => sql`(terminal.moves.source = 'polymarket' and exists (select 1 from terminal.trader_records t
       where t.wallet = terminal.moves.wallet and t.resolved >= 20 and t.profit > 0))`,
   }),
-  style("top-1-percent", "Top 1% Traders", "Big moves by the top 1% of traders by all-time profit.", 16, {
+  style("top-1-percent", "Top 1% Traders", "Large positions from the top 1% of accounts by all-time net P&L.", 16, {
     live: (m, c) => m.source === "polymarket" && Boolean(m.wallet) && Boolean(c.topPct?.(m.wallet!)),
     sql: () => sql`(terminal.moves.source = 'polymarket' and terminal.moves.wallet in (select wallet from (
       select wallet, percent_rank() over (order by profit desc) as pr from terminal.trader_records where resolved >= 20 and profit > 0) r where r.pr < 0.01))`,
   }),
-  style("underdog-hunters", "Underdog Hunters", "Big bets bought at under a 40% chance: the long shots.", 9, { fixed: m => isBet(m) && m.avgPrice > 0 && m.avgPrice < UNDERDOG_MAX }),
-  style("favorites-only", "Favorites Only", "Big bets bought at over a 75% chance: the heavy favorites.", 3, { fixed: m => isBet(m) && m.avgPrice > FAVORITE_MIN && m.avgPrice < 1 }),
-  style("early-money", "Early Money", "Big bets placed 24 hours or more before the game.", 15, { observed: true }),
-  style("late-money", "Late Money", "Big bets placed in the last hour before the game.", 11, { observed: true }),
-  style("steam", "Steam", "Big bets the price then moved 5 points or more toward.", 14, { observed: true }),
-  style("new-wallets", "Brand-New Wallets", "Bets of $25K+ from wallets with no history at all.", 8, { fixed: m => m.source === "polymarket" && m.newWallet === true && m.amount >= NEW_WALLET_MIN }),
+  style("underdog-hunters", "Long Shots", "Large positions opened at an entry under 40%.", 9, { fixed: m => isBet(m) && m.avgPrice > 0 && m.avgPrice < UNDERDOG_MAX }),
+  style("favorites-only", "Heavy Favorites", "Large positions opened at an entry above 75%.", 3, { fixed: m => isBet(m) && m.avgPrice > FAVORITE_MIN && m.avgPrice < 1 }),
+  style("early-money", "Early Positions", "Large positions opened 24 hours or more before the event starts.", 15, { observed: true }),
+  style("late-money", "Late Positions", "Large positions opened in the final hour before the event starts.", 11, { observed: true }),
+  style("steam", "Momentum", "Positions the market then moved 5+ points toward.", 14, { observed: true }),
+  style("new-wallets", "New Accounts", "Positions of $25K+ from accounts with no prior activity.", 8, { fixed: m => m.source === "polymarket" && m.newWallet === true && m.amount >= NEW_WALLET_MIN }),
   /* Leagues */
-  league("nfl-big-money", "NFL Big Money", "The biggest bets on NFL games and futures.", 12, m => m.league === "NFL"),
-  league("nba-big-money", "NBA Big Money", "The biggest bets on NBA games and futures.", 5, m => m.league === "NBA"),
-  league("mlb-big-money", "MLB Big Money", "The biggest bets on baseball.", 3, m => m.league === "MLB"),
-  league("nhl-big-money", "NHL Big Money", "The biggest bets on hockey.", 11, m => m.league === "NHL"),
-  league("college-football", "College Football", "The biggest bets on college football.", 12, m => label(m) === "College football"),
-  league("college-basketball", "College Basketball", "The biggest bets on college basketball.", 5, m => label(m) === "College basketball"),
-  league("soccer-big-money", "Soccer Big Money", "The biggest bets on soccer, every league.", 2, m => m.league === "soccer"),
-  league("premier-league", "Premier League", "The biggest bets on English Premier League games.", 2, m => label(m) === "Premier League"),
-  league("champions-league", "Champions League", "The biggest bets on the Champions League.", 13, m => label(m) === "Champions League"),
-  league("la-liga", "La Liga", "The biggest bets on Spanish football.", 4, m => label(m) === "La Liga"),
-  league("serie-a", "Serie A", "The biggest bets on Italian football.", 6, m => label(m) === "Serie A"),
-  league("ufc", "UFC", "The biggest bets on UFC fights.", 14, m => m.league === "UFC"),
-  league("tennis", "Tennis", "The biggest bets on tennis.", 9, m => m.league === "tennis"),
-  league("golf", "Golf", "The biggest bets on golf.", 10, m => m.league === "golf"),
-  league("esports", "Esports", "The biggest bets on Counter-Strike, Dota 2, League of Legends and more.", 16, m => ESPORTS.has(label(m) ?? "")),
+  league("nfl-big-money", "NFL", "Large positions on NFL games and futures.", 12, m => m.league === "NFL"),
+  league("nba-big-money", "NBA", "Large positions on NBA games and futures.", 5, m => m.league === "NBA"),
+  league("mlb-big-money", "MLB", "Large positions on MLB games and futures.", 3, m => m.league === "MLB"),
+  league("nhl-big-money", "NHL", "Large positions on NHL games and futures.", 11, m => m.league === "NHL"),
+  league("college-football", "College Football", "Large positions on college football.", 12, m => label(m) === "College football"),
+  league("college-basketball", "College Basketball", "Large positions on college basketball.", 5, m => label(m) === "College basketball"),
+  league("soccer-big-money", "Soccer", "Large positions on soccer, across every league.", 2, m => m.league === "soccer"),
+  league("premier-league", "Premier League", "Large positions on English Premier League matches.", 2, m => label(m) === "Premier League"),
+  league("champions-league", "Champions League", "Large positions on UEFA Champions League matches.", 13, m => label(m) === "Champions League"),
+  league("la-liga", "La Liga", "Large positions on La Liga matches.", 4, m => label(m) === "La Liga"),
+  league("serie-a", "Serie A", "Large positions on Serie A matches.", 6, m => label(m) === "Serie A"),
+  league("ufc", "UFC", "Large positions on UFC fights.", 14, m => m.league === "UFC"),
+  league("tennis", "Tennis", "Large positions on ATP and WTA tennis.", 9, m => m.league === "tennis"),
+  league("golf", "Golf", "Large positions on professional golf.", 10, m => m.league === "golf"),
+  league("esports", "Esports", "Large positions on Counter-Strike, Dota 2, League of Legends and other titles.", 16, m => ESPORTS.has(label(m) ?? "")),
   /* Topics */
-  topic("fed-and-rates", "Fed & Rates", "Big money on Fed decisions and interest rates.", 13, m => m.tab === "markets" && re(FED_RE).test(text(m))),
-  topic("elections-2026", "Elections 2026", "Big money on the 2026 races.", 16,
+  topic("fed-and-rates", "Fed & Rates", "Large positions on Federal Reserve decisions and interest rates.", 13, m => m.tab === "markets" && re(FED_RE).test(text(m))),
+  topic("elections-2026", "Elections 2026", "Large positions on the 2026 U.S. elections.", 16,
     m => m.tab === "markets" && m.category === "politics" && re(ELECTION_RE).test(text(m)) && /2026|midterm/i.test(text(m))),
-  topic("crypto-prices", "Crypto Prices", "Big money on where Bitcoin, Ethereum and others trade next.", 15, m => m.tab === "crypto" || m.category === "crypto", "crypto"),
-  topic("geopolitics", "Geopolitics", "Big money on wars, treaties and world leaders.", 6, m => m.tab === "markets" && m.category === "geopolitics"),
-  topic("tech-and-ai", "Tech & AI", "Big money on AI, big tech and space.", 4, m => m.tab === "markets" && m.category === "tech"),
-  topic("culture", "Culture", "Big money on awards, music, movies and the internet.", 7, m => m.tab === "markets" && m.category === "culture"),
+  topic("crypto-prices", "Crypto Prices", "Large positions on Bitcoin, Ethereum and other crypto price levels.", 15, m => m.tab === "crypto" || m.category === "crypto", "crypto"),
+  topic("geopolitics", "Geopolitics", "Large positions on conflicts, treaties and heads of state.", 6, m => m.tab === "markets" && m.category === "geopolitics"),
+  topic("tech-and-ai", "Tech & AI", "Large positions on AI, large-cap tech and space.", 4, m => m.tab === "markets" && m.category === "tech"),
+  topic("culture", "Culture", "Large positions on awards, music, film and online culture.", 7, m => m.tab === "markets" && m.category === "culture"),
   /* Stocks */
-  { slug: "ceo-buys", name: "CEO Buys", line: "CEOs buying their own company's stock (SEC Form 4).", group: "Stocks", photo: 6, kind: "filings",
+  { slug: "ceo-buys", name: "CEO Purchases", line: "Open-market purchases by CEOs of their own company's stock (SEC Form 4).", group: "Stocks", photo: 6, kind: "filings",
     rule: { fixed: m => m.source === "sec" && m.detail?.kind === "insider" && re(CEO_RE).test(m.detail.role) } },
-  { slug: "cluster-buys", name: "Cluster Buys", line: "Three or more insiders buying at one company within 30 days.", group: "Stocks", photo: 16, kind: "filings",
+  { slug: "cluster-buys", name: "Insider Clusters", line: "Three or more insiders purchasing at one company within 30 days (SEC Form 4).", group: "Stocks", photo: 16, kind: "filings",
     rule: {
       live: (m, c) => m.source === "sec" && m.detail?.kind === "insider" && Boolean(c.cluster?.(m.detail.issuerCik, m.at)),
       sql: () => sql`(terminal.moves.source = 'sec' and terminal.moves.detail->>'kind' = 'insider' and (
@@ -135,7 +135,7 @@ export const TRACKERS: readonly Tracker[] = [
           and o.detail->>'issuerCik' = terminal.moves.detail->>'issuerCik'
           and o.at between terminal.moves.at - interval '30 days' and terminal.moves.at + interval '30 days') >= 3)`,
     } },
-  { slug: "big-funds", name: "Big Funds: New Positions", line: "Companies the largest funds bought into last quarter (SEC 13F).", group: "Stocks", photo: 4, kind: "filings",
+  { slug: "big-funds", name: "New Fund Positions (13F)", line: "New positions opened by the largest funds last quarter (SEC 13F).", group: "Stocks", photo: 4, kind: "filings",
     rule: { fixed: m => m.source === "sec" && m.detail?.kind === "fund" && m.detail.newPosition === true } },
 ];
 

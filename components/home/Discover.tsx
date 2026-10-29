@@ -1,9 +1,10 @@
-/* Discover, the members' home: one headline, then the data. Top performers (1W 1M 3M 6M 1Y), Popular trackers, the
- * biggest bets today, trending markets (the most big money in the last hour) and tonight's games with big money on
- * them. Every number is a row from terminal.moves (lib/discover.ts, lib/trackers-store.ts). Server component. */
+/* Trackers, the members' home (/ and /discover): every tracker ranked by ROI, each with its record and what it holds
+ * now (open positions, the money in them and the largest one). Trackers under 20 settled positions follow, marked
+ * New. Below: the largest positions today, the most active markets and tonight's games. Every number is a row from
+ * terminal.moves (lib/trackers-store.ts, lib/discover.ts). Server component. */
 import Link from "next/link";
-import { PeriodTabs } from "@/components/trackers/PeriodTabs";
-import { TrackerRow } from "@/components/trackers/Tracker";
+import { RecordResult } from "@/components/trackers/Tracker";
+import { coverStats, TrackerCover } from "@/components/trackers/TrackerCover";
 import { Section, Table } from "@/components/stats/Stats";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { Db } from "@/lib/db";
@@ -13,68 +14,76 @@ import { memo } from "@/lib/memo";
 import { agoText, clockET, dollars } from "@/lib/moves/copy";
 import { feedItems } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
-import { PERIODS, popular, topPerformers, visibleTrackers } from "@/lib/trackers";
-import { trackerStats } from "@/lib/trackers-store";
+import { headlineOf } from "@/lib/moves/headline";
+import { hasTrackerRecord, returnPct, topPerformers, trackerHref, visibleTrackers } from "@/lib/trackers";
+import { trackerHoldings, trackerStats, type TrackerHolding } from "@/lib/trackers-store";
 
 const marketHref = (id: string) => `/market/${encodeURIComponent(id)}`;
 
+/** "12 open · $4.1M · largest: Warriors to beat the Timberwolves", or that it holds nothing right now. */
+export function holdingLine(h: TrackerHolding | undefined): string {
+  if (!h || h.open === 0) return "No open positions";
+  return `${h.open.toLocaleString("en-US")} open · ${dollars(h.amount)}${h.top ? ` · largest: ${headlineOf(h.top)}` : ""}`;
+}
+
 export async function Discover({ db, viewer, now }: { db: Db | null; viewer: Viewer; now: number }) {
   const until = now - movePlan(viewer.plan).delayMs;
-  const [stats, today, trending, tonight] = db ? await Promise.all([
+  const [stats, holdings, today, trending, tonight] = db ? await Promise.all([
     trackerStats(db, now).catch(() => new Map()),
+    trackerHoldings(db, until, now).catch(() => new Map()),
     memo(`discover:today:${Math.floor(until / 30_000)}`, 30_000, () => biggestToday(db, now, until)).then(l => feedItems(db, l, viewer.plan, viewer.region, now)).catch(() => []),
     memo(`discover:trending:${Math.floor(until / 30_000)}`, 30_000, () => trendingMarkets(db, until - 3_600_000, until)).catch((): MarketRow[] => []),
     memo(`discover:tonight:${Math.floor(until / 60_000)}`, 60_000, () => tonightsGames(db, now, until)).catch((): MarketRow[] => []),
-  ]) : [new Map(), [], [], []];
-  const rows = visibleTrackers(isReady).map(t => ({ t, s: stats.get(t.slug) }));
-  const tabs = PERIODS.map(p => {
-    const ranked = topPerformers(rows.map(({ t, s }) => ({ t, slug: t.slug, record: s?.records[p.key] ?? null })));
-    return { key: p.key, label: p.label, body: ranked.length
-      ? <ol className="tlist">{ranked.slice(0, 6).map(({ t, record }) => <TrackerRow key={t.slug} t={t} r={record} />)}</ol>
-      : <p className="tlist__empty">No tracker has 20 settled moves in this window yet.</p> };
-  });
-  const pop = popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, followers: s!.followers, tracked30d: s!.tracked30d })));
-  const word = viewer.user?.name?.trim().split(/\s+/)[0] ?? "";
-  const first = /^[A-Z][a-z'-]{1,20}$/.test(word) ? word : null;
+  ]) : [new Map(), new Map(), [], [], []];
+  const rows = visibleTrackers(isReady).map(t => ({ t, slug: t.slug, s: stats.get(t.slug), record: stats.get(t.slug)?.records.all ?? null }));
+  const ranked = topPerformers(rows);
+  const rest = rows.filter(r => !hasTrackerRecord(r.record));
   return (
     <main className="wrap app2 discover">
       <header className="phead">
-        <h1 className="phead__h">{first ? `Hi, ${first}.` : "Discover"}</h1>
-        <p className="phead__sub">Where the big money is right now.</p>
+        <h1 className="phead__h">Trackers</h1>
+        <p className="phead__sub">Each tracker is a live portfolio of large positions. Ranked by ROI on settled positions; a record starts at 20.</p>
       </header>
 
-      <div className="tcols">
-        <div className="tcol"><h2 className="sec3__h sec3__h--sm">Top performers</h2><PeriodTabs tabs={tabs} initial="1m" /></div>
-        <div className="tcol">
-          <h2 className="sec3__h sec3__h--sm">Popular trackers</h2>
-          <p className="tcol__note">By followers, then money tracked in the last 30 days.</p>
-          {pop.length ? <ol className="tlist">{pop.slice(0, 6).map(({ t, followers, tracked30d }, i) => (
-            <TrackerRow key={t.slug} t={t} rank={i + 1} figure={followers > 0 ? `${followers.toLocaleString("en-US")} ${followers === 1 ? "follower" : "followers"}` : tracked30d > 0 ? dollars(tracked30d) : "No moves yet"} />
-          ))}</ol> : <p className="tlist__empty">Catching up: the trackers fill in as the first moves arrive.</p>}
-        </div>
-      </div>
+      <ol className="tbook" aria-label="Trackers by ROI">
+        {[...ranked, ...rest].map(({ t, s, record }, i) => (
+          <li key={t.slug}>
+            <Link className="tbook__row" href={trackerHref(t.slug)}>
+              <span className="tbook__rank">{hasTrackerRecord(record) ? i + 1 : ""}</span>
+              <TrackerCover t={t} s={coverStats(s)} small className="tbook__thumb" />
+              <span className="tbook__who">
+                <span className="tbook__name">{t.name}</span>
+                <span className="tbook__hold">{holdingLine(holdings.get(t.slug))}</span>
+              </span>
+              <span className="tbook__roi">{returnPct(record) ?? (t.kind === "filings" ? "Filings" : "New")}<span>{t.kind === "filings" ? "no settlement" : "ROI"}</span></span>
+              <RecordResult r={record} />
+            </Link>
+          </li>
+        ))}
+      </ol>
+      <p className="tsec__foot"><Link className="tlink tlink--go" href="/trackers">Browse trackers by group <span className="arrow" aria-hidden="true">→</span></Link></p>
 
-      <Section id="today-h" title="Biggest bets today" note="Since midnight, New York time.">
-        {today.length ? <Table label="Biggest bets today" head={["Bet", "Amount", "When"]} numeric={[1, 2]} rows={today.map(m => [
-          <Link key="b" className="dtable__link" href={marketHref(m.marketId)}>{m.sentence}</Link>, dollars(m.amount), m.ago])} />
-          : <p className="dnote">No big bets yet today.</p>}
+      <Section id="today-h" title="Largest positions today" note="Since midnight, New York time.">
+        {today.length ? <Table label="Largest positions today" head={["Position", "Size", "Opened"]} numeric={[1, 2]} rows={today.map(m => [
+          <Link key="b" className="dtable__link" href={marketHref(m.marketId)}>{m.headline}<span className="dtable__sub">{m.subline}</span></Link>, dollars(m.amount), m.ago])} />
+          : <p className="dnote">No large positions yet today.</p>}
       </Section>
 
       <div className="dgrid2 dsec">
         <div>
-          <h2 className="dsec__h">Trending markets</h2>
-          <p className="dsec__note">The most big money in the last hour.</p>
-          {trending.length ? <Table label="Trending markets" head={["Market", "Big money", "Moves"]} numeric={[1, 2]} rows={trending.map(m => [
+          <h2 className="dsec__h">Most active markets</h2>
+          <p className="dsec__note">The most volume in large positions in the last hour.</p>
+          {trending.length ? <Table label="Most active markets" head={["Market", "Volume", "Positions"]} numeric={[1, 2]} rows={trending.map(m => [
             <Link key="m" className="dtable__link" href={marketHref(m.marketId)}>{m.title}<span className="dtable__sub">{m.event !== m.title ? m.event : agoText(m.lastAt, now)}</span></Link>, dollars(m.total), m.moves.toLocaleString("en-US")])} />
-            : <p className="dnote">No big money in the last hour.</p>}
+            : <p className="dnote">No large positions in the last hour.</p>}
         </div>
         <div>
           <h2 className="dsec__h">Tonight&apos;s games</h2>
-          <p className="dsec__note">Games starting before 6 a.m. ET with big money on them.</p>
-          {tonight.length ? <Table label="Tonight's games" head={["Game", "Starts", "Big money"]} numeric={[1, 2]} rows={tonight.map(m => [
+          <p className="dsec__note">Games starting before 6 a.m. ET with large positions on them.</p>
+          {tonight.length ? <Table label="Tonight's games" head={["Game", "Starts", "Volume"]} numeric={[1, 2]} rows={tonight.map(m => [
             <Link key="g" className="dtable__link" href={marketHref(m.marketId)}>{m.title}<span className="dtable__sub">{m.event !== m.title ? m.event : ""}</span></Link>,
             m.startAt! <= now ? "Started" : clockET(m.startAt!), dollars(m.total)])} />
-            : <p className="dnote">No games tonight with big money yet.</p>}
+            : <p className="dnote">No games tonight with large positions yet.</p>}
         </div>
       </div>
     </main>

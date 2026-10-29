@@ -29,7 +29,7 @@ const DAY = 86_400_000;
 
 export default async function StartPage() {
   const viewer = await getViewer();
-  if (viewer.user && isPaid(viewer.plan)) redirect("/feed");
+  if (viewer.user && isPaid(viewer.plan)) redirect("/");
   const jar = await cookies();
   const pending = viewer.user ? null : readPending(jar.get(PENDING_COOKIE)?.value);
   const now = Date.now();

@@ -1,7 +1,8 @@
-/* The top of every page: the nav, white with the black logo and a hairline. Visitors: logo, Trackers, Results, How it
- * works, Pricing, Log in, and "Get started" (36px, the one button besides each page's own). Members:
- * logo, Trackers, Feed, Following, Results, Account. On phones: logo, the button and a menu; on the app pages (feed, top, profiles, markets, results, following, account), members and
- * visitors get a bottom tab bar within thumb reach: Feed, Top, Following, Account.
+/* The top of every page: the nav, white with the black logo and a hairline. Visitors: logo, Trackers, Activity,
+ * Positioning, Track record, Pricing, Log in, and "Get started" (36px, the one button besides each page's own).
+ * Members: logo, Trackers (their home), Activity, Following, Positioning, Track record, Account; the menu also holds
+ * Position check (/check), reachable only from there. On phones: logo, the button and a menu; on the app pages,
+ * members and visitors get a bottom tab bar within thumb reach: Trackers, Activity, Following, Account.
  * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -36,20 +37,23 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
   const link = (href: string, label: string, section = href) => (
     <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
+  // Trackers first: each one is a live portfolio of large positions. Members open the app on Trackers (home).
   const links = signedIn
-    ? [...(paid ? [link("/", "Discover", "/discover")] : []), link("/check", "Check your bet"), link("/trackers", "Trackers"), link("/splits", "Splits"), link("/feed", "Feed"), link("/following", "Following"), link("/settings", "Account", "/account")]
-    : [link("/check", "Check your bet"), link("/trackers", "Trackers"), link("/splits", "Splits"), link("/results", "Results"), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
+    ? [link(paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"), link("/feed", "Activity"), link("/following", "Following"), link("/splits", "Positioning"), link("/results", "Track record"), link("/settings", "Account", "/account")]
+    : [link("/trackers", "Trackers"), link("/feed", "Activity"), link("/splits", "Positioning"), link("/results", "Track record"), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
+  // The app menu also holds the position check, which lives only here.
+  const menu = signedIn ? [...links.slice(0, -1), link("/check", "Position check"), links[links.length - 1]!] : links;
   return (
     <>
       <ViewAs />
       <header className={tone === "light" ? "nav nav--light" : "nav"}>
         <div className="wrap nav__in">
-          <Link className="wordmark" href={signedIn ? "/feed" : "/"} aria-label="Insidir home"><Wordmark /></Link>
+          <Link className="wordmark" href={signedIn && !paid ? "/trackers" : "/"} aria-label="Insidir home"><Wordmark /></Link>
           <nav className={`nav__links${signedIn ? " nav__links--member" : ""}`} aria-label="Main">{links}</nav>
           {!paid && offer ? <a className="btn btn--primary nav__cta" href={trialHref} data-unlock="nav">{NAV_CTA}</a> : null}
           <details className={`nav__menu${signedIn ? " nav__menu--member" : ""}`}>
             <summary aria-label="Menu"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></summary>
-            <nav className="nav__sheet" aria-label="Menu">{links}</nav>
+            <nav className="nav__sheet" aria-label="Menu">{menu}</nav>
           </details>
         </div>
         {status ? <div className="wrap nav__status">{status}</div> : null}
@@ -58,9 +62,8 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
       </header>
       {signedIn || (at && APP_SECTIONS.has(at)) ? (
         <nav className="tabbar" aria-label="App">
-          {/* Check your bet sits in the middle: the app's main action. Trackers stays in the menu and on Discover. */}
-          {[paid ? ["/", "Discover", "/discover"] : ["/trackers", "Trackers", "/trackers"], ["/feed", "Feed", "/feed"], ["/check", "Check", "/check"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
-            <Link key={href} href={href!} className={`tabbar__item${label === "Check" ? " tabbar__item--main" : ""}`} aria-current={at === section ? "page" : undefined}>
+          {[[paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"], ["/feed", "Activity", "/feed"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
+            <Link key={href} href={href!} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
               <TabIcon name={label!} />
               <span>{label}</span>
             </Link>

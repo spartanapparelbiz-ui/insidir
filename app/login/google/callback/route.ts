@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     const { token, expires } = await createSession(r.userId);
     void recordEvent({ name: "login", userId: r.userId }).catch(() => undefined);
     logLine(`signed in (${r.why})`);
-    const res = done(to(safeNext(saved.next === "/start" ? "/feed" : saved.next)));
+    const res = done(to(safeNext(saved.next === "/start" ? "/" : saved.next)));
     setSessionCookie(res, token, expires);
     res.cookies.delete(PENDING_COOKIE);
     return res;
