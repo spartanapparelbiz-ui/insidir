@@ -149,9 +149,9 @@ export async function TraderProfile({ db, wallet, viewer, trial, now, page = 1 }
           : <p className="dnote">No big moves from this wallet{paid ? "" : " more than 30 minutes ago"} yet.</p>}
         {pages > 1 ? (
           <nav className="pager" aria-label="Pages">
-            {page > 1 ? <Link className="btn btn--secondary" href={`/p/${wallet}?page=${page - 1}#moves-h`}>Newer</Link> : <span />}
+            {page > 1 ? <a className="btn btn--secondary" href={`/p/${wallet}?page=${page - 1}#moves-h`}>Newer</a> : <span />}
             <span className="pager__n">Page {page} of {pages}</span>
-            {page < pages ? <Link className="btn btn--secondary" href={`/p/${wallet}?page=${page + 1}#moves-h`}>Older</Link> : <span />}
+            {page < pages ? <a className="btn btn--secondary" href={`/p/${wallet}?page=${page + 1}#moves-h`}>Older</a> : <span />}
           </nav>
         ) : null}
       </Section>

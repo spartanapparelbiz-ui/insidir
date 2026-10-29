@@ -168,7 +168,8 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
         <Section id="moves-h" title={t.kind === "filings" ? "Latest filings" : "Moves"} note={!paid ? <>You&apos;re seeing moves 30 minutes late. <a href={trial} data-unlock="tracker">Members see them live.</a></> : undefined}>
           {t.kind === "bets" ? (
             <nav className="dfilters" aria-label="Show">
-              {SHOW.map(s => <Link key={s} className="chip2" aria-current={show === s ? "true" : undefined} href={s === "all" ? `/trackers/${t.slug}#moves-h` : `/trackers/${t.slug}?show=${s}#moves-h`}>{s[0]!.toUpperCase() + s.slice(1)}</Link>)}
+              {/* Plain links: a query-only change on the same page through the client router sometimes never lands (Next 15.5). */}
+              {SHOW.map(s => <a key={s} className="chip2" aria-current={show === s ? "true" : undefined} href={s === "all" ? `/trackers/${t.slug}#moves-h` : `/trackers/${t.slug}?show=${s}#moves-h`}>{s[0]!.toUpperCase() + s.slice(1)}</a>)}
             </nav>
           ) : null}
           {list.length ? (
