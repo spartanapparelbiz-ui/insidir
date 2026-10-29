@@ -1,5 +1,5 @@
 /* Moves, trader records, follows and the waitlist in Postgres (terminal schema). Server only. */
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
 import { follows, markets, moves, traderRecords, waitlist, type FollowKind } from "@/lib/db/schema";
@@ -179,6 +179,8 @@ export interface MoveQuery {
   source?: Move["source"];
   /** Only moves by these wallets or in these markets (a member's Following feed); nothing when both are empty. */
   followed?: { wallets: string[]; marketIds: string[] };
+  /** Any extra condition over terminal.moves (a tracker's rule, lib/trackers.ts). */
+  where?: SQL;
 }
 
 export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
@@ -204,6 +206,7 @@ export async function listMoves(db: Db, q: MoveQuery): Promise<Move[]> {
       q.followed.wallets.length ? inArray(moves.wallet, q.followed.wallets) : undefined,
       q.followed.marketIds.length ? inArray(moves.marketId, q.followed.marketIds) : undefined,
       sql`false`) : undefined,
+    q.where,
   ].filter(Boolean);
   const rs = await db.select().from(moves).where(w.length ? and(...w) : undefined)
     // Stocks: insiders' Form 4 buys (days old) before funds' 13F adds (up to months old), each newest first.

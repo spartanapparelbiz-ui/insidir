@@ -1,132 +1,87 @@
-/* The home page: "serious type, wild world". Top to bottom: the trial bar and the black nav (SiteHeader); the cinematic
- * hero (components/home/Hero.tsx: seven graded photos, what Insidir is in one line, "Follow the big money.", one real big
- * move per photo on a solid card, the ticker strip of real moves); the scroll story "How Insidir works in 10 seconds"
- * (components/home/Story.tsx, one real trader); then clean white sections: a real feed preview (3 live cards and a
- * profile snippet), Results ("Real past moves. Not a promise."), where the data comes from (the trust
- * block), Pricing (one plan), FAQ, and "Try 7 days for $1" at the end. Visitors see a public preview: real moves 30
- * minutes late, records blurred.
- * Every move and number is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Nothing is made
- * up: with no moves, the card says it's catching up and the ticker and preview are hidden. */
+/* The home page, Autopilot-style: one centred hero (the logo mark in a black rounded square, "Follow the big money.",
+ * one line, one black pill "Explore trackers →", then five real app screens in phone frames fanned across); "Featured"
+ * (four wide photo cards); two columns, "Top performers" by window and "Popular"; pricing; FAQ.
+ * Every number is a row from terminal.moves on the viewer's clock (free: 30 minutes late), and a tracker's record is
+ * its settled moves (lib/trackers-store.ts). Nothing is made up: a phone with nothing to show is left out, and a
+ * tracker with under 20 settled moves says "New". */
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
-import { Hero, PreviewSeen } from "@/components/home/Hero";
-import { Story } from "@/components/home/Story";
-import { storyFor, type Story as StoryData } from "@/lib/home/story";
-import { homeCopy, isMainstream } from "@/lib/home/curate";
-import { PhotoSection } from "@/components/home/PhotoSection";
-import { ScrollOffer } from "@/components/home/ScrollOffer";
-import { HOME_SECTIONS } from "@/lib/photos";
-import { HERO_PHOTOS } from "@/lib/photos";
+import { HeroCta } from "@/components/home/HeroCta";
+import { Phones, type PhoneData } from "@/components/home/Phones";
+import { PeriodTabs } from "@/components/trackers/PeriodTabs";
+import { TrackerFeature, TrackerRow } from "@/components/trackers/Tracker";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
-import { MoveCard, SourceA } from "@/components/v2/MoveCard";
-import { TrustBlock } from "@/components/TrustBlock";
 import { LOGO } from "@/components/Wordmark";
-import { countsToRecord, trustFacts, type TrustFacts } from "@/lib/trust";
+import { homeCopy, isMainstream } from "@/lib/home/curate";
+import { countsToRecord } from "@/lib/trust";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
-import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import { getDb, hasDatabase, type Db } from "@/lib/db";
-import { isReady, liveTabs } from "@/lib/features";
-import { agoText, dollars, recordLine } from "@/lib/moves/copy";
-import { feedItems, feedStatus, type FeedItem, type FeedStatus } from "@/lib/moves/feed";
+import { clockET, dollars } from "@/lib/moves/copy";
+import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
-import { isTopTrader, walletLabel } from "@/lib/moves/records";
-import { listMoves, recordsFor } from "@/lib/moves/store";
-import { moveSource } from "@/lib/moves/source";
-import { tickerItem, type TickerItem } from "@/lib/moves/ticker";
-import type { Move, TraderRecord } from "@/lib/moves/types";
+import { listMoves } from "@/lib/moves/store";
+import type { Move } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
+import { FEATURED, PERIODS, popular, topPerformers, trackerBySlug, TRACKERS, type TrackerSlug } from "@/lib/trackers";
+import { trackerMoves, trackerStats, type TrackerStats } from "@/lib/trackers-store";
 import type { Plan, Region } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const WEEK = 7 * 86_400_000;
 const MONTH = 30 * 86_400_000;
 
-/** The hero's moves: the biggest mainstream moves of the last week (lib/home/curate.ts), taking each live tab in turn
- *  so Sports, Markets and Stocks mix; topped up with the latest mainstream moves. Up to seven, one per photo. */
-function heroPick(big: Move[], latest: Move[]): Move[] {
-  const tabs = liveTabs().filter(t => t !== "crypto");
-  const per = tabs.map(tab => big.filter(m => m.tab === tab));
-  const out: Move[] = [];
-  for (let i = 0; out.length < HERO_PHOTOS.length && per.some(l => l[i]); i++) for (const l of per) if (l[i] && out.length < HERO_PHOTOS.length) out.push(l[i]!);
-  for (const m of latest) if (out.length < HERO_PHOTOS.length && !out.some(o => o.id === m.id)) out.push(m);
-  return out;
-}
-
-/** A feed item said the home page's way: the short line, one line of context, no "30 min late"; a stock card's
- *  dates move into the context line. */
+/** A feed item said the home page's short way. */
 function homeItem(fi: FeedItem, m: Move | undefined): FeedItem {
   const c = homeCopy({ ...fi, detail: m?.detail ?? null }, fi.who.name);
-  return { ...fi, sentence: c.line, context: c.context, note: fi.source === "sec" ? null : fi.note };
+  return { ...fi, sentence: c.line, context: c.context };
 }
 
-/** Results: the six best recent mainstream examples, three won and three lost when there are, biggest first. Only
- *  bets that count toward the record shown above them (Polymarket, not sold early), so the two always agree. */
+/** Results' phone: recent settled bets that count toward the record, won ones and lost ones, biggest first. */
 function resultPick(settled: Move[], now: number): Move[] {
   const pool = settled.filter(m => (m.settledAt ?? m.at) > now - MONTH && countsToRecord(m)).sort((a, b) => b.amount - a.amount);
-  const won = pool.filter(m => m.result === "won"), lost = pool.filter(m => m.result === "lost");
-  const w = Math.min(3, won.length), l = Math.min(3, lost.length);
-  const out = [...won.slice(0, 6 - Math.min(l, 3) > w ? Math.min(won.length, 6 - l) : w), ...lost.slice(0, l)];
-  return out.slice(0, 6).sort((a, b) => b.amount - a.amount);
+  const won = pool.filter(m => m.result === "won").slice(0, 2), lost = pool.filter(m => m.result === "lost").slice(0, 2);
+  return [...won, ...lost].sort((a, b) => b.amount - a.amount);
 }
 
-/** The profile snippet: the trader behind the newest Polymarket move in the preview, from their moves we have
- *  (public), and their record for members only. */
-interface Snippet { wallet: string; name: string; moves: number; total: number; biggest: number; record: string | null; top: boolean }
-async function snippetFor(db: Db, items: FeedItem[], until: number, records: boolean): Promise<Snippet | null> {
-  const lead = items.find(m => m.wallet);
-  if (!lead?.wallet) return null;
-  const theirs = await listMoves(db, { wallet: lead.wallet, until, limit: 200 });
-  if (!theirs.length) return null;
-  let rec: TraderRecord | null = null;
-  if (records) rec = (await recordsFor(db, [lead.wallet])).get(lead.wallet) ?? null;
-  return {
-    wallet: lead.wallet, name: lead.walletLabel ?? lead.who.name, moves: theirs.length,
-    total: theirs.reduce((s, m) => s + m.amount, 0), biggest: Math.max(...theirs.map(m => m.amount)),
-    record: recordLine(rec), top: isTopTrader(rec),
-  };
-}
+interface HomeData { phones: PhoneData; stats: Map<TrackerSlug, TrackerStats> }
+const EMPTY: HomeData = { phones: { feed: [], results: [], tracker: null, list: [], alert: null }, stats: new Map() };
 
-interface HomeData { hero: FeedItem[]; recent: FeedItem[]; results: FeedItem[]; status: FeedStatus | null; snippet: Snippet | null; ticker: TickerItem[]; trust: TrustFacts | null; story: StoryData | null }
-const EMPTY: HomeData = { hero: [], recent: [], results: [], status: null, snippet: null, ticker: [], trust: null, story: null };
-
-async function homeData(db: Db, plan: Plan, region: Region | null, until: number, now: number, records: boolean): Promise<HomeData> {
-  let hero: FeedItem[] = [], recent: FeedItem[] = [], results: FeedItem[] = [], status: FeedStatus | null = null, snippet: Snippet | null = null;
-  let ticker: TickerItem[] = [];
-  let trust: TrustFacts | null = null;
-  let story: StoryData | null = null;
-  // Home only shows mainstream moves (lib/home/curate.ts); the feed keeps everything.
-  const [bigAll, latestAll, settledAll, st] = await Promise.all([
-    listMoves(db, { since: now - WEEK, until, byAmount: true, limit: 200 }).catch(() => []),
-    listMoves(db, { until, limit: 200 }).catch(() => []),
+async function homeData(db: Db, plan: Plan, region: Region | null, until: number, now: number): Promise<HomeData> {
+  const lead = trackerBySlug("biggest-bets")!;
+  const [latestAll, settledAll, stats, leadMoves] = await Promise.all([
+    listMoves(db, { until, limit: 60 }).catch(() => []),
     listMoves(db, { settled: true, source: "polymarket", limit: 200 }).catch(() => []),
-    feedStatus(db, now).catch(() => null),
+    trackerStats(db, now).catch(() => new Map<TrackerSlug, TrackerStats>()),
+    trackerMoves(db, lead, { until, limit: 3 }).catch(() => []),
   ]);
-  const [big, latest, settled] = [bigAll, latestAll, settledAll].map(l => l.filter(isMainstream));
-  const byId = new Map([...big!, ...latest!].map(m => [m.id, m]));
-  const [heroItems, recentItems] = await Promise.all([
-    feedItems(db, heroPick(big!, latest!), plan, region, now).catch(() => []),
-    feedItems(db, latest!.slice(0, 24), plan, region, now).catch(() => []),
+  const latest = latestAll.filter(isMainstream).slice(0, 4);
+  const picked = resultPick(settledAll, now);
+  const byId = new Map([...latest, ...picked, ...leadMoves].map(m => [m.id, m]));
+  const [feed, results, leadItems] = await Promise.all([
+    feedItems(db, latest, plan, region, now).catch(() => []),
+    feedItems(db, picked, plan, region, now, now).catch(() => []),
+    feedItems(db, leadMoves, plan, region, now).catch(() => []),
   ]);
-  hero = heroItems.map(fi => homeItem(fi, byId.get(fi.id)));
-  recent = recentItems.map(fi => homeItem(fi, byId.get(fi.id)));
-  ticker = recent.slice(0, 12).map(fi => tickerItem({ ...fi, company: fi.source === "sec" ? fi.sentence.replace(/^.* of /, "") : null }));
-  snippet = await snippetFor(db, recent.slice(0, 12), until, records).catch(() => null);
-  const picked = resultPick(settled!, now);
-  results = (await feedItems(db, picked, plan, region, now, now).catch(() => [])).map(fi => homeItem(fi, picked.find(m => m.id === fi.id)));
-  status = st;
-  [trust, story] = await Promise.all([
-    memo("trust", 60_000, () => trustFacts(db)).catch(() => null),
-    storyFor(db, plan, region, until, now, process.env.APP_URL || "https://insidir.com").catch(() => null),
-  ]);
-  return { hero, recent, results, status, snippet, ticker, trust, story };
+  const short = (l: FeedItem[]) => l.map(fi => homeItem(fi, byId.get(fi.id)));
+  const leadShort = short(leadItems);
+  const ranked = topPerformers(TRACKERS.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records["1m"] ?? null })));
+  const list = [...ranked, ...TRACKERS.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))];
+  return {
+    stats,
+    phones: {
+      feed: short(feed), results: short(results),
+      tracker: leadShort.length ? { t: lead, record: stats.get(lead.slug)?.records.all ?? null, moves: leadShort } : null,
+      list: stats.size ? list : [],
+      alert: leadShort[0] ? { tracker: lead.name, body: leadShort[0].sentence, time: clockET(leadShort[0].at).replace(/ (AM|PM) ET$/, "") } : null,
+    },
+  };
 }
 
 export default async function Home() {
@@ -135,111 +90,74 @@ export default async function Home() {
   const paid = isPaid(viewer.plan);
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
-  // Every visitor on the same plan and region sees the same home page data: computed once per 15 seconds.
-  const { hero, recent, results, status, snippet, ticker, trust, story } = hasDatabase()
-    ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, until, now, plan.records))
+  // Every visitor on the same plan and region sees the same home page: computed once per 15 seconds.
+  const { phones, stats } = hasDatabase()
+    ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, until, now))
     : EMPTY;
-  const preview = recent.slice(0, 3);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined));
   const trial = unlockHref();
-  const follow = !isReady("follows") ? "soon" as const : paid ? "off" as const : "locked" as const;
 
-  const record = trust?.settled ?? null;
-  const cardIn = (i: number) => ({ ["--i" as string]: i });
+  const rows = TRACKERS.map(t => ({ t, s: stats.get(t.slug) }));
+  const periodTabs = PERIODS.map(p => {
+    const ranked = topPerformers(rows.map(({ t, s }) => ({ t, slug: t.slug, record: s?.records[p.key] ?? null })));
+    return {
+      key: p.key, label: p.label,
+      body: ranked.length ? <ol className="tlist">{ranked.slice(0, 6).map(({ t, record }) => <TrackerRow key={t.slug} t={t} r={record} />)}</ol>
+        : <p className="tlist__empty">No tracker has 20 settled moves in this window yet.</p>,
+    };
+  });
+  const pop = popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, followers: s!.followers, tracked30d: s!.tracked30d })));
 
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} offer={false} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
-      <main className="lp2">
-        <Hero alerts={isReady("alerts_push")} moves={hero} ticker={ticker} late={false} trialLine={paid ? null : CANCEL_LINE} cta={paid ? "See the live feed" : GET_CTA} ctaHref={paid ? "/feed" : trial} status={status} />
-        {story ? <Story data={story} alerts={isReady("alerts_push")} /> : null}
+      <main className="lp3">
+        <section className="hero3" aria-labelledby="hero-h">
+          <div className="wrap hero3__in">
+            <span className="hero3__mark" aria-hidden="true"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
+            <h1 id="hero-h" className="hero3__h">Follow the big money.</h1>
+            <p className="hero3__sub">Pick a tracker. See every big move. That&apos;s it.</p>
+            <HeroCta />
+          </div>
+          <Phones d={phones} />
+        </section>
 
-        <PhotoSection n={HOME_SECTIONS.seconds} id="ps-seconds" line="Big moves happen in seconds.">
-          {recent[0] ? <div className="psec__card"><MoveCard m={recent[0]} follow={follow} trialHref={trial} compact /></div> : null}
-        </PhotoSection>
-
-        {preview.length ? (
-          <PreviewSeen className="sec2 preview" labelledBy="preview-h">
-            <div className="wrap">
-              <div className="sec2__head">
-                <h2 id="preview-h" className="sec2__h rv">Right now on the feed</h2>
-                {status ? <p className={`status status--${status.state} rv`} style={cardIn(1)}><span className="status__dot" aria-hidden="true" />{status.text}</p> : null}
-              </div>
-              <div className="preview__grid">
-                {preview.map((m, i) => <div key={m.id} className="rv rv--card" style={cardIn(i)}><MoveCard m={m} follow={follow} trialHref={trial} compact /></div>)}
-                {snippet && snippet.moves > 0 && snippet.total > 0 ? (
-                  <aside className="psnip rv rv--card" style={cardIn(3)} aria-labelledby="psnip-h">
-                    <p className="psnip__kicker">{snippet.top ? "Top trader" : "Trader"} profile</p>
-                    <h3 id="psnip-h" className="psnip__name">{snippet.name}</h3>
-                    <dl className="psnip__stats">
-                      <div><dt>Big moves</dt><dd data-count={snippet.moves}>{snippet.moves}</dd></div>
-                      <div><dt>Total in</dt><dd data-count={snippet.total} data-fmt="dollars">{dollars(snippet.total)}</dd></div>
-                      <div><dt>Biggest</dt><dd data-count={snippet.biggest} data-fmt="dollars">{dollars(snippet.biggest)}</dd></div>
-                    </dl>
-                    <p className="psnip__line">{snippet.record ?? (paid ? "Not enough settled markets for a record yet." : "Their win record is for members.")}</p>
-                    <Link className="psnip__link" href={`/p/${snippet.wallet}`}>See their profile</Link>
-                  </aside>
-                ) : null}
-              </div>
-              <div className="sec2__foot"><Link className="btn btn--secondary" href={paid ? "/feed" : trial}>{paid ? "See the live feed" : GET_CTA}</Link></div>
+        <section className="sec3" aria-labelledby="feat-h">
+          <div className="wrap">
+            <h2 id="feat-h" className="sec3__h">Featured</h2>
+            <div className="tfeats">
+              {FEATURED.map((s, i) => <TrackerFeature key={s} t={trackerBySlug(s)!} i={i} />)}
             </div>
-          </PreviewSeen>
-        ) : null}
+          </div>
+        </section>
 
-        <PhotoSection n={HOME_SECTIONS.wins} id="ps-wins" line="See who actually wins.">
-          {record && record.won + record.lost > 0 ? <p className="psec__stat"><span className="money-on-dark"><span data-count={record.won}>{record.won.toLocaleString("en-US")}</span> won</span> · <span className="loss-on-dark"><span data-count={record.lost}>{record.lost.toLocaleString("en-US")}</span> lost</span></p> : null}
-        </PhotoSection>
-
-        {results.length ? (
-          <section className="sec2" aria-labelledby="res-h">
-            <div className="wrap">
-              <div className="sec2__head">
-                <h2 id="res-h" className="sec2__h rv">Results</h2>
-                <p className="sec2__sub rv" style={cardIn(1)}>Real past moves. Not a promise.</p>
-                {record && record.won + record.lost > 0 ? <p className="results__record rv" style={cardIn(2)}><span className="money">{record.won.toLocaleString("en-US")} won</span> · <span className="loss">{record.lost.toLocaleString("en-US")} lost</span></p> : null}
-              </div>
-              <ol className="rcards">
-                {results.map((r, i) => (
-                  <li key={r.id} className="rcard rv rv--card" style={cardIn(i)}>
-                    <p className="rcard__top"><span className={`rcard__res rcard__res--${r.result}`}>{r.result === "won" ? "Won" : "Lost"}</span><span className="rcard__when">{r.ago}</span></p>
-                    <p className="rcard__amt" data-count={r.amount} data-fmt="dollars">{dollars(r.amount)}</p>
-                    <p className="rcard__line">{r.sentence}</p>
-                    {r.context ? <p className="rcard__ctx">{r.context}</p> : null}
-                    {r.sourceLink ? <SourceA link={r.sourceLink} /> : null}
-                  </li>
-                ))}
-              </ol>
-              <div className="sec2__foot"><Link className="btn btn--secondary" href="/results">See every result</Link></div>
+        <section className="sec3 sec3--tight" aria-label="Trackers">
+          <div className="wrap tcols">
+            <div className="tcol">
+              <h2 className="sec3__h sec3__h--sm">Top performers</h2>
+              <PeriodTabs tabs={periodTabs} initial="1m" />
             </div>
-          </section>
-        ) : null}
-
-        {/* Only once phone alerts are live (FEATURES_READY alerts_push). */}
-        {isReady("alerts_push") ? <PhotoSection n={HOME_SECTIONS.alert} id="ps-alert" line="Get the alert before everyone else.">
-          {story ? (
-            <div className="psec__note" aria-hidden="true">
-              <span className="psec__note-icon"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
-              <div><p className="psec__note-head"><b>{story.alert.title}</b><span>now</span></p><p className="psec__note-text">{story.alert.body}</p></div>
+            <div className="tcol">
+              <h2 className="sec3__h sec3__h--sm">Popular</h2>
+              <p className="tcol__note">By followers, then money tracked in the last 30 days.</p>
+              {pop.length ? (
+                <ol className="tlist">
+                  {pop.slice(0, 6).map(({ t, followers, tracked30d }, i) => (
+                    <TrackerRow key={t.slug} t={t} rank={i + 1}
+                      figure={followers > 0 ? `${followers.toLocaleString("en-US")} ${followers === 1 ? "follower" : "followers"}` : tracked30d > 0 ? dollars(tracked30d) : "No moves yet"} />
+                  ))}
+                </ol>
+              ) : <p className="tlist__empty">Catching up: the trackers fill in as the first moves arrive.</p>}
             </div>
-          ) : null}
-        </PhotoSection> : null}
+          </div>
+          <div className="wrap sec3__foot"><Link className="btn btn--secondary" href="/trackers">See all trackers <span className="arrow" aria-hidden="true">→</span></Link></div>
+        </section>
 
-        <TrustBlock facts={trust} />
-        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} actions={false} />
+        <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={trial} title="One plan. Every tracker." />
         <FaqV2 />
-
-        <PhotoSection n={HOME_SECTIONS.yourMove} id="ps-move" line="Your move.">
-          {!paid ? (
-            <div className="psec__cta">
-              <a className="btn btn--onDark btn--big" href={trial} data-unlock="home-end">{GET_CTA}</a>
-              <p className="psec__fine">{CANCEL_LINE}</p>
-            </div>
-          ) : <Link className="btn btn--onDark btn--big" href="/feed">See the live feed</Link>}
-        </PhotoSection>
       </main>
-      {paid ? null : <ScrollOffer where="home" />}
     </>
   );
 }

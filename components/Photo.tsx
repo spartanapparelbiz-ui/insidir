@@ -36,8 +36,6 @@ type Crop = keyof typeof W;
 const set = (n: PhotoN, c: Crop, ext: string) => W[c].map(w => `/hero/${n}-${c}-${w}.${ext} ${w}w`).join(", ");
 /** The smallest file of a crop, for browsers that ignore srcset. */
 export const photoSrc = (n: PhotoN, c: Crop, ext = "webp") => `/hero/${n}-${c}-${W[c][W[c].length - 1]}.${ext}`;
-/** The srcset and sizes for preloading a photo (components/home/Hero.tsx). */
-export const photoSet = (n: PhotoN, c: Crop, ext = "avif") => set(n, c, ext);
 /** How wide a full-bleed phone photo really is: a 2:3 photo covering a tall phone screen is ~1.5 screens wide. */
 export const PHONE_SIZES = "150vw";
 
@@ -61,6 +59,28 @@ export function Photo({ n, className, eager = false, wideOnly = false, band = fa
       {narrow ? <source type="image/webp" srcSet={set(n, narrow, "webp")} sizes={narrowSizes} /> : null}
       <img src={photoSrc(n, narrow ?? wide)} alt="" decoding="async" loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : undefined} onLoad={onLoad} />
+    </picture>
+  );
+}
+
+/** A 16:9 cover (public/hero/<n>-c-<w>), for tracker cards and headers: decorative, always cropped clean. */
+export function Cover({ n, className, eager = false, sizes = "(min-width: 900px) 600px, 100vw" }: { n: PhotoN; className?: string; eager?: boolean; sizes?: string }) {
+  const s = (ext: string) => [640, 960, 1440].map(w => `/hero/${n}-c-${w}.${ext} ${w}w`).join(", ");
+  return (
+    <picture className={className}>
+      <source type="image/avif" srcSet={s("avif")} sizes={sizes} />
+      <img src={`/hero/${n}-c-640.webp`} srcSet={s("webp")} sizes={sizes} alt="" width={640} height={360} decoding="async"
+        loading={eager ? "eager" : "lazy"} fetchPriority={eager ? "high" : undefined} />
+    </picture>
+  );
+}
+
+/** A round 1:1 thumbnail (public/hero/<n>-t-<w>), 48px or so. */
+export function Thumb({ n, size = 48, className }: { n: PhotoN; size?: number; className?: string }) {
+  return (
+    <picture className={className}>
+      <source type="image/avif" srcSet={`/hero/${n}-t-96.avif 1x, /hero/${n}-t-192.avif 2x`} />
+      <img src={`/hero/${n}-t-96.webp`} srcSet={`/hero/${n}-t-96.webp 1x, /hero/${n}-t-192.webp 2x`} alt="" width={size} height={size} decoding="async" loading="lazy" />
     </picture>
   );
 }

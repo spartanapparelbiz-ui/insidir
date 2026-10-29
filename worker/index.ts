@@ -32,6 +32,7 @@ import { alertText, dueAlerts } from "@/lib/alerts/fanout";
 import { ALERT_MAX_AGE_MS, alertJobs, alertMessage } from "@/lib/moves/alerts";
 import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
 import { recordsFor } from "@/lib/moves/store";
+import { isTopTrader } from "@/lib/moves/records";
 import { isReady } from "@/lib/features";
 import { sendPush } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/app-url";
@@ -104,10 +105,11 @@ async function moveAlertsOnce(): Promise<void> {
   const fresh = await recentMoves(db, new Date(now - ALERT_MAX_AGE_MS));
   if (!fresh.length) return;
   const users = (await moveAlertUsers(db)).map(u => ({ ...u, emailOn: false }));
-  const jobs = alertJobs(users, fresh, now);
+  const records = await recordsFor(db, fresh.map(m => m.wallet ?? ""));
+  // Top Traders tracker: the wallet's record decides (lib/trackers.ts).
+  const jobs = alertJobs(users, fresh, now, { topTrader: w => isTopTrader(records.get(w) ?? null) });
   if (!jobs.length) return;
   const byId = new Map(fresh.map(m => [m.id, m])), userById = new Map(users.map(u => [u.id, u]));
-  const records = await recordsFor(db, fresh.map(m => m.wallet ?? ""));
   for (const job of jobs) {
     const m = byId.get(job.moveId), user = userById.get(job.userId);
     if (!m || !user || !(await claimAlert(db, job.userId, `move:${m.id}`, job.channel))) continue;

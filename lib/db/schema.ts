@@ -449,9 +449,9 @@ export const trackedWallets = terminal.table("tracked_wallets", {
   addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** What a member can follow (lib/follows.ts): a trader (wallet), a market, an insider (SEC reporting-owner CIK), a
+/** What a member can follow (lib/follows.ts): a tracker (lib/trackers.ts slug), a trader (wallet), a market, an insider (SEC reporting-owner CIK), a
  *  company (issuer CIK) or a fund (13F filer CIK). CIKs are stored without leading zeros. */
-export type FollowKind = "trader" | "market" | "insider" | "company" | "fund";
+export type FollowKind = "trader" | "market" | "insider" | "company" | "fund" | "tracker";
 
 /** What a member follows. */
 export const follows = terminal.table("follows", {

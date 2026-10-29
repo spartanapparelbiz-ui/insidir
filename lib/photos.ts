@@ -3,13 +3,6 @@
  * fifteen rotate through the hero, the bands, empty states and share cards. */
 import type { PhotoN } from "@/components/Photo";
 
-/** The home hero's slideshow, in order: the first loads with the page. None of the home page's photo
- *  sections (HOME_SECTIONS) or phone screens repeats one of these. */
-export const HERO_PHOTOS: PhotoN[] = [5, 2, 11, 4, 12, 15, 14];
-
-/** The home page's full-bleed photo sections, top to bottom (components/home/PhotoSection.tsx). */
-export const HOME_SECTIONS = { seconds: 7, wins: 3, alert: 8, yourMove: 6 } as const satisfies Record<string, PhotoN>;
-
 /** Header bands, by page (the feed's and a market's follow the tab; a profile's, the trader's best category). */
 export const BAND = {
   feed: { sports: 2, markets: 9, stocks: 10 },

@@ -1,6 +1,6 @@
 /* Following (docs/INSIDIR-V2.md §6): the member's Following feed (lib/following-feed.ts: big moves by the traders and
  * markets they follow, and every new filing by the insiders, companies and funds they follow), then everything they
- * follow, and the alert switches. Alert switches show Coming soon until alerts are live on production. Free viewers
+ * follow (Trackers always; traders, markets, insiders, companies and funds only once they follow one), and the alert switches. Alert switches show Coming soon until alerts are live on production. Free viewers
  * see what following does and Get Insidir. */
 import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
@@ -26,6 +26,7 @@ import { agoText } from "@/lib/moves/copy";
 import { isPaid } from "@/lib/plans";
 import { PageBand } from "@/components/PageBand";
 import { BAND } from "@/lib/photos";
+import { trackerBySlug, trackerHref, type Tracker } from "@/lib/trackers";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Following" };
@@ -87,7 +88,7 @@ export default async function FollowingPage() {
                     {e.type === "move" ? <MoveCard m={e.item} follow="on" trialHref={trial} /> : <FilingCard f={e.item} now={now} />}
                   </li>)}
                 </ol>
-              ) : <p className="note">{list.length ? `Nothing from who you follow in the last ${FOLLOWING_DAYS} days yet. Their next move or filing shows up here.` : "Follow a trader, insider, company or fund and their moves and filings show up here."}</p>}
+              ) : <p className="note">{list.length ? `Nothing from who you follow in the last ${FOLLOWING_DAYS} days yet. Their next move or filing shows up here.` : "Follow a tracker, trader, insider, company or fund and their moves and filings show up here."}</p>}
             </section>
             <section className="block" aria-labelledby="alerts-h">
               <h2 id="alerts-h" className="block__h">Alerts</h2>
@@ -98,87 +99,110 @@ export default async function FollowingPage() {
                 </div>
               )}
             </section>
-            <section className="block" aria-labelledby="tr-h">
-              <h2 id="tr-h" className="block__h">Traders</h2>
-              {list.some(f => f.kind === "trader") ? (
+            <section className="block" aria-labelledby="tk-h">
+              <h2 id="tk-h" className="block__h">Trackers</h2>
+              {targets("tracker").some(s => trackerBySlug(s)) ? (
                 <ul className="flist">
-                  {list.filter(f => f.kind === "trader").map(f => {
-                    const r = recs.get(f.target);
-                    return (
-                      <li key={f.target} className="flist__row">
-                        <span><Link className="flist__name" href={`/p/${f.target}`}>{walletLabel(f.target, r?.name ?? null)}</Link>
-                          <span className="flist__rec">{hasRecord(r) ? `Won ${r.won} of ${r.resolved} · ${signedShort(r.profit)} all-time` : "Not enough history yet"}</span></span>
-                        <FollowButton kind="trader" target={f.target} state="on" trialHref={trial} />
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : <p className="note">No traders yet. Tap Follow on any card in the <Link href="/feed">feed</Link>.</p>}
-            </section>
-            <section className="block" aria-labelledby="mk-h">
-              <h2 id="mk-h" className="block__h">Markets</h2>
-              {list.some(f => f.kind === "market") ? (
-                <ul className="flist">
-                  {list.filter(f => f.kind === "market").map(f => (
-                    <li key={f.target} className="flist__row">
-                      <Link className="flist__name" href={`/market/${encodeURIComponent(f.target)}`}>{f.target}</Link>
-                      <FollowButton kind="market" target={f.target} state="on" trialHref={trial} label="Follow market" />
+                  {targets("tracker").map(trackerBySlug).filter((t): t is Tracker => t !== null).map(t => (
+                    <li key={t.slug} className="flist__row">
+                      <span><Link className="flist__name" href={trackerHref(t.slug)}>{t.name}</Link><span className="flist__rec">{t.line}</span></span>
+                      <FollowButton kind="tracker" target={t.slug} state="on" trialHref={trial} />
                     </li>
                   ))}
                 </ul>
-              ) : <p className="note">No markets yet. Open a market and tap Follow market.</p>}
+              ) : <p className="note">No trackers yet. <Link href="/trackers">Pick a tracker</Link> and tap Follow.</p>}
             </section>
-            <section className="block" aria-labelledby="in-h">
-              <h2 id="in-h" className="block__h">Insiders</h2>
-              {targets("insider").length ? (
-                <ul className="flist">
-                  {targets("insider").map(cik => {
-                    const o = owners.get(cik);
-                    return (
-                      <li key={cik} className="flist__row">
-                        <span><Link className="flist__name" href={insiderHref(cik, o?.name)}>{o ? personName(o.name) : `SEC filer ${cik}`}</Link>
-                          <span className="flist__rec">{o?.role ? `${roleOf(o.role)} of ${o.company}` : "Reading their SEC filings"}</span></span>
-                        <FollowButton kind="insider" target={cik} state="on" trialHref={trial} label="Follow insider" />
+            {targets("trader").length ? (
+              <section className="block" aria-labelledby="tr-h">
+                <h2 id="tr-h" className="block__h">Traders</h2>
+                {list.some(f => f.kind === "trader") ? (
+                  <ul className="flist">
+                    {list.filter(f => f.kind === "trader").map(f => {
+                      const r = recs.get(f.target);
+                      return (
+                        <li key={f.target} className="flist__row">
+                          <span><Link className="flist__name" href={`/p/${f.target}`}>{walletLabel(f.target, r?.name ?? null)}</Link>
+                            <span className="flist__rec">{hasRecord(r) ? `Won ${r.won} of ${r.resolved} · ${signedShort(r.profit)} all-time` : "Not enough history yet"}</span></span>
+                          <FollowButton kind="trader" target={f.target} state="on" trialHref={trial} />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : <p className="note">No traders yet. Tap Follow on any card in the <Link href="/feed">feed</Link>.</p>}
+              </section>
+            ) : null}
+            {targets("market").length ? (
+              <section className="block" aria-labelledby="mk-h">
+                <h2 id="mk-h" className="block__h">Markets</h2>
+                {list.some(f => f.kind === "market") ? (
+                  <ul className="flist">
+                    {list.filter(f => f.kind === "market").map(f => (
+                      <li key={f.target} className="flist__row">
+                        <Link className="flist__name" href={`/market/${encodeURIComponent(f.target)}`}>{f.target}</Link>
+                        <FollowButton kind="market" target={f.target} state="on" trialHref={trial} label="Follow market" />
                       </li>
-                    );
-                  })}
-                </ul>
-              ) : <p className="note">No insiders yet. Tap Follow insider on a Stocks card, or on an insider&apos;s page.</p>}
-            </section>
-            <section className="block" aria-labelledby="co-h">
-              <h2 id="co-h" className="block__h">Companies</h2>
-              {targets("company").length ? (
-                <ul className="flist">
-                  {targets("company").map(cik => {
-                    const c = issuers.get(cik);
-                    return (
-                      <li key={cik} className="flist__row">
-                        <span>{c?.ticker ? <Link className="flist__name" href={companyHref(c.ticker)}>{c.company}</Link> : <span className="flist__name">{c?.company ?? `SEC filer ${cik}`}</span>}
-                          <span className="flist__rec">{c?.ticker ? `${c.ticker} · every insider trade` : "Every insider trade"}</span></span>
-                        <FollowButton kind="company" target={cik} state="on" trialHref={trial} label="Follow company" />
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : <p className="note">No companies yet. Tap Follow company on a Stocks card, or on a company&apos;s insider trading page.</p>}
-            </section>
-            <section className="block" aria-labelledby="fu-h">
-              <h2 id="fu-h" className="block__h">Funds</h2>
-              {targets("fund").length ? (
-                <ul className="flist">
-                  {targets("fund").map((cik, i) => {
-                    const fund = funds[i];
-                    return (
-                      <li key={cik} className="flist__row">
-                        <span><Link className="flist__name" href={fundHref(cik, fund?.name)}>{fund?.name ?? `SEC filer ${cik}`}</Link>
-                          <span className="flist__rec">Every new 13F</span></span>
-                        <FollowButton kind="fund" target={cik} state="on" trialHref={trial} label="Follow fund" />
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : <p className="note">No funds yet. Tap Follow fund on a fund&apos;s Stocks card or its page.</p>}
-            </section>
+                    ))}
+                  </ul>
+                ) : <p className="note">No markets yet. Open a market and tap Follow market.</p>}
+              </section>
+            ) : null}
+            {targets("insider").length ? (
+              <section className="block" aria-labelledby="in-h">
+                <h2 id="in-h" className="block__h">Insiders</h2>
+                {targets("insider").length ? (
+                  <ul className="flist">
+                    {targets("insider").map(cik => {
+                      const o = owners.get(cik);
+                      return (
+                        <li key={cik} className="flist__row">
+                          <span><Link className="flist__name" href={insiderHref(cik, o?.name)}>{o ? personName(o.name) : `SEC filer ${cik}`}</Link>
+                            <span className="flist__rec">{o?.role ? `${roleOf(o.role)} of ${o.company}` : "Reading their SEC filings"}</span></span>
+                          <FollowButton kind="insider" target={cik} state="on" trialHref={trial} label="Follow insider" />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : <p className="note">No insiders yet. Tap Follow insider on a Stocks card, or on an insider&apos;s page.</p>}
+              </section>
+            ) : null}
+            {targets("company").length ? (
+              <section className="block" aria-labelledby="co-h">
+                <h2 id="co-h" className="block__h">Companies</h2>
+                {targets("company").length ? (
+                  <ul className="flist">
+                    {targets("company").map(cik => {
+                      const c = issuers.get(cik);
+                      return (
+                        <li key={cik} className="flist__row">
+                          <span>{c?.ticker ? <Link className="flist__name" href={companyHref(c.ticker)}>{c.company}</Link> : <span className="flist__name">{c?.company ?? `SEC filer ${cik}`}</span>}
+                            <span className="flist__rec">{c?.ticker ? `${c.ticker} · every insider trade` : "Every insider trade"}</span></span>
+                          <FollowButton kind="company" target={cik} state="on" trialHref={trial} label="Follow company" />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : <p className="note">No companies yet. Tap Follow company on a Stocks card, or on a company&apos;s insider trading page.</p>}
+              </section>
+            ) : null}
+            {targets("fund").length ? (
+              <section className="block" aria-labelledby="fu-h">
+                <h2 id="fu-h" className="block__h">Funds</h2>
+                {targets("fund").length ? (
+                  <ul className="flist">
+                    {targets("fund").map((cik, i) => {
+                      const fund = funds[i];
+                      return (
+                        <li key={cik} className="flist__row">
+                          <span><Link className="flist__name" href={fundHref(cik, fund?.name)}>{fund?.name ?? `SEC filer ${cik}`}</Link>
+                            <span className="flist__rec">Every new 13F</span></span>
+                          <FollowButton kind="fund" target={cik} state="on" trialHref={trial} label="Follow fund" />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : <p className="note">No funds yet. Tap Follow fund on a fund&apos;s Stocks card or its page.</p>}
+              </section>
+            ) : null}
           </>
         )}
       </main>

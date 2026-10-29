@@ -48,7 +48,7 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
   try {
     // A visitor: the landing page, then "Try 7 days for $1" → the embedded checkout → pay → logged in, welcome.
     await page.goto("/");
-    await page.locator('[data-cta="hero"]').click();
+    await page.locator('.plan2 [data-checkout="pricing"]').click();
     await expect(page).toHaveURL(/\/start$/);
     await page.locator("#start-email").fill(EMAIL(w));
     await page.locator("#start-password").fill("journey-password");

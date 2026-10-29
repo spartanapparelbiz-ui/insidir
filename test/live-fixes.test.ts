@@ -110,10 +110,9 @@ describe("stocks", () => {
 
 describe("alerts copy only when alerts are live", () => {
   it("every alerts promise is behind isReady('alerts_push')", () => {
-    const hero = readFileSync("components/home/Hero.tsx", "utf8"), home = readFileSync("app/page.tsx", "utf8"), how = readFileSync("app/how-it-works/page.tsx", "utf8");
-    expect(hero).toContain("{alerts ? <li>Alerts to your phone</li> : null}");
-    expect(home).toMatch(/isReady\("alerts_push"\) \? <PhotoSection n=\{HOME_SECTIONS\.alert\}/);
-    expect(home).toContain('<Story data={story} alerts={isReady("alerts_push")} />');
+    const home = readFileSync("app/page.tsx", "utf8"), how = readFileSync("app/how-it-works/page.tsx", "utf8");
+    // The home page promises no alerts at all (the tracker page's Follow says what following does).
+    expect(home).not.toMatch(/alert to your phone|phone alerts/i);
     expect(how).toMatch(/isReady\("alerts_push"\) \? \[\["Get pinged next time"/);
   });
 });

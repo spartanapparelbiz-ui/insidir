@@ -3,60 +3,62 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: the brief's hero, and on a phone the headline, button and top of the first card show without scrolling", async ({ page }) => {
+test("landing: the centred hero, one button to the trackers, the phones, then Featured, Top performers and Popular", async ({ page }) => {
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
+  await expect(page.getByText("Pick a tracker. See every big move. That's it.")).toBeVisible();
   const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toHaveText("Try 7 days for $1");
-  await expect(cta).toHaveAttribute("href", "/start");
-  await expect(page.getByText("Then $39/mo, cancel anytime.").first()).toBeVisible();
-  // One real move per photo on a solid card (components/home/Hero.tsx).
-  const card = page.locator(".cine__card .hcard");
-  await expect(page.getByText("LIVE · big money moves")).toBeVisible();
-  await expect(card).toBeVisible();
+  await expect(cta).toContainText("Explore trackers");
+  await expect(cta).toHaveAttribute("href", "/trackers");
+  // One action: no offer bar, no sticky bar, no nav button on home.
+  await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
+  await expect(page.locator(".trialbar")).toHaveCount(0);
+  await expect(page.locator(".nav__cta")).toHaveCount(0);
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  expect((await card.boundingBox())!.y + 24).toBeLessThan(vh);
-  // Home cards show only the time ago, never "30 min late" (the feed says it once, in its upsell).
-  await expect(page.locator("main").getByText(/30 min late/)).toHaveCount(0);
-  // What it is, in plain words, for a first-time visitor.
-  await expect(page.getByText("Live tracker for sports bets, prediction markets and insider stock trades", { exact: true })).toBeVisible();
+  await expect(page.locator(".fan .phone").first()).toBeVisible();
+  await expect(page.locator(".tfeat")).toHaveCount(4);
+  await expect(page.locator(".tfeat").first()).toContainText("by Insidir");
+  for (const h of ["Featured", "Top performers", "Popular"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
+  for (const t of ["1W", "1M", "3M", "6M", "1Y"]) await expect(page.getByRole("tab", { name: t })).toBeVisible();
+  // No page sideways scroll at any width.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("home hero: the button, a ticker tap and the feed preview scrolled into view are each recorded", async ({ page }) => {
+test("home hero: Explore trackers is recorded and opens /trackers, every tracker listed with its record or New", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
-  const before = { cta: await count("hero_cta_click"), ticker: await count("ticker_click"), preview: await count("feed_preview_view") };
+  const before = await count("hero_cta_click");
   await page.goto("/");
-  await page.locator("#preview").scrollIntoViewIfNeeded();
-  await expect.poll(() => count("feed_preview_view")).toBe(before.preview + 1);
-  await page.goto("/");
-  // White on the black strip (the global running-text link colour must not win here).
-  expect(await page.locator(".ticker__list:not([aria-hidden]) .ticker__item").first().evaluate(e => getComputedStyle(e).color)).toBe("rgb(255, 255, 255)");
-  await page.locator(".ticker__list:not([aria-hidden]) .ticker__item").first().click({ force: true }); // it scrolls, so never "stable"
-  await expect.poll(() => count("ticker_click")).toBe(before.ticker + 1);
-  await page.goto("/");
-  await page.locator(".cine__cta a").click();
-  await expect(page).toHaveURL(/\/start/);
-  await expect.poll(() => count("hero_cta_click")).toBe(before.cta + 1);
+  await page.locator('[data-cta="hero"]').click();
+  await expect(page).toHaveURL(/\/trackers$/);
+  await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
+  await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
+  await expect(page.locator(".ttile")).toHaveCount(10);
+  // The seed has fewer than 20 settled moves in every tracker: each says New, never a made-up record.
+  for (const pill of await page.locator(".ttile .rpill").allInnerTexts()) expect(pill).toBe("New");
+  await page.locator(".ttile").filter({ hasText: "Biggest Bets" }).click();
+  await expect(page).toHaveURL(/\/trackers\/biggest-bets$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Biggest Bets" })).toBeVisible();
+  await expect(page.getByText("A record shows once 20 of its moves have settled.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Follow/ }).first()).toBeVisible();
 });
 
-test("headlines are in the serif (Rufina); body text, buttons and cards in Schibsted Grotesk; both load", async ({ page }) => {
-  await page.goto("/");
+test("one font: headlines, body text, buttons and cards are all Schibsted Grotesk, and it loads", async ({ page }) => {
+  await page.goto("/trackers/biggest-bets");
   await page.evaluate(() => document.fonts.ready);
   const r = await page.evaluate(() => {
     const root = getComputedStyle(document.documentElement);
     const first = (v: string) => v.split(",")[0]!.trim().replace(/["']/g, "");
     const font = (s: string) => first(getComputedStyle(document.querySelector(s)!).fontFamily);
-    return { sans: first(root.getPropertyValue("--font-schibsted")), serif: first(root.getPropertyValue("--font-rufina")),
-      h1: font("h1"), h2: font("h2"), body: font("body"), btn: font(".btn"), card: font(".move__sentence"),
+    return { sans: first(root.getPropertyValue("--font-schibsted")), rufina: root.getPropertyValue("--font-rufina").trim(),
+      h1: font("h1"), h2: font("h2"), body: font("body"), btn: font(".btn"),
       loaded: [...document.fonts].filter(f => f.status === "loaded").map(f => f.family) };
   });
   expect(r.sans).not.toBe("");
-  expect(r.serif).not.toBe("");
-  expect([r.h1, r.h2]).toEqual([r.serif, r.serif]);
-  expect([r.body, r.btn, r.card]).toEqual([r.sans, r.sans, r.sans]);
-  for (const f of [r.sans, r.serif]) expect(r.loaded.map(x => x.replace(/["']/g, ""))).toContain(f.replace(/["']/g, ""));
+  expect(r.rufina).toBe("");
+  expect([r.h1, r.h2, r.body, r.btn]).toEqual([r.sans, r.sans, r.sans, r.sans]);
+  expect(r.loaded.map(x => x.replace(/["']/g, ""))).toContain(r.sans.replace(/["']/g, ""));
 });
 
 test("the public preview: home and the product pages show real moves 30 minutes late, records blurred, never sent", async ({ page }) => {
@@ -88,7 +90,7 @@ test("member feed: live moves with the record line; following a trader shows on 
 
 test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on ×, Esc and outside; never for members", async ({ page, context }) => {
   const popup = page.getByRole("dialog", { name: "See the biggest bets the moment they happen." });
-  await page.goto("/");
+  await page.goto("/sports");
   await expect(popup).toHaveCount(0);
   await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.3));
   await page.waitForTimeout(300);
@@ -142,7 +144,7 @@ test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on
   // Members never see it.
   await signIn(context, "insidir");
   const fresh = await context.newPage();
-  await fresh.goto("/");
+  await fresh.goto("/sports");
   await fresh.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await fresh.waitForTimeout(400);
   await expect(fresh.getByTestId("signup-popup")).toHaveCount(0);
@@ -198,7 +200,7 @@ test("location is asked once, as a sheet, the first time a market link is tapped
   }
 });
 
-test("results are public: totals match the home trust block, refunds labelled, pages instead of a cap", async ({ page }) => {
+test("results are public: totals match the trust block on /pricing, refunds labelled, pages instead of a cap", async ({ page }) => {
   await page.goto("/results");
   await expect(page).toHaveURL(/\/results$/);
   await expect(page.locator(".rlist__res--won").first()).toBeVisible();
@@ -212,7 +214,7 @@ test("results are public: totals match the home trust block, refunds labelled, p
   await expect(total).toContainText("What these bets really made");
   await expect(page.locator(".rlist__res--sold").first()).toHaveText("Sold early");
   const totalText = await total.innerText();
-  await page.goto("/");
+  await page.goto("/pricing");
   const home = await page.getByTestId("trust-record").innerText();
   for (const line of totalText.split("\n").filter(l => /Average odds|won, \d+ lost/.test(l))) expect(home).toContain(line.trim());
   expect(home).not.toContain("Net for");

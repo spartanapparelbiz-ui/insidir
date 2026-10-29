@@ -27,6 +27,7 @@ export async function moveAlertUsers(db: Db): Promise<MoveAlertUser[]> {
       quietStart: s.quietStart, quietEnd: s.quietEnd, timeZone: s.timeZone,
       traders: new Set(mine.filter(f => f.kind === "trader").map(f => f.target)),
       markets: new Set(mine.filter(f => f.kind === "market").map(f => f.target)),
+      trackers: new Set(mine.filter(f => f.kind === "tracker").map(f => f.target)),
       rules: (s.moveRules ?? []).map(r => ({ tab: r.tab, league: r.league as AlertUser["rules"][number]["league"], min: r.min })),
       emailDigest: s.emailDigest, lastDigestAt: u.lastDigestAt?.getTime() ?? null,
     };

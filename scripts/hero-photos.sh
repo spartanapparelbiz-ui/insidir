@@ -84,5 +84,9 @@ for n in ${@:-$(seq 2 16)}; do
   convert "$tmp/src.png" -crop "${mw}x${H}+${mx}+0" +repage "$tmp/m.png"
   grade "$tmp/m.png" "$tmp/m-g.png" 1720 2580 "$n"
   for w in 1720 1080; do encode "$tmp/m-g.png" "$w" "$n-m"; done
+  # Tracker covers (16:9, components/Photo.tsx Cover) and round thumbnails (1:1, centred on the person; Thumb).
+  for w in 1440 960 640; do encode "$tmp/d-g.png" "$w" "$n-c"; done
+  convert "$tmp/d-g.png" -crop "2160x2160+$(offset "$(awk -v f="${FX[$n]}" -v w="$W" -v dx="$dx" -v dw="$dw" 'BEGIN { print (f * w - dx) / dw * 3840 }')" 2160 3840)+0" +repage "$tmp/t.png"
+  for w in 192 96; do encode "$tmp/t.png" "$w" "$n-t"; done
   echo "photo $n done"
 done

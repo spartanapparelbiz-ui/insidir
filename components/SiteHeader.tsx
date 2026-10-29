@@ -1,13 +1,12 @@
-/* The top of every page (docs/INSIDIR-V2.md §6): a thin grey offer bar ("Try 7 days for $1, then $39/mo, cancel anytime."), then the nav: a black bar with the white logo,
- * or white with a hairline on the plain white pages (tone="light": legal, about). Visitors: logo, Sports, Markets,
- * Stocks, How it works, Pricing, FAQ (each its own page), Log in, and "Try 7 days for $1". Members: logo, Feed, Following, Results, Account. On phones: logo, the
- * button and a menu; on the app pages (feed, top, profiles, markets, results, following, account), members and
+/* The top of every page: the nav, white with the black logo and a hairline. Visitors: logo, Trackers, Results, How it
+ * works, Pricing, Log in, and "Try 7 days for $1" (not on home, where the one action is "Explore trackers"). Members:
+ * logo, Trackers, Feed, Following, Results, Account. On phones: logo, the button and a menu; on the app pages (feed, top, profiles, markets, results, following, account), members and
  * visitors get a bottom tab bar within thumb reach: Feed, Top, Following, Account.
  * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/types";
-import { GET_CTA, OFFER_BAR } from "@/lib/copy";
+import { GET_CTA } from "@/lib/copy";
 import { Wordmark } from "./Wordmark";
 import { isReady } from "@/lib/features";
 import { TabIcon } from "./TabIcon";
@@ -15,7 +14,7 @@ import { ViewAs } from "./ViewAs";
 
 const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed", "/p": "/top", "/market": "/feed" };
 /** Sections that get the bottom tab bar on phones, for members and visitors alike (the free feed needs no account). */
-const APP_SECTIONS = new Set(["/feed", "/top", "/following", "/results", "/account"]);
+const APP_SECTIONS = new Set(["/feed", "/trackers", "/top", "/following", "/results", "/account"]);
 
 export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
@@ -38,13 +37,11 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
     <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
   const links = signedIn
-    ? [link("/feed", "Feed"), link("/top", "Top traders"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
-    : [link("/sports", "Sports"), link("/markets", "Markets"), ...(isReady("stocks") ? [link("/stocks", "Stocks")] : []),
-      link("/how-it-works", "How it works"), link("/pricing", "Pricing"), link("/faq", "FAQ"), <Link key="login" href="/signin">Log in</Link>];
+    ? [link("/trackers", "Trackers"), link("/feed", "Feed"), link("/following", "Following"), link("/results", "Results"), link("/settings", "Account", "/account")]
+    : [link("/trackers", "Trackers"), link("/results", "Results"), link("/how-it-works", "How it works"), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
   return (
     <>
       <ViewAs />
-      {!paid && offer ? <p className="trialbar"><a href={trialHref} data-unlock="trial-bar">{OFFER_BAR}</a></p> : null}
       <header className={tone === "light" ? "nav nav--light" : "nav"}>
         <div className="wrap nav__in">
           <Link className="wordmark" href={signedIn ? "/feed" : "/"} aria-label="Insidir home"><Wordmark /></Link>
@@ -59,15 +56,9 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
         {/* how far down the page you are (app/v2.css, components/motion/Motion.tsx) */}
         <span className="nav__prog" aria-hidden="true" />
       </header>
-      {/* Phones: the one action, always within thumb reach, on every public page a visitor sees (not /start, /login). */}
-      {!paid && !signedIn && (offer || current === "/") ? (
-        <div className={`getbar${at && APP_SECTIONS.has(at) ? " getbar--tabbar" : ""}`} data-testid="sticky-cta">
-          <a className="btn btn--primary btn--block" href={trialHref} data-unlock="sticky">{GET_CTA}</a>
-        </div>
-      ) : null}
       {signedIn || (at && APP_SECTIONS.has(at)) ? (
         <nav className="tabbar" aria-label="App">
-          {[["/feed", "Feed", "/feed"], ["/top", "Top", "/top"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
+          {[["/trackers", "Trackers", "/trackers"], ["/feed", "Feed", "/feed"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
             <Link key={href} href={href!} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
               <TabIcon name={label!} />
               <span>{label}</span>

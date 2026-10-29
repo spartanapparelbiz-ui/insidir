@@ -22,7 +22,7 @@ test("sign up on /start with a password → pay → You're in → log out → lo
 
   await page.goto("/?utm_source=instagram&utm_campaign=e2e");
   await expect(page.locator("h1")).toBeVisible();
-  await page.locator('[data-cta="hero"]').click();
+  await page.locator('.plan2 [data-checkout="pricing"]').click();
   await expect(page).toHaveURL(/\/start$/);
   await expect(page.getByRole("heading", { name: "Try Insidir 7 days for $1." })).toBeVisible();
   await expect(page.getByText("Then $39/mo, cancel anytime.").first()).toBeVisible();

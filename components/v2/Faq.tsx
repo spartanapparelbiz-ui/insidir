@@ -4,6 +4,7 @@ import { WHAT_IS } from "@/lib/copy";
 
 export const FAQ_V2: Array<{ id: string; q: string; a: string }> = [
   { id: "what", q: "What is Insidir?", a: WHAT_IS },
+  { id: "trackers", q: "What's a tracker?", a: "A tracker follows one kind of big money, like every bet of $100K or more, the biggest NBA bets, or CEOs buying their own stock. We build each one from public trades and filings. Its record is its settled bets: won, lost and what they made. Under 20 settled bets it says New instead. Follow one and its moves show up in Following, with an alert when it moves." },
   { id: "data", q: "Where does the data come from?", a: "Public records only: Polymarket trades (public on the Polygon blockchain), Kalshi's public trade feed (trades there are anonymous), and for Stocks, SEC EDGAR filings. Every card links its source, and every hour we re-read random moves and trader stats from the source; anything that doesn't match is hidden until it does." },
   { id: "advice", q: "Is this financial advice?", a: "No. We show what happened: who put money on what, and how it ended. We never tell you what to buy. Big traders lose too." },
   { id: "us", q: "Can I use it in the US?", a: "Yes. Everyone sees every move. If you're in the US, we only link you to apps that work in the US, like Kalshi." },

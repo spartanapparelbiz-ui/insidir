@@ -42,7 +42,7 @@ describe("every sports move says its league", () => {
     expect(classify("sports", ["Arsenal vs. Chelsea"]).league).toBe("soccer");
   });
   it("cards show it", () => {
-    for (const f of ["components/v2/MoveCard.tsx", "components/home/Hero.tsx"]) expect(readFileSync(f, "utf8")).toContain("m.leagueLabel");
+    for (const f of ["components/v2/MoveCard.tsx"]) expect(readFileSync(f, "utf8")).toContain("m.leagueLabel");
   });
 });
 
