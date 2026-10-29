@@ -519,6 +519,24 @@ export const splits = terminal.table("splits", {
   index("splits_flagged_idx").on(t.flaggedAt),
 ]);
 
+/** A checked bet (lib/check): what the slip, link or ticker said, each leg matched to our data with its verdict, and
+ *  how it settled. `user_id` for members; `visitor_id` for a visitor's one free check. Never the slip image itself,
+ *  and the shareable card (/check/[id]) shows no stake or account. */
+export const betChecks = terminal.table("bet_checks", {
+  id: text("id").primaryKey(),
+  userId: text("user_id"),
+  visitorId: text("visitor_id"),
+  input: text("input").$type<"slip" | "link" | "ticker">().notNull(),
+  /** The book the slip came from, as read ("DraftKings"); null for links and tickers. */
+  book: text("book"),
+  legs: jsonb("legs").$type<unknown[]>().notNull(),
+  summary: text("summary").notNull(),
+  /** Every leg's result once known: "won" | "lost" | "void" | "open" per leg; settled_at when none is open. */
+  results: jsonb("results").$type<string[]>(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("bet_checks_user_idx").on(t.userId, t.createdAt), index("bet_checks_visitor_idx").on(t.visitorId)]);
+
 /** CUSIP → ticker (OpenFIGI), for the prices of what funds hold; ticker null when no US listing was found. */
 export const cusipTickers = terminal.table("cusip_tickers", {
   cusip: text("cusip").primaryKey(),

@@ -14,7 +14,7 @@ import { ViewAs } from "./ViewAs";
 
 const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed", "/p": "/top", "/market": "/feed" };
 /** Sections that get the bottom tab bar on phones, for members and visitors alike (the free feed needs no account). */
-const APP_SECTIONS = new Set(["/discover", "/feed", "/trackers", "/top", "/following", "/results", "/account"]);
+const APP_SECTIONS = new Set(["/discover", "/feed", "/trackers", "/top", "/following", "/results", "/account", "/check", "/splits"]);
 
 export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
@@ -37,8 +37,8 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
     <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
   const links = signedIn
-    ? [...(paid ? [link("/", "Discover", "/discover")] : []), link("/trackers", "Trackers"), link("/splits", "Splits"), link("/feed", "Feed"), link("/following", "Following"), link("/settings", "Account", "/account")]
-    : [link("/trackers", "Trackers"), link("/splits", "Splits"), link("/results", "Results"), link("/how-it-works", "How it works"), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
+    ? [...(paid ? [link("/", "Discover", "/discover")] : []), link("/check", "Check your bet"), link("/trackers", "Trackers"), link("/splits", "Splits"), link("/feed", "Feed"), link("/following", "Following"), link("/settings", "Account", "/account")]
+    : [link("/check", "Check your bet"), link("/trackers", "Trackers"), link("/splits", "Splits"), link("/results", "Results"), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
   return (
     <>
       <ViewAs />
@@ -58,8 +58,9 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
       </header>
       {signedIn || (at && APP_SECTIONS.has(at)) ? (
         <nav className="tabbar" aria-label="App">
-          {[...(paid ? [["/", "Discover", "/discover"]] : []), ["/trackers", "Trackers", "/trackers"], ["/feed", "Feed", "/feed"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
-            <Link key={href} href={href!} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
+          {/* Check your bet sits in the middle: the app's main action. Trackers stays in the menu and on Discover. */}
+          {[paid ? ["/", "Discover", "/discover"] : ["/trackers", "Trackers", "/trackers"], ["/feed", "Feed", "/feed"], ["/check", "Check", "/check"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
+            <Link key={href} href={href!} className={`tabbar__item${label === "Check" ? " tabbar__item--main" : ""}`} aria-current={at === section ? "page" : undefined}>
               <TabIcon name={label!} />
               <span>{label}</span>
             </Link>
