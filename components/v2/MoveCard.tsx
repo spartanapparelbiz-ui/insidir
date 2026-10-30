@@ -6,9 +6,8 @@
  * say what was bought and by whom. Everything was sent by the server for this viewer's plan and region
  * (lib/moves/feed.ts). */
 import Link from "next/link";
-import { SubjectArt } from "@/components/SubjectArt";
+import { MoveArt } from "@/components/MoveArt";
 import { TimeAgo } from "@/components/TimeAgo";
-import { subjectPhoto } from "@/lib/photos";
 import type { FeedItem } from "@/lib/moves/feed";
 import type { SourceLink } from "@/lib/moves/source";
 import type { FollowKind } from "@/lib/db/schema";
@@ -52,12 +51,6 @@ function CardResult({ m }: { m: FeedItem }) {
   return <Result status={m.source === "sec" ? "Purchase" : "Open"} />;
 }
 
-/** The card's thumbnail: the real logo of its team, league or company (FeedItem.logo, lib/logos.ts), else its subject
- *  drawn (the league's field, the topic, the filing) on its column's deep colour. */
-const TAB_TONE: Record<string, string> = { sports: "var(--cover-leagues-1)", markets: "var(--cover-topics-1)", stocks: "var(--cover-stocks-1)", crypto: "var(--cover-topics-0)" };
-const subjectOf = (m: FeedItem) => subjectPhoto({ tab: m.tab, source: m.source, leagueLabel: m.leagueLabel, league: m.league,
-  text: `${m.eventTitle} ${m.marketTitle}`, detailKind: m.source === "sec" ? (m.note?.includes("13F") ? "fund" : "insider") : null });
-
 /** Open: "Entry 45% · now 61% ↑". */
 function Standing({ m, now }: { m: FeedItem; now: number | null }) {
   if (m.result || !m.inAt) return null;
@@ -90,8 +83,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
   return (
     <article className={`move move2${fresh ? " move--fresh" : ""}${m.bets ? " move--group" : ""}`} data-move={m.id}>
       <div className="move__top">
-        {m.logo ? <span className="move__thumb move__thumb--logo"><img src={m.logo} alt="" decoding="async" /></span>
-          : <span className="move__thumb" style={{ ["--tc" as string]: TAB_TONE[m.tab] ?? TAB_TONE.markets }}><SubjectArt subject={subjectOf(m)} crop="contain" /></span>}
+        <MoveArt art={m.art} className="art56 move__thumb" />
         <span className="move__kind">{tag.text}{sub ? ` · ${sub}` : ""}</span>
       </div>
       <div className="move__hrow">

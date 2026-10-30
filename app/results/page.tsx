@@ -6,7 +6,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SourceA } from "@/components/v2/MoveCard";
 import { moveSource } from "@/lib/moves/source";
+import { MoveArt } from "@/components/MoveArt";
 import { Photo } from "@/components/Photo";
+import { artOfMove } from "@/lib/logos";
 import { SPOT } from "@/lib/photos";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
@@ -95,6 +97,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
                   {(r.soldShare ?? 0) > SOLD_EARLY_SHARE && r.result !== "void"
                     ? <span className="rlist__res rlist__res--sold">Closed before settlement</span>
                     : <span className={`rlist__res rlist__res--${r.result}`}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Voided"}</span>}
+                  <MoveArt art={artOfMove(r)} className="art56 rlist__art" />
                   <span className="rlist__what">
                     <span className="rlist__amt">{dollars(r.amount)}</span> on {r.outcome} · {member ? <Link href={`/market/${encodeURIComponent(r.marketId)}`}>{r.marketTitle}</Link> : r.marketTitle}
                     <span className="rlist__who facerow"><Avatar face={moveFace(r, avatars)} />{r.source === "kalshi" ? "Anonymous · Kalshi" : member && isTopTrader(recs.get(r.wallet ?? "")) ? `${walletLabel(r.wallet!, r.walletName)} · Top-ranked trader` : walletLabel(r.wallet!, r.walletName)}</span>

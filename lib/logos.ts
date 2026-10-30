@@ -1,9 +1,14 @@
 /* Which real logo goes with a position or a tracker (public/logos, built by scripts/logos.mjs): the team a sports
  * position is on (by nickname or city, within its league), else its league's; the company of a Form 4 or 13F by
  * ticker; the company or coin a market is about, by name. Null when there's no logo that is clearly the subject, and
- * the drawn subject art (components/SubjectArt) shows instead. Server only: the ticker list stays out of the browser.
+ * the subject's photo shows instead (moveArt). Server only: the ticker list stays out of the browser.
  * The logos are the trademarks of their owners, shown only to say which team, league or company a position is about. */
 import manifest from "@/public/logos/manifest.json";
+import { monogram } from "@/lib/moves/avatar";
+import { isEntity, personName } from "@/lib/profiles/name";
+import { leagueLabel } from "@/lib/moves/leagues";
+import type { Move } from "@/lib/moves/types";
+import { subjectPhoto, type PhotoName } from "@/lib/photos";
 
 type League = "nba" | "nfl" | "mlb" | "nhl";
 const STOCKS = new Set<string>(manifest.stocks);
@@ -99,7 +104,9 @@ const SAME_LOGO: Record<string, string> = { GOOGL: "GOOG", "BRK-A": "BRK-B", "FO
 export const stockLogo = (ticker: string | null | undefined): string | null => {
   const raw = ticker?.toUpperCase().replace(/\./g, "-");
   const t = raw ? (STOCKS.has(raw) ? raw : SAME_LOGO[raw]) : undefined;
-  return t && STOCKS.has(t) ? `/logos/stocks/${t}.webp` : null;
+  if (!t || !STOCKS.has(t)) return null;
+  // With a Logo.dev key, the same company at 512px (app/logo/ticker/[t], cached; it falls back to this file).
+  return process.env.LOGO_DEV_TOKEN ? `/logo/ticker/${t}` : `/logos/stocks/${t}.webp`;
 };
 
 /** The logo for a position: its team, else its league (sports); its company by ticker (filings); a company or coin it
@@ -119,3 +126,48 @@ export function moveLogo(m: { tab: string; source: string; league?: string | nul
   }
   return brandOf(`${text} ${m.outcome ?? ""}`);
 }
+
+/** Both teams of a game, as the market names them ("Chiefs vs. Bills", "Lakers at Celtics"), each with its logo. */
+export function matchupOf(m: { tab: string; league?: string | null; leagueLabel?: string | null; marketTitle?: string | null; eventTitle?: string | null }): [string, string] | null {
+  if (m.tab !== "sports") return null;
+  const id = leagueId(m.leagueLabel) ?? leagueId(m.league);
+  const tl = id ? TEAM_LEAGUE[id] : undefined;
+  if (!tl) return null;
+  for (const title of [m.eventTitle, m.marketTitle]) {
+    const parts = (title ?? "").replace(/^[^:]*:\s*/, "").split(/\s+(?:vs\.?|v\.?|at|@)\s+/i);
+    if (parts.length !== 2) continue;
+    const a = teamOf(tl, parts[0]!), b = teamOf(tl, parts[1]!.replace(/\?.*$/, ""));
+    if (a && b && a !== b) return [`/logos/teams/${tl}/${a}.svg`, `/logos/teams/${tl}/${b}.svg`];
+  }
+  return null;
+}
+
+/** An insider's initials, first and last name ("HUANG JEN HSUN" is Jen Hsun Huang: "JH"); a filer that's an entity
+ *  gets its first two letters. */
+export function initials(raw: string): string {
+  if (isEntity(raw)) return monogram(personName(raw));
+  const w = personName(raw).split(" ").filter(x => /^\p{L}/u.test(x) && !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(x));
+  return w.length ? `${w[0]![0]}${w.length > 1 ? w[w.length - 1]![0] : ""}`.toUpperCase() : monogram(raw);
+}
+
+/** A position's artwork: a game's two teams; a Form 4's company with the insider on its corner; the one logo it is
+ *  about (team, league, company, coin); else its subject's photo. Never a drawing. */
+export type MoveArt =
+  | { kind: "matchup"; a: string; b: string }
+  | { kind: "filing"; src: string; mono: string }
+  | { kind: "logo"; src: string }
+  | { kind: "photo"; name: PhotoName };
+
+export function moveArt(m: Parameters<typeof moveLogo>[0] & { insider?: string | null; category?: string | null; detailKind?: string | null }): MoveArt {
+  const game = matchupOf(m);
+  if (game) return { kind: "matchup", a: game[0], b: game[1] };
+  const src = moveLogo(m);
+  if (src && m.source === "sec" && m.insider) return { kind: "filing", src, mono: initials(m.insider) };
+  if (src) return { kind: "logo", src };
+  return { kind: "photo", name: subjectPhoto({ tab: m.tab, source: m.source, leagueLabel: m.leagueLabel, league: m.league, category: m.category,
+    text: `${m.eventTitle ?? ""} ${m.marketTitle ?? ""}`, detailKind: m.detailKind }) };
+}
+
+/** moveArt for a stored move (terminal.moves): its league label, ticker, company and insider read from the row. */
+export const artOfMove = (m: Move): MoveArt => moveArt({ ...m, leagueLabel: leagueLabel(m), ticker: m.detail?.kind === "insider" ? m.detail.ticker : null,
+  company: m.detail?.company ?? null, insider: m.detail?.kind === "insider" ? m.detail.ownerName : null, detailKind: m.detail?.kind ?? null });

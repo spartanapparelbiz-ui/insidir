@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RecordResult } from "@/components/trackers/Tracker";
 import { coverStats, TrackerCover } from "@/components/trackers/TrackerCover";
 import { Section, Table } from "@/components/stats/Stats";
+import { MoveArt } from "@/components/MoveArt";
 import { Result } from "@/components/ui/Result";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { Db } from "@/lib/db";
@@ -69,7 +70,7 @@ export async function Discover({ db, viewer, now }: { db: Db | null; viewer: Vie
 
       <Section id="today-h" title="Largest positions today" note="Since midnight, New York time.">
         {today.length ? <Table label="Largest positions today" head={["Position", "Size", "Opened"]} numeric={[1, 2]} rows={today.map(m => [
-          <Link key="b" className="dtable__link" href={marketHref(m.marketId)}>{m.headline}<span className="dtable__sub">{m.subline}</span></Link>, dollars(m.amount), m.ago])} />
+          <Link key="b" className="dtable__link dtable__link--art" href={marketHref(m.marketId)}><MoveArt art={m.art} /><span>{m.headline}<span className="dtable__sub">{m.subline}</span></span></Link>, dollars(m.amount), m.ago])} />
           : <p className="dnote">No large positions yet today.</p>}
       </Section>
 

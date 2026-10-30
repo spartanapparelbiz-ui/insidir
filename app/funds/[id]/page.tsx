@@ -8,7 +8,10 @@ import { quarterSummary } from "@/lib/stocks/quarters";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
+import { CompanyMark } from "@/components/Logo";
 import { Photo } from "@/components/Photo";
+import { stockLogo, tickerOfName } from "@/lib/logos";
+import { tickerMonogram } from "@/lib/moves/avatar";
 import { unlockHref } from "@/components/app/links";
 import { SourceA } from "@/components/v2/MoveCard";
 import { Avatar } from "@/components/v2/Avatar";
@@ -36,7 +39,7 @@ function Changes({ title, list, empty }: { title: string; list: Change[]; empty?
     <div>
       <h3 className="pq__h">{title}</h3>
       <ul className="positions">{list.map(c => (
-        <li key={c.cusip} className="positions__row"><span className="positions__title">{c.company}</span><span className="positions__out">{KIND[c.kind]} · {shareCount(c.shares)} shares</span><span className="positions__val">{exactDollars(c.value)}</span></li>
+        <li key={c.cusip} className="positions__row"><span className="positions__title"><CompanyMark src={stockLogo(tickerOfName(c.company))} initials={tickerMonogram(null, c.company)} className="art56" />{c.company}</span><span className="positions__out">{KIND[c.kind]} · {shareCount(c.shares)} shares</span><span className="positions__val">{exactDollars(c.value)}</span></li>
       ))}</ul>
     </div>
   );
@@ -120,7 +123,7 @@ export default async function FundPage({ params }: { params: Promise<{ id: strin
               <section className="block" aria-labelledby="top-h">
                 <h2 id="top-h" className="block__h">Top 10 holdings</h2>
                 <ol className="positions">{topHoldings(latest.holdings).map(h => (
-                  <li key={h.cusip} className="positions__row"><span className="positions__title">{h.company}</span><span className="positions__out">{pct(h.share)} of reported</span><span className="positions__val">{exactDollars(h.value)}</span></li>
+                  <li key={h.cusip} className="positions__row"><span className="positions__title"><CompanyMark src={stockLogo(tickerOfName(h.company))} initials={tickerMonogram(null, h.company)} className="art56" />{h.company}</span><span className="positions__out">{pct(h.share)} of reported</span><span className="positions__val">{exactDollars(h.value)}</span></li>
                 ))}</ol>
               </section>
               <Section id="qq-h" title="Quarter over quarter" note="Each 13F against the one before: the reported value and how many positions are new, added to, cut or sold out.">

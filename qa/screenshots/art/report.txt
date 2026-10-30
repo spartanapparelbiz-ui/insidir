@@ -1,0 +1,15 @@
+Stand-in photos (Unsplash is unreachable here); everything else is the real page.
+tracker-list 1440: 33 photos, 11 logos, CLS 0.000
+home 1440: 17 photos, 0 logos, CLS 0.000
+activity 1440: 1 photos, 18 logos, CLS 0.000
+tracker-page 1440: 5 photos, 0 logos, CLS 0.000
+tracker-page-style 1440: 5 photos, 0 logos, CLS 0.000
+activity-stocks 1440: 3 photos, 3 logos, CLS 0.000
+tracker-list 390: 33 photos, 11 logos, CLS 0.000
+home 390: 17 photos, 0 logos, CLS 0.000
+activity 390: 1 photos, 18 logos, CLS 0.000
+tracker-page 390: 5 photos, 0 logos, CLS 0.000
+tracker-page-style 390: 5 photos, 0 logos, CLS 0.000
+activity-stocks 390: 3 photos, 3 logos, CLS 0.000
+
+No problems: every image loaded, no photo shown bigger than its source, no logo cropped or rounded, every row's art 56/48px, every photo thumbnail 1:1 at radius 12, no layout shift, no drawn art (SubjectArt: 0 files).

@@ -17,7 +17,12 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { BreakdownTable, cents, gatedTile, Leaderboard, pct, perfTiles, Section, signed, Table, Tiles, tone } from "@/components/stats/Stats";
 import { BY, TrackerRow } from "@/components/trackers/Tracker";
-import { coverStats, TrackerCover } from "@/components/trackers/TrackerCover";
+import { MoveArt } from "@/components/MoveArt";
+import { Photo } from "@/components/Photo";
+import { artOfMove } from "@/lib/logos";
+import { coverFigure, coverStats } from "@/components/trackers/TrackerCover";
+import { trackerPhoto } from "@/lib/photos";
+import { trackerLogo } from "@/lib/tracker-logos";
 import { FollowButton, type FollowState } from "@/components/v2/FollowButton";
 import { MoveCard } from "@/components/v2/MoveCard";
 import { getViewer } from "@/lib/auth/viewer";
@@ -93,20 +98,29 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
   const similar = TRACKERS.filter(o => o.group === t.group && o.slug !== t.slug && (!o.needs || isReady(o.needs))).slice(0, 4);
   const streakText = st ? `${st.n} ${st.kind === "won" ? (st.n === 1 ? "win" : "wins") : (st.n === 1 ? "loss" : "losses")}` : "—";
 
+  // The league's own mark, small in white beside the name (league trackers only).
+  const leagueMark = t.group === "Leagues" ? trackerLogo(t.slug) : null;
+  const fig = coverFigure(t, coverStats(stats));
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/trackers" trialHref={trial} />
       <main className="wrap app2 tracker">
         <header className="thead">
-          <TrackerCover t={t} s={coverStats(stats)} className="thead__cover" />
-          <div className="thead__copy">
-            <p className="thead__by">{BY} · {t.group}</p>
-            <h1 className="thead__h">{t.name}</h1>
-            <p className="thead__line">{t.line}</p>
-            <div className="thead__act">
-              <FollowButton kind="tracker" target={t.slug} state={follow} trialHref={trial} />
-              {stats ? <span className="thead__meta">{stats.followers.toLocaleString("en-US")} {stats.followers === 1 ? "follower" : "followers"}</span> : null}
+          <div className="thead__art">
+            <Photo name={trackerPhoto(t.slug)} ratio="21:9" priority sizes="(min-width: 1200px) 1168px, 100vw" className="thead__photo" />
+            <div className="thead__on">
+              <p className="thead__by">{BY} · {t.group}</p>
+              <div className="thead__name">
+                <h1 className="thead__h">{t.name}</h1>
+                {leagueMark ? <img className="thead__logo" src={leagueMark} alt="" width={128} height={128} /> : null}
+              </div>
+              <p className="thead__line">{t.line}</p>
             </div>
+          </div>
+          <div className="thead__act">
+            <FollowButton kind="tracker" target={t.slug} state={follow} trialHref={trial} />
+            {stats ? <span className="thead__meta">{stats.followers.toLocaleString("en-US")} {stats.followers === 1 ? "follower" : "followers"}</span> : null}
+            <span className="thead__roi"><b>{fig.figure}</b>{fig.label ?? (t.kind === "filings" ? "30-day volume" : "ROI, from 20 settled positions")}</span>
           </div>
         </header>
 
@@ -115,7 +129,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
             {d?.open.length ? (
               <Table label="Holding now" head={["Position", "Size", "Holder", "Entry", "Now", "Change"]} numeric={[1, 3, 4, 5]}
                 rows={d.open.map(({ m, now: px }) => [
-                  <Link key="m" className="dtable__link" href={`/market/${encodeURIComponent(m.marketId)}`}>{headlineOf(m)}<span className="dtable__sub">{m.marketTitle}</span></Link>,
+                  <Link key="m" className="dtable__link dtable__link--art" href={`/market/${encodeURIComponent(m.marketId)}`}><MoveArt art={artOfMove(m)} /><span>{headlineOf(m)}<span className="dtable__sub">{m.marketTitle}</span></span></Link>,
                   dollars(m.amount), who(m, null), cents(m.avgPrice), cents(px),
                   px === null ? "—" : <span className={tone(px - m.avgPrice)}>{`${px - m.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((px - m.avgPrice) * 100))} pts`}</span>,
                 ])} />

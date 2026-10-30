@@ -120,8 +120,8 @@ test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on
   await expect(popup).toContainText("Then $39/mo, cancel anytime.");
   await expect(popup.getByRole("link", { name: "Try 7 days for $1" })).toHaveAttribute("href", "/start");
   await expect(popup.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
-  await expect(popup.locator(".artpanel svg.art")).toHaveCount(1); // its picture: the product, drawn
-  await expect(popup.locator("svg").first()).toBeVisible();
+  await expect(popup.locator(".popup__photo img")).toHaveCount(1); // its picture: a photo, never a drawing
+  await expect(popup.locator("svg.art")).toHaveCount(0);
   // Focus starts on Get Insidir and Tab never leaves the pop-up.
   await expect(popup.getByRole("link", { name: "Try 7 days for $1" })).toBeFocused();
   for (let i = 0; i < 5; i++) {

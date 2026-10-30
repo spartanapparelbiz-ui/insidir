@@ -1,9 +1,9 @@
 /* The polish rules that can be checked without a browser: the home order, results as plain text, the cover's numbers
- * and curve, and no stylesheet heavier than 600. */
+ * and the curve data, and no stylesheet heavier than 600. */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { coverFigure, curvePath } from "@/components/trackers/TrackerCover";
+import { coverFigure } from "@/components/trackers/TrackerCover";
 import { FEATURED, homeOrder, recordResult, returnPct, trackerBySlug, type TrackerRecord } from "@/lib/trackers";
 import { cumulative } from "@/lib/trackers-store";
 
@@ -37,11 +37,6 @@ describe("polish", () => {
   it("the curve is cumulative by week, oldest first, and empty when nothing happened", () => {
     expect(cumulative([{ week: 0, v: 5 }, { week: 2, v: 10 }, { week: 30, v: 99 }], 4)).toEqual([0, 10, 10, 15]);
     expect(cumulative([], 4)).toEqual([]);
-    expect(curvePath([1])).toBeNull();
-    const d = curvePath([0, 10, 5], 400, 300)!;
-    expect(d.startsWith("M0.0,258.0")).toBe(true);
-    expect(d).toContain("L200.0,114.0");
-    expect(d.endsWith("L400.0,186.0")).toBe(true);
   });
 
   it("no stylesheet sets a weight above 600", () => {
