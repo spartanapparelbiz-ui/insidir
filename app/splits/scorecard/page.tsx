@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { isPaid } from "@/lib/plans";
 import { PAST } from "@/lib/copy";
 import { positioningEdge } from "@/lib/smart/gate";
-import { positioningPublic, SCORE_MIN } from "@/lib/smart/splits";
+import { edgeOf, positioningPublic, SCORE_MIN } from "@/lib/smart/splits";
 import { getDb, hasDatabase } from "@/lib/db";
 import { scorecard, STOCK_WINDOW_DAYS } from "@/lib/smart/splits";
 import { flaggedSplits, type SplitRec } from "@/lib/smart/store";
@@ -35,10 +35,12 @@ function result(s: SplitRec): string {
 
 export default async function ScorecardPage() {
   const viewer = await getViewer();
-  const edge = hasDatabase() ? await positioningEdge(getDb()).catch(() => null) : null;
+  const gate = hasDatabase() ? await positioningEdge(getDb()).catch(() => null) : null;
   // Off public pages until the edge is positive on 100+ scored calls; members can still see where it stands.
-  if (!(edge && positioningPublic(edge)) && !isPaid(viewer.plan)) redirect("/top");
+  if (!(gate && positioningPublic(gate)) && !isPaid(viewer.plan)) redirect("/top");
   const rows = hasDatabase() ? await flaggedSplits(getDb(), 20_000).catch(() => []) : [];
+  // The tiles read the calls as they are now (the gate's answer is kept for up to 10 minutes).
+  const edge = hasDatabase() ? edgeOf(rows) : null;
   const all = scorecard(rows), mk = scorecard(rows.filter(r => r.kind === "crowd" || r.kind === "bigmoney")), st = scorecard(rows.filter(r => r.kind === "insider_dip" || r.kind === "fund_add"));
   const share = (x: ReturnType<typeof scorecard>) => (x.share === null ? null : `${Math.round(x.share * 100)}%`);
   return (

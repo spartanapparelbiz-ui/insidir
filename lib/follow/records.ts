@@ -21,8 +21,10 @@ const pointFor = (slug: string | null): { price: SQL; at: SQL; join: SQL } => sl
 
 /** Columns of one window's followable record: n, won, lost, staked and net. */
 function cols(key: string, since: Date | null, price: SQL, at: SQL): SQL {
-  const ok = sql`${price} > 0 and ${price} + ${SLIPPAGE} < 1 and ${at} < terminal.moves.settled_at and terminal.moves.result in ('won', 'lost')${since ? sql` and terminal.moves.settled_at >= ${since}` : sql``}`;
-  const pnl = sql`case when terminal.moves.result = 'won' then ${STAKE} / (${price} + ${SLIPPAGE}) - ${STAKE} else -${STAKE} end`;
+  // Typed parameters: Postgres can't tell what an untyped "-$1" is.
+  const slip = sql`${SLIPPAGE}::float8`, stake = sql`${STAKE}::float8`;
+  const ok = sql`${price} > 0 and ${price} + ${slip} < 1 and ${at} < terminal.moves.settled_at and terminal.moves.result in ('won', 'lost')${since ? sql` and terminal.moves.settled_at >= ${since}` : sql``}`;
+  const pnl = sql`case when terminal.moves.result = 'won' then ${stake} / (${price} + ${slip}) - ${stake} else -${stake} end`;
   return sql`count(*) filter (where ${ok})::int as ${sql.raw(`n_${key}`)},
     count(*) filter (where ${ok} and terminal.moves.result = 'won')::int as ${sql.raw(`won_${key}`)},
     coalesce(sum(${pnl}) filter (where ${ok}), 0)::float as ${sql.raw(`net_${key}`)}`;
@@ -47,7 +49,7 @@ export async function trackerFollow(db: Db, t: Tracker, now: number): Promise<Fo
 export function trackerFollowAll(db: Db, now: number): Promise<Map<TrackerSlug, FollowWindows>> {
   return memo("follow:trackers", 5 * 60_000, async () => {
     const out = new Map<TrackerSlug, FollowWindows>();
-    for (const t of TRACKERS) out.set(t.slug, await trackerFollow(db, t, now).catch(() => ({ all: EMPTY })));
+    for (const t of TRACKERS) out.set(t.slug, await trackerFollow(db, t, now).catch(e => { console.error("follow:tracker", t.slug, e instanceof Error ? (e.cause ?? e).toString() : e); return { all: EMPTY }; }));
     return out;
   });
 }

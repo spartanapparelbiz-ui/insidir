@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
 import { OUT } from "./env";
 import { q, signIn } from "./helpers";
 
-const P1 = "0xe2echk0000000000000000000000000000000a1", P2 = "0xe2echk0000000000000000000000000000000a2";
+const P1 = "0xe2echk0000000000000000000000000000000a1", P2 = "0xe2echk0000000000000000000000000000000a2", P3 = "0xe2echk0000000000000000000000000000000a3";
 
 test.beforeAll(async () => {
   await q("delete from terminal.moves where id like 'pm:e2echk:%'");
@@ -17,7 +17,7 @@ test.beforeAll(async () => {
     q(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, wallet, at, last_at, tab, league, category)
        values ($1, 'polymarket', $2, $3, $4, $5, $6, $7, 0.5, '0xe2echk00000000000000000000000000000000ff', now() - interval '2 hours', now() - interval '2 hours', 'sports', 'MLB', 'sports')`,
       [id, market, event, title, outcome, side, amount]);
-  // Brewers: $70K of big money on them, but both proven traders are on the Cubs → against.
+  // Brewers: $70K of big money on them, but all three proven traders are on the Cubs → against.
   await ins("pm:e2echk:1", "0xe2echkml", "E2E Brewers vs. Cubs", "E2E Brewers vs. Cubs", "Brewers", "yes", 70_000);
   await ins("pm:e2echk:2", "0xe2echkml", "E2E Brewers vs. Cubs", "E2E Brewers vs. Cubs", "Cubs", "no", 30_000);
   // Over 8.5: proven traders on the Over → with.
@@ -25,7 +25,7 @@ test.beforeAll(async () => {
   await ins("pm:e2echk:4", "0xe2echktot", "E2E Brewers vs. Cubs", "E2E Brewers vs. Cubs: O/U 8.5", "Under", "no", 60_000);
   // Chiefs −3.5: only $5K, no proven traders → no big money yet.
   await ins("pm:e2echk:5", "0xe2echksp", "E2E Chiefs vs. Bills", "Spread: Chiefs (-3.5)", "Chiefs", "yes", 5_000);
-  for (const w of [P1, P2]) {
+  for (const w of [P1, P2, P3]) {
     await q(`insert into terminal.trader_records (wallet, name, resolved, won, lost, profit, biggest_win, avg_price, proven, updated_at)
       values ($1, null, 40, 28, 12, 50000, 9000, 0.55, true, now()) on conflict (wallet) do update set proven = true`, [w]);
     await q("delete from terminal.trader_open where wallet = $1", [w]);
@@ -36,8 +36,8 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => {
   await q("delete from terminal.moves where id like 'pm:e2echk:%'");
-  await q("delete from terminal.trader_open where wallet in ($1, $2)", [P1, P2]);
-  await q("delete from terminal.trader_records where wallet in ($1, $2)", [P1, P2]);
+  await q("delete from terminal.trader_open where wallet in ($1, $2, $3)", [P1, P2, P3]);
+  await q("delete from terminal.trader_records where wallet in ($1, $2, $3)", [P1, P2, P3]);
   await q("delete from terminal.bet_checks");
 });
 
@@ -55,7 +55,7 @@ test("a visitor checks a 3-leg parlay: every leg matched with a verdict, a share
   await expect(page.getByText("3-leg parlay")).toBeVisible();
   await expect(page.getByTestId("verdict-0")).toHaveText("Smart money against you");
   await expect(page.getByTestId("leg-0")).toContainText("$70K on Brewers (70%) · $30K on Cubs");
-  await expect(page.getByTestId("leg-0")).toContainText("0% on Brewers · 2 traders, $6K in");
+  await expect(page.getByTestId("leg-0")).toContainText("0% on Brewers · 3 traders, $9K in");
   await expect(page.getByTestId("leg-0")).toContainText("your slip 54.5%");
   await expect(page.getByTestId("verdict-1")).toHaveText("Smart money with you");
   await expect(page.getByTestId("verdict-2")).toHaveText("No large positions yet");
