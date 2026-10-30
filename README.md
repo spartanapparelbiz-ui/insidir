@@ -66,8 +66,8 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `WHOP_PLAN_INSIDIR`, `WHOP_PRODUCT_INSIDIR` | web | the one plan (Insidir, $39/month) the embedded checkout on `/start` sells |
 | `WHOP_WEBHOOK_SECRET` | web | `/api/billing/webhook` signature check |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
-| `WHOP_CLIENT_ID`, `WHOP_CLIENT_SECRET` (optional) | web | "Forgot password?": confirming it's the member through their Whop account (OAuth app, redirect URI `https://YOUR_DOMAIN/reset/callback`) |
-| `ANTHROPIC_API_KEY`, `CHECK_MONTHLY_USD` (optional, default $50) | web | Check my bet: reading slip screenshots |
+| `WHOP_CLIENT_SECRET`, `WHOP_CLIENT_ID` (optional; else the app id `whop:setup` stored) | web | Sign-in: Whop OAuth 2.1 + PKCE (Google, Apple or email on Whop's page), redirect URI `https://YOUR_DOMAIN/reset/callback` |
+| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (optional, default `anthropic/claude-sonnet-5.5`), `CHECK_MONTHLY_USD` (optional, default $50) | web | Position check: reading slip screenshots through OpenRouter; the cap counts the cost OpenRouter returns |
 | `OPENFIGI_KEY` (optional) | worker | more CUSIP → ticker lookups a minute for fund splits |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MATCH_LLM_MONTHLY_USD` | match | LLM second check on unsure matches (optional, capped per month; default $3) |
 | `ADMIN_TOKEN`, `ADMIN_TOTP_SECRET` | web | `/admin` (both required) |
@@ -149,7 +149,7 @@ Pages: `/splits` (live, biggest gap first; free viewers 30 minutes late), `/spli
 
 `/check` takes a bet-slip screenshot (any book), a Polymarket or Kalshi link, or a stock ticker (`lib/check`). Data, never advice.
 
-- **Reading slips** (`lib/check/extract.ts`): Claude's vision, model `claude-sonnet-5-5`, needs `ANTHROPIC_API_KEY`.
+- **Reading slips** (`lib/check/extract.ts`): a vision model through OpenRouter (`OPENROUTER_MODEL`, default `anthropic/claude-sonnet-5.5`), JSON held to a schema (`response_format` json_schema, or parsed from the text when a model won't take one), needs `OPENROUTER_API_KEY`.
   - Each leg's event, pick, kind of market, line, price and stake come back as JSON in a fixed shape (structured outputs).
   - Refusals fall back server-side (`fallbacks: "default"`).
   - A monthly cap stops new reads: `CHECK_MONTHLY_USD`, default $50, tracked in `llm_usage` as `check:YYYY-MM`.
@@ -162,7 +162,7 @@ Pages: `/splits` (live, biggest gap first; free viewers 30 minutes late), `/spli
 - **Limits:** free viewers get one check (by account, else by the visitor cookie); members unlimited, with a history at `/check/history` that settles from the venue.
 - **Sharing:** `/check/<id>/card` is a 1080×1920 share card with no stake, book or account on it.
 - **Testing slip reading:** ten made-up test slips in different books' layouts are in `test/fixtures/slips` (rendered by `scripts/slips/render.mjs`).
-  - `npx tsx scripts/check-slips.ts` reads them with the real model and checks each reading (needs `ANTHROPIC_API_KEY`).
+  - `npx tsx scripts/check-slips.ts` reads them with the real model and checks each reading (needs `OPENROUTER_API_KEY`).
   - The e2e suite uses a stand-in API that answers with the recorded reading.
 
 ## Insiders, companies and funds
@@ -218,8 +218,8 @@ On a 429 the bucket pauses for `Retry-After` (or an exponential back-off), retri
      `dispute.created`. Put its secret in `WHOP_WEBHOOK_SECRET`.
    - Apple Pay: `public/.well-known/apple-developer-merchantid-domain-association` is served as is; register the
      domain under Websites → Fix Apple Pay in Whop.
-   - For "Forgot password?": an OAuth app with redirect URI `https://YOUR_DOMAIN/reset/callback`; its id in `WHOP_CLIENT_ID`.
-   - Insidir sends no email: log-in is email and password (scrypt), and resets confirm through Whop.
+   - Sign-in: the Whop app named "Insidir" with redirect URI `https://YOUR_DOMAIN/reset/callback` (whop:setup checks it, read-only, and stores its id); its secret in `WHOP_CLIENT_SECRET`.
+   - Sign-in and payments are Whop's: no passwords, no Google keys. Members manage or cancel at https://whop.com/@me/settings/orders.
 6. **Network:** the worker must reach `api.elections.kalshi.com`, `gamma-api.polymarket.com`, `clob.polymarket.com`,
    `data-api.polymarket.com` (and `api.polymarket.us` if enabled), `openrouter.ai` and `api.resend.com`; the web
    service needs `api.whop.com` and `api.resend.com`.

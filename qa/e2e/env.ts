@@ -1,7 +1,7 @@
 /* Shared settings for the end-to-end run: ports, the e2e database and the server environment. Test values only. */
 import { join } from "node:path";
 
-export const APP_PORT = 3100, WHOP_PORT = 4010, PUSH_PORT = 4011, ANTHROPIC_PORT = 4012;
+export const APP_PORT = 3100, WHOP_PORT = 4010, PUSH_PORT = 4011, OPENROUTER_PORT = 4012;
 export const APP_URL = `http://localhost:${APP_PORT}`;
 export const OUT = join(__dirname, ".out");
 export const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgresql://insidir:insidir@localhost:5432/terminal_e2e";
@@ -14,15 +14,13 @@ export const SERVER_ENV: Record<string, string> = {
   APP_URL,
   WHOP_API_ORIGIN: `http://localhost:${WHOP_PORT}`,
   WHOP_ELEMENTS_URL: `http://localhost:${WHOP_PORT}/elements.js`,
-  GOOGLE_CLIENT_ID: "e2e.apps.googleusercontent.com",
-  GOOGLE_CLIENT_SECRET: "e2e_google_secret",
-  GOOGLE_AUTH_URL: `http://localhost:${WHOP_PORT}/google/auth`,
-  GOOGLE_TOKEN_URL: `http://localhost:${WHOP_PORT}/google/token`,
-  GOOGLE_USERINFO_URL: `http://localhost:${WHOP_PORT}/google/userinfo`,
+  // Sign-in with Whop, against the mock's OAuth (qa/e2e/mock-whop.ts MOCK_CLIENT).
+  WHOP_CLIENT_ID: "app_e2e_login",
+  WHOP_CLIENT_SECRET: "e2e_whop_client_secret",
   WHOP_API_KEY: "key_e2e",
-  // A stand-in for the Anthropic API (qa/e2e/global-setup.ts): Check my bet reads slips through it.
-  ANTHROPIC_API_KEY: "sk-ant-e2e",
-  ANTHROPIC_BASE_URL: `http://localhost:${ANTHROPIC_PORT}`,
+  // A stand-in for OpenRouter (qa/e2e/global-setup.ts): Check my bet reads slips through it.
+  OPENROUTER_API_KEY: "sk-or-e2e",
+  OPENROUTER_BASE_URL: `http://localhost:${OPENROUTER_PORT}/api/v1`,
   WHOP_COMPANY_ID: "biz_e2e",
   WHOP_PLAN_INSIDIR: "plan_e2e_insidir",
   WHOP_PRODUCT_INSIDIR: "prod_e2e_insidir",

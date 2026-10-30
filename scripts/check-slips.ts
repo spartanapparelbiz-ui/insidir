@@ -1,6 +1,6 @@
 /* Reads the ten test slips (test/fixtures/slips, scripts/slips/fixtures.ts) with the real model and compares each
  * reading with what the slip says: the book, how many legs, and each leg's kind of market, line, side and price.
- * Needs ANTHROPIC_API_KEY; each run costs a few cents.
+ * Needs OPENROUTER_API_KEY (OPENROUTER_MODEL to try another model); each run costs a few cents.
  *   npx tsx scripts/check-slips.ts */
 import { readFileSync } from "node:fs";
 import { readSlip, type Slip } from "@/lib/check/extract";

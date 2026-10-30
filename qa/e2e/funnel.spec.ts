@@ -1,15 +1,15 @@
 /* The owner's free-access list and the sign-up funnel:
- *   free access: an email on FREE_ACCESS_EMAILS with no account uses "Continue with Google" → an account, a full
+ *   free access: an email on FREE_ACCESS_EMAILS with no account signs in with Whop ("Continue") → an account, a full
  *   member with no payment, never sent to /start, no pop-up, a View as Member / Visitor switch;
  *   /admin marks them "Free access" and leaves them out of the numbers.
  *   /start: five live lines at most and one "More coming" line, a real move with its record locked, the payment
- *   line; an unpaid sign-up comes back to "Finish getting Insidir" (on /start and /login) with the email in.
+ *   line; someone who signed in but didn't pay comes back to the checkout, already signed in.
  *   The sticky "Try 7 days for $1" bar on phones; "Setting up your account…" and its 30-second fallback; the
  *   funnel's steps and drop-off on /admin/funnel. */
 import { expect, test, type Page } from "@playwright/test";
 import { base32Decode, stepAt, totpCode } from "@/lib/admin";
 import { SERVER_ENV, WHOP_PORT } from "./env";
-import { q } from "./helpers";
+import { q, signIn } from "./helpers";
 
 const whop = (path: string, init?: RequestInit) => fetch(`http://localhost:${WHOP_PORT}${path}`, init);
 const post = (path: string, body: unknown) => whop(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -31,16 +31,16 @@ async function adminIn(page: Page) {
   throw new Error("couldn't sign in to /admin");
 }
 
-test("free access: Continue with Google makes the account; a full member with no payment, View as Member / Visitor, marked in /admin", async ({ page }) => {
+test("free access: Whop sign-in makes the account; a full member with no payment, View as Member / Visitor, marked in /admin", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = w < 900 ? "friend.free@example.test" : "owner.free@example.test";
   await q("delete from terminal.users where email = $1", [email]);
   await q("delete from terminal.login_attempts");
 
-  // No account yet: Log in → Continue with Google (Google says who they are, email verified).
+  // No account yet: Log in → Continue → Whop says who they are.
   await page.goto("/login");
-  await post("/__google_user", { sub: `g_free_${w}`, email: email.toUpperCase(), email_verified: true });
-  await page.getByTestId("google-continue").click();
+  await post("/__whop_user", { email: email.toUpperCase(), name: null });
+  await page.getByTestId("continue").click();
   await expect(page).toHaveURL(/\/onboarding/, { timeout: 15_000 });
   const u = (await q<{ id: string; plan: string; membership_id: string | null }>("select id, plan, membership_id from terminal.users where email = $1", [email]))[0]!;
   expect(u.membership_id).toBeNull();
@@ -73,20 +73,20 @@ test("free access: Continue with Google makes the account; a full member with no
   await page.goto("/feed");
   await expect(page).toHaveURL(/\/feed$/);
 
-  // Logging in with Google again is the same account.
+  // Signing in with Whop again is the same account.
   await page.context().clearCookies();
   await page.goto("/login");
-  await page.getByTestId("google-continue").click();
+  await page.getByTestId("continue").click();
   await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
   expect(await q("select 1 from terminal.users where email = $1", [email])).toHaveLength(1);
 
-  // Someone not on the list (and with no membership) can't make an account this way.
+  // Someone not on the list (and with no membership) is signed in without Insidir: sent to /start.
   await page.context().clearCookies();
-  await post("/__google_user", { sub: `g_nolist_${w}`, email: `nolist-${w}@example.test`, email_verified: true });
+  await post("/__whop_user", { email: `nolist-${w}@example.test`, name: null });
   await page.goto("/login");
-  await page.getByTestId("google-continue").click();
-  await expect(page).toHaveURL(/\/login\?error=no_membership/);
-  expect(await q("select 1 from terminal.users where email = $1", [`nolist-${w}@example.test`])).toHaveLength(0);
+  await page.getByTestId("continue").click();
+  await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
+  expect((await q<{ plan: string }>("select plan from terminal.users where email = $1", [`nolist-${w}@example.test`]))[0]!.plan).toBe("free");
 
   // /admin: marked Free access, and left out of the funnel.
   await adminIn(page);
@@ -107,36 +107,32 @@ test("/start: five live lines, one 'More coming' line, a real move with its reco
   const move = page.getByTestId("start-move");
   await expect(move.locator(".move")).toBeVisible();
   await expect(move.getByTestId("locked-record")).toBeVisible();
-  await expect(page.getByText("Cancel anytime in 2 clicks. Secure checkout.")).toBeVisible();
+  await expect(page.getByText("Secure sign-in and payments by Whop.")).toBeVisible();
   await page.screenshot({ path: `qa/screenshots/start-${page.viewportSize()!.width}.png`, fullPage: true });
 });
 
-test("an unpaid sign-up comes back to 'Finish getting Insidir' on /start and /login, email filled in; funnel events are recorded", async ({ page }) => {
+test("signed in without paying: back later, /start opens the checkout already signed in; funnel events are recorded", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = `unpaid-${w}@example.test`;
+  await whop("/__reset", { method: "POST" });
+  await q("delete from terminal.users where email = $1", [email]);
   await q("delete from terminal.events where name in ('start_view', 'account_created', 'checkout_start')");
   await page.goto("/start");
-  await page.locator("#start-email").fill(email);
-  await page.locator("#start-password").fill("unpaid-password");
-  const go = page.getByRole("button", { name: "Continue to payment" });
-  await go.scrollIntoViewIfNeeded();
-  const y = await page.evaluate(() => scrollY);
-  await go.click();
-  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
-  // The checkout opens in place: no jump.
-  expect(Math.abs((await page.evaluate(() => scrollY)) - y)).toBeLessThan(200);
-  // They leave without paying, and come back later.
+  await post("/__whop_user", { email, name: null });
+  await page.getByTestId("continue").click();
+  await expect(page.locator("[data-mock-checkout]")).toBeVisible({ timeout: 15_000 });
+  // They leave without paying, and come back later: still signed in, the checkout opens again.
   await page.goto("/");
   await page.goto("/start");
-  await expect(page.getByRole("heading", { name: "Finish getting Insidir." })).toBeVisible();
-  await expect(page.locator("#start-email")).toHaveValue(email);
+  await expect(page.getByTestId("start-signed-in")).toContainText(email);
+  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
+  // /login for someone signed in without Insidir: on to /start.
   await page.goto("/login");
-  await expect(page.getByTestId("finish-insidir")).toContainText(email);
-  await expect(page.getByLabel("Email")).toHaveValue(email);
-  await page.screenshot({ path: `qa/screenshots/login-finish-${w}.png` });
+  await expect(page).toHaveURL(/\/start$/);
   await expect.poll(async () => (await q<{ name: string }>("select distinct name from terminal.events where name in ('start_view', 'account_created', 'checkout_start')")).map(r => r.name).sort())
     .toEqual(["account_created", "checkout_start", "start_view"]);
 });
+
 
 test("one action per page: no offer bar or sticky bar anywhere; the nav's 36px Get started on public pages, home included, but not /start or /login", async ({ page }) => {
   for (const path of ["/", "/trackers", "/sports", "/markets", "/results", "/pricing", "/faq", "/start", "/login"]) {
@@ -165,6 +161,8 @@ test("/admin/funnel: the eight steps with the drop-off between each", async ({ p
 test("after paying: 'Setting up your account…', then after 30s 'Payment received, finishing up' with refresh and our email", async ({ page }) => {
   test.skip(page.viewportSize()!.width < 900, "once is enough: it waits 30 seconds");
   test.setTimeout(60_000);
+  // Signed in (a buyer is, by then) and Whop doesn't say they have access yet.
+  await signIn(page.context(), "freeUs");
   await page.goto("/welcome");
   const box = page.getByTestId("setting-up");
   await expect(box.getByRole("heading", { name: "Setting up your account…" })).toBeVisible();

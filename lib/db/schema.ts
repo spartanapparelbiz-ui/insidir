@@ -57,13 +57,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
 export const users = terminal.table("users", {
   /** Our own id ("usr_…"; accounts from before our own login kept their Whop user id). */
   id: text("id").primaryKey(),
-  /** Lower-case. One account per email: with a password, it is how they log in (lib/auth/password.ts). */
+  /** Lower-case; from their Whop account. One account per email. */
   email: text("email"),
-  /** scrypt hash of their password ("scrypt$N$r$p$salt$hash", lib/auth/password.ts); null for Google-only accounts. */
-  passwordHash: text("password_hash"),
-  /** Their Google account ("sub"), for "Continue with Google" (lib/auth/google.ts). */
-  googleId: text("google_id"),
-  /** The Whop user behind their membership (user_…), set by the billing webhook. */
+  /** Their Whop user (user_…): how they sign in (lib/auth/whop-login.ts) and whose access Whop checks. */
   whopUserId: text("whop_user_id"),
   name: text("name"),
   username: text("username"),
@@ -85,9 +81,9 @@ export const users = terminal.table("users", {
   /** First-touch UTM tags carried from the visit that led to signup. */
   utm: jsonb("utm").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, t => [uniqueIndex("users_email_idx").on(t.email), uniqueIndex("users_whop_user_idx").on(t.whopUserId), uniqueIndex("users_google_idx").on(t.googleId)]);
+}, t => [uniqueIndex("users_email_idx").on(t.email), uniqueIndex("users_whop_user_idx").on(t.whopUserId)]);
 
-/** Every log-in try (lib/auth/password.ts, lib/auth/google.ts), for the rate limits per email and per IP. */
+/** Every sign-in (lib/auth/whop-login.ts), for the rate limit per IP. */
 export const loginAttempts = terminal.table("login_attempts", {
   id: serial("id").primaryKey(),
   email: text("email").notNull(),
@@ -95,21 +91,6 @@ export const loginAttempts = terminal.table("login_attempts", {
   ok: boolean("ok").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("login_attempts_email_idx").on(t.email, t.createdAt), index("login_attempts_ip_idx").on(t.ip, t.createdAt)]);
-
-/** A checkout in progress: the browser holds the token in a cookie, Whop carries it in the payment's metadata, and the
- *  billing webhook fills in the account it paid for, so the buyer is logged in the moment the payment lands. */
-export const checkoutClaims = terminal.table("checkout_claims", {
-  /** SHA-256 of the token. */
-  tokenHash: text("token_hash").primaryKey(),
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  /** What /start knew before paying (the email and password hash typed, or the Google account): the account is made
-   *  with these once the payment lands. */
-  email: text("email"),
-  passwordHash: text("password_hash"),
-  googleId: text("google_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  usedAt: timestamp("used_at", { withTimezone: true }),
-});
 
 /** Our own sessions: a random token in an httpOnly cookie, 30 days. */
 export const sessions = terminal.table("sessions", {

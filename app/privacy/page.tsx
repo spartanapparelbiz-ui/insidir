@@ -53,7 +53,7 @@ export default async function PrivacyPage() {
           </ul>
 
           <h2>Your choices</h2>
-          <p>Turn alerts off in Account, unsubscribe from any email in one click, and cancel your plan in one click. To have your account data deleted, email hello@aethric.llc.</p>
+          <p>Turn alerts off in Account, unsubscribe from any email in one click, and cancel your plan anytime from your Whop orders page. To have your account data deleted, email hello@aethric.llc.</p>
 
           <h2>Contact</h2>
           <p>Aethric LLC · hello@aethric.llc</p>

@@ -1,0 +1,6 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": { "buildCommand": "npm ci" },
+  "deploy": { "startCommand": "npx tsx scripts/whop-login-check.ts", "restartPolicyType": "NEVER" },
+  "$comment": "One-off, read-only: checks the Whop login app's redirect URIs (scripts/whop-login-check.ts)."
+}

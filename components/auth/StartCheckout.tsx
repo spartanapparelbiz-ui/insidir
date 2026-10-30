@@ -1,18 +1,12 @@
 "use client";
-/* Get Insidir on /start: one page, sign-up on top and the secure checkout embedded below (the payment provider's
- * embedded checkout, docs.whop.com/developer/guides/embed-checkout; never named on the page).
- *   New: "Continue with Google" (back here with their Google email, checkout open), or email and a password (at least
- *   8 characters), then "Continue to payment" opens the checkout under them with that email filled in and locked.
- *   Paying makes the account with that email and password, or linked to that Google account.
- *   Logged in (their plan ended): the checkout opens straight away.
- * The checkout carries a claim token (and our account id when logged in) as metadata (app/api/checkout/start); when
- * it completes we go to /welcome, which logs the buyer in as soon as the billing webhook has made the account. Access
- * itself only ever comes from the webhook, never from this page. */
-import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+/* The checkout on /start, for someone signed in with Whop who doesn't have Insidir yet: Whop's embedded checkout
+ * (docs.whop.com/developer/guides/embed-checkout) opens in place straight away, 7 days for $1, then $39/month, Apple Pay
+ * and Google Pay first where the device has them. The checkout carries our account id as metadata
+ * (app/api/checkout/start), so the billing webhook links the membership to this account; when it completes we go to
+ * /welcome, which waits for Whop to say they have access. Access only ever comes from Whop, never from this page. */
+import { useCallback, useEffect, useRef, useState } from "react";
 import { beacon } from "@/components/app/beacon";
 import { chargeLine } from "@/lib/copy";
-import { GoogleButton } from "@/components/auth/GoogleButton";
 
 interface Elements { checkout: { create: (o: Record<string, unknown>) => { create: (k: "checkout", p?: Record<string, unknown>) => { mount: (sel: string | HTMLElement) => void } } } }
 declare global { interface Window { WhopElements?: (o?: Record<string, unknown>) => Elements } }
@@ -30,29 +24,20 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
-type State = "form" | "opening" | "ready" | "error" | "unconfigured";
+type State = "opening" | "ready" | "error" | "unconfigured";
 
-export function StartCheckout({ elementsUrl, signedInEmail, pendingEmail = null, googleEmail = null }: { elementsUrl: string; signedInEmail: string | null;
-  /** Made their account here before but didn't pay: their email, filled in. */
-  pendingEmail?: string | null;
-  /** Back from "Continue with Google": the checkout opens straight away with their Google email. */
-  googleEmail?: string | null }) {
+export function StartCheckout({ elementsUrl, signedInAs }: { elementsUrl: string; signedInAs: string }) {
   const box = useRef<HTMLDivElement>(null);
-  const ready = signedInEmail ?? googleEmail;
-  const [state, setState] = useState<State>(ready ? "opening" : "form");
-  const [email, setEmail] = useState(pendingEmail ?? "");
-  const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
-  const [error, setError] = useState<{ message: string; exists?: boolean } | null>(null);
+  const [state, setState] = useState<State>("opening");
+  const [error, setError] = useState<string | null>(null);
 
-  const open = useCallback(async (body: Record<string, string>) => {
+  const open = useCallback(async () => {
     setState("opening"); setError(null);
-    const res = await fetch("/api/checkout/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
-    const o = (await res?.json().catch(() => null)) as { planId?: string; metadata?: Record<string, string>; email?: string; returnUrl?: string; error?: string; message?: string } | null;
+    const res = await fetch("/api/checkout/start", { method: "POST" }).catch(() => null);
+    const o = (await res?.json().catch(() => null)) as { planId?: string; metadata?: Record<string, string>; email?: string | null; returnUrl?: string; message?: string } | null;
     if (!res?.ok || !o?.planId) {
       if (res?.status === 503) { setState("unconfigured"); return; }
-      setError({ message: o?.message ?? "Something went wrong. Try again.", exists: o?.error === "exists" });
-      setState(ready ? "error" : "form");
+      setError(o?.message ?? "Something went wrong. Try again."); setState("error");
       return;
     }
     await loadScript(elementsUrl);
@@ -61,59 +46,24 @@ export function StartCheckout({ elementsUrl, signedInEmail, pendingEmail = null,
       plan: o.planId, metadata: o.metadata, returnUrl: o.returnUrl,
       onComplete: (c: { result?: string }) => { if (c.result === "payment") location.assign("/welcome?status=succeeded"); },
     });
-    // The payment form opens in place, right under the account step: the page doesn't jump (its slot keeps its height).
-    checkout.create("checkout", { buyerEmail: o.email, lockBuyerEmail: true }).mount(box.current);
+    checkout.create("checkout", o.email ? { buyerEmail: o.email, lockBuyerEmail: true } : {}).mount(box.current);
     setState("ready");
     beacon("checkout_start", "start");
-  }, [elementsUrl, ready]);
+  }, [elementsUrl]);
 
-  useEffect(() => { if (ready) void open({}).catch(() => setState("error")); }, [ready, open]);
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (password.length < 8) { setError({ message: "Use at least 8 characters for your password." }); return; }
-    void open({ email, password }).catch(() => setState("error"));
-  };
+  useEffect(() => { void open().catch(() => setState("error")); }, [open]);
 
   return (
     <div className="start__flow">
-      {signedInEmail ? (
-        <p className="start__who">Restarting Insidir for <b>{signedInEmail}</b>.</p>
-      ) : googleEmail ? (
-        <p className="start__who" data-testid="start-google">Signed in with Google as <b>{googleEmail}</b>. Next time, log in with &quot;Continue with Google&quot;.</p>
-      ) : (
-        <form className="login__form start__signup" onSubmit={submit} noValidate aria-label="Create your account">
-          <p className="start__step"><span className="start__n">1</span> {pendingEmail ? "Finish getting Insidir" : "Create your account"}</p>
-          <GoogleButton next="/start" testId="start-google-continue" />
-          <p className="login__or"><span>or</span></p>
-          <label className="login__label" htmlFor="start-email">Email</label>
-          <input id="start-email" className="login__input" type="email" name="email" autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false}
-            required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" disabled={state === "ready" || state === "opening"} />
-          <label className="login__label" htmlFor="start-password">Password</label>
-          <div className="login__pw">
-            <input id="start-password" className="login__input" type={show ? "text" : "password"} name="password" autoComplete="new-password" minLength={8} required
-              value={password} onChange={e => setPassword(e.target.value)} aria-describedby="start-password-hint" disabled={state === "ready" || state === "opening"} />
-            <button type="button" className="login__show" onClick={() => setShow(s => !s)} aria-pressed={show}>{show ? "Hide" : "Show"}</button>
-          </div>
-          <p id="start-password-hint" className="login__fine">At least 8 characters. You&apos;ll log in with this email and password.</p>
-          {error ? <p className="login__err" role="alert">{error.message}{error.exists ? <> <Link href="/login?next=%2Fstart">Log in</Link></> : null}</p> : null}
-          {state === "ready" || state === "opening" ? null
-            : <button className="btn btn--primary btn--big btn--block" type="submit" disabled={!email.includes("@") || !password}>Continue to payment</button>}
-          <p className="start__charge" data-testid="charge-line" suppressHydrationWarning>{chargeLine(Date.now())}</p>
-          <p className="start__trust">Cancel anytime in 2 clicks. Secure checkout.</p>
-        </form>
-      )}
+      <p className="start__who" data-testid="start-signed-in">Signed in as <b>{signedInAs}</b>. <a href="/login/start?next=%2Fstart&amp;fresh=1">Use a different account</a></p>
       <section className="start__pay" aria-label="Payment">
-        <p className="start__step"><span className="start__n">{ready ? 1 : 2}</span> Pay $1 today · then $39/mo, cancel anytime</p>
-        {state === "form" ? <p className="start__note">The secure payment form opens here once you&apos;ve created your account.</p> : null}
+        <p className="start__step">Pay $1 today · then $39/mo, cancel anytime</p>
         {state === "opening" ? <p className="start__note" role="status">Opening secure checkout…</p> : null}
-        {state === "error" ? <p className="login__err" role="alert">{error?.message ?? "The checkout didn't load. Refresh the page; if it keeps happening, write to hello@aethric.llc."}</p> : null}
+        {state === "error" ? <p className="login__err" role="alert">{error ?? "The checkout didn't load. Refresh the page; if it keeps happening, write to hello@aethric.llc."}</p> : null}
         {state === "unconfigured" ? <p className="login__err" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
         <div ref={box} className="start__frame" hidden={state !== "ready"} />
-        {state === "ready" ? <>
-          <p className="start__charge" suppressHydrationWarning>{chargeLine(Date.now())}</p>
-          <p className="start__trust">Cancel anytime in 2 clicks. Secure checkout.</p>
-        </> : null}
+        <p className="start__charge" data-testid="charge-line" suppressHydrationWarning>{chargeLine(Date.now())}</p>
+        <p className="continue__by">Secure sign-in and payments by Whop. Cancel anytime from your Whop orders.</p>
       </section>
     </div>
   );

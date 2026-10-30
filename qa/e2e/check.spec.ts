@@ -63,10 +63,10 @@ test("a visitor checks a 3-leg parlay: every leg matched with a verdict, a share
   await expect(page.getByText("DraftKings")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
   if (info.project.name === "phone-390") await page.screenshot({ path: "qa/screenshots/check-parlay-390.png", fullPage: true });
-  // The model was asked once, with the image, through the fallback beta.
-  const asked = JSON.parse(readFileSync(join(OUT, "anthropic.json"), "utf8")) as Array<{ model: string; beta: string; image: string }>;
-  expect(asked.at(-1)).toMatchObject({ model: "claude-sonnet-5-5", image: "image/png" });
-  expect(asked.at(-1)!.beta).toContain("server-side-fallback-2026-07-01");
+  // OpenRouter was asked once: the default model, the image as a data URL, the JSON schema, our key and headers.
+  const asked = JSON.parse(readFileSync(join(OUT, "openrouter.json"), "utf8")) as Array<Record<string, string | null>>;
+  expect(asked.at(-1)).toMatchObject({ path: "/api/v1/chat/completions", model: "anthropic/claude-sonnet-5.5", image: "image/png", format: "json_schema",
+    auth: "Bearer sk-or-e2e", referer: "https://insidir.com", title: "Insidir" });
 
   const id = page.url().split("/").pop()!;
   const card = await page.request.get(`/check/${id}/card`);

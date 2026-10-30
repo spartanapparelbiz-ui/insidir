@@ -26,11 +26,9 @@ describe("trust claims", () => {
     }
   });
 
-  it("'Cancel in one click': the Cancel button cancels on its own, with no confirm step", () => {
-    const form = read("components/account/AccountForms.tsx");
-    const cancel = form.slice(form.indexOf("export function CancelButton"));
-    expect(cancel).toContain('fetch("/api/account/cancel"');
-    expect(cancel.slice(0, cancel.indexOf("Cancel subscription"))).not.toMatch(/confirm\(/);
+  it("'Cancel anytime': Manage subscription goes to Whop's orders page, where cancelling happens", () => {
+    expect(read("lib/billing/whop.ts")).toContain('MANAGE_URL = "https://whop.com/@me/settings/orders"');
+    expect(read("app/settings/page.tsx")).toMatch(/href=\{MANAGE_URL\}[^>]*>Manage subscription/);
   });
 
   it("'Every deal we flag goes in Receipts': each new deal gets a receipt row when it is stored", () => {

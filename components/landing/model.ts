@@ -27,7 +27,7 @@ export const REFUND_MIN_GREEN_PER_DAY = 1;
 export const REFUND_WINDOW_DAYS = 30;
 
 /** Objection killers, right under the pricing cards. */
-export const OBJECTIONS = ["Not a prediction. Arithmetic.", "We never touch your money.", "Cancel in one click."] as const;
+export const OBJECTIONS = ["Not a prediction. Arithmetic.", "We never touch your money.", "Cancel anytime."] as const;
 
 /** Stake per green deal in the "if you had followed every green deal" line, dollars. */
 export const FOLLOW_STAKE = 500;

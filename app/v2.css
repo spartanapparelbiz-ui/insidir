@@ -1028,13 +1028,10 @@ html.popup-open { overflow: hidden; }
 .adm-avatars { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .adm-avatar { display: flex; align-items: center; gap: 12px; padding: 12px; }
 .adm-avatar__w { min-width: 0; flex: 1; overflow-wrap: anywhere; }
-/* "Continue with Google" (components/auth/GoogleButton.tsx) and the "or" line under it. */
-.btn--google { gap: 10px; background: var(--paper); color: var(--ink); border: 1px solid var(--grey-2); }
-.btn--google:hover { background: var(--grey-1); }
-.login__or { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--muted); font-size: var(--t13); }
-.login__or::before, .login__or::after { content: ""; flex: 1; height: 1px; background: var(--night-line); }
-.login__help { margin: 4px 0 12px; color: var(--muted); font-size: var(--t13); line-height: 1.5; }
-.login__help a { color: var(--text); }
+/* "Continue" to Whop's sign-in (components/auth/ContinueButton.tsx) and the small line under it. */
+.continue { display: grid; gap: 10px; margin: 8px 0 16px; }
+.continue__by { margin: 0; color: var(--muted); font-size: var(--t13); text-align: center; }
+.start__signin { padding-top: 8px; }
 
 /* The public SEC pages (/insiders, /insider-trading, /funds; components/v2/sec). */
 .trader__acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

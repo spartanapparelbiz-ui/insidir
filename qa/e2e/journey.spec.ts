@@ -46,14 +46,13 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
   }, { endpoint, p256dh: ecdh.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") });
 
   try {
-    // A visitor: the landing page, then "Try 7 days for $1" → the embedded checkout → pay → logged in, welcome.
+    // A visitor: the landing page, then "Try 7 days for $1" → Continue (Whop sign-in) → the embedded checkout → pay → welcome.
     await page.goto("/");
     await page.goto("/pricing");
     await page.locator('[data-checkout="pricing"]').first().click();
     await expect(page).toHaveURL(/\/start$/);
-    await page.locator("#start-email").fill(EMAIL(w));
-    await page.locator("#start-password").fill("journey-password");
-    await page.getByRole("button", { name: "Continue to payment" }).click();
+    await whop("/__whop_user", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: EMAIL(w), name: null }) });
+    await page.getByTestId("continue").click();
     await page.getByRole("button", { name: "Pay $1 (test mode)" }).click();
     await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;

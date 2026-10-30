@@ -1,6 +1,6 @@
 "use client";
-/* Right after paying: "Setting up your account…" while it asks /api/checkout/claim every second until the billing
- * webhook has made the account (it can lag), then straight into onboarding. After 30 seconds: "Payment received,
+/* Right after paying: "Setting up your account…" while it asks /api/checkout/status every second until Whop says this
+ * account has Insidir (the webhook can lag; the status check asks Whop directly), then straight into onboarding. After 30 seconds: "Payment received,
  * finishing up" with a refresh button and our email; it keeps asking in the background. Whop sends the buyer back here with ?status=failed|canceled when an off-site step
  * (3-D Secure, a bank page) didn't go through: then nothing was charged and they can try again. */
 import Link from "next/link";
@@ -14,8 +14,8 @@ export function Welcome({ status }: { status: string | null }) {
     let n = 0, gone = false;
     const tick = async () => {
       if (gone) return;
-      const r = await fetch("/api/checkout/claim", { method: "POST" }).then(x => x.json() as Promise<{ ready: boolean; next?: string }>).catch(() => ({ ready: false } as { ready: boolean; next?: string }));
-      if (r.ready) { location.replace(r.next ?? "/feed?welcome=1"); return; }
+      const r = await fetch("/api/checkout/status", { method: "POST" }).then(x => x.json() as Promise<{ member: boolean; next?: string }>).catch(() => ({ member: false } as { member: boolean; next?: string }));
+      if (r.member) { location.replace(r.next ?? "/feed?welcome=1"); return; }
       if (++n === 30) setSlow(true);
       setTimeout(tick, n < 30 ? 1000 : 3000);
     };
