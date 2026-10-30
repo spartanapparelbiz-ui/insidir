@@ -2,12 +2,12 @@
  * to edge at every size, with no colour fill, no badge and no curve. 1:1 thumbnails (radius 12, a 0.5px ring) carry
  * nothing else; 4:3 cards and the 21:9 page header carry their words (the return, the name) over a soft scrim for
  * contrast. The P&L curve lives only in the performance chart. Every figure is from TrackerStats
- * (lib/trackers-store.ts); a tracker without a record says "New". */
+ * (lib/trackers-store.ts): the followable return, or "Building record · N of 30" under 30 settled. */
 import type { ReactNode } from "react";
 import { Photo, type PhotoRatio } from "@/components/Photo";
 import { dollars } from "@/lib/moves/copy";
 import { trackerPhoto } from "@/lib/photos";
-import { returnPct, type Tracker, type TrackerRecord } from "@/lib/trackers";
+import { returnPct, settledOf, TRACKER_MIN_SETTLED, type Tracker, type TrackerRecord } from "@/lib/trackers";
 import type { TrackerStats } from "@/lib/trackers-store";
 
 export interface CoverStats { record: TrackerRecord | null; curve: readonly number[]; tracked30d: number }
@@ -15,11 +15,12 @@ export interface CoverStats { record: TrackerRecord | null; curve: readonly numb
 /** What a cover needs from a tracker's stats (its all-time record). */
 export const coverStats = (s: TrackerStats | null | undefined): CoverStats | null => (s ? { record: s.records.all, curve: s.curve, tracked30d: s.tracked30d } : null);
 
-/** The figure on the cover and its label: the return, money tracked for filings, or "New". */
+/** The figure on the cover and its label: the followable return, money tracked for filings, or "Building record · N
+ *  of 30" (never "New"). */
 export function coverFigure(t: Pick<Tracker, "kind">, s: CoverStats | null | undefined): { figure: string; label: string | null } {
-  if (t.kind === "filings") return s && s.tracked30d > 0 ? { figure: dollars(s.tracked30d), label: "30-day volume" } : { figure: "New", label: null };
+  if (t.kind === "filings") return s && s.tracked30d > 0 ? { figure: dollars(s.tracked30d), label: "30-day volume" } : { figure: "No filings yet", label: null };
   const r = returnPct(s?.record);
-  return r ? { figure: r, label: "ROI, all settled positions" } : { figure: "New", label: null };
+  return r ? { figure: r, label: "Followable ROI" } : { figure: "Building record", label: `${settledOf(s?.record)} of ${TRACKER_MIN_SETTLED} settled` };
 }
 
 export function TrackerCover({ t, s, small = false, ratio, sizes, priority = false, figure = true, className, children }: {

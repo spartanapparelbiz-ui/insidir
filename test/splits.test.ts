@@ -46,16 +46,17 @@ describe("proven traders", () => {
 describe("smart money and the gap", () => {
   const pos = (wallet: string, outcomeIndex: number, moneyIn: number) => ({ wallet, outcomeIndex, moneyIn });
 
-  it("YES share of proven money, with 2+ wallets and enough money", () => {
-    const s = smartOf([pos("a", 0, 6000), pos("b", 0, 2100), pos("b", 1, 1900)]);
-    expect(s).toMatchObject({ yes: 8100, no: 1900, wallets: 2 });
-    expect(s.share).toBeCloseTo(0.81);
-    expect(smartOf([pos("a", 0, 6000)]).share).toBeNull();
-    expect(smartOf([pos("a", 0, 400), pos("b", 1, SMART_MIN_MONEY - 401)]).share).toBeNull();
+  it("YES share of proven money: positions of $2K+, with 3+ wallets and enough money", () => {
+    const s = smartOf([pos("a", 0, 6000), pos("b", 0, 2100), pos("c", 1, 1900), pos("c", 1, 2000)]);
+    expect(s).toMatchObject({ yes: 8100, no: 2000, wallets: 3 }); // the $1,900 position doesn't count
+    expect(s.share).toBeCloseTo(8100 / 10100);
+    expect(smartOf([pos("a", 0, 6000), pos("b", 0, 6000)]).share).toBeNull();
+    expect(SMART_MIN_MONEY).toBeLessThan(6000);
   });
 
   it("Crowd 62% · Smart money 81% is 19 points, smart money leaning YES", () => {
-    const s = smartOf([pos("a", 0, 6000), pos("b", 0, 2100), pos("b", 1, 1900)]);
+    const s = smartOf([pos("a", 0, 6000), pos("b", 0, 2100), pos("c", 1, 1900), pos("d", 1, 2000)]);
+    s.share = 0.81;
     expect(crowdSplit(0.62, s)).toEqual({ crowd: 0.62, smart: 0.81, gap: 19, smartSide: "yes" });
     expect(crowdSplit(0.9, s)!.smartSide).toBe("no");
     expect(crowdSplit(null, s)).toBeNull();
@@ -64,10 +65,11 @@ describe("smart money and the gap", () => {
   });
 
   it("games: all big bets vs. proven traders only when they point opposite ways", () => {
-    const smart = smartOf([pos("a", 0, 1000), pos("b", 1, 3000)]); // 25% YES
-    expect(bigMoneySplit({ yes: 70_000, no: 30_000 }, smart)).toEqual({ crowd: 0.7, smart: 0.25, gap: 45, smartSide: "no" });
-    expect(bigMoneySplit({ yes: 30_000, no: 70_000 }, smart)).toBeNull(); // both lean NO
-    expect(bigMoneySplit({ yes: 7_000, no: 3_000 }, smart)).toBeNull(); // too little big money
+    const smart = smartOf([pos("a", 0, 2000), pos("b", 1, 3000), pos("c", 1, 3000)]); // 25% YES
+    expect(bigMoneySplit({ yes: 70_000, no: 30_000 }, smart, 0.6)).toEqual({ crowd: 0.7, smart: 0.25, gap: 45, smartSide: "no" });
+    expect(bigMoneySplit({ yes: 30_000, no: 70_000 }, smart, 0.6)).toBeNull(); // both lean NO
+    expect(bigMoneySplit({ yes: 7_000, no: 3_000 }, smart, 0.6)).toBeNull(); // too little big money
+    expect(bigMoneySplit({ yes: 70_000, no: 30_000 }, smart, 0.97)).toBeNull(); // NO priced at 3%
   });
 
   it("scored on the side smart money leaned to; void isn't scored", () => {

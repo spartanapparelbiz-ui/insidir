@@ -26,6 +26,9 @@ const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
  *  left out: they're no longer a view on an open market. */
 export async function saveOpen(db: Db, wallet: string, list: readonly PolymarketPosition[], now: number): Promise<void> {
   const seen = new Set<string>();
+  // When each position was first seen open: kept across reads (Positioning counts the last 14 days only).
+  const first = new Map((await db.select({ m: traderOpen.marketId, o: traderOpen.outcomeIndex, f: traderOpen.firstSeenAt }).from(traderOpen).where(eq(traderOpen.wallet, wallet)))
+    .map(r => [`${r.m}:${r.o}`, r.f]));
   const values = list.flatMap(p => {
     const k = `${p.conditionId}:${p.outcomeIndex ?? -1}`;
     if (seen.has(k) || p.outcomeIndex === null || p.redeemable || !(p.size > 0)) return [];
@@ -34,7 +37,8 @@ export async function saveOpen(db: Db, wallet: string, list: readonly Polymarket
     if (!(moneyIn > 0)) return [];
     seen.add(k);
     return [{ wallet, marketId: p.conditionId, outcomeIndex: p.outcomeIndex, outcome: p.outcome, title: p.title.slice(0, 300), size: p.size,
-      avgPrice: p.avgPrice, moneyIn: Math.round(moneyIn * 100) / 100, curPrice: p.curPrice, endDate: p.endDate ? new Date(p.endDate) : null, readAt: new Date(now) }];
+      avgPrice: p.avgPrice, moneyIn: Math.round(moneyIn * 100) / 100, curPrice: p.curPrice, endDate: p.endDate ? new Date(p.endDate) : null, readAt: new Date(now),
+      firstSeenAt: first.get(k) ?? new Date(now) }];
   });
   await db.transaction(async tx => {
     await tx.delete(traderOpen).where(eq(traderOpen.wallet, wallet));
@@ -57,13 +61,13 @@ export async function provenOpenOnce(db: Db, poly: PolymarketClient, now: number
 /** Proven traders' open money per market (positions read in the last 3 hours). */
 export async function provenOpen(db: Db, now: number, marketIds?: readonly string[]): Promise<Map<string, { positions: SmartPosition[]; title: string; outcomes: [string | null, string | null]; cur: number | null }>> {
   const rows = await db.select({ wallet: traderOpen.wallet, marketId: traderOpen.marketId, outcomeIndex: traderOpen.outcomeIndex, outcome: traderOpen.outcome,
-    title: traderOpen.title, moneyIn: traderOpen.moneyIn, curPrice: traderOpen.curPrice })
+    title: traderOpen.title, moneyIn: traderOpen.moneyIn, curPrice: traderOpen.curPrice, firstSeenAt: traderOpen.firstSeenAt })
     .from(traderOpen).innerJoin(traderRecords, eq(traderRecords.wallet, traderOpen.wallet))
     .where(and(eq(traderRecords.proven, true), gte(traderOpen.readAt, new Date(now - 3 * 3_600_000)), marketIds ? inArray(traderOpen.marketId, [...marketIds]) : undefined));
   const out = new Map<string, { positions: SmartPosition[]; title: string; outcomes: [string | null, string | null]; cur: number | null }>();
   for (const r of rows) {
     const m = out.get(r.marketId) ?? { positions: [], title: r.title, outcomes: [null, null] as [string | null, string | null], cur: null };
-    m.positions.push({ wallet: r.wallet, outcomeIndex: r.outcomeIndex, moneyIn: r.moneyIn });
+    m.positions.push({ wallet: r.wallet, outcomeIndex: r.outcomeIndex, moneyIn: r.moneyIn, firstSeenAt: r.firstSeenAt.getTime() });
     if (r.outcomeIndex === 0 || r.outcomeIndex === 1) m.outcomes[r.outcomeIndex] ??= r.outcome;
     if (r.curPrice !== null && m.cur === null) m.cur = r.outcomeIndex === 0 ? r.curPrice : r.outcomeIndex === 1 ? 1 - r.curPrice : null;
     out.set(r.marketId, m);
@@ -116,7 +120,7 @@ async function endUnseen(db: Db, kinds: readonly SplitKind[], seen: ReadonlySet<
 export async function marketSplitsOnce(db: Db, poly: PolymarketClient, now: number): Promise<{ markets: number; live: number; flagged: string[] }> {
   const open = await provenOpen(db, now);
   // The MARKETS_PER_RUN markets with the most proven money: the venue is asked about each one every run.
-  const held = [...open].map(([id, o]) => ({ id, o, smart: smartOf(o.positions) })).filter(x => x.smart.share !== null)
+  const held = [...open].map(([id, o]) => ({ id, o, smart: smartOf(o.positions, now) })).filter(x => x.smart.share !== null)
     .sort((a, b) => b.smart.yes + b.smart.no - (a.smart.yes + a.smart.no)).slice(0, MARKETS_PER_RUN);
   const venue = held.length ? await poly.getMarketsById(held.map(x => x.id)).catch(() => new Map()) : new Map();
   const big = await bigMoney(db, held.map(x => x.id));
@@ -134,7 +138,7 @@ export async function marketSplitsOnce(db: Db, poly: PolymarketClient, now: numb
     if (cs && cs.gap >= SPLIT_MIN) rows.push({ ...base, kind: "crowd", ...cs, detail: facts });
     const all = big.get(id);
     if (c.tab === "sports" && all) {
-      const bs = bigMoneySplit(all, smart);
+      const bs = bigMoneySplit(all, smart, m?.yesPrice ?? o.cur);
       if (bs && bs.gap >= SPLIT_MIN) rows.push({ ...base, kind: "bigmoney", ...bs, detail: { ...facts, bigYes: Math.round(all.yes), bigNo: Math.round(all.no) } });
     }
   }

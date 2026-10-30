@@ -17,6 +17,7 @@ export const fromRow = (r: Row): Move => ({
   category: r.category, url: r.url, result: r.result ?? null, settledAt: r.settledAt?.getTime() ?? null,
   detail: (r.detail as Move["detail"]) ?? null, newWallet: r.newWallet ?? null, sourceRefs: r.sourceRefs ?? null,
   pnl: r.pnl ?? null, soldShare: r.soldShare ?? null, trackers: r.trackers ?? null,
+  seenAt: r.seenAt?.getTime() ?? null, seenPrice: r.seenPrice ?? null,
 });
 
 /** Inserts new moves; a move seen again (more fills merged in) gets its new total. Returns the ids that are new. */

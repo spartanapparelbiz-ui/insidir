@@ -29,6 +29,7 @@ import { walletLabel } from "@/lib/moves/records";
 import type { Move } from "@/lib/moves/types";
 import { SplitBars } from "@/components/smart/SplitBars";
 import { marketSmart, splitsFor } from "@/lib/smart/store";
+import { positioningOn } from "@/lib/smart/gate";
 import { SMART_MIN_MONEY, SMART_MIN_WALLETS } from "@/lib/smart/splits";
 
 export const dynamic = "force-dynamic";
@@ -132,7 +133,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
               ...(tab === "sports" && bigShare !== null ? [{ label: "All large positions", note: "every large position we track", value: bigShare }] : []),
             ]} />
             {opposite ? <p className="sflag" data-testid="split-opposite">Large positions and proven traders are on opposite sides of this game.</p> : null}
-            {split?.crowd ? <p className="dnote dnote--tight">{Math.round(split.crowd.gap)} points apart. <Link href="/splits">See every split</Link> · <Link href="/splits/scorecard">How past splits went</Link></p> : null}
+            {split?.crowd && (positioningOn() || isPaid(viewer.plan)) ? <p className="dnote dnote--tight">{Math.round(split.crowd.gap)} points apart. <Link href="/splits">See every split</Link> · <Link href="/splits/scorecard">How past splits went</Link></p> : null}
           </Section>
         ) : null}
 

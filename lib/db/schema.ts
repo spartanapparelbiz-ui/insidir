@@ -377,6 +377,13 @@ export const moves = terminal.table("moves", {
    *  was tagged with; null until tagged. Trackers that depend on live data (records, prices, start times) aren't stored. */
   trackers: text("trackers").array(),
   trackersV: integer("trackers_v"),
+  /** When Insidir first showed it (members see it live): when it was stored. Followable returns start here (lib/follow). */
+  seenAt: timestamp("seen_at", { withTimezone: true }).defaultNow(),
+  /** The market's price of its side at seenAt, 0..1, before slippage: what a member could have followed at. */
+  seenPrice: doublePrecision("seen_price"),
+  /** Where seenPrice came from: "history" (the venue's price history at seenAt), or "none" (the venue had no price then:
+   *  left out of followable records). */
+  seenSrc: text("seen_src"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   index("moves_at_idx").on(t.at),
@@ -448,6 +455,9 @@ export const traderOpen = terminal.table("trader_open", {
   curPrice: doublePrecision("cur_price"),
   endDate: timestamp("end_date", { withTimezone: true }),
   readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+  /** When we first saw this position open (kept across reads): Positioning counts positions opened in the last 14
+   *  days only (lib/smart/splits.ts). */
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.wallet, t.marketId, t.outcomeIndex] }), index("trader_open_market_idx").on(t.marketId)]);
 
 /** When a wallet's open positions were last read (also for wallets holding none). */
@@ -608,8 +618,23 @@ export const marketInfo = terminal.table("market_info", {
   closed: boolean("closed").notNull().default(false),
   /** Polymarket: the YES token (CLOB price history); Kalshi: the series ticker (candlesticks). */
   historyKey: text("history_key"),
+  /** When the market is due to settle (the venue's close time), for "time left" on open positions. */
+  endAt: timestamp("end_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.source, t.marketId] })]);
+
+/** When a move joined a tracker tagged after the fact (Momentum, Early, Late: lib/trackers.ts observedTags), and the
+ *  side's price then. Those trackers' followable records start from this price, never from the move's entry. */
+export const moveTags = terminal.table("move_tags", {
+  moveId: text("move_id").notNull(),
+  tracker: text("tracker").notNull(),
+  taggedAt: timestamp("tagged_at", { withTimezone: true }).notNull(),
+  /** 0..1, the side's price at taggedAt (before slippage); null until the backfill has found it. */
+  taggedPrice: doublePrecision("tagged_price"),
+  /** "live" (the market read that added the tag), "history" (found in the venue's price history), "seen" (Early and
+   *  Late, knowable from the start time the moment Insidir showed it). */
+  src: text("src").notNull(),
+}, t => [primaryKey({ columns: [t.moveId, t.tracker] })]);
 
 /** EDGAR history reads for an insider ("owner") or a company ("issuer"): which Form 4s are left to read, and from
  *  which date the history is complete. */

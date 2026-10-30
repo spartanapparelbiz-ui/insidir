@@ -12,13 +12,13 @@ import { memo } from "@/lib/memo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { FAQ_PRICING, FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
-import { PlanPromises, PricingCards } from "@/components/v2/Pricing";
+import { PlanPromises, PricingCards, trackerCount } from "@/components/v2/Pricing";
 import { getViewer } from "@/lib/auth/viewer";
-import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
+import { PAST, CANCEL_LINE, GET_CTA } from "@/lib/copy";
 import { PLANS, isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `Try Insidir 7 days for $1, then $${PLANS.insidir.price}/month for everything: every large position live, trader records, follows and alerts. Cancel anytime.` };
+export const metadata: Metadata = { title: "Pricing", description: `$${PLANS.insidir.price}/month for every tracker: every open position from winning trackers live, followable records for every tracker and trader, the leaderboard and Following. First week $1. Cancel anytime.` };
 
 export default async function PricingPage() {
   const viewer = await getViewer();
@@ -28,8 +28,8 @@ export default async function PricingPage() {
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/pricing" trialHref={href} />
       <main className="dark mkt">
-        <PageBand n={BAND.pricing} title="7 days for $1. Then $39 a month." kicker="Pricing">
-          <p className="pband__sub">Everything Insidir does, live. {CANCEL_LINE}</p>
+        <PageBand n={BAND.pricing} title={`$39 a month. All ${trackerCount()} trackers.`} kicker="Pricing">
+          <p className="pband__sub">Every open position from winning trackers, live, and what following each tracker and trader would have made. First week $1. {PAST}</p>
         </PageBand>
         <PricingCards current={viewer.plan} signedIn={Boolean(viewer.user)} href={href} title={null} />
         <PlanPromises />

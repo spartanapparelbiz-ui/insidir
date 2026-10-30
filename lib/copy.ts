@@ -12,6 +12,8 @@ export const WHAT_IS_TITLE = "Insidir: live trackers of large positions on predi
 /** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards): the first
  *  7 days for $1 (lib/plans.ts TRIAL), then $39/mo. */
 export const GET_CTA = "Try 7 days for $1";
+/** Next to every performance figure. */
+export const PAST = "Past results, not a promise.";
 /** The nav's one button, for visitors on every page. */
 export const NAV_CTA = "Get started";
 /** What comes after, said next to every price. */

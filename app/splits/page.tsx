@@ -7,6 +7,9 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { getViewer } from "@/lib/auth/viewer";
+import { redirect } from "next/navigation";
+import { positioningEdge } from "@/lib/smart/gate";
+import { positioningPublic } from "@/lib/smart/splits";
 import { getDb, hasDatabase } from "@/lib/db";
 import type { SplitKind } from "@/lib/db/schema";
 import { movePlan } from "@/lib/moves/gate";
@@ -32,6 +35,9 @@ export default async function SplitsPage({ searchParams }: { searchParams: Promi
   const now = Date.now();
   const viewer = await getViewer();
   const paid = isPaid(viewer.plan);
+  // Off public pages until its scorecard shows a positive edge on 100+ scored calls (lib/smart/gate.ts).
+  const edge = hasDatabase() ? await positioningEdge(getDb()).catch(() => null) : null;
+  if (!paid && !(edge && positioningPublic(edge))) redirect("/top");
   const until = now - movePlan(viewer.plan).delayMs;
   let list: SplitRec[] = [];
   if (hasDatabase()) list = await liveSplits(getDb(), { kinds: show.kinds, until, limit: 100 }).catch(() => []);

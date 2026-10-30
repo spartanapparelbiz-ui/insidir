@@ -12,12 +12,16 @@ import { notComboSql } from "@/lib/moves/combos";
 import { SOLD_EARLY_SHARE } from "@/lib/moves/realize";
 import { listMoves, type MoveQuery } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
+import { trackerFollow } from "@/lib/follow/records";
 import { PERIODS, TRACKERS, trackerWhere, type PeriodKey, type Tracker, type TrackerRecord, type TrackerSlug } from "./trackers";
 
 export interface TrackerStats {
   slug: TrackerSlug;
-  /** Record per window (by when the market settled), and all-time. */
+  /** The followable record per window (by when the market settled), and all-time: $100 on every position at the price
+   *  Insidir showed it, plus a point of slippage (lib/follow). The headline figure everywhere. */
   records: Record<PeriodKey, TrackerRecord>;
+  /** The traders' own return per window: what the positions made from their entry prices (secondary). */
+  own: Record<PeriodKey, TrackerRecord>;
   /** Money in its moves over the last 30 days, and how many. */
   tracked30d: number;
   moves30d: number;
@@ -65,9 +69,15 @@ export async function trackerStatsOne(db: Db, t: Tracker, now: number): Promise<
     return { won: n(r?.[`won_${k}`]), lost: n(r?.[`lost_${k}`]), oddsPct: w > 0 ? (n(r?.[`wp_${k}`]) / w) * 100 : null, net: n(r?.[`net_${k}`]), staked: n(r?.[`st_${k}`]) };
   };
   const curve = await trackerCurve(db, t, now, counted, tabs).catch(() => []);
+  const follow = await trackerFollow(db, t, now).catch(() => null);
+  const own = Object.fromEntries(windows.map(w => [w.key, rec(w.key)])) as Record<PeriodKey, TrackerRecord>;
   return {
     slug: t.slug,
-    records: Object.fromEntries(windows.map(w => [w.key, rec(w.key)])) as Record<PeriodKey, TrackerRecord>,
+    records: Object.fromEntries(windows.map(w => {
+      const f = follow?.[w.key];
+      return [w.key, f ? { won: f.won, lost: f.lost, net: f.net, staked: f.staked, oddsPct: own[w.key as PeriodKey]?.oddsPct ?? null } : { won: 0, lost: 0, net: 0, staked: 0, oddsPct: null }];
+    })) as Record<PeriodKey, TrackerRecord>,
+    own,
     tracked30d: n(r?.tracked30), moves30d: n(r?.moves30), moves: n(r?.moves),
     lastAt: r?.last_at ? new Date(r.last_at as string).getTime() : null, followers: n(r?.followers), curve,
   };

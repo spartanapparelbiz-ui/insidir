@@ -169,6 +169,13 @@
       "when": 1793375966732,
       "tag": "0023_whop_sign_in",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793378293521,
+      "tag": "0024_followable",
+      "breakpoints": true
     }
   ]
 }

@@ -1,10 +1,12 @@
-/* The top of every page: the nav, white with the black logo and a hairline. Visitors: logo, Trackers, Activity,
- * Positioning, Track record, Pricing, Log in, and "Get started" (36px, the one button besides each page's own).
- * Members: logo, Trackers (their home), Activity, Following, Positioning, Track record, Account; the menu also holds
+/* The top of every page: the nav, white with the black logo and a hairline. Visitors: logo, Trackers, Activity, Open
+ * now, Leaderboard, Pricing, Log in, and "Get started" (36px, the one button besides each page's own).
+ * Members: logo, Trackers (their home), Activity, Following, Leaderboard, Track record, Account; the menu also holds
  * Position check (/check), reachable only from there. On phones: logo, the button and a menu; on the app pages,
  * members and visitors get a bottom tab bar within thumb reach: Trackers, Activity, Following, Account.
+ * Positioning joins both only once its scorecard shows a positive edge on 100+ scored calls (lib/smart/gate.ts).
  * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */
 import Link from "next/link";
+import { positioningOn } from "@/lib/smart/gate";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/types";
 import { NAV_CTA } from "@/lib/copy";
@@ -15,7 +17,7 @@ import { ViewAs } from "./ViewAs";
 
 const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed", "/p": "/top", "/market": "/feed" };
 /** Sections that get the bottom tab bar on phones, for members and visitors alike (the free feed needs no account). */
-const APP_SECTIONS = new Set(["/discover", "/feed", "/trackers", "/top", "/following", "/results", "/account", "/check", "/splits"]);
+const APP_SECTIONS = new Set(["/discover", "/feed", "/trackers", "/top", "/open", "/following", "/results", "/account", "/check", "/splits"]);
 
 export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
@@ -39,8 +41,8 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
   );
   // Trackers first: each one is a live portfolio of large positions. Members open the app on Trackers (home).
   const links = signedIn
-    ? [link(paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"), link("/feed", "Activity"), link("/following", "Following"), link("/splits", "Positioning"), link("/results", "Track record"), link("/settings", "Account", "/account")]
-    : [link("/trackers", "Trackers"), link("/feed", "Activity"), link("/splits", "Positioning"), link("/results", "Track record"), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
+    ? [link(paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"), link("/feed", "Activity"), link("/following", "Following"), link("/top", "Leaderboard"), ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/results", "Track record"), link("/settings", "Account", "/account")]
+    : [link("/trackers", "Trackers"), link("/feed", "Activity"), link("/open", "Open now"), link("/top", "Leaderboard"), ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
   // The app menu also holds the position check, which lives only here.
   const menu = signedIn ? [...links.slice(0, -1), link("/check", "Position check"), links[links.length - 1]!] : links;
   return (

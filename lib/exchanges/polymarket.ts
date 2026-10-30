@@ -642,6 +642,11 @@ export class PolymarketClient implements VenueClient {
     return this.clob.json(`${this.clobUrl}/prices-history${qs({ market: tokenId, interval: "max", fidelity: 60 })}`, { priority });
   }
 
+  /** A token's price history between two moments (CLOB /prices-history with startTs/endTs), `fidelity` minutes apart. */
+  async getPriceHistoryRange(tokenId: string, startMs: number, endMs: number, fidelity: number, priority: Priority = "normal"): Promise<unknown> {
+    return this.clob.json(`${this.clobUrl}/prices-history${qs({ market: tokenId, startTs: Math.floor(startMs / 1000), endTs: Math.ceil(endMs / 1000), fidelity })}`, { priority });
+  }
+
   async getPrice(tokenId: string, side: "BUY" | "SELL", priority: Priority = "normal"): Promise<number | null> {
     const raw = await this.clob.json(`${this.clobUrl}/price${qs({ token_id: tokenId, side })}`, { priority });
     return isObject(raw) ? num(raw.price) : null;

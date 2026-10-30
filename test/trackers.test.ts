@@ -151,25 +151,25 @@ describe("observed and live rules", () => {
 
 describe("tracker records", () => {
   const rec = (won: number, lost: number): TrackerRecord => ({ won, lost, oddsPct: 50, net: 0 });
-  it("under 20 settled: New, never a record", () => {
-    expect(TRACKER_MIN_SETTLED).toBe(20);
-    expect(recordPill(rec(19, 0))).toEqual({ text: "New", tone: "new" });
-    expect(recordPill(null)).toEqual({ text: "New", tone: "new" });
-    expect(hasTrackerRecord(rec(12, 8))).toBe(true);
+  it("under 30 settled: the record being built, never New", () => {
+    expect(TRACKER_MIN_SETTLED).toBe(30);
+    expect(recordPill(rec(29, 0))).toEqual({ text: "Building record · 29 of 30", tone: "new" });
+    expect(recordPill(null)).toEqual({ text: "Building record · 0 of 30", tone: "new" });
+    expect(hasTrackerRecord(rec(18, 12))).toBe(true);
     expect(recordPill(rec(63, 37))).toEqual({ text: "Won 63%", tone: "won" });
-    expect(recordPill(rec(9, 11))).toEqual({ text: "Won 45%", tone: "lost" });
+    expect(recordPill(rec(18, 22))).toEqual({ text: "Won 45%", tone: "lost" });
     expect(winPct(rec(2, 1))).toBe(67);
   });
 
   it("Top performers: only trackers with a record, best win rate first, then most settled", () => {
     const rows = [{ slug: "a", record: rec(30, 10) }, { slug: "b", record: rec(10, 5) }, { slug: "c", record: rec(5, 1) }, { slug: "d", record: rec(60, 20) }, { slug: "e", record: null }];
-    // b and c have under 20 settled; d and a tie on 75%, d has more settled.
+    // b and c have under 30 settled; d and a tie on 75%, d has more settled.
     expect(topPerformers(rows).map(r => r.slug)).toEqual(["d", "a"]);
   });
 
   it("Top performers rank by return (net on the money in), not win rate", () => {
     const r = (won: number, lost: number, net: number, staked: number): TrackerRecord => ({ won, lost, oddsPct: 50, net, staked });
-    const rows = [{ slug: "wins-often", record: r(80, 20, 1_000, 100_000) }, { slug: "pays-best", record: r(11, 14, 30_000, 100_000) }, { slug: "loses", record: r(15, 15, -5_000, 50_000) }, { slug: "new", record: r(5, 5, 9e9, 1) }];
+    const rows = [{ slug: "wins-often", record: r(80, 20, 1_000, 100_000) }, { slug: "pays-best", record: r(16, 14, 30_000, 100_000) }, { slug: "loses", record: r(15, 15, -5_000, 50_000) }, { slug: "new", record: r(5, 5, 9e9, 1) }];
     expect(topPerformers(rows).map(x => x.slug)).toEqual(["pays-best", "wins-often", "loses"]);
   });
 

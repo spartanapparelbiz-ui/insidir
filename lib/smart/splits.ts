@@ -2,19 +2,26 @@
  *
  *   crowd        the market's price now for YES (Polymarket outcome 0), 0..1
  *   smart money  the share of proven traders' money (lib/smart/proven.ts) on YES: what their open positions cost,
- *                YES ÷ (YES + NO), with SMART_MIN_WALLETS+ proven wallets and SMART_MIN_MONEY+ in
+ *                YES ÷ (YES + NO). A position counts only when it is POSITION_MIN ($2K)+, opened in the last
+ *                POSITION_DAYS (14) days, and the market has SMART_MIN_WALLETS (3)+ proven traders in
  *   gap          points between the two ("Crowd 62% · Smart money 81%" is 19 points)
  *
  * Games (sports) also compare all big bets (every big move we track, any wallet) with proven traders only, and are
  * flagged when the two point opposite ways. Stocks: insiders buying (Form 4) while the stock is down DIP_MIN% or more
  * over the 30 days before, and big funds adding (13F) in a quarter the price fell DIP_MIN% or more.
  *
- * A split is listed from SPLIT_MIN points and alerts members from SPLIT_ALERT_GAP points. Each flagged split is
- * scored when it ends: a market when it settles (smart money was right when the side it leaned to, against the
- * crowd, won), a stock STOCK_WINDOW_DAYS after the flag (right when the price is higher than on the flag day). */
+ * A split is listed from SPLIT_MIN points, only on a side priced SIDE_MIN–SIDE_MAX (5–95%), and alerts members from
+ * SPLIT_ALERT_GAP points. Each flagged split is scored when it ends: a market when it settles (the side smart money
+ * leaned to won or lost), a stock STOCK_WINDOW_DAYS after the flag (up or down). The scorecard is edge: how often that
+ * side won, minus the average price of that side when flagged (what the market already gave it). It stays off public
+ * pages until it shows a positive edge on SCORE_MIN (100)+ scored. */
 
-export const SMART_MIN_WALLETS = 2;
+export const SMART_MIN_WALLETS = 3;
 export const SMART_MIN_MONEY = 1_000;
+export const POSITION_MIN = 2_000;
+export const POSITION_DAYS = 14;
+export const SIDE_MIN = 0.05, SIDE_MAX = 0.95;
+export const SCORE_MIN = 100;
 export const SPLIT_MIN = 10;
 export const SPLIT_ALERT_GAP = 15;
 export const BIG_MIN_MONEY = 25_000;
@@ -23,15 +30,17 @@ export const DIP_DAYS = 30;
 export const STOCK_WINDOW_DAYS = 90;
 const DAY = 86_400_000;
 
-export interface SmartPosition { wallet: string; outcomeIndex: number; moneyIn: number }
+export interface SmartPosition { wallet: string; outcomeIndex: number; moneyIn: number; /** When we first saw it open (ms); absent: counts. */ firstSeenAt?: number }
 export interface Smart { yes: number; no: number; wallets: number; share: number | null }
 
-/** Proven money on each side of a market. share is null under the minimums. */
-export function smartOf(positions: readonly SmartPosition[]): Smart {
+/** Proven money on each side of a market, from positions of POSITION_MIN+ opened in the last POSITION_DAYS days.
+ *  share is null under the minimums. */
+export function smartOf(positions: readonly SmartPosition[], now = Date.now()): Smart {
   let yes = 0, no = 0;
   const ws = new Set<string>();
   for (const p of positions) {
-    if (!(p.moneyIn > 0)) continue;
+    if (!(p.moneyIn >= POSITION_MIN)) continue;
+    if (p.firstSeenAt !== undefined && now - p.firstSeenAt > POSITION_DAYS * DAY) continue;
     if (p.outcomeIndex === 0) yes += p.moneyIn; else if (p.outcomeIndex === 1) no += p.moneyIn; else continue;
     ws.add(p.wallet);
   }
@@ -41,19 +50,28 @@ export function smartOf(positions: readonly SmartPosition[]): Smart {
 
 export const points = (a: number, b: number): number => Math.round(Math.abs(a - b) * 1000) / 10;
 
-/** Crowd vs. smart money on one open market; null when there's no smart money read or no price. */
+/** The price of a side, from the YES price. */
+export const sidePrice = (yes: number, side: "yes" | "no"): number => (side === "yes" ? yes : 1 - yes);
+const sideOk = (yes: number | null, side: "yes" | "no") => yes !== null && sidePrice(yes, side) >= SIDE_MIN && sidePrice(yes, side) <= SIDE_MAX;
+
+/** Crowd vs. smart money on one open market; null when there's no smart money read, no price, or smart money's side
+ *  is priced outside 5–95% (nothing left to learn there). */
 export function crowdSplit(crowd: number | null, smart: Smart): { crowd: number; smart: number; gap: number; smartSide: "yes" | "no" } | null {
   if (crowd === null || !(crowd > 0 && crowd < 1) || smart.share === null) return null;
-  return { crowd, smart: smart.share, gap: points(crowd, smart.share), smartSide: smart.share >= crowd ? "yes" : "no" };
+  const smartSide = smart.share >= crowd ? "yes" : "no";
+  if (!sideOk(crowd, smartSide)) return null;
+  return { crowd, smart: smart.share, gap: points(crowd, smart.share), smartSide };
 }
 
-/** All big money vs. proven traders on a game: only when they lean opposite ways. */
-export function bigMoneySplit(all: { yes: number; no: number }, smart: Smart): { crowd: number; smart: number; gap: number; smartSide: "yes" | "no" } | null {
+/** All big money vs. proven traders on a game: only when they lean opposite ways, on a side priced 5–95%. */
+export function bigMoneySplit(all: { yes: number; no: number }, smart: Smart, yesPrice: number | null = null): { crowd: number; smart: number; gap: number; smartSide: "yes" | "no" } | null {
   const total = all.yes + all.no;
   if (smart.share === null || total < BIG_MIN_MONEY) return null;
   const a = all.yes / total, s = smart.share;
   if ((a - 0.5) * (s - 0.5) >= 0) return null;
-  return { crowd: a, smart: s, gap: points(a, s), smartSide: s > 0.5 ? "yes" : "no" };
+  const smartSide = s > 0.5 ? "yes" : "no";
+  if (!sideOk(yesPrice, smartSide)) return null;
+  return { crowd: a, smart: s, gap: points(a, s), smartSide };
 }
 
 export interface Close { date: string; close: number }
@@ -133,3 +151,18 @@ export function scorecard(rows: ReadonlyArray<{ smartRight: boolean | null }>): 
   const right = scored.filter(r => r.smartRight).length;
   return { scored: scored.length, right, share: scored.length ? right / scored.length : null };
 }
+
+export interface Edge { scored: number; won: number; winRate: number | null; avgPrice: number | null; edge: number | null }
+/** Edge, for market calls: how often smart money's side won, minus the average price of that side when the call was
+ *  flagged. Only calls that meet today's rules count: 3+ proven traders, the side priced 5–95% (void and unscored left
+ *  out). Stock calls have no price for a side and aren't in it. */
+export function edgeOf(rows: ReadonlyArray<{ source: string; smartRight: boolean | null; smartSide: string; flaggedCrowd: number | null; kind: string; detail: Record<string, unknown> }>): Edge {
+  const ok = rows.filter(r => r.source === "polymarket" && r.smartRight !== null && (r.smartSide === "yes" || r.smartSide === "no") && r.flaggedCrowd !== null
+    && Number(r.detail.wallets ?? 0) >= SMART_MIN_WALLETS && r.kind === "crowd" && sideOk(r.flaggedCrowd, r.smartSide));
+  if (!ok.length) return { scored: 0, won: 0, winRate: null, avgPrice: null, edge: null };
+  const won = ok.filter(r => r.smartRight).length;
+  const avgPrice = ok.reduce((a, r) => a + sidePrice(r.flaggedCrowd!, r.smartSide as "yes" | "no"), 0) / ok.length;
+  return { scored: ok.length, won, winRate: won / ok.length, avgPrice, edge: won / ok.length - avgPrice };
+}
+/** Positioning shows publicly only once its edge is positive on SCORE_MIN+ scored calls. */
+export const positioningPublic = (e: Edge): boolean => e.scored >= SCORE_MIN && (e.edge ?? 0) > 0;
