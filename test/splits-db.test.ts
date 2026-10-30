@@ -12,7 +12,7 @@ import type { VMarket } from "@/lib/types";
 const URL0 = process.env.E2E_DATABASE_URL;
 const NAME = `terminal_splits_${process.pid}`;
 const NOW = Date.UTC(2026, 9, 29, 15), DAY = 86_400_000;
-const P1 = "0x" + "a".repeat(40), P2 = "0x" + "b".repeat(40), NOPE = "0x" + "c".repeat(40);
+const P1 = "0x" + "a".repeat(40), P2 = "0x" + "b".repeat(40), P3 = "0x" + "e".repeat(40), NOPE = "0x" + "c".repeat(40);
 const FED = "0xfed", GAME = "0xgame";
 
 function position(wallet: string, conditionId: string, outcomeIndex: number, money: number, cur: number): PolymarketPosition {
@@ -34,7 +34,10 @@ describe.skipIf(!URL0)("splits in Postgres", () => {
   const asked: string[] = [];
   let venue = new Map<string, VMarket>();
   const poly = {
-    getPositions: async (w: string) => { asked.push(w); return w === P1 ? [position(P1, FED, 0, 6000, 0.62), position(P1, GAME, 1, 3000, 0.3)] : w === P2 ? [position(P2, FED, 0, 2100, 0.62), position(P2, FED, 1, 1900, 0.38), position(P2, GAME, 1, 1000, 0.3)] : []; },
+    // Three proven traders, every position $2K+ (a smaller one never counts: P2's $1,500 on the Fed NO).
+    getPositions: async (w: string) => { asked.push(w); return w === P1 ? [position(P1, FED, 0, 6000, 0.62), position(P1, GAME, 1, 3000, 0.3)]
+      : w === P2 ? [position(P2, FED, 0, 2000, 0.62), position(P2, FED, 1, 1500, 0.38), position(P2, GAME, 1, 2000, 0.3)]
+      : w === P3 ? [position(P3, FED, 1, 2000, 0.38), position(P3, GAME, 1, 2000, 0.3)] : []; },
     getMarketsById: async (ids: readonly string[]) => new Map(ids.flatMap(id => (venue.has(id) ? [[id, venue.get(id)!] as const] : []))),
   } as unknown as PolymarketClient;
 
@@ -55,12 +58,12 @@ describe.skipIf(!URL0)("splits in Postgres", () => {
     const { saveRecord } = await import("@/lib/moves/store");
     const { provenOpenOnce, marketSplitsOnce, liveSplits, splitsFor, marketSmart, resolveSplitsOnce, flaggedSplits, saveOpen } = await import("@/lib/smart/store");
     const rec = (wallet: string, proven: boolean) => saveRecord(db, { wallet, name: null, resolved: 30, won: 21, lost: 9, profit: 1000, biggestWin: 100, avgPrice: 0.6, proven, updatedAt: NOW });
-    await rec(P1, true); await rec(P2, true); await rec(NOPE, false);
+    await rec(P1, true); await rec(P2, true); await rec(P3, true); await rec(NOPE, false);
     // A non-proven wallet's money never counts, even when stored.
     await saveOpen(db, NOPE, [position(NOPE, FED, 1, 50_000, 0.62)], NOW);
 
-    expect(await provenOpenOnce(db, poly, NOW)).toBe(2);
-    expect(asked.sort()).toEqual([P1, P2].sort());
+    expect(await provenOpenOnce(db, poly, NOW)).toBe(3);
+    expect(asked.sort()).toEqual([P1, P2, P3].sort());
     expect(await provenOpenOnce(db, poly, NOW + 60_000)).toBe(0); // read 1 minute ago: fresh
 
     // All big money on the game: $70K Brewers, $30K Cubs.
@@ -71,19 +74,19 @@ describe.skipIf(!URL0)("splits in Postgres", () => {
 
     const r = await marketSplitsOnce(db, poly, NOW);
     expect(r.markets).toBe(2);
-    // Fed: proven money $8,100 YES of $10,000 = 81% vs. the price 62% → 19 points. Game: big bets 70% Brewers vs.
-    // proven 0% Brewers (all $4,000 on the Cubs) → opposite ways, 70 points; the crowd split there is 70 points too.
+    // Fed: proven money $8,000 YES of $10,000 = 80% vs. the price 62% → 18 points. Game: big bets 70% Brewers vs.
+    // proven 0% Brewers (all $7,000 on the Cubs, priced 30%) → opposite ways, 70 points; the crowd split there too.
     const live = await liveSplits(db, { until: NOW });
-    expect(live.map(s => [s.kind, s.subject, s.gap])).toEqual([["crowd", GAME, 70], ["bigmoney", GAME, 70], ["crowd", FED, 19]]);
+    expect(live.map(s => [s.kind, s.subject, s.gap])).toEqual([["crowd", GAME, 70], ["bigmoney", GAME, 70], ["crowd", FED, 18]]);
     const fed = live.find(s => s.subject === FED)!;
-    expect(fed).toMatchObject({ crowd: 0.62, smartSide: "yes", tab: "markets", flaggedGap: 19 });
-    expect(fed.smart).toBeCloseTo(0.81);
+    expect(fed).toMatchObject({ crowd: 0.62, smartSide: "yes", tab: "markets", flaggedGap: 18 });
+    expect(fed.smart).toBeCloseTo(0.8);
     expect(r.flagged.sort()).toEqual([`bigmoney:${GAME}`, `crowd:${FED}`, `crowd:${GAME}`]);
     expect((await marketSplitsOnce(db, poly, NOW + 60_000)).flagged).toEqual([]); // flagged once
 
-    expect((await splitsFor(db, [FED, "0xnone"])).get(FED)?.crowd?.gap).toBe(19);
+    expect((await splitsFor(db, [FED, "0xnone"])).get(FED)?.crowd?.gap).toBe(18);
     const page = await marketSmart(db, GAME, NOW);
-    expect(page).toMatchObject({ smart: { yes: 0, no: 4000, wallets: 2, share: 0 }, big: { yes: 70000, no: 30000 } });
+    expect(page).toMatchObject({ smart: { yes: 0, no: 7000, wallets: 3, share: 0 }, big: { yes: 70000, no: 30000 } });
     // Free viewers see a split 30 minutes after it was first seen.
     expect(await liveSplits(db, { until: NOW - 30 * 60_000 })).toEqual([]);
 
