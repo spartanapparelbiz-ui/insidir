@@ -1,9 +1,10 @@
 /* The whole member journey, as one person: visitor → paid → follow → alerts → cancel (docs/INSIDIR-V2.md).
- *   A visitor lands, taps "Try 7 days for $1", chooses an email and password and pays in the checkout embedded
- *   on /start (the local mock),
+ *   A visitor lands, taps "Try 7 days for $1", signs in with Whop ("Continue", the local mock) and pays in the checkout
+ *   embedded on /start,
  *   comes back signed in to the live feed with the one-time welcome, follows a top trader, sets up alerts (push on
  *   this device, a real test alert delivered to the stand-in push service, the alert history), then sees the next
- *   charge in Billing and cancels in one tap. Run at both sizes; it resets everything it creates. */
+ *   charge in Billing and the "Manage subscription" link to Whop's orders page, where cancelling happens; a cancel made
+ *   there shows as "Cancels on …". Run at both sizes; it resets everything it creates. */
 import { createECDH, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -113,18 +114,21 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await expect(page.locator(".atable").getByText("$412K on Chiefs to win")).toBeVisible();
     await shot("alerts");
 
-    // Billing: the next charge, then cancel in one tap.
+    // Billing: the next charge; managing and cancelling happen on Whop's orders page.
     await page.goto("/settings");
     await expect(page.getByRole("heading", { name: "Account", level: 1 })).toBeVisible();
     // Access started with the $1: the account shows when the $39 starts.
     await expect(page.getByText("Your $1 week ends")).toBeVisible();
     await expect(page.getByText("then $39.00 / month unless you cancel")).toBeVisible();
-    await page.getByRole("button", { name: "Cancel subscription" }).click();
-    await expect(toast(page, "Subscription cancelled.")).toBeVisible();
-    await expect(page.getByTestId("cancels-on")).toContainText("Cancels on");
+    await expect(page.getByTestId("manage-subscription")).toHaveAttribute("href", "https://whop.com/@me/settings/orders");
+    await expect(page.getByRole("button", { name: /cancel subscription/i })).toHaveCount(0);
     await shot("billing");
-    const st = await (await whop("/__state")).json() as { memberships: Array<{ cancel_at_period_end: boolean }> };
-    expect(st.memberships[0]?.cancel_at_period_end).toBe(true);
+    // They cancel on Whop: Whop's next membership webhook says so, and the account shows when access ends.
+    const st = await (await whop("/__state")).json() as { memberships: Array<{ id: string }> };
+    await whop(`/api/v1/memberships/${st.memberships[0]!.id}/cancel`, { method: "POST", headers: { authorization: "Bearer key_e2e" } });
+    await whop("/__webhook", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "membership.updated", membershipId: st.memberships[0]!.id }) });
+    await page.reload();
+    await expect(page.getByTestId("cancels-on")).toContainText("Cancels on");
   } finally {
     await reset(EMAIL(w));
   }

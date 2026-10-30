@@ -6,6 +6,7 @@
  *   POST /__pay                    creates an active membership for that email, sends signed `membership.activated`
  *                                  and `payment.succeeded` webhooks (the payment carries the checkout's metadata)
  *   POST /__refund                 ends a membership and sends `refund.created`
+ *   POST /__webhook                sends a signed webhook of { type } for { membershipId } (a change made on Whop)
  *   GET  /api/v1/memberships, GET /api/v1/memberships/:id, POST /api/v1/memberships/:id/cancel, GET /api/v1/payments/:id
  *   GET  /oauth/authorize          Whop's sign-in: signs in as whoever POST /__whop_user set ({ email, name }; their
  *                                  Whop user id is whopUserFor(email), the same one /__pay uses) and redirects back
@@ -92,6 +93,13 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         if (!mem || !pay) return send(res, 404, { error: "no membership" });
         mem.status = "canceled";
         await webhook("refund.created", { id: "rf_" + randomUUID().slice(0, 8), payment: { id: pay.id } });
+        return send(res, 200, {});
+      }
+      if (req.method === "POST" && p === "/__webhook") {
+        const b = JSON.parse(await body(req)) as { type: string; membershipId: string };
+        const mem = memberships.find(x => x.id === b.membershipId);
+        if (!mem) return send(res, 404, { error: "no membership" });
+        await webhook(b.type, mem);
         return send(res, 200, {});
       }
       if (req.method === "GET" && p === "/api/v1/memberships") {
