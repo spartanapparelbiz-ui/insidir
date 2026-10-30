@@ -257,10 +257,11 @@ describe.skipIf(!URL0)("trackers in Postgres", () => {
       const s = await trackerStatsOne(db, t, NOW);
       const counted = want.filter(m => countsToRecord(m, tabs));
       const pure = recordOf(counted);
-      expect([s.records.all.won, s.records.all.lost], t.slug).toEqual([pure.won, pure.lost]);
-      expect(s.records.all.net, t.slug).toBeCloseTo(counted.reduce((a, m) => a + (m.pnl ?? 0), 0));
-      if (pure.oddsPct !== null) expect(s.records.all.oddsPct!, t.slug).toBeCloseTo(pure.oddsPct);
-      expect(s.records["1w"].won + s.records["1w"].lost, t.slug).toBe(counted.filter(m => m.settledAt! >= NOW - 7 * DAY).length);
+      // The traders' own return (from their entries); the followable record is covered in follow-db.test.ts.
+      expect([s.own.all.won, s.own.all.lost], t.slug).toEqual([pure.won, pure.lost]);
+      expect(s.own.all.net, t.slug).toBeCloseTo(counted.reduce((a, m) => a + (m.pnl ?? 0), 0));
+      if (pure.oddsPct !== null) expect(s.own.all.oddsPct!, t.slug).toBeCloseTo(pure.oddsPct);
+      expect(s.own["1w"].won + s.own["1w"].lost, t.slug).toBe(counted.filter(m => m.settledAt! >= NOW - 7 * DAY).length);
       expect(s.moves, t.slug).toBe(want.length);
     }
     // Sanity: the fixture reaches every kind of rule.
