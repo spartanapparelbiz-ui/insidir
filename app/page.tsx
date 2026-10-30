@@ -1,11 +1,12 @@
 /* The home page: one centred hero (the logo mark, "Follow the big money.", one line, one black button "Explore
- * trackers →" with a text link to the track record, then five real app screens in phone frames fanned across); "A live
+ * trackers →" with a text link to the track record); "Four markets. One membership." (four laptops whose screens are live
+ * previews of sports, prediction markets, stocks and crypto, components/home/Laptops.tsx); "A live
  * portfolio of big money" (one tracker: what it holds now and its latest results); "Featured"; two columns, "Top
  * performers" by window and "Popular"; pricing; FAQ. Home lists lead with stocks, then prediction markets, then sports.
  * Under the hero, "Open now from winning trackers" (lib/follow/open.ts): the 3 newest open positions from trackers and
  * traders with a positive followable record on 30+ settled, and how many more (all of them on /open for members).
  * Every number is a row from terminal.moves on the viewer's clock (free: 30 minutes late), and a tracker's record is
- * what following it would have made (lib/follow). Nothing is made up: a phone with nothing to show is left out, a
+ * what following it would have made (lib/follow). Nothing is made up: a market with nothing yet says so, a
  * tracker with under 30 settled says "Building record · N of 30", one with none yet isn't listed, and a losing tracker
  * is never the live portfolio. */
 import Link from "next/link";
@@ -20,25 +21,22 @@ import { dedupe, openFromWinners, type OpenRow } from "@/lib/follow/open";
 import { PAST } from "@/lib/copy";
 import { HeroCta } from "@/components/home/HeroCta";
 import { LivePortfolio, type PortfolioData } from "@/components/home/LivePortfolio";
-import { Phones, type PhoneData } from "@/components/home/Phones";
+import { Laptops } from "@/components/home/Laptops";
 import { PeriodTabs } from "@/components/trackers/PeriodTabs";
 import { TrackerFeature, TrackerRow } from "@/components/trackers/Tracker";
 import { coverStats } from "@/components/trackers/TrackerCover";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { PricingCards } from "@/components/v2/Pricing";
 import { LOGO } from "@/components/Wordmark";
-import { homeCopy, isMainstream } from "@/lib/home/curate";
 import { countsToRecord } from "@/lib/trust";
+import { marketPreviews, type MarketKind, type MarketPreview } from "@/lib/markets/preview";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase, type Db } from "@/lib/db";
-import { clockET, dollars } from "@/lib/moves/copy";
-import { short as shortMoney } from "@/lib/moves/headline";
-import { feedItems, type FeedItem } from "@/lib/moves/feed";
+import { dollars } from "@/lib/moves/copy";
+import { feedItems } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
-import { listMoves } from "@/lib/moves/store";
-import type { Move } from "@/lib/moves/types";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
 import { FEATURED, homeOrder, PERIODS, popular, topPerformers, trackerBySlug, visibleTrackers, type TrackerSlug } from "@/lib/trackers";
@@ -48,30 +46,12 @@ import type { Plan, Region } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const MONTH = 30 * 86_400_000;
-
-/** Home lists lead with stocks, then prediction markets, then sports (each kind keeps its own order). */
-const KIND_ORDER: Record<string, number> = { stocks: 0, markets: 1, crypto: 1, sports: 2 };
-const moveOrder = (l: Move[]): Move[] => l.map((m, i) => ({ m, i })).sort((a, b) => (KIND_ORDER[a.m.tab] ?? 1) - (KIND_ORDER[b.m.tab] ?? 1) || a.i - b.i).map(x => x.m);
-
-/** A feed item said the home page's short way. */
-function homeItem(fi: FeedItem, m: Move | undefined): FeedItem {
-  const c = homeCopy({ ...fi, detail: m?.detail ?? null }, fi.who.name);
-  return { ...fi, sentence: c.line, context: c.context };
-}
-
-/** Results' phone: recent settled bets that count toward the record, won ones and lost ones, biggest first. */
-function resultPick(settled: Move[], now: number): Move[] {
-  const pool = settled.filter(m => (m.settledAt ?? m.at) > now - MONTH && countsToRecord(m)).sort((a, b) => b.amount - a.amount);
-  const won = pool.filter(m => m.result === "won").slice(0, 2), lost = pool.filter(m => m.result === "lost").slice(0, 2);
-  return [...won, ...lost].sort((a, b) => b.amount - a.amount);
-}
-
 /** A tracker with at least one settled, followable position (its record or "Building record · N of 30" to show). */
 const hasSettled = (s: TrackerStats | undefined): boolean => Boolean(s && s.records.all.won + s.records.all.lost > 0);
 
-interface HomeData { phones: PhoneData; stats: Map<TrackerSlug, TrackerStats>; portfolio: PortfolioData | null; open: { rows: OpenRow[]; total: number } }
-const EMPTY: HomeData = { phones: { feed: [], results: [], tracker: null, list: [], alert: null }, stats: new Map(), portfolio: null, open: { rows: [], total: 0 } };
+interface HomeData { markets: Record<MarketKind, MarketPreview>; stats: Map<TrackerSlug, TrackerStats>; portfolio: PortfolioData | null; open: { rows: OpenRow[]; total: number } }
+const NO_MARKET = (kind: MarketKind): MarketPreview => ({ kind, rows: [], total: 0, window: "", proof: [], live: false });
+const EMPTY: HomeData = { markets: { sports: NO_MARKET("sports"), markets: NO_MARKET("markets"), stocks: NO_MARKET("stocks"), crypto: NO_MARKET("crypto") }, stats: new Map(), portfolio: null, open: { rows: [], total: 0 } };
 
 /** The live portfolio: the best tracker by ROI with a record (bets only), else Whales; its largest open positions and
  *  its latest settled results. */
@@ -92,37 +72,12 @@ async function portfolioData(db: Db, stats: Map<TrackerSlug, TrackerStats>, plan
 }
 
 async function homeData(db: Db, plan: Plan, region: Region | null, until: number, now: number): Promise<HomeData> {
-  const lead = trackerBySlug("biggest-bets")!;
-  const [latestAll, settledAll, stats, leadMoves] = await Promise.all([
-    listMoves(db, { until, limit: 60 }).catch(() => []),
-    listMoves(db, { settled: true, source: "polymarket", limit: 200 }).catch(() => []),
-    trackerStats(db, now).catch(() => new Map<TrackerSlug, TrackerStats>()),
-    trackerMoves(db, lead, { until, limit: 3 }).catch(() => []),
-  ]);
-  // The same account on the same side of the same market within an hour is one row.
-  const latest = moveOrder(dedupe(latestAll.filter(isMainstream))).slice(0, 4);
-  const picked = resultPick(settledAll, now);
-  const byId = new Map([...latest, ...picked, ...leadMoves].map(m => [m.id, m]));
-  const [feed, results, leadItems] = await Promise.all([
-    feedItems(db, latest, plan, region, now).catch(() => []),
-    feedItems(db, picked, plan, region, now, now).catch(() => []),
-    feedItems(db, leadMoves, plan, region, now).catch(() => []),
-  ]);
-  const short = (l: FeedItem[]) => l.map(fi => homeItem(fi, byId.get(fi.id)));
-  const leadShort = short(leadItems);
-  const shown = visibleTrackers(isReady).filter(t => hasSettled(stats.get(t.slug)));
-  const ranked = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records["1m"] ?? null })));
-  const list = homeOrder([...ranked, ...shown.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))]);
+  const stats = await trackerStats(db, now).catch(() => new Map<TrackerSlug, TrackerStats>());
   return {
     stats,
+    markets: await marketPreviews(db, plan, region, now),
     open: await openFromWinners(db, plan, now).catch(() => ({ rows: [], total: 0 })),
     portfolio: await portfolioData(db, stats, plan, region, until, now).catch(() => null),
-    phones: {
-      feed: short(feed), results: short(results),
-      tracker: leadShort.length ? { t: lead, record: stats.get(lead.slug)?.records.all ?? null, cover: coverStats(stats.get(lead.slug)), moves: leadShort } : null,
-      list: stats.size ? list.map(x => ({ ...x, cover: coverStats(stats.get(x.slug)) })) : [],
-      alert: leadShort[0] ? { tracker: lead.name, body: `${shortMoney(leadShort[0].amount)} on ${leadShort[0].headline.replace(/^\w/, c => c.toLowerCase())}. ${leadShort[0].subline}.`, time: clockET(leadShort[0].at).replace(/ (AM|PM) ET$/, "") } : null,
-    },
   };
 }
 
@@ -143,7 +98,7 @@ export default async function Home() {
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
   // Every visitor on the same plan and region sees the same home page: computed once per 15 seconds.
-  const { phones, stats, portfolio, open } = hasDatabase()
+  const { markets, stats, portfolio, open } = hasDatabase()
     ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, until, now))
     : EMPTY;
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
@@ -174,7 +129,7 @@ export default async function Home() {
             <p className="hero3__sub rise" style={{ ["--i" as string]: 2 }}>Trackers follow large positions on Polymarket, Kalshi and SEC filings as they are opened and settled. Each one is a live portfolio with a public track record.</p>
             <div className="hero3__acts rise" style={{ ["--i" as string]: 3 }}><HeroCta /></div>
           </div>
-          <Phones d={phones} />
+          <Laptops data={markets} trialHref={trial} signedIn={Boolean(viewer.user)} />
         </section>
 
         <section className="sec3" aria-labelledby="open-h">

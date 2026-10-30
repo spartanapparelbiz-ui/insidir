@@ -3,7 +3,7 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: the centred hero, one button to the trackers, the phones, the live portfolio, then Featured, Top performers and Popular", async ({ page }) => {
+test("landing: the centred hero, one button to the trackers, the four laptops, the live portfolio, then Featured, Top performers and Popular", async ({ page }) => {
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
@@ -25,7 +25,8 @@ test("landing: the centred hero, one button to the trackers, the phones, the liv
   expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  await expect(page.locator(".fan .phone--2")).toBeVisible();
+  await expect(page.locator(".lt__item")).toHaveCount(4);
+  await expect(page.locator(".lt__item").first()).toBeVisible();
   await expect(page.locator(".tfeat")).toHaveCount(4);
   await expect(page.locator(".tfeat").first()).toContainText("by Insidir");
   for (const h of ["Open now from winning trackers", "Featured", "Top performers", "Popular"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();

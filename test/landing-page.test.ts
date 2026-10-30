@@ -25,14 +25,14 @@ function literals(src: string): string {
 const V2_UI = [
   "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
-  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/Phones.tsx", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
+  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/Laptops.tsx", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
   "lib/moves/copy.ts", "lib/moves/ticker.ts",
 ];
 
 describe("V2 landing page", () => {
-  it("renders its sections in order: the centred hero with the phones, Featured, Top performers and Popular, pricing, FAQ", () => {
+  it("renders its sections in order: the centred hero with the four laptops, Featured, Top performers and Popular, pricing, FAQ", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero3"', "<Phones ", 'id="feat-h"', "<PeriodTabs ", "Popular</h2>", "<PricingCards ", "<FaqV2 "];
+    const markers = ['className="hero3"', "<Laptops ", 'id="feat-h"', "<PeriodTabs ", "Popular</h2>", "<PricingCards ", "<FaqV2 "];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);

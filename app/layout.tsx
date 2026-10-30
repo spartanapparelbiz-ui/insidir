@@ -18,6 +18,7 @@ import "./globals.css";
 import "./v2.css";
 import "./light.css";
 import "./polish.css";
+import "./laptops.css";
 import "./motion.css";
 
 export const metadata: Metadata = {

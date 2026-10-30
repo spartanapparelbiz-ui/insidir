@@ -80,7 +80,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 /* ---------- surfaces: white, 1px lines, no grey cards ---------- */
 .card, .move, .upsell, .empty, .record div, .flist__row, .pline, .pchart, .trust__card, .prod__tile, .side, .deal, .start__signup, .start__pay,
 .inband__card, .psnip, .rcard, .promise__item, .tile, .dnote, .hypo, .tnew, .tempty, .lchart__empty, .cluster, .sbars__row, .sflag, .srow, .cleg,
-.checkf__err, .login__err, .cmp__scroll, .trialbar, .pm {
+.checkf__err, .login__err, .cmp__scroll, .trialbar {
   background: none !important; border-radius: 0; box-shadow: none !important; }
 .move:hover, .dash .move:hover, .prod__tile--link:hover, .deal:hover, .srow:hover { background: none; box-shadow: none !important; }
 .ptable tbody tr:hover, .table tbody tr:hover, .dtable tbody tr:hover, .trow:hover { background: none; }
@@ -149,8 +149,6 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .sec3, .sec3--tight { padding-top: var(--sec); }
 .lp3 .pricing2, .lp3 .sec2 { padding: var(--sec) 0; }
 .tsec, .dsec { margin-top: var(--sec); }
-.fan { margin-top: 112px; }
-@media (min-width: 1100px) { .fan { margin-top: 120px; } }
 
 /* ---------- tracker covers (components/trackers/TrackerCover.tsx): 4:3, deep colour, a thin white curve ---------- */
 /* Featured: the name at the bottom of the cover */
@@ -165,11 +163,6 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .ttile__link:hover .ttile__name { text-decoration: underline; text-underline-offset: 3px; }
 .ttile__name { font-weight: 600; }
 /* the phones */
-.ph__trow .res__amt { font-size: 11px; }
-.ph__trow .res__st { font-size: 9px; }
-.ph__row .res__amt { font-size: 13px; }
-.ph__row .res__st { font-size: 10px; }
-.pm { padding: 10px 0; border-radius: 0; border-bottom: 1px solid var(--line); }
 .pm--res { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
 .pm--res .res__amt { font-size: 13px; }
 .pm--res .res__st { font-size: 10px; }

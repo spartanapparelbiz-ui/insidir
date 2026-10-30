@@ -39,6 +39,4 @@
   a:hover > .arrow, button:hover > .arrow, a:hover::after { transform: translateX(3px); }
 }
 .hero3__acts { display: grid; justify-items: center; }
-/* the phones keep their fanned transforms: they rise with opacity only */
-@media (prefers-reduced-motion: no-preference) { .phone.rise { animation-name: fade-in; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

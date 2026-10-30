@@ -62,10 +62,9 @@ describe("home Results preview: only bets in the record", () => {
     expect(countsToRecord(settled({ result: "void" }))).toBe(false);
     expect(countsToRecord(settled({ marketTitle: "Arsenal AND Chelsea win" }))).toBe(false);
   });
-  it("the home page picks from Polymarket and filters by the record rule", () => {
+  it("the home page's live portfolio picks its results from Polymarket and filters by the record rule", () => {
     const src = readFileSync("app/page.tsx", "utf8");
-    expect(src).toContain(`listMoves(db, { settled: true, source: "polymarket"`);
-    expect(src).toMatch(/resultPick[\s\S]*countsToRecord\(m\)/);
+    expect(src).toMatch(/settled: true, source: "polymarket"[^\n]*countsToRecord\(m\)/);
   });
 });
 
