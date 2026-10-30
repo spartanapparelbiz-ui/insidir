@@ -48,14 +48,14 @@ describe.skipIf(!URL0)("followable records in Postgres", () => {
       row(42, { at: new Date(NOW - DAY), lastAt: new Date(NOW - DAY), seenAt: new Date(NOW - DAY) }),
     ]);
     const net = 20 * (100 / 0.46 - 100) - 12 * 100;
-    const t = await trackerFollow(db, TRACKERS.find(x => x.slug === "tennis")!, NOW);
-    expect(t.all).toMatchObject({ n: 32, won: 20, lost: 12, staked: 3200 });
-    expect(t.all.net).toBeCloseTo(net, 6);
-    expect(isWinner(t.all)).toBe(true);
+    const all = (await trackerFollow(db, TRACKERS.find(x => x.slug === "tennis")!, NOW)).all!;
+    expect(all).toMatchObject({ n: 32, won: 20, lost: 12, staked: 3200 });
+    expect(all.net).toBeCloseTo(net, 6);
+    expect(isWinner(all)).toBe(true);
     const tr = (await traderFollowAll(db, NOW)).get(W)!;
     expect(tr.all.n).toBe(32);
     expect(tr.all.net).toBeCloseTo(net, 6);
     expect(tr.open).toBe(1);
-    expect(isWinner({ ...t.all, n: 29 })).toBe(false);
+    expect(isWinner({ ...all, n: 29 })).toBe(false);
   });
 });
