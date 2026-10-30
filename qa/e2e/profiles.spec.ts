@@ -75,7 +75,7 @@ test("/top: ranked by followable ROI on 30+ settled, each with its $100 line; ho
   const td = page.getByTestId("board-traders").locator(".board__row").first();
   await expect(td.getByRole("link", { name: "E2E-Follow" })).toHaveAttribute("href", "/p/0xe2e00000000000000000000000000000000000dd");
   await expect(td.locator(".board__fig b")).toHaveText("+35.9%");
-  await page.screenshot({ path: shotName("top", page), fullPage: true });
+  await page.screenshot({ path: shotName("top-all", page), fullPage: true });
   // The last 30 days: only what settled in them (fewer than 30): nothing ranked.
   await page.goto("/top");
   await expect(page.getByText("No tracker has 30 settled positions in the last 30 days.")).toBeVisible();
