@@ -1,5 +1,5 @@
 /* Countries and public figures that markets are about, found in a market's own words. A country's art is its flag
- * (flag-icons, MIT); a figure's is their Wikidata portrait (P18) when Commons licenses it freely, else a monogram.
+ * (flag-icons, MIT); a figure's is their Wikidata portrait (P18) when Commons licenses it freely, else their initials.
  * Traders, the people behind Polymarket wallets, are never here: they keep their own Polymarket picture or a monogram. */
 
 /** ISO 3166 alpha-2 (flag-icons' file name), the country's name, and how markets write it. */

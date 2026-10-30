@@ -683,7 +683,8 @@ export const whopConfig = terminal.table("whop_config", {
 });
 
 /** One artwork per entity (lib/art): a tracker, person, company, fund, team, league or country, made once by the art
- *  job (jobs/art.ts) and stored in the art bucket under `key` (<key>/<width>.<avif|webp>). A monogram has no files. */
+ *  job (jobs/art.ts) and stored in the art bucket under `key` (<key>/<width>.<avif|webp>). Initials have no files;
+ *  an insider shown with their company's logo has its key. */
 export const entityArt = terminal.table("entity_art", {
   /** lib/art/ids.ts: "company:NVDA", "person:1214156", "team:nba:LAL"… */
   entityId: text("entity_id").primaryKey(),
@@ -691,10 +692,8 @@ export const entityArt = terminal.table("entity_art", {
   label: text("label").notNull(),
   /** lib/art/ref.ts Treatment. */
   treatment: text("treatment").notNull(),
-  /** The field and the placeholder, "#RRGGBB". */
+  /** The placeholder while it loads: a photo's dominant colour, white behind a logo or flag, "#RRGGBB". */
   colour: text("colour").notNull(),
-  /** The brand's own colour (a company's, for its executives' duotones), when it isn't the field. */
-  brandColour: text("brand_colour"),
   mono: text("mono").notNull(),
   key: text("key"),
   /** Widths stored, largest first. */
@@ -709,9 +708,7 @@ export const entityArt = terminal.table("entity_art", {
   license: text("license"),
   licenseUrl: text("license_url"),
   author: text("author"),
-  /** Changed from the source (a duotone, a recoloured mark): /credits says so. */
-  adapted: boolean("adapted").notNull().default(false),
-  /** Why it's a monogram or a fallback, in words, for the QA list. */
+  /** Why it's initials or a fallback, in words, for the QA list. */
   why: text("why"),
   /** The art job's version when it was made: a newer job remakes it. */
   version: integer("version").notNull().default(1),

@@ -1,6 +1,6 @@
 /* QA for the art job, on Railway (ART_QA=1 npm run art): a contact sheet of 48 artworks at 2x (12 trackers, 8
  * people, 10 companies, 12 teams, 6 leagues and countries) as rounded squares of 88px, and the list of every entity
- * still on a monogram or a fallback, with why. Both go to the bucket (art/qa/) and, so they can be read without
+ * still on initials or a fallback, with why. Both go to the bucket (art/qa/) and, so they can be read without
  * bucket access, to the log as base64 lines "QA-FILE <name> <part>/<parts> <data>". Server only. */
 import sharp, { type Sharp, type OverlayOptions } from "sharp";
 import type { Db } from "@/lib/db";
@@ -22,8 +22,8 @@ export async function artQa(db: Db): Promise<void> {
   const hasFile = (r: typeof all[number]) => (r.key ? 1 : 0);
   const sheet = [
     ...pick("tracker", 12, hasFile),
-    ...pick("person", 8, r => (r.treatment === "duotone" ? 2 : 0) + (r.entityId.includes("fig-") ? 0 : 1)),
-    ...pick("company", 10, r => (r.treatment === "mark" ? 3 : r.treatment === "mark-white" ? 2 : r.key ? 1 : 0)),
+    ...pick("person", 8, r => (r.treatment === "photo" ? 2 : 0) + (r.entityId.includes("fig-") ? 0 : 1)),
+    ...pick("company", 10, r => (r.key ? 2 : 0) + (r.w >= 1024 ? 1 : 0)),
     ...["team:nba:LAL", "team:nba:BOS", "team:nba:GSW", "team:nfl:KC", "team:nfl:DAL", "team:nfl:GB", "team:mlb:NYY", "team:mlb:LAD", "team:nhl:BOS", "team:nhl:NYR", "team:soccer:arsenal", "team:soccer:real-madrid"]
       .map(id => all.find(r => r.entityId === id)).filter((r): r is typeof all[number] => !!r),
     ...pick("league", 3, hasFile), ...["country:us", "country:ua", "country:gb"].map(id => all.find(r => r.entityId === id)).filter((r): r is typeof all[number] => !!r),
@@ -40,8 +40,8 @@ export async function artQa(db: Db): Promise<void> {
       const res = await getObject(b, `${r.key}/${w}.webp`);
       tile = await sharp(Buffer.from(await res.arrayBuffer())).resize(TILE, TILE).png().toBuffer();
     } else {
-      // A monogram, as the site draws it: initials on the colour.
-      tile = await sharp(Buffer.from(`<svg width="${TILE}" height="${TILE}"><rect width="100%" height="100%" fill="${r.colour}"/><text x="50%" y="54%" font-family="sans-serif" font-weight="700" font-size="${TILE * 0.34}" fill="#fff" text-anchor="middle" dominant-baseline="middle">${r.mono}</text></svg>`)).png().toBuffer();
+      // Initials, as the site draws them: ink on light grey.
+      tile = await sharp(Buffer.from(`<svg width="${TILE}" height="${TILE}"><rect width="100%" height="100%" fill="#F7F7F8"/><text x="50%" y="54%" font-family="sans-serif" font-weight="700" font-size="${TILE * 0.34}" fill="#0B0B12" text-anchor="middle" dominant-baseline="middle">${r.mono}</text></svg>`)).png().toBuffer();
     }
     const rounded = await sharp(tile).composite([{ input: mask, blend: "dest-in" }, { input: ring }]).png().toBuffer();
     layers.push({ input: rounded, left: GAP + (i % COLS) * (TILE + GAP), top: GAP + Math.floor(i / COLS) * (TILE + GAP) });
@@ -51,10 +51,10 @@ export async function artQa(db: Db): Promise<void> {
   dumpToLog("contact-sheet.webp", await sharp(png).webp({ quality: 92 }).toBuffer());
 
   const legend = sheet.map((r, i) => `${String(i + 1).padStart(2)} ${r.entityId} · ${r.label} · ${r.treatment}${r.w ? ` ${r.w}px` : ""} · ${r.colour}`).join("\n");
-  const fallbacks = all.filter(r => r.treatment === "monogram" || r.why).sort((x, y) => x.kind.localeCompare(y.kind) || x.entityId.localeCompare(y.entityId))
+  const fallbacks = all.filter(r => r.treatment === "initials" || r.why).sort((x, y) => x.kind.localeCompare(y.kind) || x.entityId.localeCompare(y.entityId))
     .map(r => `${r.entityId} · ${r.label} · ${r.treatment} · ${r.why ?? ""}`).join("\n");
   const counts = Object.entries(all.reduce<Record<string, number>>((a, r) => { const k = `${r.kind} ${r.treatment}`; a[k] = (a[k] ?? 0) + 1; return a; }, {})).sort().map(([k, v]) => `${k}: ${v}`).join("\n");
-  const report = `ART QA\n\n${all.length} entities\n${counts}\n\nCONTACT SHEET (left to right, top to bottom)\n${legend}\n\nMONOGRAMS AND FALLBACKS\n${fallbacks}\n`;
+  const report = `ART QA\n\n${all.length} entities\n${counts}\n\nCONTACT SHEET (left to right, top to bottom)\n${legend}\n\nINITIALS AND FALLBACKS\n${fallbacks}\n`;
   await putObject(b, "art/qa/report.txt", Buffer.from(report), "text/plain; charset=utf-8");
   dumpToLog("report.txt", Buffer.from(report));
 }

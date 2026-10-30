@@ -1,18 +1,18 @@
 /* The art job (jobs/art.ts runs it on Railway; it needs the internet the site's own sandbox doesn't have). It finds
- * every entity the product names, makes the ones without art (or with art from an older version of this job, or a
- * monogram older than a week, in case a free picture has appeared since), stores each square in the art bucket as
+ * every entity the product names, makes the ones without art (or with art from an older version of this job, or
+ * initials older than a week, in case a free picture has appeared since), stores each square in the art bucket as
  * AVIF and WebP at every width it has, and records it in terminal.entity_art. Each artwork is made once.
+ * No colour is ever added: every artwork is the real picture.
  *
- *   trackers   their Unsplash photo (lib/photos.ts), natural colour
- *   people     insiders (their Wikidata item by CIK, or the executive of their company with their surname) and the
- *              public figures markets name (lib/art/places.ts): Wikidata P18 on Commons, only Public Domain, CC0,
- *              CC BY or CC BY-SA; a duotone in their company's colour (ink for everyone else); else a monogram
- *   companies, funds, leagues   the logo (Wikidata P154 on Commons, else Simple Icons, else the 128px file in
- *              public/logos/stocks for art of 64px or less) in white on the brand colour (P465, else Simple Icons'
- *              hex, else the logo's own colour); full colour on white when white would lose it; else a monogram
- *   teams      public/logos/teams on the team's colour (lib/art/teams.ts), on white where it would vanish; soccer
- *              clubs from Commons when their crest is there
- *   countries  flag-icons, centred on white
+ *   trackers   their Unsplash photo (lib/photos.ts)
+ *   people     insiders (their Wikidata item by CIK, or the officer of their company with their surname) and the
+ *              public figures markets name (lib/art/places.ts): their Wikidata portrait (P18) on Commons, only Public
+ *              Domain, CC0, CC BY or CC BY-SA, square on the face, natural colour. An insider without one shows their
+ *              company's logo; anyone else, their initials
+ *   companies, funds, leagues, soccer clubs   the logo whole in its own colours on white: Wikidata P154 on Commons,
+ *              else Simple Icons (in the brand's own colour), else the file the site ships (public/logos)
+ *   teams      public/logos/teams on white
+ *   countries  flag-icons on white
  * Server only. */
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -24,20 +24,20 @@ import { personName } from "@/lib/profiles/name";
 import { niceName } from "@/lib/stocks/names";
 import { TRACKERS } from "@/lib/trackers";
 import { tickerOfName } from "@/lib/logos";
-import { companyArtId, countryArtId, figureArtId, fundArtId, INK, initialsOf, insiderArtId, keyOf, leagueArtId, teamArtId, trackerArtId } from "./ids";
+import { companyArtId, countryArtId, figureArtId, fundArtId, GREY, initialsOf, insiderArtId, keyOf, leagueArtId, teamArtId, trackerArtId } from "./ids";
 import { COUNTRIES, FIGURES } from "./places";
 import type { ArtKind, Treatment } from "./ref";
-import { contrast, duotone, encodeLadder, flagArt, logoStats, markArt, mix, photoSquare, rasterLogo, teamArt } from "./render";
+import { encodeLadder, flagArt, logoArt, photoSquare } from "./render";
 import { bucket, putObject } from "./s3";
 import {
-  bytes, commonsFiles, commonsName, flagPage, flagSvg, freeForPeople, iconFor, itemsByEnwiki, repoFile, shareAlike, simpleIconPage,
+  bytes, commonsFiles, commonsName, flagPage, flagSvg, freeForPeople, iconFor, itemsByEnwiki, repoFile, simpleIconPage,
   simpleIconSvg, simpleIcons, sparql, unsplashSquare, wikiRequests, type CommonsFile,
 } from "./sources";
-import { CLUBS, TEAM_COLOURS } from "./teams";
+import { CLUBS } from "./teams";
 
 /** Bump to remake every artwork (a change to a treatment). */
 export const ART_VERSION = 1;
-const RETRY_MONOGRAMS_MS = 7 * 86_400_000;
+const RETRY_INITIALS_MS = 7 * 86_400_000;
 
 export const LEAGUES: Record<string, { label: string; wiki: string; icon?: string }> = {
   nba: { label: "NBA", wiki: "National_Basketball_Association", icon: "nba" }, nfl: { label: "NFL", wiki: "National_Football_League" },
@@ -100,10 +100,12 @@ export async function entities(db: Db): Promise<Entity[]> {
 
 /* ---------- what's made ---------- */
 interface Made {
-  t: Treatment; colour: string; brand?: string | null; png?: Buffer; n?: number; fx?: number; fy?: number;
-  sourceUrl?: string | null; sourcePage?: string | null; license?: string | null; licenseUrl?: string | null; author?: string | null; adapted?: boolean; why?: string | null;
+  t: Treatment; colour: string; png?: Buffer; n?: number; fx?: number; fy?: number;
+  /** Shows another entity's art (an insider without a portrait: their company's logo). */
+  reuse?: string;
+  sourceUrl?: string | null; sourcePage?: string | null; license?: string | null; licenseUrl?: string | null; author?: string | null; why?: string | null;
 }
-const mono = (colour: string, why: string, brand?: string | null): Made => ({ t: "monogram", colour, brand, why });
+const initials = (why: string): Made => ({ t: "initials", colour: GREY, why });
 
 /** Wikidata facts gathered in batches before anything is drawn. */
 interface Facts {
@@ -181,61 +183,46 @@ async function gather(todo: Entity[], log: (s: string) => void): Promise<Facts> 
 /* ---------- making one ---------- */
 const surname = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\.?$/, "").trim().split(/\s+/).pop() ?? "";
 
-async function logoMark(buf: Buffer, colour: string | null, fallbackColour: () => Promise<string>): Promise<Made & { png: Buffer }> {
-  const c = colour ?? await fallbackColour();
-  const r = await markArt(buf, c);
-  return { t: r.t, colour: r.colour, brand: c, png: r.png, n: r.n, adapted: r.t === "mark", why: r.why ?? null };
-}
-/** A logo's own colour: the mean of its visible pixels that aren't near white. */
-async function logoColour(buf: Buffer): Promise<string> {
-  const r = await rasterLogo(buf, 256);
-  const st = logoStats(r);
-  return st.opaque ? st.mean : INK;
+async function logo(buf: Buffer, src: Omit<Made, "t" | "colour">): Promise<Made> {
+  const r = await logoArt(buf);
+  return { t: "logo", colour: r.colour, png: r.png, n: r.n, ...src };
 }
 
-/** A company's, fund's or league's mark, from the first source that has one. `small` allows the 128px repo file. */
-async function orgArt(o: { logos: string[]; colour: string | null } | null, files: Map<string, CommonsFile>, name: string, iconSlug: string | null, smallFile: string | null): Promise<Made> {
-  const icon = iconSlug ? (await simpleIcons()).find(i => i.slug === iconSlug) ?? null : await iconFor(name);
-  const colour = o?.colour ?? icon?.hex ?? null;
+/** A Simple Icons mark is one path; it's drawn in the brand's own colour, as the brand draws it. */
+const inColour = (svg: Buffer, hex: string) => Buffer.from(svg.toString("utf8").replace("<svg ", `<svg fill="${hex}" `));
+
+/** A company's, fund's, league's or club's logo, from the first source that has one. */
+async function orgArt(o: { logos: string[] } | null, files: Map<string, CommonsFile>, name: string, iconSlug: string | null, shipped: string | null, shippedFrom: string | null): Promise<Made> {
   for (const n of svgFirst(o?.logos ?? [])) {
     const f = files.get(n);
     if (!f) continue;
-    try {
-      const buf = await bytes(f.url);
-      const m = await logoMark(buf, colour, () => logoColour(buf));
-      return { ...m, sourceUrl: f.url, sourcePage: f.page, license: f.license || "See source", licenseUrl: f.licenseUrl, author: f.author };
-    } catch { /* the next source */ }
+    try { return await logo(await bytes(f.url), { sourceUrl: f.url, sourcePage: f.page, license: f.license || "See source", licenseUrl: f.licenseUrl, author: f.author }); } catch { /* the next source */ }
   }
-  if (icon) {
-    const buf = await simpleIconSvg(icon.slug);
-    const m = await logoMark(buf, colour ?? icon.hex, async () => icon.hex);
-    return { ...m, sourceUrl: `https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/${icon.slug}.svg`, sourcePage: simpleIconPage(icon.slug), license: "CC0 1.0 (Simple Icons)", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/", author: "Simple Icons contributors" };
-  }
-  if (smallFile) {
-    const buf = await repoFile(smallFile).catch(() => null);
+  // iconSlug: null looks the name up in Simple Icons, "" skips it (teams: the site's own file is the real logo).
+  const icon = iconSlug === null ? await iconFor(name) : iconSlug ? (await simpleIcons()).find(i => i.slug === iconSlug) ?? null : null;
+  if (icon) return logo(inColour(await simpleIconSvg(icon.slug), icon.hex), { sourceUrl: `https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/${icon.slug}.svg`, sourcePage: simpleIconPage(icon.slug), license: "CC0 1.0 (Simple Icons)", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/", author: "Simple Icons contributors" });
+  if (shipped) {
+    const buf = await repoFile(shipped).catch(() => null);
     if (buf) {
-      const m = await logoMark(buf, colour, () => logoColour(buf));
-      return { ...m, sourceUrl: smallFile, sourcePage: "https://www.npmjs.com/package/us-stock-logos", license: "MIT (us-stock-logos)", licenseUrl: "https://opensource.org/license/mit", author: "us-stock-logos", why: `only a ${m.n}px logo (Wikidata and Simple Icons have none): shown at 64px or less, a monogram above` };
+      const m = await logo(buf, { sourceUrl: shipped, sourcePage: `https://www.npmjs.com/package/${shippedFrom}`, license: shippedFrom === "us-stock-logos" || shippedFrom === "sports-assets" ? `MIT (${shippedFrom})` : `ISC (${shippedFrom})`, author: shippedFrom });
+      return m.n && m.n < 2048 ? { ...m, why: `only a ${m.n}px logo (not on Wikidata or Simple Icons): shown up to ${Math.floor(m.n / 2)}px, initials above that` } : m;
     }
   }
-  return mono(colour ?? INK, o ? "Wikidata has no logo on Commons and Simple Icons has none" : "not on Wikidata (by CIK) and not in Simple Icons", colour);
+  return initials(o ? "Wikidata has no logo on Commons, and Simple Icons and the site's files have none" : "not on Wikidata, Simple Icons or the site's files");
 }
 
-async function personArt(img: string | null, files: Map<string, CommonsFile>, colour: string, nowhere: string): Promise<Made> {
-  if (!img) return mono(colour, nowhere);
+/** A portrait, if Commons licenses it freely: square on the face (the top third), natural colour. */
+async function portrait(img: string | null, files: Map<string, CommonsFile>): Promise<Made | string> {
+  if (!img) return "no portrait on Wikidata (P18)";
   const f = files.get(img);
-  if (!f) return mono(colour, `Commons has no description of ${img}`);
-  if (!freeForPeople(f.license)) return mono(colour, `portrait licence is "${f.license || "unknown"}", not PD, CC0, CC BY or CC BY-SA`);
-  const buf = await bytes(f.thumb);
-  // The darker end has to read against the pale one: a pale brand colour is deepened toward ink first.
-  let dark = colour;
-  for (let i = 0; i < 6 && contrast(dark, mix(dark, "#FFFFFF", 0.86)) < 4; i++) dark = mix(dark, INK, 0.25);
-  const d = await duotone(buf, dark, 0.5, 1 / 3);
-  return { t: "duotone", colour: dark, brand: colour, png: d.png, n: d.n, fx: 0.5, fy: 1 / 3, sourceUrl: f.url, sourcePage: f.page, license: f.license, licenseUrl: f.licenseUrl, author: f.author, adapted: true,
-    why: shareAlike(f.license) ? "adapted (duotone); shared under the same licence" : null };
+  if (!f) return `Commons has no description of ${img}`;
+  if (!freeForPeople(f.license)) return `portrait licence is "${f.license || "unknown"}", not PD, CC0, CC BY or CC BY-SA`;
+  const s = await photoSquare(await bytes(f.thumb), 0.5, 1 / 3);
+  return { t: "photo", colour: s.colour, png: s.png, n: s.n, fx: 0.5, fy: 1 / 3, sourceUrl: f.url, sourcePage: f.page, license: f.license, licenseUrl: f.licenseUrl, author: f.author,
+    why: null };
 }
 
-async function make(e: Entity, facts: Facts, brandOf: (id: string) => string | null): Promise<Made> {
+async function make(e: Entity, facts: Facts, has: (id: string) => boolean): Promise<Made> {
   switch (e.kind) {
     case "tracker": {
       const name = trackerPhoto(e.slug), p = PHOTOS[name];
@@ -247,32 +234,15 @@ async function make(e: Entity, facts: Facts, brandOf: (id: string) => string | n
       if (e.league === "soccer") {
         const club = CLUBS.find(c => c.slug === e.club)!;
         const it = facts.enwiki.get(club.wiki);
-        for (const n of svgFirst((it?.claims.P154 ?? []).map(x => x.replace(/_/g, " ")))) {
-          const f = facts.files.get(n);
-          if (!f) continue;
-          const r = await teamArt(await bytes(f.url), club.colour);
-          return { t: r.t, colour: r.colour, brand: club.colour, png: r.png, n: r.n, sourceUrl: f.url, sourcePage: f.page, license: f.license || "See source", licenseUrl: f.licenseUrl, author: f.author };
-        }
-        return mono(club.colour, it ? "its crest isn't on Commons (Wikidata P154)" : "no Wikidata item found for its article");
+        return orgArt(it ? { logos: (it.claims.P154 ?? []).map(x => x.replace(/_/g, " ")) } : null, facts.files, e.label, null, null, null);
       }
-      const colour = TEAM_COLOURS[e.league][e.abbr] ?? INK;
-      const path = `/logos/teams/${e.league}/${e.abbr}.svg`;
-      const r = await teamArt(await repoFile(path), colour);
       const pkg = { nba: "nba-team-logos", nfl: "nfl-team-logos", mlb: "react-mlb-logos", nhl: "nhl-team-logos" }[e.league];
-      return { t: r.t, colour: r.colour, brand: colour, png: r.png, n: r.n, sourceUrl: path, sourcePage: `https://www.npmjs.com/package/${pkg}`, license: `ISC (${pkg})`, author: pkg,
-        why: r.t === "team-white" ? `logo vanishes into ${colour} (${Math.round(r.vanish * 100)}% of it or its outline): on white` : null };
+      return orgArt(null, facts.files, e.label, "", `/logos/teams/${e.league}/${e.abbr}.svg`, pkg);
     }
     case "league": {
       const l = LEAGUES[e.league]!, it = facts.enwiki.get(l.wiki);
-      const colour = it?.claims.P465?.[0] ? `#${it.claims.P465[0]}` : null;
       const file = (manifest.leagues as Record<string, string>)[e.league];
-      const m = await orgArt(it ? { logos: (it.claims.P154 ?? []).map(x => x.replace(/_/g, " ")), colour } : null, facts.files, l.label, l.icon ?? null, null);
-      if (m.t !== "monogram" || !file) return m;
-      // The league file the site already ships (public/logos/leagues): full size when it's a vector.
-      const buf = await repoFile(`/logos/leagues/${file}`);
-      const lm = await logoMark(buf, colour, () => logoColour(buf));
-      return { ...lm, sourceUrl: `/logos/leagues/${file}`, sourcePage: "https://www.npmjs.com/package/sports-assets", license: "MIT (sports-assets)", author: "sports-assets",
-        why: `Wikidata and Simple Icons have no mark: the site's own league file${lm.n && lm.n < 2048 ? ` (${lm.n}px)` : ""}` };
+      return orgArt(it ? { logos: (it.claims.P154 ?? []).map(x => x.replace(/_/g, " ")) } : null, facts.files, l.label, l.icon ?? "", file ? `/logos/leagues/${file}` : null, "sports-assets");
     }
     case "country": {
       const f = await flagArt(await flagSvg(e.iso2));
@@ -280,21 +250,23 @@ async function make(e: Entity, facts: Facts, brandOf: (id: string) => string | n
     }
     case "company": {
       const o = (e.cik ? facts.orgs.get(unpad(e.cik)) : undefined) ?? (e.ticker ? facts.orgs.get(`t:${e.ticker.toUpperCase()}`) : undefined) ?? null;
-      return orgArt(o, facts.files, e.label, null, e.ticker ? `/logos/stocks/${e.ticker.toUpperCase().replace(/\./g, "-")}.webp` : null);
+      return orgArt(o, facts.files, e.label, null, e.ticker ? `/logos/stocks/${e.ticker.toUpperCase().replace(/\./g, "-")}.webp` : null, "us-stock-logos");
     }
-    case "fund": return orgArt(facts.orgs.get(unpad(e.cik)) ?? null, facts.files, e.label, null, null);
+    case "fund": return orgArt(facts.orgs.get(unpad(e.cik)) ?? null, facts.files, e.label, null, null, null);
     case "person": {
       if ("wiki" in e) {
         const it = facts.enwiki.get(e.wiki);
-        return personArt(it?.claims.P18?.[0]?.replace(/_/g, " ") ?? null, facts.files, INK, it ? "Wikidata has no portrait (P18)" : "no Wikidata item found for their article");
+        const r = await portrait(it?.claims.P18?.[0]?.replace(/_/g, " ") ?? null, facts.files);
+        return typeof r === "string" ? initials(it ? r : "no Wikidata item found for their article") : r;
       }
-      const colour = (e.companyId && brandOf(e.companyId)) || INK;
       const own = facts.peopleByCik.get(unpad(e.cik));
-      if (own) return personArt(own.img, facts.files, colour, "their Wikidata item has no portrait (P18)");
       const org = e.issuerCik ? facts.orgs.get(unpad(e.issuerCik)) : undefined;
-      const exec = org?.execs.find(x => x.cik === unpad(e.cik)) ?? org?.execs.find(x => surname(x.label) === surname(e.label));
-      if (exec) return personArt(exec.img, facts.files, colour, `${exec.label} on Wikidata has no portrait (P18)`);
-      return mono(colour, org ? "not among their company's officers on Wikidata" : "no Wikidata item for them or their company");
+      const exec = own ? null : org?.execs.find(x => x.cik === unpad(e.cik)) ?? org?.execs.find(x => surname(x.label) === surname(e.label));
+      const why = own || exec ? await portrait((own ?? exec)!.img, facts.files) : org ? "not among their company's officers on Wikidata" : "no Wikidata item for them or their company";
+      if (typeof why !== "string") return why;
+      // No free portrait: their company's logo, which is a picture of what they're trading.
+      if (e.companyId && has(e.companyId)) return { t: "logo", colour: "#FFFFFF", reuse: e.companyId, why: `${why}: shows their company's logo` };
+      return initials(why);
     }
   }
 }
@@ -307,9 +279,9 @@ export async function artOnce(db: Db, opts: { limit?: number; only?: ArtKind[]; 
   const b = bucket();
   if (!b) throw new Error("art bucket not configured (ART_BUCKET_*)");
   const all = (await entities(db)).filter(e => !opts.only || opts.only.includes(e.kind));
-  const have = new Map((await db.select({ id: entityArt.entityId, t: entityArt.treatment, v: entityArt.version, at: entityArt.updatedAt, colour: entityArt.colour, brand: entityArt.brandColour }).from(entityArt)).map(r => [r.id, r]));
-  const due = (e: Entity) => { const h = have.get(e.id); return opts.force || !h || h.v < ART_VERSION || (h.t === "monogram" && Date.now() - h.at.getTime() > RETRY_MONOGRAMS_MS); };
-  // Companies before people: an executive's duotone takes their company's colour.
+  const have = new Map((await db.select({ id: entityArt.entityId, t: entityArt.treatment, v: entityArt.version, at: entityArt.updatedAt, key: entityArt.key, sizes: entityArt.sizes, w: entityArt.w }).from(entityArt)).map(r => [r.id, r]));
+  const due = (e: Entity) => { const h = have.get(e.id); return opts.force || !h || h.v < ART_VERSION || ((h.t === "initials" || h.key === null) && Date.now() - h.at.getTime() > RETRY_INITIALS_MS); };
+  // Companies before people: an insider without a portrait shows their company's logo.
   const order: ArtKind[] = ["tracker", "league", "team", "country", "company", "fund", "person"];
   const todo = all.filter(due).sort((a, c) => order.indexOf(a.kind) - order.indexOf(c.kind)).slice(0, opts.limit ?? Infinity);
   log(`art: ${all.length} entities, ${todo.length} to make`);
@@ -317,13 +289,15 @@ export async function artOnce(db: Db, opts: { limit?: number; only?: ArtKind[]; 
   if (!todo.length) return res;
   const facts = await gather(todo, log);
   log(`art: facts gathered (${facts.orgs.size} companies/funds on Wikidata, ${facts.peopleByCik.size} insiders by CIK, ${facts.enwiki.size} articles, ${facts.files.size} Commons files; ${wikiRequests} Wikimedia requests)`);
-  const brands = new Map<string, string>();
-  for (const [id, h] of have) brands.set(id, h.brand ?? h.colour);
+  const files = new Map<string, { key: string | null; sizes: number[] | null; w: number }>();
+  for (const [id, h] of have) files.set(id, { key: h.key, sizes: h.sizes, w: h.w });
   for (const e of todo) {
     try {
-      const m = await make(e, facts, id => brands.get(id) ?? null);
+      const m = await make(e, facts, id => !!files.get(id)?.key);
       let key: string | null = null, sizes: number[] | null = null;
-      if (m.png && m.n) {
+      const reused = m.reuse ? files.get(m.reuse) : undefined;
+      if (reused) { key = reused.key; sizes = reused.sizes; m.n = reused.w; }
+      else if (m.png && m.n) {
         const hash = createHash("sha256").update(m.png).digest("hex").slice(0, 10);
         key = `art/${keyOf(e.id)}/${hash}`;
         const files = await encodeLadder(m.png, m.n);
@@ -331,12 +305,12 @@ export async function artOnce(db: Db, opts: { limit?: number; only?: ArtKind[]; 
         sizes = [...new Set(files.map(f => f.w))].sort((x, y) => y - x);
       }
       const row = {
-        entityId: e.id, kind: e.kind, label: e.label, treatment: m.t, colour: m.colour, brandColour: m.brand ?? null, mono: initialsOf(e.label), key, sizes,
+        entityId: e.id, kind: e.kind, label: e.label, treatment: m.t, colour: m.colour, mono: initialsOf(e.label), key, sizes,
         w: m.n ?? 0, h: m.n ?? 0, fx: m.fx ?? 0.5, fy: m.fy ?? 0.5, sourceUrl: m.sourceUrl ?? null, sourcePage: m.sourcePage ?? null, license: m.license ?? null,
-        licenseUrl: m.licenseUrl ?? null, author: m.author ?? null, adapted: m.adapted ?? false, why: m.why ?? null, version: ART_VERSION, updatedAt: new Date(),
+        licenseUrl: m.licenseUrl ?? null, author: m.author ?? null, why: m.why ?? null, version: ART_VERSION, updatedAt: new Date(),
       };
       await db.insert(entityArt).values(row).onConflictDoUpdate({ target: entityArt.entityId, set: { ...row, createdAt: undefined } });
-      brands.set(e.id, m.brand ?? m.colour);
+      files.set(e.id, { key, sizes, w: m.n ?? 0 });
       res.made++; res.byTreatment[m.t] = (res.byTreatment[m.t] ?? 0) + 1;
       log(`art: ${e.id} → ${m.t}${m.n ? ` ${m.n}px` : ""} ${m.colour}${m.why ? ` (${m.why})` : ""}`);
     } catch (err) {

@@ -1,5 +1,5 @@
 {
-  "id": "2bcb92de-5347-4529-84fb-04d15cd2ee9d",
+  "id": "01099587-e468-4073-a767-8b6c020729a7",
   "prevId": "8c366e41-ac90-4622-b7eb-16b600e98d15",
   "version": "7",
   "dialect": "postgresql",
@@ -402,12 +402,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "brand_colour": {
-          "name": "brand_colour",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "mono": {
           "name": "mono",
           "type": "text",
@@ -483,13 +477,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "adapted": {
-          "name": "adapted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "why": {
           "name": "why",
