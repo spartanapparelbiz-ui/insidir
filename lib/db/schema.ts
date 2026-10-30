@@ -57,13 +57,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
 export const users = terminal.table("users", {
   /** Our own id ("usr_…"; accounts from before our own login kept their Whop user id). */
   id: text("id").primaryKey(),
-  /** Lower-case. One account per email: with a password, it is how they log in (lib/auth/password.ts). */
+  /** Lower-case; from their Whop account. One account per email. */
   email: text("email"),
-  /** scrypt hash of their password ("scrypt$N$r$p$salt$hash", lib/auth/password.ts); null for Google-only accounts. */
-  passwordHash: text("password_hash"),
-  /** Their Google account ("sub"), for "Continue with Google" (lib/auth/google.ts). */
-  googleId: text("google_id"),
-  /** The Whop user behind their membership (user_…), set by the billing webhook. */
+  /** Their Whop user (user_…): how they sign in (lib/auth/whop-login.ts) and whose access Whop checks. */
   whopUserId: text("whop_user_id"),
   name: text("name"),
   username: text("username"),
@@ -85,9 +81,9 @@ export const users = terminal.table("users", {
   /** First-touch UTM tags carried from the visit that led to signup. */
   utm: jsonb("utm").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, t => [uniqueIndex("users_email_idx").on(t.email), uniqueIndex("users_whop_user_idx").on(t.whopUserId), uniqueIndex("users_google_idx").on(t.googleId)]);
+}, t => [uniqueIndex("users_email_idx").on(t.email), uniqueIndex("users_whop_user_idx").on(t.whopUserId)]);
 
-/** Every log-in try (lib/auth/password.ts, lib/auth/google.ts), for the rate limits per email and per IP. */
+/** Every sign-in (lib/auth/whop-login.ts), for the rate limit per IP. */
 export const loginAttempts = terminal.table("login_attempts", {
   id: serial("id").primaryKey(),
   email: text("email").notNull(),
@@ -95,21 +91,6 @@ export const loginAttempts = terminal.table("login_attempts", {
   ok: boolean("ok").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("login_attempts_email_idx").on(t.email, t.createdAt), index("login_attempts_ip_idx").on(t.ip, t.createdAt)]);
-
-/** A checkout in progress: the browser holds the token in a cookie, Whop carries it in the payment's metadata, and the
- *  billing webhook fills in the account it paid for, so the buyer is logged in the moment the payment lands. */
-export const checkoutClaims = terminal.table("checkout_claims", {
-  /** SHA-256 of the token. */
-  tokenHash: text("token_hash").primaryKey(),
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  /** What /start knew before paying (the email and password hash typed, or the Google account): the account is made
-   *  with these once the payment lands. */
-  email: text("email"),
-  passwordHash: text("password_hash"),
-  googleId: text("google_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  usedAt: timestamp("used_at", { withTimezone: true }),
-});
 
 /** Our own sessions: a random token in an httpOnly cookie, 30 days. */
 export const sessions = terminal.table("sessions", {
@@ -396,6 +377,13 @@ export const moves = terminal.table("moves", {
    *  was tagged with; null until tagged. Trackers that depend on live data (records, prices, start times) aren't stored. */
   trackers: text("trackers").array(),
   trackersV: integer("trackers_v"),
+  /** When Insidir first showed it (members see it live): when it was stored. Followable returns start here (lib/follow). */
+  seenAt: timestamp("seen_at", { withTimezone: true }).defaultNow(),
+  /** The market's price of its side at seenAt, 0..1, before slippage: what a member could have followed at. */
+  seenPrice: doublePrecision("seen_price"),
+  /** Where seenPrice came from: "history" (the venue's price history at seenAt), or "none" (the venue had no price then:
+   *  left out of followable records). */
+  seenSrc: text("seen_src"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   index("moves_at_idx").on(t.at),
@@ -467,6 +455,9 @@ export const traderOpen = terminal.table("trader_open", {
   curPrice: doublePrecision("cur_price"),
   endDate: timestamp("end_date", { withTimezone: true }),
   readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+  /** When we first saw this position open (kept across reads): Positioning counts positions opened in the last 14
+   *  days only (lib/smart/splits.ts). */
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.wallet, t.marketId, t.outcomeIndex] }), index("trader_open_market_idx").on(t.marketId)]);
 
 /** When a wallet's open positions were last read (also for wallets holding none). */
@@ -627,8 +618,23 @@ export const marketInfo = terminal.table("market_info", {
   closed: boolean("closed").notNull().default(false),
   /** Polymarket: the YES token (CLOB price history); Kalshi: the series ticker (candlesticks). */
   historyKey: text("history_key"),
+  /** When the market is due to settle (the venue's close time), for "time left" on open positions. */
+  endAt: timestamp("end_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.source, t.marketId] })]);
+
+/** When a move joined a tracker tagged after the fact (Momentum, Early, Late: lib/trackers.ts observedTags), and the
+ *  side's price then. Those trackers' followable records start from this price, never from the move's entry. */
+export const moveTags = terminal.table("move_tags", {
+  moveId: text("move_id").notNull(),
+  tracker: text("tracker").notNull(),
+  taggedAt: timestamp("tagged_at", { withTimezone: true }).notNull(),
+  /** 0..1, the side's price at taggedAt (before slippage); null until the backfill has found it. */
+  taggedPrice: doublePrecision("tagged_price"),
+  /** "live" (the market read that added the tag), "history" (found in the venue's price history), "seen" (Early and
+   *  Late, knowable from the start time the moment Insidir showed it). */
+  src: text("src").notNull(),
+}, t => [primaryKey({ columns: [t.moveId, t.tracker] })]);
 
 /** EDGAR history reads for an insider ("owner") or a company ("issuer"): which Form 4s are left to read, and from
  *  which date the history is complete. */
@@ -681,3 +687,37 @@ export const whopConfig = terminal.table("whop_config", {
   value: text("value"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** One artwork per entity (lib/art): a tracker, person, company, fund, team, league or country, made once by the art
+ *  job (jobs/art.ts) and stored in the art bucket under `key` (<key>/<width>.<avif|webp>). Initials have no files;
+ *  an insider shown with their company's logo has its key. */
+export const entityArt = terminal.table("entity_art", {
+  /** lib/art/ids.ts: "company:NVDA", "person:1214156", "team:nba:LAL"… */
+  entityId: text("entity_id").primaryKey(),
+  kind: text("kind").notNull(),
+  label: text("label").notNull(),
+  /** lib/art/ref.ts Treatment. */
+  treatment: text("treatment").notNull(),
+  /** The placeholder while it loads: a photo's dominant colour, white behind a logo or flag, "#RRGGBB". */
+  colour: text("colour").notNull(),
+  mono: text("mono").notNull(),
+  key: text("key"),
+  /** Widths stored, largest first. */
+  sizes: jsonb("sizes").$type<number[]>(),
+  w: integer("w").notNull().default(0),
+  h: integer("h").notNull().default(0),
+  fx: doublePrecision("fx").notNull().default(0.5),
+  fy: doublePrecision("fy").notNull().default(0.5),
+  /** Where the picture came from: the file itself, its page, its licence and author, for /credits. */
+  sourceUrl: text("source_url"),
+  sourcePage: text("source_page"),
+  license: text("license"),
+  licenseUrl: text("license_url"),
+  author: text("author"),
+  /** Why it's initials or a fallback, in words, for the QA list. */
+  why: text("why"),
+  /** The art job's version when it was made: a newer job remakes it. */
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("entity_art_kind_idx").on(t.kind)]);

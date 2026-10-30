@@ -28,7 +28,8 @@ for (const who of ["visitor", "member"]) {
         const bgOf = el => {
           for (let e = el; e; e = e.parentElement) {
             const c = getComputedStyle(e);
-            if (c.backgroundImage !== "none") return null; // over a picture or gradient: not judged here
+            // Over a picture or gradient: not judged here. A photo (components/Photo) is an <img> beside the words, not a background.
+            if (c.backgroundImage !== "none" || e.querySelector(":scope > [data-photo]")) return null;
             const v = rgb(c.backgroundColor);
             if (v.length === 3 || (v[3] ?? 0) > 0.9) return v.slice(0, 3);
           }

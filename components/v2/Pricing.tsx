@@ -1,21 +1,28 @@
-/* Pricing: one plan, Insidir: $39/month first, the $1 first week as small print, cancel anytime. Its card lists everything that's live, then what's coming
- * marked "(coming soon)", so nobody pays for something that isn't there yet (lib/features.ts). The button opens the
- * checkout embedded on /start; billing itself is Whop's. */
+/* Pricing: one plan, Insidir: "$39/month · all N trackers" (N counted, never typed), the $1 first week as small print,
+ * cancel anytime. It leads with what a member gets that a visitor doesn't: every open position from winning trackers,
+ * live; followable records for every tracker and trader; the leaderboard with what each one holds now; Following.
+ * Then what's coming, marked "(coming soon)", so nobody pays for something that isn't there yet (lib/features.ts).
+ * No invented numbers, no promises: performance is past results. The button opens the checkout on /start; sign-in and
+ * billing are Whop's. */
 import Link from "next/link";
 import { isReady, type Feature } from "@/lib/features";
 import { PLANS, PRICE, TRIAL } from "@/lib/plans";
-import { GET_CTA } from "@/lib/copy";
+import { GET_CTA, PAST } from "@/lib/copy";
+import { visibleTrackers } from "@/lib/trackers";
+
+/** Every tracker a member gets today (crypto counts once it's live). */
+export const trackerCount = (): number => visibleTrackers(isReady).length;
 import type { Plan } from "@/lib/types";
 
 interface Bullet { text: string; needs?: Feature }
 /** Everything Insidir gives a member; the unready ones show as "(coming soon)". */
 export const FEATURES: Bullet[] = [
+  { text: "Every open position from winning trackers, live (visitors see 3, 30 minutes late)", needs: "feed" },
+  { text: "Followable records for every tracker and trader: what $100 on each position would have made", needs: "records" },
+  { text: "The leaderboard, with what each tracker and trader holds now", needs: "records" },
+  { text: "Following: the trackers and traders you pick, in one feed", needs: "follows" },
   { text: "Every large position, live: sports, prediction markets and insider stock trades", needs: "feed" },
-  { text: "Insider stock trades from SEC filings", needs: "stocks" },
-  { text: "Trader records: won, lost, all-time net P&L", needs: "records" },
-  { text: "Top traders, this week, this month and all time", needs: "records" },
   { text: "Every result, won or lost" },
-  { text: "Follow traders and markets", needs: "follows" },
   { text: "Phone alerts when they move", needs: "alerts_push" },
   { text: "Custom alert rules: any tab, league or size", needs: "custom_rules" },
   { text: "Price gaps between Kalshi and Polymarket", needs: "price_gaps" },
@@ -30,11 +37,11 @@ const Check = () => <svg className="plan2__check" viewBox="0 0 16 16" aria-hidde
 
 /** /start's list: at most five live things, no repeats; everything not live yet goes in one quiet line under it. */
 const START_LIST: Bullet[] = [
-  { text: "Every large position, live: sports positions, prediction markets and insider stock trades", needs: "feed" },
-  { text: "Trader records: won, lost, all-time net P&L", needs: "records" },
-  { text: "Top traders this week, this month and all time", needs: "records" },
-  { text: "Every result, won or lost" },
-  { text: "Follow traders and markets", needs: "follows" },
+  { text: "Every open position from winning trackers, live", needs: "feed" },
+  { text: "Followable records for every tracker and trader", needs: "records" },
+  { text: "The leaderboard, with what each one holds now", needs: "records" },
+  { text: "Following: the trackers and traders you pick", needs: "follows" },
+  { text: "Every large position, live, including insider stock trades", needs: "feed" },
 ];
 const SOON_NAME: Record<string, string> = { alerts_push: "phone alerts", custom_rules: "custom alert rules", price_gaps: "price gaps", crypto: "crypto" };
 export const startList = (): string[] => START_LIST.filter(ready).map(b => b.text).slice(0, 5);
@@ -84,9 +91,9 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
               <PlanH className="plan2__name">{PLANS.insidir.name}</PlanH>
               {mine ? <p className="plan2__flag plan2__flag--mine">Your plan</p> : null}
             </div>
-            <p className="plan2__pitch">See every large position the moment it happens: who made it, how much, and whether they usually win.</p>
-            <p className="plan2__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month</span></p>
-            <p className="plan2__sub">Your first week is ${TRIAL.fee}. Cancel anytime.</p>
+            <p className="plan2__pitch">Every open position from the trackers that made money for anyone following them, live, with each one&apos;s record. {PAST}</p>
+            <p className="plan2__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month · all {trackerCount()} trackers</span></p>
+            <p className="plan2__sub plan2__fine">First week ${TRIAL.fee}. Cancel anytime.</p>
             {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Manage your plan</Link>
               : <Link className="btn btn--primary btn--big btn--block" href={href} data-checkout="pricing">{GET_CTA}</Link>}
           </div>
@@ -101,8 +108,8 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
 /** Three plain promises under the plan. */
 export function PlanPromises() {
   const items: Array<[string, string, string]> = [
-    ["M12 3v18M3 12h18", "Cancel in one tap", "In Account. No emails, no calls. You keep access until the month you paid for ends."],
-    ["M5 12l4 4L19 6", "Secure checkout", "Payments run right on this site. We never see your card."],
+    ["M12 3v18M3 12h18", "Cancel anytime", "On your Whop orders page (Account → Manage subscription). You keep access until the month you paid for ends."],
+    ["M5 12l4 4L19 6", "Secure sign-in and payments by Whop", "Checkout runs right on this site. We never see your card."],
     ["M12 8v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z", "Real data, checked hourly", "Public records only, and every card links its source."],
   ];
   return (

@@ -1,22 +1,18 @@
-/* Who has paid: the billing webhook (app/api/billing/webhook) and the periodic re-check turn Whop memberships into our
- * accounts and plans. Whop is the source of truth for payment; accounts are ours, one per email.
+/* Who is a member. Whop is the source of truth: its access check for WHOP_PRODUCT_INSIDIR (users.checkAccess),
+ * read at most every 5 minutes per account (lib/auth/session.ts) and at once on sign-in and on every billing webhook
+ * (membership activated, deactivated, …). FREE_ACCESS_EMAILS are members without paying.
  *
  *   applyBillingEvent  a webhook arrived: find the account (our id in the checkout's metadata, then the Whop user, then
- *                      the email), create it when a payment made a new member, re-read every membership that Whop
- *                      user has, store the best plan and the end of the paid period, and mark the checkout claim so
- *                      the buyer's browser can log in (lib/billing/claims.ts).
- *   refreshPlan        the same re-read for one account (on log-in and every 10 minutes of use).
- *   effectivePlan      what a stored account may use right now: nothing once the paid period has ended, whatever the
- *                      last webhook said. */
+ *                      the email), make one for a buyer who paid signed out, link the Whop user, re-read their access.
+ *   refreshPlan        the access check (and their memberships, for the dates the account page shows), stored.
+ *   effectivePlan      what a stored account may use right now. */
 import { randomBytes } from "node:crypto";
-import { sha256 } from "@/lib/hash";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { checkoutClaims, DEFAULT_SETTINGS, users } from "@/lib/db/schema";
+import { DEFAULT_SETTINGS, users } from "@/lib/db/schema";
 import type { Plan } from "@/lib/types";
-import { claimSignup } from "./claims";
 import { isFreeAccess } from "./free";
-import { fetchMembership, fetchMemberships, fetchPayment, grants, planFrom, planIds, type MembershipLite, type WebhookRef } from "./whop";
+import { checkAccess, fetchMembership, fetchMemberships, fetchPayment, grants, planFrom, planIds, type MembershipLite, type WebhookRef } from "./whop";
 
 export const newUserId = (): string => "usr_" + randomBytes(12).toString("base64url");
 export const normEmail = (e: string): string => e.trim().toLowerCase();
@@ -33,21 +29,29 @@ export function effectivePlan(u: Pick<UserRow, "plan" | "accessUntil" | "members
   return u.plan;
 }
 
-async function store(db: Db, userId: string, list: readonly MembershipLite[], now: number): Promise<Plan> {
-  const { plan, membership } = planFrom(list, planIds(), now);
+/** Stores what Whop says: the access check decides the plan; memberships (when they could be read) give the dates. */
+async function store(db: Db, userId: string, list: readonly MembershipLite[] | null, has: boolean | null, now: number): Promise<Plan> {
+  const { plan: fromMemberships, membership } = planFrom(list ?? [], planIds(), now);
+  const plan: Plan = has === null ? fromMemberships : has ? "insidir" : "free";
+  const end = membership?.renewalPeriodEnd ?? null;
   await db.update(users).set({
-    plan, membershipId: membership?.id ?? null, manageUrl: membership?.manageUrl ?? null, membershipStatus: membership?.status ?? null,
-    accessUntil: membership?.renewalPeriodEnd ? new Date(membership.renewalPeriodEnd) : null,
-    cancelAtPeriodEnd: membership?.cancelAtPeriodEnd ?? false, planCheckedAt: new Date(now),
+    plan, ...(list ? { membershipId: membership?.id ?? null, manageUrl: membership?.manageUrl ?? null, membershipStatus: membership?.status ?? null,
+      cancelAtPeriodEnd: membership?.cancelAtPeriodEnd ?? false } : {}),
+    // Whop says they have access: never let an old period end take it away before the next check.
+    accessUntil: has && (!end || end <= now) ? null : end !== null ? new Date(end) : null,
+    planCheckedAt: new Date(now),
   }).where(eq(users.id, userId));
   return plan;
 }
 
-/** Re-reads the account's memberships from Whop and stores the plan. On a Whop error the stored plan is kept (null). */
+/** Asks Whop now and stores the plan. On a Whop error the stored plan is kept (null). */
 export async function refreshPlan(db: Db, userId: string, now = Date.now()): Promise<Plan | null> {
   const u = (await db.select({ whop: users.whopUserId }).from(users).where(eq(users.id, userId)).limit(1))[0];
   if (!u?.whop) return null;
-  try { return await store(db, userId, await fetchMemberships(u.whop), now); } catch { return null; }
+  const product = planIds().insidirProduct;
+  const [has, list] = await Promise.all([product ? checkAccess(u.whop, product).catch(() => null) : Promise.resolve(null), fetchMemberships(u.whop).catch(() => null)]);
+  if (has === null && list === null) return null;
+  return store(db, userId, list, has, now);
 }
 
 async function findUser(db: Db, ref: { userId?: string | null; whopUserId?: string | null; email?: string | null }): Promise<UserRow | null> {
@@ -63,7 +67,7 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   let { membershipId, whopUserId, email } = ref;
   const metadata = { ...ref.metadata };
   // A payment or refund names its membership; the API has the rest (email, metadata) when the payload doesn't.
-  if (ref.paymentId && (!membershipId || !metadata.insidir_claim)) {
+  if (ref.paymentId && (!membershipId || !metadata.insidir_user_id)) {
     const p = await fetchPayment(ref.paymentId).catch(() => null);
     if (p) { membershipId ??= p.membershipId; whopUserId ??= p.whopUserId; email ??= p.email; Object.assign(metadata, { ...p.metadata, ...metadata }); }
   }
@@ -75,15 +79,12 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
     Object.assign(metadata, { ...membership.metadata, ...metadata });
   }
 
-  // What /start knew (the email and password, or the Google account): the account is made with it.
-  const signup = metadata.insidir_claim ? await claimSignup(db, metadata.insidir_claim) : null;
-  if (signup?.email) email = signup.email;
   let user = await findUser(db, { userId: metadata.insidir_user_id, whopUserId, email });
   let created = false;
-  // A new account only for someone who has just paid and whose email we know.
+  // A buyer who paid signed out: an account for their Whop user, so signing in with Whop finds it.
   if (!user && email && membership && grants(membership, now)) {
     const id = newUserId();
-    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, passwordHash: signup?.passwordHash ?? null, googleId: signup?.googleId ?? null, settings: DEFAULT_SETTINGS })
+    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, settings: DEFAULT_SETTINGS })
       .onConflictDoNothing().returning();
     user = rows[0] ?? await findUser(db, { email });
     created = Boolean(rows[0]);
@@ -94,18 +95,12 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   const patch: Partial<UserRow> = {};
   if (whopUserId && !user.whopUserId) patch.whopUserId = whopUserId;
   if (email && !user.email) patch.email = normEmail(email);
-  if (signup?.passwordHash && !user.passwordHash) patch.passwordHash = signup.passwordHash;
-  if (signup?.googleId && !user.googleId) patch.googleId = signup.googleId;
   if (Object.keys(patch).length) await db.update(users).set(patch).where(eq(users.id, user.id)).catch(() => undefined);
 
   const whop = whopUserId ?? user.whopUserId;
-  let list: MembershipLite[] | null = null;
-  if (whop) list = await fetchMemberships(whop).catch(() => null);
-  const plan = await store(db, user.id, list ?? (membership ? [membership] : []), now);
-
-  if (metadata.insidir_claim) {
-    await db.update(checkoutClaims).set({ userId: user.id }).where(and(eq(checkoutClaims.tokenHash, sha256(metadata.insidir_claim)), isNull(checkoutClaims.usedAt)));
-  }
+  const product = planIds().insidirProduct;
+  const [has, list] = whop ? await Promise.all([product ? checkAccess(whop, product).catch(() => null) : Promise.resolve(null), fetchMemberships(whop).catch(() => null)]) : [null, null];
+  const plan = await store(db, user.id, list ?? (membership ? [membership] : []), has, now);
   void type;
   return { userId: user.id, plan, created };
 }

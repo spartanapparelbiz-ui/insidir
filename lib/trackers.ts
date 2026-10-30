@@ -10,6 +10,7 @@
  *   live      decided by data that keeps changing (a wallet's record, other insiders' filings): SQL at read time,
  *             with the same rule pure for alerts and tests (test/trackers.test.ts checks the two agree).
  * Pure, plus SQL fragments. */
+import { MIN_SETTLED } from "@/lib/follow/math";
 import { sql, type SQL } from "drizzle-orm";
 import type { PhotoN } from "@/components/Photo";
 import type { Feature } from "@/lib/features";
@@ -17,8 +18,8 @@ import { signedShort } from "@/lib/moves/copy";
 import { leagueLabel } from "@/lib/moves/leagues";
 import type { Move } from "@/lib/moves/types";
 
-/** Below this many settled (won + lost) moves a tracker shows "New", not a record. */
-export const TRACKER_MIN_SETTLED = 20;
+/** Below this many settled positions a tracker shows "Building record · N of 30", not a return (lib/follow MIN_SETTLED). */
+export const TRACKER_MIN_SETTLED = MIN_SETTLED;
 /** Bump when a fixed rule changes: the worker re-tags every move (lib/trackers-tag.ts). */
 export const TRACKER_RULES_V = 2;
 
@@ -184,6 +185,8 @@ export function trackerWhere(t: Tracker): SQL {
 /** The fixed trackers a move meets (what the worker stores). */
 export const fixedTags = (m: TrackerMove): string[] => TRACKERS.filter(isFixed).filter(t => t.rule.fixed(m)).map(t => t.slug);
 const OBSERVED = new Set(TRACKERS.filter(isObserved).map(t => t.slug));
+/** Trackers whose positions join after the fact (Momentum, Early, Late): followed from the moment they joined. */
+export const OBSERVED_TRACKERS: ReadonlySet<string> = OBSERVED;
 /** A move's tags after re-tagging: its fixed tags now, plus any observed ones it already had. */
 export const retag = (m: TrackerMove): string[] => [...fixedTags(m), ...(m.trackers ?? []).filter(s => OBSERVED.has(s))].sort();
 
@@ -218,22 +221,26 @@ export const PERIODS = [
 ] as const;
 export type PeriodKey = (typeof PERIODS)[number]["key"] | "all";
 
-/** A tracker's record over settled moves: won and lost, the average price paid (weighted by amount, in %), and what
- *  those bets really made (net, from the wallets' own trades). */
+/** A tracker's record over settled positions: won and lost, the average price (weighted by amount, in %), what it
+ *  made (net) and the money in it (staked). TrackerStats.records is the followable record ($100 on each position at the
+ *  price Insidir showed it, plus slippage; lib/follow); TrackerStats.own is the traders' own return from their entries. */
 export interface TrackerRecord { won: number; lost: number; oddsPct: number | null; net: number; /** Money in those bets. */ staked?: number }
 
 export const settledOf = (r: TrackerRecord | null | undefined) => (r ? r.won + r.lost : 0);
 export const hasTrackerRecord = (r: TrackerRecord | null | undefined): r is TrackerRecord => settledOf(r) >= TRACKER_MIN_SETTLED;
 export const winPct = (r: TrackerRecord) => Math.round((r.won / Math.max(1, r.won + r.lost)) * 100);
 
-/** "Won 63%", or "New" under 20 settled moves. */
-export const recordPill = (r: TrackerRecord | null | undefined): { text: string; tone: "won" | "lost" | "new" } =>
-  hasTrackerRecord(r) ? { text: `Won ${winPct(r)}%`, tone: winPct(r) >= 50 ? "won" : "lost" } : { text: "New", tone: "new" };
+/** Under 30 settled: "Building record · 12 of 30", never "New". */
+export const buildingLine = (r: TrackerRecord | null | undefined): string => `Building record · ${settledOf(r)} of ${TRACKER_MIN_SETTLED}`;
 
-/** The record as a result, plain text on the right: the net in green or red, the win rate in grey under it ("New" under
- *  20 settled moves, with no amount). */
+/** "Won 63%", or "Building record · 12 of 30" under 30 settled positions. */
+export const recordPill = (r: TrackerRecord | null | undefined): { text: string; tone: "won" | "lost" | "new" } =>
+  hasTrackerRecord(r) ? { text: `Won ${winPct(r)}%`, tone: winPct(r) >= 50 ? "won" : "lost" } : { text: buildingLine(r), tone: "new" };
+
+/** The record as a result, plain text on the right: the net in green or red, the win rate in grey under it ("Building
+ *  record · N of 30" under 30 settled positions, with no amount). */
 export function recordResult(r: TrackerRecord | null | undefined): { amount: string | null; tone: "won" | "lost" | "none"; status: string } {
-  if (!hasTrackerRecord(r)) return { amount: null, tone: "none", status: "New" };
+  if (!hasTrackerRecord(r)) return { amount: null, tone: "none", status: buildingLine(r) };
   return { amount: signedShort(r.net), tone: r.net > 0 ? "won" : r.net < 0 ? "lost" : "none", status: `Won ${winPct(r)}%` };
 }
 
@@ -253,7 +260,7 @@ export function returnTone(r: TrackerRecord | null | undefined): "won" | "lost" 
 /** What a record returned on the money in it (net / staked), or −∞ without the money to tell. */
 export const returnOf = (r: TrackerRecord): number => (r.staked && r.staked > 0 ? r.net / r.staked : Number.NEGATIVE_INFINITY);
 
-/** Ranks trackers for one window: only those with a record there (20+ settled bets), best return first, then the
+/** Ranks trackers for one window: only those with a record there (30+ settled positions), best return first, then the
  *  better win rate, then most settled. */
 export function topPerformers<T extends { slug: string; record: TrackerRecord | null }>(rows: readonly T[]): T[] {
   return rows.filter(r => hasTrackerRecord(r.record)).sort((a, b) =>

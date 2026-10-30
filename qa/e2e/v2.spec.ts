@@ -28,13 +28,19 @@ test("landing: the centred hero, one button to the trackers, the phones, the liv
   await expect(page.locator(".fan .phone--2")).toBeVisible();
   await expect(page.locator(".tfeat")).toHaveCount(4);
   await expect(page.locator(".tfeat").first()).toContainText("by Insidir");
-  for (const h of ["Featured", "Top performers", "Popular"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
+  for (const h of ["Open now from winning trackers", "Featured", "Top performers", "Popular"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
+  // Open now: the newest from winning trackers (the tennis fixture), how many more, and past results beside it.
+  await expect(page.getByTestId("open-now").locator("tbody tr").first()).toContainText("Tennis");
+  await expect(page.getByTestId("open-more")).toContainText("1 more open.");
+  await expect(page.getByText(/Past results, not a promise\./).first()).toBeVisible();
+  // The live portfolio is a winning tracker, never a losing one.
+  await expect(page.locator(".lport")).toContainText("Tennis");
   for (const t of ["1W", "1M", "3M", "6M", "1Y"]) await expect(page.getByRole("tab", { name: t })).toBeVisible();
   // No page sideways scroll at any width.
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("home hero: Explore trackers is recorded and opens /trackers, every tracker listed with its record or New; the track record link opens /results", async ({ page }) => {
+test("home hero: Explore trackers is recorded and opens /trackers, every tracker listed with its record or the record being built; the track record link opens /results", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("hero_cta_click");
   await page.goto("/");
@@ -49,8 +55,10 @@ test("home hero: Explore trackers is recorded and opens /trackers, every tracker
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
   await expect(page.locator(".ttile")).toHaveCount(32);
   for (const g of ["Styles", "Leagues", "Topics", "Stocks"]) await expect(page.getByRole("heading", { level: 2, name: g })).toBeVisible();
-  // The seed has fewer than 20 settled moves in every tracker: each says New, never a made-up record.
-  for (const r of await page.locator(".ttile .res").allInnerTexts()) expect(r).toBe("New");
+  // Every tracker but Tennis has fewer than 30 settled: "Building record · N of 30", never New, never a made-up record.
+  for (const r of await page.locator(".ttile .res").allInnerTexts()) expect(r).toMatch(/^(Building record · \d+ of 30|[\s\S]*Won \d+%)$/);
+  await expect(page.locator(".ttile", { hasText: "Tennis" }).locator(".res")).toContainText("Won 63%");
+  await expect(page.locator(".ttile .res", { hasText: /^New$/ })).toHaveCount(0);
   // Each cover: 4:3, deep colour.
   const box = (await page.locator(".ttile .tcover").first().boundingBox())!;
   expect(box.width / box.height).toBeCloseTo(4 / 3, 1);
@@ -120,8 +128,8 @@ test("sign-up pop-up: after 60% scroll or exit intent, once per visit, closes on
   await expect(popup).toContainText("Then $39/mo, cancel anytime.");
   await expect(popup.getByRole("link", { name: "Try 7 days for $1" })).toHaveAttribute("href", "/start");
   await expect(popup.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
-  await expect(popup.locator(".artpanel svg.art")).toHaveCount(1); // its picture: the product, drawn
-  await expect(popup.locator("svg").first()).toBeVisible();
+  await expect(popup.locator(".popup__photo img")).toHaveCount(1); // its picture: a photo, never a drawing
+  await expect(popup.locator("svg.art")).toHaveCount(0);
   // Focus starts on Get Insidir and Tab never leaves the pop-up.
   await expect(popup.getByRole("link", { name: "Try 7 days for $1" })).toBeFocused();
   for (let i = 0; i < 5; i++) {

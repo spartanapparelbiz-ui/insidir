@@ -7,6 +7,8 @@
  *   Breakdowns   by league or topic, bet size, favorite vs underdog, day of the week
  *   Open now     unsettled moves, price paid against the price now
  *   Top traders  in this tracker; then its moves (filter: all, open, won, lost) and similar trackers.
+ * Following it (lib/follow): what $100 on every position would have made at the price Insidir showed it, the headline
+ * figure ("Building record · N of 30" under 30 settled); the traders' own return from their entries is secondary.
  * Every number comes from terminal.moves (lib/trackers-store.ts → lib/stats.ts); anything built on under 20
  * settled moves says "Not enough data yet". Public: visitors see moves 30 minutes late (lib/moves/feed.ts). */
 import type { Metadata } from "next";
@@ -17,7 +19,14 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { BreakdownTable, cents, gatedTile, Leaderboard, pct, perfTiles, Section, signed, Table, Tiles, tone } from "@/components/stats/Stats";
 import { BY, TrackerRow } from "@/components/trackers/Tracker";
-import { coverStats, TrackerCover } from "@/components/trackers/TrackerCover";
+import { hundredLine, roiText } from "@/lib/follow/math";
+import { PAST } from "@/lib/copy";
+import { MoveArt } from "@/components/MoveArt";
+import { Photo } from "@/components/Photo";
+import { artOfMove } from "@/lib/logos";
+import { coverFigure, coverStats } from "@/components/trackers/TrackerCover";
+import { trackerPhoto } from "@/lib/photos";
+import { trackerLogo } from "@/lib/tracker-logos";
 import { FollowButton, type FollowState } from "@/components/v2/FollowButton";
 import { MoveCard } from "@/components/v2/MoveCard";
 import { getViewer } from "@/lib/auth/viewer";
@@ -35,7 +44,7 @@ import {
   activity, bestDay, biggestLoss, biggestWin, breakdown, CHART_WINDOWS, dayOf, leaders, NOT_ENOUGH, perf, pnlSeries, priceMove, sideOf, SIDES, sizeOf, SIZES,
   streak, topShare, WEEKDAYS,
 } from "@/lib/stats";
-import { trackerBySlug, TRACKERS } from "@/lib/trackers";
+import { buildingLine, hasTrackerRecord, OBSERVED_TRACKERS, trackerBySlug, TRACKER_MIN_SETTLED, TRACKERS } from "@/lib/trackers";
 import { trackerMoves, trackerPage, trackerStats, type TrackerPageData, type TrackerStats } from "@/lib/trackers-store";
 
 export const dynamic = "force-dynamic";
@@ -93,20 +102,32 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
   const similar = TRACKERS.filter(o => o.group === t.group && o.slug !== t.slug && (!o.needs || isReady(o.needs))).slice(0, 4);
   const streakText = st ? `${st.n} ${st.kind === "won" ? (st.n === 1 ? "win" : "wins") : (st.n === 1 ? "loss" : "losses")}` : "—";
 
+  // The league's own mark, small in white beside the name (league trackers only).
+  const leagueMark = t.group === "Leagues" ? trackerLogo(t.slug) : null;
+  const fig = coverFigure(t, coverStats(stats));
+  const fr = stats?.records.all ?? null;
+  // A boolean, not a type guard: the "building" branch still reads the tally so far.
+  const frOk: boolean = hasTrackerRecord(fr);
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/trackers" trialHref={trial} />
       <main className="wrap app2 tracker">
         <header className="thead">
-          <TrackerCover t={t} s={coverStats(stats)} className="thead__cover" />
-          <div className="thead__copy">
-            <p className="thead__by">{BY} · {t.group}</p>
-            <h1 className="thead__h">{t.name}</h1>
-            <p className="thead__line">{t.line}</p>
-            <div className="thead__act">
-              <FollowButton kind="tracker" target={t.slug} state={follow} trialHref={trial} />
-              {stats ? <span className="thead__meta">{stats.followers.toLocaleString("en-US")} {stats.followers === 1 ? "follower" : "followers"}</span> : null}
+          <div className="thead__art">
+            <Photo name={trackerPhoto(t.slug)} ratio="21:9" priority sizes="(min-width: 1200px) 1168px, 100vw" className="thead__photo" />
+            <div className="thead__on">
+              <p className="thead__by">{BY} · {t.group}</p>
+              <div className="thead__name">
+                <h1 className="thead__h">{t.name}</h1>
+                {leagueMark ? <img className="thead__logo" src={leagueMark} alt="" width={128} height={128} /> : null}
+              </div>
+              <p className="thead__line">{t.line}</p>
             </div>
+          </div>
+          <div className="thead__act">
+            <FollowButton kind="tracker" target={t.slug} state={follow} trialHref={trial} />
+            {stats ? <span className="thead__meta">{stats.followers.toLocaleString("en-US")} {stats.followers === 1 ? "follower" : "followers"}</span> : null}
+            <span className="thead__roi"><b>{fig.figure}</b>{fig.label ?? (t.kind === "filings" ? "30-day volume" : null)}{t.kind === "bets" ? <span className="past">{PAST}</span> : null}</span>
           </div>
         </header>
 
@@ -115,7 +136,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
             {d?.open.length ? (
               <Table label="Holding now" head={["Position", "Size", "Holder", "Entry", "Now", "Change"]} numeric={[1, 3, 4, 5]}
                 rows={d.open.map(({ m, now: px }) => [
-                  <Link key="m" className="dtable__link" href={`/market/${encodeURIComponent(m.marketId)}`}>{headlineOf(m)}<span className="dtable__sub">{m.marketTitle}</span></Link>,
+                  <Link key="m" className="dtable__link dtable__link--art" href={`/market/${encodeURIComponent(m.marketId)}`}><MoveArt art={artOfMove(m)} /><span>{headlineOf(m)}<span className="dtable__sub">{m.marketTitle}</span></span></Link>,
                   dollars(m.amount), who(m, null), cents(m.avgPrice), cents(px),
                   px === null ? "—" : <span className={tone(px - m.avgPrice)}>{`${px - m.avgPrice >= 0 ? "+" : "−"}${Math.abs(Math.round((px - m.avgPrice) * 100))} pts`}</span>,
                 ])} />
@@ -124,13 +145,30 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
         ) : null}
 
         {t.kind === "bets" ? (
-          <Section id="perf-h" title="Performance" note={`From ${p.settled.toLocaleString("en-US")} settled Polymarket positions, each checked against the wallet's own trades. Past results, not a promise.`}>
+          <Section id="follow-h" title="Following it" note={`What $100 on every position would have made, bought at the price Insidir showed it${OBSERVED_TRACKERS.has(t.slug) ? " in this tracker (the moment it was added here, not the trader's entry)" : ""}, plus one point of slippage, held until it settled. ${PAST}`}>
+            {fr && frOk ? (
+              <div className="follow" data-testid="followable">
+                <p className="follow__roi"><b className={tone(fr.net)}>{roiText(fr.net, fr.staked ?? 0)}</b> <span>Followable ROI</span></p>
+                <p className="follow__line">{hundredLine({ staked: fr.staked ?? 0, net: fr.net })}</p>
+                <p className="follow__tally">{fr.won.toLocaleString("en-US")} won · {fr.lost.toLocaleString("en-US")} lost · {(fr.won + fr.lost).toLocaleString("en-US")} settled</p>
+              </div>
+            ) : (
+              <div className="follow follow--building" data-testid="followable">
+                <p className="follow__roi"><b>{buildingLine(fr)}</b></p>
+                <p className="follow__tally">So far: {(fr?.won ?? 0).toLocaleString("en-US")} won · {(fr?.lost ?? 0).toLocaleString("en-US")} lost{fr && fr.staked ? ` · $100 on each: ${fr.net >= 0 ? "+" : "−"}$${Math.round(Math.abs(fr.net)).toLocaleString("en-US")}` : ""}. The return shows at {TRACKER_MIN_SETTLED} settled.</p>
+              </div>
+            )}
+          </Section>
+        ) : null}
+
+        {t.kind === "bets" ? (
+          <Section id="perf-h" title="The traders' own return" note={`From ${p.settled.toLocaleString("en-US")} settled Polymarket positions at the traders' own entry prices, each checked against the wallet's own trades: what they made, not what following them would have. ${PAST}`}>
             {ok ? <LineChart points={series} windows={windows} format="money" label="Net P&L on settled positions" empty="No settled positions in this window." />
               : <div className="lchart__empty">{NOT_ENOUGH}: the chart starts at 20 settled positions ({p.settled} so far).</div>}
             <div className="dsub"><Tiles tiles={perfTiles(p)} cols={3} label="Record" /></div>
             <p className="hypo">{p.hundred !== null
-              ? <><b>$100 on every position: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>Hypothetical: $100 at each position's entry, on all {p.settled.toLocaleString("en-US")} settled positions. Past results.</span></>
-              : <><b>$100 on every position:</b> <span>{NOT_ENOUGH}.</span></>}</p>
+              ? <><b>$100 at each trader&apos;s entry: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>On all {p.settled.toLocaleString("en-US")} settled positions, at the price they paid (not one a follower could get). {PAST}</span></>
+              : <><b>$100 at each trader&apos;s entry:</b> <span>{NOT_ENOUGH}.</span></>}</p>
           </Section>
         ) : null}
 

@@ -1,19 +1,18 @@
 /* Account (/settings): Alerts (a summary; the switches live on /alerts and /following), Location, Billing, Account. Every
  * change saves itself with a "Saved" confirmation; no Save button. Signed-in only. No bankroll.
- * Billing is read from Whop on each visit: the plan, the next charge date and amount, Manage billing (Whop's own
- * page) and one-click cancel (at the end of the period you paid for). */
+ * Billing is read from Whop on each visit: the plan, the next charge date and amount, Manage subscription (Whop's own
+ * orders page, where they change their card or cancel). */
 import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CancelButton } from "@/components/account/AccountForms";
 import { ComingSoon } from "@/components/v2/ComingSoon";
 import { LocationPill } from "@/components/v2/LocationPill";
 import { isReady } from "@/lib/features";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
-import { fetchMemberships, type MembershipLite } from "@/lib/billing/whop";
+import { fetchMemberships, MANAGE_URL, type MembershipLite } from "@/lib/billing/whop";
 import { getDb, hasDatabase } from "@/lib/db";
 import { pushSubscriptions } from "@/lib/db/schema";
 import { isPaid, PLANS } from "@/lib/plans";
@@ -49,9 +48,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const m = mem === "error" ? null : mem;
   const s = user.settings;
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
-  // Notices from the no-JS form fallbacks (cancel, saved).
-  const notice = q.cancel === "done" ? "Subscription cancelled. You keep access until the end of this billing period."
-    : q.cancel === "failed" ? "Couldn't reach our payment provider to cancel. Try again in a minute, or use Manage billing." : q.saved ? "Saved." : null;
+  // Notices from the no-JS form fallbacks (saved).
+  const notice = q.saved ? "Saved." : null;
 
   return (
     <>
@@ -96,18 +94,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {paid ? (
                 <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? "Your $1 week ends" : "Next charge"}</dt>
                   <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.status === "trialing" ? `then ${m.renewalPrice} unless you cancel` : m.renewalPrice}</span> : null}</>
-                    : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it now. Manage billing shows it.</span> : <span className="akv__sub">Shown in Manage billing</span>}</dd></div>
+                    : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it now. Manage subscription shows it.</span> : <span className="akv__sub">Shown in Manage subscription</span>}</dd></div>
               ) : null}
             </dl>
             {paid ? (
               <>
                 {user.cancelAtPeriodEnd ? <p className="asum" data-testid="cancels-on">Cancels on {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of this billing period"}. You keep access until then.</p> : null}
                 <div className="row-gap">
-                  {user.manageUrl ? <a className="btn btn--secondary" href={user.manageUrl} target="_blank" rel="noopener noreferrer">Manage billing</a> : null}
-                  {!user.cancelAtPeriodEnd ? <CancelButton /> : null}
+                  <a className="btn btn--secondary" href={MANAGE_URL} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Manage subscription</a>
                   {viewer.plan === "insidir" ? <a className="btn btn--ghost" href={unlockHref()} data-unlock="settings-pro">Go Pro</a> : null}
                 </div>
-                {!user.cancelAtPeriodEnd ? <p className="afield__hint">One tap, no forms. You keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}. No refund for the current month.</p> : null}
+                <p className="afield__hint">Your subscription is with Whop: change your card or cancel on your Whop orders page. If you cancel, you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
               </>
             ) : (
               <>

@@ -2,9 +2,9 @@
  * pasted links and tickers, and reading a slip (the API stood in by recorded readings of the ten test slips,
  * scripts/slips/fixtures.ts; scripts/check-slips.ts reads the same images with the real model). */
 import { existsSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BANNED_WORDS } from "@/lib/moves/copy";
-import { CheckError, readPasted, readSlip, SLIP_JSON_SCHEMA, toLeg, CHECK_MODEL } from "@/lib/check/extract";
+import { callCost, CheckError, DEFAULT_MODEL, jsonIn, readPasted, readSlip, SLIP_JSON_SCHEMA, toLeg } from "@/lib/check/extract";
 import { bestMatch, kindOf, sideOf, type Candidate } from "@/lib/check/match";
 import { asChance, chanceFrom } from "@/lib/check/odds";
 import { legVerdict, parlaySummary, stockVerdict, VERDICT_TEXT } from "@/lib/check/verdict";
@@ -102,10 +102,20 @@ describe("pasted links and tickers", () => {
 });
 
 describe("reading a slip", () => {
+  const ENV = { ...process.env };
+  beforeEach(() => { process.env.OPENROUTER_API_KEY = "sk-or-test"; delete process.env.OPENROUTER_MODEL; delete process.env.OPENROUTER_BASE_URL; });
+  afterEach(() => { process.env = { ...ENV }; });
   const spendStore = () => { const s = { spent: 0, month: async () => 0, add: async (u: number) => { s.spent += u; } }; return s; };
-  const stand = (reply: unknown, stop = "end_turn") => {
-    const calls: Array<Record<string, unknown>> = [];
-    return { calls, beta: { messages: { create: async (p: Record<string, unknown>) => { calls.push(p); return { stop_reason: stop, usage: { input_tokens: 1500, output_tokens: 400 }, content: [{ type: "text", text: JSON.stringify(reply) }] }; } } } };
+  /** A stand-in for OpenRouter's chat completions: answers with `reply` as the message, at a cost of $0.0123. */
+  const stand = (reply: unknown, o: { refusal?: boolean; text?: string; rejectSchema?: boolean } = {}) => {
+    const calls: Array<{ url: string; headers: Record<string, string>; body: Record<string, unknown> }> = [];
+    const f = (async (url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      calls.push({ url, headers: init.headers as Record<string, string>, body });
+      if (o.rejectSchema && body.response_format) return new Response(JSON.stringify({ error: { code: 400, message: "This model does not support response_format json_schema" } }), { status: 400 });
+      return new Response(JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: o.text ?? JSON.stringify(reply), refusal: o.refusal ? "I can't help with that." : null } }], usage: { prompt_tokens: 1500, completion_tokens: 400, cost: 0.0123 } }));
+    }) as unknown as typeof fetch;
+    return { calls, f };
   };
 
   it("all ten test slips exist and their readings are in the required shape", async () => {
@@ -113,30 +123,46 @@ describe("reading a slip", () => {
     expect(new Set(SLIPS.map(s => s.book)).size).toBe(10);
     for (const s of SLIPS) {
       expect(existsSync(`test/fixtures/slips/${s.file}`), s.file).toBe(true);
-      const api = stand(s.expect);
-      const got = await readSlip({ data: "AAAA", mediaType: "image/png" }, spendStore(), api as never);
+      const got = await readSlip({ data: "AAAA", mediaType: "image/png" }, spendStore(), stand(s.expect).f);
       expect(got).toEqual(s.expect);
     }
   });
 
-  it("asks the right model with the image, a fixed JSON shape and a fallback; records what it cost", async () => {
+  it("calls OpenRouter: the model (OPENROUTER_MODEL, default Sonnet 5.5), the image as a data URL, the JSON schema, our headers; records the cost it returns", async () => {
     const api = stand(SLIPS[0]!.expect), spend = spendStore();
-    await readSlip({ data: "AAAA", mediaType: "image/jpeg" }, spend, api as never);
-    const p = api.calls[0]!;
-    expect(p.model).toBe(CHECK_MODEL);
-    expect(CHECK_MODEL).toBe("claude-sonnet-5-5");
-    expect(p.fallbacks).toBe("default");
-    expect(p.betas).toEqual(["server-side-fallback-2026-07-01"]);
-    expect((p.output_config as { format: { schema: unknown } }).format.schema).toBe(SLIP_JSON_SCHEMA);
-    expect(JSON.stringify(p.messages)).toContain(`"media_type":"image/jpeg"`);
-    expect(spend.spent).toBeCloseTo((1500 * 2 + 400 * 10) / 1e6);
+    await readSlip({ data: "AAAA", mediaType: "image/jpeg" }, spend, api.f);
+    const c = api.calls[0]!;
+    expect(c.url).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(c.headers).toMatchObject({ Authorization: "Bearer sk-or-test", "HTTP-Referer": "https://insidir.com", "X-Title": "Insidir" });
+    expect(c.body.model).toBe(DEFAULT_MODEL);
+    expect(DEFAULT_MODEL).toBe("anthropic/claude-sonnet-5.5");
+    expect(c.body.response_format).toEqual({ type: "json_schema", json_schema: { name: "slip", strict: true, schema: SLIP_JSON_SCHEMA } });
+    expect(JSON.stringify(c.body.messages)).toContain(`"url":"data:image/jpeg;base64,AAAA"`);
+    expect(spend.spent).toBe(0.0123);
+    process.env.OPENROUTER_MODEL = "openai/gpt-5.5";
+    await readSlip({ data: "AAAA", mediaType: "image/png" }, spend, api.f);
+    expect(api.calls[1]!.body.model).toBe("openai/gpt-5.5");
   });
 
-  it("not a slip, a refusal, a broken reply, the monthly cap", async () => {
-    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), stand({ is_bet_slip: false, book: null, legs: [], total_stake: null }) as never)).rejects.toMatchObject({ code: "not_a_slip" });
-    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), stand({}, "refusal") as never)).rejects.toMatchObject({ code: "refused" });
-    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), stand({ legs: "x" }) as never)).rejects.toBeInstanceOf(CheckError);
+  it("a model that rejects the JSON schema: asked again for plain JSON, parsed from the text (even in a fence) and held to the same schema", async () => {
+    const api = stand(null, { rejectSchema: true, text: "Here it is:\n```json\n" + JSON.stringify(SLIPS[1]!.expect) + "\n```" });
+    expect(await readSlip({ data: "AAAA", mediaType: "image/png" }, spendStore(), api.f)).toEqual(SLIPS[1]!.expect);
+    expect(api.calls).toHaveLength(2);
+    expect(api.calls[1]!.body.response_format).toBeUndefined();
+    const broken = stand(null, { rejectSchema: true, text: '{"is_bet_slip": true, "legs": "x"}' });
+    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), broken.f)).rejects.toMatchObject({ code: "unreadable" });
+    expect(jsonIn("no json here")).toBeNull();
+  });
+
+  it("not a slip, a refusal, a broken reply, the monthly cap, no key; a cost OpenRouter didn't report is estimated high", async () => {
+    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), stand({ is_bet_slip: false, book: null, legs: [], total_stake: null }).f)).rejects.toMatchObject({ code: "not_a_slip" });
+    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), stand({}, { refusal: true }).f)).rejects.toMatchObject({ code: "refused" });
+    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), stand({ legs: "x" }).f)).rejects.toBeInstanceOf(CheckError);
     const capped = { month: async () => 1e9, add: async () => undefined };
-    await expect(readSlip({ data: "A", mediaType: "image/png" }, capped, stand(SLIPS[0]!.expect) as never)).rejects.toMatchObject({ code: "budget" });
+    await expect(readSlip({ data: "A", mediaType: "image/png" }, capped, stand(SLIPS[0]!.expect).f)).rejects.toMatchObject({ code: "budget" });
+    delete process.env.OPENROUTER_API_KEY;
+    await expect(readSlip({ data: "A", mediaType: "image/png" }, spendStore(), stand(SLIPS[0]!.expect).f)).rejects.toMatchObject({ code: "not_configured" });
+    expect(callCost({ cost: 0.004 })).toBe(0.004);
+    expect(callCost({ prompt_tokens: 1000, completion_tokens: 1000 })).toBeCloseTo(0.018);
   });
 });

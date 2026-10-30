@@ -1,15 +1,14 @@
 /* The owner's free-access list (FREE_ACCESS_EMAILS), the /start list, onboarding picks and the funnel's drop-off. The
- * account part (a confirmed email on the list gets an account; anyone else doesn't) runs against a throwaway database
+ * account part (a Whop sign-in with a listed email is a member; anyone else is signed in without Insidir) runs against a throwaway database
  * next to E2E_DATABASE_URL and is skipped without it. */
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { dropOff, FUNNEL_LABEL, FUNNEL } from "@/lib/analytics";
-import { signInWithGoogle } from "@/lib/auth/google";
+import { signInAs } from "@/lib/auth/whop-login";
 import { effectivePlan } from "@/lib/billing/access";
 import { freeAccessEmails, isFreeAccess } from "@/lib/billing/free";
-import { readPending } from "@/lib/billing/pending";
 import { comingSoonLine, startList } from "@/components/v2/Pricing";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
@@ -47,11 +46,6 @@ describe("/start", () => {
     expect(comingSoonLine()).toBe("More coming: phone alerts, custom alert rules, price gaps, crypto.");
     delete process.env.FEATURES_READY;
   });
-  it("reads the unpaid sign-up's email back only when it looks like one", () => {
-    expect(readPending(" A@b.co ")).toBe("a@b.co");
-    expect(readPending("<script>")).toBeNull();
-    expect(readPending(undefined)).toBeNull();
-  });
 });
 
 describe("onboarding picks", () => {
@@ -86,14 +80,13 @@ describe.skipIf(!URL0)("free access accounts in Postgres", () => {
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
 
-  it("a Google-verified email on the list gets an account (once) and signs in; one not on the list doesn't", async () => {
+  it("a Whop sign-in with an email on the list is a member (one account); one not on the list signs in without Insidir", async () => {
     process.env.FREE_ACCESS_EMAILS = "Owner@Insidir.com";
-    const r = await signInWithGoogle(db, { id: "g_owner", email: " owner@insidir.com", verified: true }, null);
-    expect(r.ok && r.userId).toMatch(/^usr_/);
-    expect(await signInWithGoogle(db, { id: "g_owner", email: "owner@insidir.com", verified: true }, null)).toEqual(r);
+    const r = await signInAs(db, { id: "user_owner", email: " owner@insidir.com", name: "Owner", picture: null }, null);
+    expect(r).toMatchObject({ member: true, created: true });
+    expect(r.userId).toMatch(/^usr_/);
+    expect(await signInAs(db, { id: "user_owner", email: "owner@insidir.com", name: "Owner", picture: null }, null)).toEqual({ ...r, created: false });
     expect((await pool.query("select count(*)::int as n from terminal.users where email = 'owner@insidir.com'")).rows[0].n).toBe(1);
-    expect((await signInWithGoogle(db, { id: "g_x", email: "stranger@insidir.com", verified: true }, null)).ok).toBe(false);
-    // An email Google hasn't verified: nothing.
-    expect((await signInWithGoogle(db, { id: "g_y", email: "owner@insidir.com", verified: false }, null)).ok).toBe(false);
+    expect((await signInAs(db, { id: "user_x", email: "stranger@insidir.com", name: null, picture: null }, null)).member).toBe(false);
   });
 });

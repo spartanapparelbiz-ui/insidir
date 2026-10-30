@@ -5,14 +5,16 @@
  * request from the venue (Polymarket CLOB prices-history, Kalshi candlesticks). Server only. */
 import { and, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { marketInfo, moves } from "@/lib/db/schema";
+import { marketInfo, moves, moveTags } from "@/lib/db/schema";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { isObject, list, num, rows } from "@/lib/exchanges/parse";
 import { fromRow } from "@/lib/moves/store";
 import { observedTags } from "@/lib/trackers";
 import { addTags } from "@/lib/trackers-tag";
 
-export interface MarketInfo { source: "polymarket" | "kalshi"; marketId: string; yesPrice: number | null; startAt: number | null; closed: boolean; historyKey: string | null; updatedAt: number }
+export interface MarketInfo { source: "polymarket" | "kalshi"; marketId: string; yesPrice: number | null; startAt: number | null; closed: boolean; historyKey: string | null; updatedAt: number;
+  /** When it's due to settle (the venue's close time). */
+  endAt?: number | null }
 
 const DAY = 86_400_000;
 
@@ -29,44 +31,59 @@ async function due(db: Db, now: number, limit: number): Promise<Array<{ source: 
 /** Kalshi's series ticker is the event ticker's first part ("KXNFLGAME-26NOV09NYJBUF" → "KXNFLGAME"). */
 export const kalshiSeries = (ticker: string): string | null => /^([A-Z0-9]+)-/.exec(ticker)?.[1] ?? null;
 
+/** Reads markets from their venue and stores what they say now (price, start, close, end, history key). Markets the
+ *  venue didn't return are marked read, so the next run moves on. */
+export async function readInfos(db: Db, clients: { polymarket: PolymarketClient; kalshi: KalshiClient }, source: "polymarket" | "kalshi", ids: readonly string[], now: number): Promise<MarketInfo[]> {
+  if (!ids.length) return [];
+  const got = await clients[source].getMarketsById([...ids]);
+  const infos: MarketInfo[] = [...got.values()].map(m => ({
+    source, marketId: m.id, yesPrice: m.yesPrice ?? null, startAt: m.startTime ?? null, closed: !m.active || m.result !== null,
+    historyKey: source === "polymarket" ? m.yesTokenId : kalshiSeries(m.id), updatedAt: now, endAt: m.closeTime ?? null,
+  }));
+  for (const id of ids) if (!got.has(id)) infos.push({ source, marketId: id, yesPrice: null, startAt: null, closed: false, historyKey: null, updatedAt: now, endAt: null });
+  for (const i of infos) {
+    await db.insert(marketInfo).values({ ...i, startAt: i.startAt ? new Date(i.startAt) : null, endAt: i.endAt ? new Date(i.endAt) : null, updatedAt: new Date(now) })
+      .onConflictDoUpdate({ target: [marketInfo.source, marketInfo.marketId], set: {
+        yesPrice: sql`coalesce(excluded.yes_price, ${marketInfo.yesPrice})`, startAt: sql`coalesce(excluded.start_at, ${marketInfo.startAt})`,
+        endAt: sql`coalesce(excluded.end_at, ${marketInfo.endAt})`, closed: i.closed, historyKey: sql`coalesce(excluded.history_key, ${marketInfo.historyKey})`, updatedAt: new Date(now) } });
+  }
+  return infos;
+}
+
 export async function marketInfoOnce(db: Db, clients: { polymarket: PolymarketClient; kalshi: KalshiClient }, now: number, perRun = 300): Promise<{ read: number; tagged: number }> {
   const list0 = await due(db, now, perRun);
   let read = 0, tagged = 0;
   for (const source of ["polymarket", "kalshi"] as const) {
     const ids = list0.filter(d => d.source === source).map(d => d.marketId);
     if (!ids.length) continue;
-    const got = await clients[source].getMarketsById(ids);
-    const infos: MarketInfo[] = [...got.values()].map(m => ({
-      source, marketId: m.id, yesPrice: m.yesPrice ?? null, startAt: m.startTime ?? null, closed: !m.active || m.result !== null,
-      historyKey: source === "polymarket" ? m.yesTokenId : kalshiSeries(m.id), updatedAt: now,
-    }));
-    // Read but not returned: mark read so the next run moves on.
-    for (const id of ids) if (!got.has(id)) infos.push({ source, marketId: id, yesPrice: null, startAt: null, closed: false, historyKey: null, updatedAt: now });
-    for (const i of infos) {
-      await db.insert(marketInfo).values({ ...i, startAt: i.startAt ? new Date(i.startAt) : null, updatedAt: new Date(now) })
-        .onConflictDoUpdate({ target: [marketInfo.source, marketInfo.marketId], set: {
-          yesPrice: sql`coalesce(excluded.yes_price, ${marketInfo.yesPrice})`, startAt: sql`coalesce(excluded.start_at, ${marketInfo.startAt})`,
-          closed: i.closed, historyKey: sql`coalesce(excluded.history_key, ${marketInfo.historyKey})`, updatedAt: new Date(now) } });
-    }
-    read += got.size;
+    const infos = await readInfos(db, clients, source, ids, now);
+    read += infos.filter(i => i.historyKey !== null || i.yesPrice !== null).length;
     tagged += await tagObserved(db, source, infos, now);
   }
   return { read, tagged };
 }
 
-/** Adds the observed tags these markets' info shows to their moves of the last 60 days. */
+/** Adds the observed tags these markets' info shows to their moves of the last 60 days. A tag added now is recorded
+ *  with this moment and the side's price now (terminal.move_tags): that tracker's followable record starts there. */
 export async function tagObserved(db: Db, source: "polymarket" | "kalshi", infos: readonly MarketInfo[], now: number): Promise<number> {
   const byId = new Map(infos.map(i => [i.marketId, i]));
   if (!byId.size) return 0;
   const l = (await db.select().from(moves).where(and(eq(moves.source, source), inArray(moves.marketId, [...byId.keys()]), isNull(moves.hiddenAt),
     gte(moves.at, new Date(now - 60 * DAY))))).map(fromRow);
+  const fresh = l.flatMap(m => {
+    const info = byId.get(m.marketId)!;
+    const tags = observedTags(m, info).filter(t => !(m.trackers ?? []).includes(t));
+    const price = info.yesPrice === null ? null : m.outcomeSide === "no" ? 1 - info.yesPrice : info.yesPrice;
+    return tags.map(tracker => ({ moveId: m.id, tracker, taggedAt: new Date(now), taggedPrice: price, src: "live" }));
+  });
+  if (fresh.length) await db.insert(moveTags).values(fresh).onConflictDoNothing();
   return addTags(db, l.map(m => ({ id: m.id, tags: observedTags(m, byId.get(m.marketId)!) })));
 }
 
 export async function infoFor(db: Db, source: "polymarket" | "kalshi", ids: readonly string[]): Promise<Map<string, MarketInfo>> {
   if (!ids.length) return new Map();
   const r = await db.select().from(marketInfo).where(and(eq(marketInfo.source, source), inArray(marketInfo.marketId, [...new Set(ids)])));
-  return new Map(r.map(x => [x.marketId, { source: x.source, marketId: x.marketId, yesPrice: x.yesPrice, startAt: x.startAt?.getTime() ?? null, closed: x.closed, historyKey: x.historyKey, updatedAt: x.updatedAt.getTime() }]));
+  return new Map(r.map(x => [x.marketId, { source: x.source, marketId: x.marketId, yesPrice: x.yesPrice, startAt: x.startAt?.getTime() ?? null, closed: x.closed, historyKey: x.historyKey, updatedAt: x.updatedAt.getTime(), endAt: x.endAt?.getTime() ?? null }]));
 }
 
 /* ---------- price history ---------- */

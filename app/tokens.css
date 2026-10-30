@@ -3,8 +3,8 @@
  * on white, so one shade serves lines and small text). Green only for gains and wins, red only
  * for losses; nothing else gets colour. One font, Schibsted Grotesk, tight headlines, tabular numbers. 8px grid.
  * Every page is light (the old dark app theme is gone: <main class="dark"> no longer changes anything).
- * Pictures are each subject drawn in white line on deep colour (components/SubjectArt), never behind data. Tracker covers (one
- * family per group, components/trackers/TrackerCover.tsx), always under white text and a white curve. */
+ * Pictures are photos from Unsplash (components/Photo) or whole logos (components/Logo), never behind data. Tracker covers
+ * are the tracker's photo, edge to edge (components/trackers/TrackerCover.tsx). */
 :root {
   /* the palette */
   --ink: #0b0b12;
@@ -21,10 +21,6 @@
   --loss: #c4321f;
   --loss-text: #c4321f;
   /* tracker covers: stocks navy, markets indigo, styles plum, sports ocean */
-  --cover-stocks-0: #13294b; --cover-stocks-1: #182f57; --cover-stocks-2: #0f2342;
-  --cover-topics-0: #23205a; --cover-topics-1: #2a2566; --cover-topics-2: #1d1a4d;
-  --cover-styles-0: #341c4a; --cover-styles-1: #3d2156; --cover-styles-2: #2c1740;
-  --cover-leagues-0: #0d3550; --cover-leagues-1: #103d5c; --cover-leagues-2: #0a2d45;
   /* kept for old names: the "night" palette now points at the light one */
   --night: var(--paper);
   --night-surface: var(--grey-1);

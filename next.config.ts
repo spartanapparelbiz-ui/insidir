@@ -3,10 +3,14 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // next/image is only used for trader pictures (components/v2/Avatar.tsx): Polymarket's own image host and nothing
-  // else (lib/moves/avatar.ts AVATAR_HOST, checked by test/avatar.test.ts). Every other picture is a plain <img>.
+  // next/image is only used for trader pictures (components/v2/Avatar.tsx): Polymarket's own image host (lib/moves/avatar.ts
+  // AVATAR_HOST, checked by test/avatar.test.ts). Photos are plain <img>s straight from Unsplash's image CDN, which crops and
+  // sizes them itself (components/Photo.tsx); it's listed here so any next/image use of a photo is allowed too.
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "polymarket-upload.s3.us-east-2.amazonaws.com", port: "", pathname: "/**" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "polymarket-upload.s3.us-east-2.amazonaws.com", port: "", pathname: "/**" },
+      { protocol: "https", hostname: "images.unsplash.com", port: "", pathname: "/photo-*" },
+    ],
     formats: ["image/webp"],
     deviceSizes: [96, 192],
     imageSizes: [40, 80],

@@ -1,5 +1,5 @@
 "use client";
-/* The Account page's client parts: Filters, Region (with the venues that follow it) and the Cancel button. Every
+/* The Account page's client parts: Filters, Region (with the venues that follow it). Every
  * change saves itself (components/account/fields.tsx). */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -52,18 +52,5 @@ export function RegionForm({ region, venues }: { region: Region | null; venues: 
         {kalshi && poly ? null : <p className="afield__hint">Keep at least one app on. Most deals need both.</p>}
       </fieldset>
     </div>
-  );
-}
-
-export function CancelButton() {
-  const router = useRouter();
-  return (
-    <ActionButton data-testid="cancel" action={async () => {
-      const res = await fetch("/api/account/cancel", { method: "POST", headers: { Accept: "application/json" } });
-      const body = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
-      if (!res.ok) return { ok: false, message: body?.error ?? "Couldn't cancel now. Try again in a minute, or use Manage billing." };
-      router.refresh();
-      return { ok: true, message: body?.message ?? "Subscription cancelled." };
-    }}>Cancel subscription</ActionButton>
   );
 }

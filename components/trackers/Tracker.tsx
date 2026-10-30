@@ -1,26 +1,27 @@
 /* Tracker pieces (lib/trackers.ts): the 4:3 cover card (home "Featured"), the ranked row (Top performers, Popular),
  * the grid card (/trackers) and the record line. Every number comes from TrackerStats (lib/trackers-store.ts); a
- * tracker with under 20 settled moves shows "New", never a record. */
+ * tracker's record is its followable one ($100 at the price Insidir showed each position); under 30 settled it shows
+ * "Building record · N of 30", never "New" and never a made-up record. */
 import Link from "next/link";
 import { Result } from "@/components/ui/Result";
 import { dollars, signedShort } from "@/lib/moves/copy";
-import { hasTrackerRecord, recordResult, trackerHref, winPct, type Tracker, type TrackerRecord } from "@/lib/trackers";
+import { buildingLine, hasTrackerRecord, recordResult, trackerHref, TRACKER_MIN_SETTLED, winPct, type Tracker, type TrackerRecord } from "@/lib/trackers";
 import { TrackerCover, type CoverStats } from "./TrackerCover";
 
 export const BY = "by Insidir";
 
-/** The record on the right: the net in green or red, "Won 63%" in grey under it, or just "New". */
+/** The record on the right: the followable net in green or red, "Won 63%" in grey under it, or "Building record · N of 30". */
 export function RecordResult({ r, dash = false }: { r: TrackerRecord | null | undefined; dash?: boolean }) {
   const p = recordResult(r);
   return <Result amount={p.amount} tone={p.tone} status={p.status} dash={dash} />;
 }
 
-/** "Won 63% · 412 settled · avg 41% chance · +$1.2M net", or why there's no record yet. */
+/** "Won 63% · average entry 41% · +$1.2M followable net", or the record being built. */
 export function recordText(r: TrackerRecord | null | undefined, kind: Tracker["kind"]): string {
   if (kind === "filings") return "Filings don't settle, so there's no win record.";
-  if (!hasTrackerRecord(r)) return "New: under 20 settled positions, no record yet.";
+  if (!hasTrackerRecord(r)) return `${buildingLine(r)}: the record shows at ${TRACKER_MIN_SETTLED} settled positions.`;
   const price = r.oddsPct !== null ? ` · average entry ${Math.round(r.oddsPct)}%` : "";
-  return `Won ${r.won}, lost ${r.lost} (${winPct(r)}%)${price} · ${signedShort(r.net)} net`;
+  return `Won ${r.won}, lost ${r.lost} (${winPct(r)}%)${price} · ${signedShort(r.net)} followable net on $100 each`;
 }
 
 const Chevron = () => (

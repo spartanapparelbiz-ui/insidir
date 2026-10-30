@@ -48,10 +48,11 @@ describe("the picture's URL", () => {
     expect(safeAvatarUrl(42)).toBeNull();
   });
 
-  it("next/image may fetch from that host and no other", () => {
+  it("next/image may fetch from that host and Unsplash's photo CDN, and no other", () => {
     const patterns = config.images?.remotePatterns ?? [];
-    expect(patterns).toHaveLength(1);
+    expect(patterns).toHaveLength(2);
     expect(patterns[0]).toMatchObject({ protocol: "https", hostname: AVATAR_HOST });
+    expect(patterns[1]).toMatchObject({ protocol: "https", hostname: "images.unsplash.com", pathname: "/photo-*" });
     expect(config.images?.unoptimized).toBeFalsy();
     expect(config.images?.dangerouslyAllowSVG).toBe(false);
     // Both sizes (and their 2x) are widths the optimizer serves.

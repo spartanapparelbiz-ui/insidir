@@ -2,9 +2,12 @@
  * trackers →" with a text link to the track record, then five real app screens in phone frames fanned across); "A live
  * portfolio of big money" (one tracker: what it holds now and its latest results); "Featured"; two columns, "Top
  * performers" by window and "Popular"; pricing; FAQ. Home lists lead with stocks, then prediction markets, then sports.
+ * Under the hero, "Open now from winning trackers" (lib/follow/open.ts): the 3 newest open positions from trackers and
+ * traders with a positive followable record on 30+ settled, and how many more (all of them on /open for members).
  * Every number is a row from terminal.moves on the viewer's clock (free: 30 minutes late), and a tracker's record is
- * its settled positions (lib/trackers-store.ts). Nothing is made up: a phone with nothing to show is left out, and a
- * tracker with under 20 settled positions says "New". */
+ * what following it would have made (lib/follow). Nothing is made up: a phone with nothing to show is left out, a
+ * tracker with under 30 settled says "Building record · N of 30", one with none yet isn't listed, and a losing tracker
+ * is never the live portfolio. */
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -12,6 +15,9 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { Discover } from "@/components/home/Discover";
+import { OpenNow } from "@/components/follow/OpenNow";
+import { dedupe, openFromWinners, type OpenRow } from "@/lib/follow/open";
+import { PAST } from "@/lib/copy";
 import { HeroCta } from "@/components/home/HeroCta";
 import { LivePortfolio, type PortfolioData } from "@/components/home/LivePortfolio";
 import { Phones, type PhoneData } from "@/components/home/Phones";
@@ -61,14 +67,19 @@ function resultPick(settled: Move[], now: number): Move[] {
   return [...won, ...lost].sort((a, b) => b.amount - a.amount);
 }
 
-interface HomeData { phones: PhoneData; stats: Map<TrackerSlug, TrackerStats>; portfolio: PortfolioData | null }
-const EMPTY: HomeData = { phones: { feed: [], results: [], tracker: null, list: [], alert: null }, stats: new Map(), portfolio: null };
+/** A tracker with at least one settled, followable position (its record or "Building record · N of 30" to show). */
+const hasSettled = (s: TrackerStats | undefined): boolean => Boolean(s && s.records.all.won + s.records.all.lost > 0);
+
+interface HomeData { phones: PhoneData; stats: Map<TrackerSlug, TrackerStats>; portfolio: PortfolioData | null; open: { rows: OpenRow[]; total: number } }
+const EMPTY: HomeData = { phones: { feed: [], results: [], tracker: null, list: [], alert: null }, stats: new Map(), portfolio: null, open: { rows: [], total: 0 } };
 
 /** The live portfolio: the best tracker by ROI with a record (bets only), else Whales; its largest open positions and
  *  its latest settled results. */
 async function portfolioData(db: Db, stats: Map<TrackerSlug, TrackerStats>, plan: Plan, region: Region | null, until: number, now: number): Promise<PortfolioData | null> {
   const shown = visibleTrackers(isReady).filter(t => t.kind === "bets");
-  const best = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null })))[0]?.t ?? trackerBySlug("biggest-bets")!;
+  // Only a tracker that made money for anyone following it; none yet, no live portfolio.
+  const best = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))).find(x => (x.record?.net ?? 0) > 0)?.t;
+  if (!best) return null;
   const [holdings, open, settled] = await Promise.all([
     trackerHoldings(db, until, now).catch(() => new Map()),
     trackerMoves(db, best, { until, since: now - 60 * 86_400_000, byAmount: true, limit: 12 }).then(l => l.filter(m => !m.result).slice(0, 4)).catch(() => []),
@@ -88,7 +99,8 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
     trackerStats(db, now).catch(() => new Map<TrackerSlug, TrackerStats>()),
     trackerMoves(db, lead, { until, limit: 3 }).catch(() => []),
   ]);
-  const latest = moveOrder(latestAll.filter(isMainstream)).slice(0, 4);
+  // The same account on the same side of the same market within an hour is one row.
+  const latest = moveOrder(dedupe(latestAll.filter(isMainstream))).slice(0, 4);
   const picked = resultPick(settledAll, now);
   const byId = new Map([...latest, ...picked, ...leadMoves].map(m => [m.id, m]));
   const [feed, results, leadItems] = await Promise.all([
@@ -98,11 +110,12 @@ async function homeData(db: Db, plan: Plan, region: Region | null, until: number
   ]);
   const short = (l: FeedItem[]) => l.map(fi => homeItem(fi, byId.get(fi.id)));
   const leadShort = short(leadItems);
-  const shown = visibleTrackers(isReady);
+  const shown = visibleTrackers(isReady).filter(t => hasSettled(stats.get(t.slug)));
   const ranked = topPerformers(shown.map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records["1m"] ?? null })));
   const list = homeOrder([...ranked, ...shown.filter(t => !ranked.some(r => r.slug === t.slug)).map(t => ({ t, slug: t.slug, record: stats.get(t.slug)?.records.all ?? null }))]);
   return {
     stats,
+    open: await openFromWinners(db, plan, now).catch(() => ({ rows: [], total: 0 })),
     portfolio: await portfolioData(db, stats, plan, region, until, now).catch(() => null),
     phones: {
       feed: short(feed), results: short(results),
@@ -130,20 +143,21 @@ export default async function Home() {
   const plan = movePlan(viewer.plan);
   const until = now - plan.delayMs;
   // Every visitor on the same plan and region sees the same home page: computed once per 15 seconds.
-  const { phones, stats, portfolio } = hasDatabase()
+  const { phones, stats, portfolio, open } = hasDatabase()
     ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, until, now))
     : EMPTY;
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined));
   const trial = unlockHref();
 
-  const rows = visibleTrackers(isReady).map(t => ({ t, s: stats.get(t.slug) }));
+  // No wall of "Building record · 0 of 30": a tracker shows here once it has a settled position.
+  const rows = visibleTrackers(isReady).filter(t => hasSettled(stats.get(t.slug))).map(t => ({ t, s: stats.get(t.slug) }));
   const periodTabs = PERIODS.map(p => {
     const ranked = homeOrder(topPerformers(rows.map(({ t, s }) => ({ t, s, slug: t.slug, record: s?.records[p.key] ?? null }))).slice(0, 6));
     return {
       key: p.key, label: p.label,
       body: ranked.length ? <ol className="tlist">{ranked.map(({ t, s, record }) => <TrackerRow key={t.slug} t={t} r={record} s={coverStats(s)} />)}</ol>
-        : <p className="tlist__empty">No tracker has 20 settled positions in this window yet.</p>,
+        : <p className="tlist__empty">No tracker has 30 settled positions in this window yet.</p>,
     };
   });
   const pop = homeOrder(popular(rows.filter(r => r.s).map(({ t, s }) => ({ t, s, followers: s!.followers, tracked30d: s!.tracked30d }))).slice(0, 6));
@@ -161,6 +175,15 @@ export default async function Home() {
             <div className="hero3__acts rise" style={{ ["--i" as string]: 3 }}><HeroCta /></div>
           </div>
           <Phones d={phones} />
+        </section>
+
+        <section className="sec3" aria-labelledby="open-h">
+          <div className="wrap">
+            <h2 id="open-h" className="sec3__h">Open now from winning trackers</h2>
+            <p className="tcol__note">Positions still open from trackers and traders with a positive followable return on 30 or more settled. {PAST}</p>
+            <OpenNow rows={open.rows} total={open.total} member={false} now={now} trialHref={trial} />
+            <div className="sec3__foot"><Link className="tlink tlink--go" href="/top">See the leaderboard <span className="arrow" aria-hidden="true">→</span></Link></div>
+          </div>
         </section>
 
         {portfolio ? <LivePortfolio d={portfolio} /> : null}

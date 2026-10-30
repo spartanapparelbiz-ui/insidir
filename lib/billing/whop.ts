@@ -1,6 +1,5 @@
-/* Whop, our payment provider: memberships → plan, cancellation, the embedded checkout's plan ids, and webhook
- * signatures. Whop never logs anyone in to Insidir: accounts and log-in are ours (lib/auth/login.ts); Whop only says
- * who has paid. Docs: docs.whop.com/developer/guides/embed-checkout, /developer/guides/webhooks, /api-reference/memberships.
+/* Whop: sign-in (lib/auth/whop-login.ts) and payment. Here: whether a Whop user has access to Insidir (the access
+ * check), memberships → plan and dates, the embedded checkout's plan id, and webhook signatures. Docs: docs.whop.com/developer/guides/embed-checkout, /developer/guides/webhooks, /api-reference/memberships.
  *
  * Env:
  *   WHOP_API_KEY            account API key (server only): reads memberships and payments, cancels memberships
@@ -123,6 +122,14 @@ export async function fetchMembership(id: string): Promise<MembershipLite | null
   return body ? readMembership(body) : null;
 }
 
+/** Whop's access check (users.checkAccess): whether a Whop user has access to a product now, whatever membership
+ *  gives it. Throws on a Whop error, so a stored answer is kept rather than taking access away. */
+export async function checkAccess(whopUserId: string, resourceId: string): Promise<boolean> {
+  const res = await fetch(`${WHOP_API}/users/${encodeURIComponent(whopUserId)}/access/${encodeURIComponent(resourceId)}`, { headers: apiHeaders(), signal: AbortSignal.timeout(10_000) });
+  if (!res.ok) throw new Error(`Whop access: HTTP ${res.status}`);
+  return obj(await res.json())?.has_access === true;
+}
+
 /** The membership a payment belongs to, and its metadata (what our checkout put there). */
 export async function fetchPayment(id: string): Promise<{ membershipId: string | null; metadata: Record<string, string>; email: string | null; whopUserId: string | null } | null> {
   const res = await fetch(`${WHOP_API}/payments/${encodeURIComponent(id)}`, { headers: apiHeaders(), signal: AbortSignal.timeout(10_000) });
@@ -137,16 +144,9 @@ export function readPayment(p: Record<string, unknown>) {
     email: str(user?.email)?.toLowerCase() ?? null, whopUserId: str(user?.id) ?? str(p.user_id) };
 }
 
-/** One-click cancel: access continues to the end of the paid period. */
-export async function cancelMembership(membershipId: string): Promise<void> {
-  const res = await fetch(`${WHOP_API}/memberships/${encodeURIComponent(membershipId)}/cancel`, {
-    method: "POST", headers: { ...apiHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ cancel_at_period_end: true }),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) throw new Error(`Whop cancel: HTTP ${res.status}`);
-}
+/** Where a member manages or cancels their subscription: Whop's own orders page. */
+export const MANAGE_URL = "https://whop.com/@me/settings/orders";
 
-/** The Whop plan the embedded checkout sells, if configured. */
 /** The plan the checkout sells: WHOP_PLAN_INSIDIR, else the one `npm run whop:setup` checked is exactly 7 days for $1,
  *  then $39/month (lib/billing/setup.ts). Null keeps checkout closed. */
 export const checkoutPlanId = async (): Promise<string | null> => (await whopRuntime()).planId;

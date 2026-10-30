@@ -132,9 +132,32 @@ export function roleOf(role: string): string {
 const US_TEAMS = /^(NFL|NBA|WNBA|MLB|NHL|MLS|college|cfb|cbb|ncaaf|ncaab)$/i;
 const cap = (t: string) => t.replace(/^[a-z]/, c => c.toUpperCase());
 
+/** A person in politics by their surname ("James Talarico" → "Talarico"); anything else as written. */
+function who(name: string, category: string | null | undefined): string {
+  const w = name.trim().split(/\s+/);
+  return category === "politics" && w.length >= 2 && w.length <= 3 && w.every(x => /^[A-ZÀ-Ý][\p{L}'.-]+$/u.test(x)) ? w[w.length - 1]! : name;
+}
+const office = (s: string) => s.replace(/\b(Election|Race|Primary|Nomination|Seat|Runoff)\b/g, x => x.toLowerCase());
+
+/** Markets that aren't sports, in plain present tense: "Talarico wins the Texas Senate race", "Mamdani doesn't win the
+ *  NYC mayoral election"; a name under an event ("Texas Senate Election Winner", "Who will win the …?") the same way. */
+function plain(m: Pick<Move, "outcome" | "marketTitle" | "eventTitle"> & { category?: string | null }, c: string): string {
+  const t = clean(m.marketTitle), e = clean(m.eventTitle), o = clean(m.outcome);
+  if ((isYes(o) || isNo(o)) && !/\?$/.test(t) && t.split(/\s+/).length <= 5) {
+    const what = /^who will win (.+?)\??$/i.exec(e)?.[1] ?? (/^(.+?)\s+winner$/i.exec(e)?.[1] ? `the ${/^(.+?)\s+winner$/i.exec(e)![1]}` : null);
+    if (what) return `${who(t, m.category)} ${isYes(o) ? "wins" : "doesn't win"} ${office(what)}`;
+  }
+  const will = /^(.+?) (will|won't) (win|lose)\b(.*)$/.exec(c);
+  if (will) {
+    const verb = will[2] === "will" ? `${will[3]}s` : `doesn't ${will[3]}`;
+    return `${who(will[1]!, m.category)} ${verb}${office(will[4]!)}`;
+  }
+  return c;
+}
+
 /** The outcome the money is on, in plain English: "Warriors to beat the Timberwolves", "Brewers to win by 2 or more",
- *  "No runs in the 1st inning", "The Fed will cut rates in December". The amount is the card's result, not here. */
-export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league">): string {
+ *  "No runs in the 1st inning", "Talarico wins the Texas Senate race". The amount is the card's result, not here. */
+export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league"> & { category?: string | null }): string {
   const c = claimOf(m), o = clean(m.outcome);
   if (m.tab === "sports") {
     // A moneyline on one side of "A vs. B": "A to beat (the) B".
@@ -149,9 +172,9 @@ export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle
     if (/ tie$/.test(c)) return cap(c.replace(/ tie$/, " to win or tie"));
   }
   // "Who will win the Super Bowl?" on Chiefs: "Chiefs to win the Super Bowl".
-  const who = /^who will (win|be|become|lead|top)\s+(.+?)\??$/i.exec(clean(m.marketTitle));
-  if (who && c === o) return cap(`${o} to ${who[1]!.toLowerCase()} ${who[2]}`);
-  return cap(c);
+  const whoWins = /^who will (win|be|become|lead|top)\s+(.+?)\??$/i.exec(clean(m.marketTitle));
+  if (whoWins && c === o) return cap(`${o} to ${whoWins[1]!.toLowerCase()} ${whoWins[2]}`);
+  return cap(plain(m, c));
 }
 
 /** A card's headline: the outcome for a bet; for a filing, what was bought and by whom. */

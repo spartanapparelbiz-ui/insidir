@@ -1,7 +1,7 @@
 /* `npm run whop:setup` (lib/billing/setup.ts) against a stand-in Whop API and a throwaway Postgres next to
  * E2E_DATABASE_URL: picks the right plan and keeps checkout closed when it isn't exactly 7 days for $1 then
- * $39/month; creates the webhook once and stores its secret encrypted; never duplicates; finds or creates the
- * env vars override; no secret in the logs. The crypto and plan checks run without a database. */
+ * $39/month; creates the webhook once and stores its secret encrypted; never duplicates; checks the login app has
+ * <APP_URL>/reset/callback without ever changing it; env vars override; no secret in the logs. The crypto and plan checks run without a database. */
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
@@ -35,8 +35,8 @@ describe("crypto and plan checks", () => {
 });
 
 /** A stand-in for Whop's API: plans, webhooks and apps, in memory. */
-function fakeWhop(plans: Array<Record<string, unknown>>) {
-  const s = { webhooks: [] as Array<Record<string, unknown>>, apps: [] as Array<Record<string, unknown>>, calls: [] as string[], n: 0 };
+function fakeWhop(plans: Array<Record<string, unknown>>, redirectUris = ["https://insidir.com/reset/callback"]) {
+  const s = { webhooks: [] as Array<Record<string, unknown>>, apps: [{ id: "app_login", name: "Insidir", redirect_uris: redirectUris }] as Array<Record<string, unknown>>, calls: [] as string[], n: 0 };
   const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "content-type": "application/json" } });
   const f = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const u = new URL(String(input)), m = init?.method ?? "GET", body = init?.body ? JSON.parse(String(init.body)) as Record<string, unknown> : {};
@@ -52,6 +52,8 @@ function fakeWhop(plans: Array<Record<string, unknown>>) {
     if (hook && m === "DELETE") { s.webhooks = s.webhooks.filter(w => w.id !== hook[1]); return json({}); }
     if (hook && m === "PATCH") { const w = s.webhooks.find(x => x.id === hook[1])!; Object.assign(w, body); return json(w); }
     if (m === "GET" && p === "/apps") return json({ data: s.apps });
+    const one = p.match(/^\/apps\/([^/]+)$/);
+    if (one && m === "GET") { const a = s.apps.find(x => x.id === one[1]); return a ? json(a) : json({ error: { message: "not found" } }, 404); }
     if (m === "POST" && p === "/apps") { const a = { id: `app_${++s.n}`, company: { id: body.account_id }, ...body }; s.apps.push(a); return json(a); }
     const app = p.match(/^\/apps\/(.+)$/);
     if (app && m === "PATCH") { const a = s.apps.find(x => x.id === app[1])!; Object.assign(a, body); return json(a); }
@@ -79,25 +81,26 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
   beforeEach(async () => { await pool.query("truncate terminal.whop_config"); });
 
-  it("first run: picks the $39 plan, creates the webhook and the app; second run changes nothing; no secret in the logs", async () => {
+  it("first run: picks the $39 plan, creates the webhook, finds the login app; second run changes nothing; no secret in the logs", async () => {
     const w = fakeWhop([{ ...GOOD, id: "plan_annual", renewal_price: 390, billing_period: 365 }, { ...GOOD, id: "plan_hidden", visibility: "hidden" }, GOOD]);
     const logs: string[] = [];
     const r1 = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
-    expect(r1.line).toBe("Whop setup: plan ok, webhook ok");
+    expect(r1.line).toBe("Whop setup: plan ok, webhook ok, login app ok");
     expect(logs).toContain("Whop plan plan_good: $39 every 30 days, trial 7 days, initial fee $1.");
     expect(w.s.webhooks).toHaveLength(1);
     expect(w.s.webhooks[0]).toMatchObject({ url: "https://insidir.com/api/billing/webhook", events: [...EVENTS], resource_id: "biz_1" });
-    // Log-in is our own now: no login app is made.
-    expect(w.s.apps).toEqual([]);
+    // The login app is found by name, its id stored, and never changed.
+    expect(w.s.apps).toEqual([{ id: "app_login", name: "Insidir", redirect_uris: ["https://insidir.com/reset/callback"] }]);
+    expect(logs).toContain("Whop login app app_login: redirect URI https://insidir.com/reset/callback is registered.");
     const stored = await readConfig(db);
     expect(stored.plan_id).toBe("plan_good");
     expect(stored.webhook_secret).not.toContain("whsec_");
     expect(decryptSecret(stored.webhook_secret!, KEY)).toBe("whsec_secret1");
-    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_good", webhookSecret: "whsec_secret1", clientId: null });
+    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_good", webhookSecret: "whsec_secret1", clientId: "app_login" });
 
     const before = w.s.calls.length;
     const r2 = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
-    expect(r2.line).toBe("Whop setup: plan ok, webhook ok");
+    expect(r2.line).toBe("Whop setup: plan ok, webhook ok, login app ok");
     expect(w.s.webhooks).toHaveLength(1);
     expect(w.s.calls.slice(before).filter(c => !c.startsWith("GET"))).toEqual([]);
     for (const l of logs) expect(l).not.toMatch(/whsec_|apik_/);
@@ -108,7 +111,7 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     const w = fakeWhop([{ ...GOOD, trial_period_days: 3, initial_price: 0 }]);
     const logs: string[] = [];
     const r = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
-    expect(r.line).toBe("Whop setup: plan wrong, webhook ok");
+    expect(r.line).toBe("Whop setup: plan wrong, webhook ok, login app ok");
     expect(logs.join("\n")).toContain("Whop plan plan_good is not what the site says (7 days for $1, then $39/month): trial is 3 days, not 7; initial fee is $0, not $1. Checkout stays closed.");
     expect((await readConfig(db)).plan_id).toBeUndefined();
   });
@@ -128,5 +131,14 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     expect(w.s.webhooks[0]!.id).toBe("hook_env");
     expect(new Set(w.s.webhooks[0]!.events as string[])).toEqual(new Set(EVENTS));
     for (const l of logs) expect(l).not.toMatch(/whsec_|apik_/);
+  });
+
+  it("a login app without /reset/callback: nothing is changed in Whop, and the log says exactly which URI to add", async () => {
+    const w = fakeWhop([GOOD], ["https://insidir.com/login/callback"]);
+    const logs: string[] = [];
+    const r = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
+    expect(r.app).toBe("missing redirect");
+    expect(w.s.calls.filter(c => c.includes("/apps") && !c.startsWith("GET"))).toEqual([]);
+    expect(logs).toContain("Whop login app app_login: https://insidir.com/reset/callback is not one of its redirect URIs (https://insidir.com/login/callback). Add exactly https://insidir.com/reset/callback in the app's OAuth settings on Whop.");
   });
 });

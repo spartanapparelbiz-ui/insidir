@@ -15,8 +15,8 @@ export const VISITOR_COOKIE = "insidir_vid";
 /** A free-access account previewing the site as a logged-out visitor ("visitor"); unset means as themselves. */
 export const VIEW_AS_COOKIE = "insidir_view_as";
 export const SESSION_DAYS = 30;
-/** Re-read the plan from Whop at most this often (the billing webhook updates it in between). */
-export const PLAN_REFRESH_MS = 10 * 60_000;
+/** Ask Whop whether they have access at most this often (the billing webhook and sign-in ask at once in between). */
+export const PLAN_REFRESH_MS = 5 * 60_000;
 
 export const hashToken = (t: string): string => createHash("sha256").update(t).digest("hex");
 

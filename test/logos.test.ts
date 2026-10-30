@@ -3,7 +3,7 @@
  * file parses as an image with something drawn in it. */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { brandOf, moveLogo, stockLogo, teamOf, tickerOfName } from "@/lib/logos";
+import { brandOf, initials, moveLogo, stockLogo, teamOf, tickerOfName } from "@/lib/logos";
 import { TRACKER_LOGOS, trackerLogo } from "@/lib/tracker-logos";
 import { TRACKERS } from "@/lib/trackers";
 
@@ -38,14 +38,18 @@ describe("logos", () => {
     expect(brandOf("Will Ethereum hit $5K?")).toBe("/logos/brands/ethereum.svg");
   });
 
-  it("every tracker logo exists, and every league tracker has one", () => {
-    for (const p of Object.values(TRACKER_LOGOS)) expect(existsSync(pub(p)), p).toBe(true);
-    for (const t of TRACKERS.filter(t => ["nfl-big-money", "nba-big-money", "mlb-big-money", "nhl-big-money", "premier-league", "champions-league", "la-liga", "serie-a", "ufc"].includes(t.slug)))
-      expect(trackerLogo(t.slug), t.slug).not.toBeNull();
+  it("the header marks exist, are single-colour white, and only leagues with a clean mark get one", () => {
+    for (const p of Object.values(TRACKER_LOGOS)) {
+      expect(existsSync(pub(p)), p).toBe(true);
+      expect(readFileSync(pub(p), "utf8"), p).toMatch(/^<svg fill="#ffffff"/);
+    }
+    for (const s of ["nba-big-money", "mlb-big-money", "nhl-big-money", "premier-league", "ufc"]) expect(trackerLogo(s), s).not.toBeNull();
+    for (const s of ["nfl-big-money", "la-liga", "biggest-bets", "fed-and-rates"]) expect(trackerLogo(s), s).toBeNull();
+    expect(TRACKERS.length).toBeGreaterThan(30);
   });
 
   it("every team and league SVG has shapes in it and no editor-only attributes", () => {
-    for (const dir of ["leagues", "teams/nba", "teams/nfl", "teams/mlb", "teams/nhl", "brands"]) {
+    for (const dir of ["leagues", "teams/nba", "teams/nfl", "teams/mlb", "teams/nhl", "brands", "marks"]) {
       const files = readdirSync(pub(`/logos/${dir}`)).filter(f => f.endsWith(".svg"));
       for (const f of files) {
         const svg = readFileSync(pub(`/logos/${dir}/${f}`), "utf8");
@@ -58,5 +62,11 @@ describe("logos", () => {
     expect(readdirSync(pub("/logos/teams/nfl")).length).toBe(32);
     expect(readdirSync(pub("/logos/teams/mlb")).length).toBe(30);
     expect(readdirSync(pub("/logos/teams/nhl")).length).toBe(32);
+  });
+  it("a Form 4's insider shows as their initials, first and last name", () => {
+    expect(initials("HUANG JEN HSUN")).toBe("JH");
+    expect(initials("COOK TIMOTHY D")).toBe("TC");
+    expect(initials("Musk, Elon")).toBe("EM");
+    expect(initials("SMITH JOHN A JR")).toBe("JS");
   });
 });

@@ -4,7 +4,7 @@ import { createServer } from "node:https";
 import { join } from "node:path";
 import { closeDb } from "@/lib/db";
 import { createServer as createHttp } from "node:http";
-import { ANTHROPIC_PORT, APP_URL, E2E_DB, OUT, PUSH_PORT, WHOP, WHOP_PORT } from "./env";
+import { OPENROUTER_PORT, APP_URL, E2E_DB, OUT, PUSH_PORT, WHOP, WHOP_PORT } from "./env";
 import { SLIPS } from "../../scripts/slips/fixtures";
 import { Pool } from "pg";
 import { startMockWhop } from "./mock-whop";
@@ -30,22 +30,24 @@ export default async function globalSetup() {
     });
   });
   await new Promise<void>(ok => push.listen(PUSH_PORT, ok));
-  // A stand-in Anthropic API: every slip reads as the DraftKings 3-leg parlay (scripts/slips/fixtures.ts, the reading
-  // the real model gives). Each request is recorded for the tests.
+  // A stand-in OpenRouter (chat completions): every slip reads as the DraftKings 3-leg parlay (scripts/slips/fixtures.ts,
+  // the reading the real model gives). Each request is recorded for the tests.
   const asked: unknown[] = [];
-  const anthropic = createHttp((req, res) => {
+  const openrouter = createHttp((req, res) => {
     const chunks: Buffer[] = [];
     req.on("data", c => chunks.push(c as Buffer));
     req.on("end", () => {
-      const body = JSON.parse(Buffer.concat(chunks).toString() || "{}") as { model?: string; messages?: Array<{ content: Array<{ type: string; source?: { media_type?: string } }> }> };
-      asked.push({ path: req.url, model: body.model, beta: req.headers["anthropic-beta"], image: body.messages?.[0]?.content.find(c => c.type === "image")?.source?.media_type ?? null });
-      writeFileSync(join(OUT, "anthropic.json"), JSON.stringify(asked, null, 2));
+      const body = JSON.parse(Buffer.concat(chunks).toString() || "{}") as { model?: string; response_format?: { type?: string }; messages?: Array<{ content: Array<{ type: string; image_url?: { url?: string } }> }> };
+      const image = body.messages?.[0]?.content.find(c => c.type === "image_url")?.image_url?.url ?? "";
+      asked.push({ path: req.url, model: body.model, format: body.response_format?.type ?? null, image: /^data:([^;]+);base64,/.exec(image)?.[1] ?? null,
+        auth: req.headers.authorization, referer: req.headers["http-referer"], title: req.headers["x-title"] });
+      writeFileSync(join(OUT, "openrouter.json"), JSON.stringify(asked, null, 2));
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ id: "msg_e2e", type: "message", role: "assistant", model: body.model, stop_reason: "end_turn", stop_sequence: null,
-        usage: { input_tokens: 1500, output_tokens: 400 }, content: [{ type: "text", text: JSON.stringify(SLIPS[0]!.expect) }] }));
+      res.end(JSON.stringify({ id: "gen-e2e", object: "chat.completion", model: body.model, choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: JSON.stringify(SLIPS[0]!.expect), refusal: null } }],
+        usage: { prompt_tokens: 1500, completion_tokens: 400, total_tokens: 1900, cost: 0.0105 } }));
     });
   });
-  await new Promise<void>(ok => anthropic.listen(ANTHROPIC_PORT, ok));
+  await new Promise<void>(ok => openrouter.listen(OPENROUTER_PORT, ok));
   // Plays the worker's part while tests run: deals stay re-confirmed and the scanner looks live, unless a test
   // pauses it (a heartbeat row named "e2e:pause") to check the failure states.
   const pool = new Pool({ connectionString: E2E_DB, max: 1 });
@@ -58,5 +60,5 @@ export default async function globalSetup() {
     await pool.query("update terminal.opportunities set last_seen_at = now() where active");
   };
   const timer = setInterval(() => void keep().catch(() => undefined), 15_000);
-  return async () => { clearInterval(timer); await pool.end(); whop.close(); push.close(); anthropic.close(); };
+  return async () => { clearInterval(timer); await pool.end(); whop.close(); push.close(); openrouter.close(); };
 }

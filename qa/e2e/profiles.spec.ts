@@ -50,34 +50,57 @@ test("a trader's profile: every stat from their resolved positions, for members"
   await expect(page.getByRole("link", { name: "See their Polymarket profile" })).toHaveCount(0);
 });
 
-test("profiles and Top are members only: a visitor is sent to log in, and no record reaches them", async ({ page }) => {
+test("profiles are members only; the leaderboard is public and no trader's own record reaches a visitor", async ({ page }) => {
   const bodies = await captureBodies(page, async () => {
     await page.goto(`/p/${TOP}`);
     await expect(page).toHaveURL(/\/login\?next=%2Fp%2F/);
     await page.goto("/top");
-    await expect(page).toHaveURL(/\/login\?next=%2Ftop/);
+    await expect(page.getByRole("heading", { level: 1, name: "Leaderboard" })).toBeVisible();
   });
   for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|\+\$1\.2M|\$310K|Net P&L over time/);
 });
 
-test("/top: 20+ resolved markets, ranked by profit, filtered by time and category, with Follow", async ({ page, context }) => {
-  await signIn(context, "pro");
+test("/top: ranked by followable ROI on 30+ settled, each with its $100 line; holdings for members; past results", async ({ page, context }) => {
+  // The tennis fixture: 32 settled shown at 45%, 20 won and 12 lost. $100 at 46% on each: +$1,148 on $3,200.
+  await page.goto("/top?window=all");
+  await expect(page.getByText(/Past results, not a promise\./).first()).toBeVisible();
+  const tr = page.getByTestId("board-trackers").locator(".board__row").first();
+  await expect(tr.getByRole("link", { name: "Tennis" })).toHaveAttribute("href", "/trackers/tennis");
+  await expect(tr.locator(".board__fig b")).toHaveText("+35.9%");
+  await expect(tr).toContainText("32 settled");
+  await expect(tr).toContainText("$100 on every position since we started tracking: $3,200 in, +$1,148 back.");
+  await expect(tr.getByRole("link", { name: "Members see what it holds now" })).toBeVisible();
+  // Trackers under 30 settled (NFL has 3) aren't ranked.
+  await expect(page.getByTestId("board-trackers").getByRole("link", { name: "NFL" })).toHaveCount(0);
+  const td = page.getByTestId("board-traders").locator(".board__row").first();
+  await expect(td.getByRole("link", { name: "E2E-Follow" })).toHaveAttribute("href", "/p/0xe2e00000000000000000000000000000000000dd");
+  await expect(td.locator(".board__fig b")).toHaveText("+35.9%");
+  await page.screenshot({ path: shotName("top-all", page), fullPage: true });
+  // The last 30 days: only what settled in them (fewer than 30): nothing ranked.
   await page.goto("/top");
-  await expect(page.getByRole("heading", { level: 1, name: "Top traders" })).toBeVisible();
-  const row = page.locator(".toplist__row").first();
-  await expect(row.getByRole("link", { name: "E2E-Top" })).toHaveAttribute("href", `/p/${TOP}`);
-  await expect(row.getByText("Won 41 of 63 (65%)")).toBeVisible();
-  await expect(row.getByText("Best: Markets")).toBeVisible(); // $600,750 in Markets, $599,250 in NFL
-  await expect(row.getByText("+$1.2M")).toBeVisible();
-  await expect(row.getByRole("button", { name: "Follow" })).toBeVisible();
-  // 7 resolved markets: never ranked.
-  await expect(page.getByRole("link", { name: "0xe2…bb" })).toHaveCount(0);
-  await page.locator("main").getByRole("link", { name: "Markets" }).click();
-  await expect(page).toHaveURL(/tab=markets/);
-  await expect(page.locator(".toplist__row").first().getByText(/Won \d+ of 21/)).toBeVisible();
-  await page.getByRole("link", { name: "This week" }).click();
-  await expect(page).toHaveURL(/window=week/);
-  await expect(page.getByText("No wallets with 20 or more resolved markets in this window yet.")).toBeVisible();
+  await expect(page.getByText("No tracker has 30 settled positions in the last 30 days.")).toBeVisible();
+  // Members see what each one holds now.
+  await signIn(context, "pro");
+  await page.goto("/top?window=all");
+  await expect(page.getByTestId("board-trackers").locator(".board__row").first()).toContainText("Holds 3 open positions, $195K");
+});
+
+test("/open: open positions from winning trackers; a visitor sees the newest 30 minutes late and how many more, a member every one", async ({ page, context }) => {
+  await page.goto("/open");
+  const rows = page.getByTestId("open-now").locator("tbody tr");
+  await expect(rows).toHaveCount(2); // the 5-minute-old one is a member's only
+  await expect(rows.first()).toContainText("Tennis");
+  await expect(rows.first()).toContainText("+35.9% followable · 32 settled");
+  await expect(rows.first()).toContainText("$90K");
+  await expect(rows.first()).toContainText("53%"); // seen at
+  await expect(rows.first()).toContainText("58%"); // now
+  await expect(page.getByTestId("open-more")).toContainText("1 more open.");
+  await expect(page.getByText(/Past results, not a promise\./).first()).toBeVisible();
+  await page.screenshot({ path: shotName("open", page), fullPage: true });
+  await signIn(context, "pro");
+  await page.goto("/open");
+  await expect(page.getByTestId("open-now").locator("tbody tr")).toHaveCount(3);
+  await expect(page.getByTestId("open-more")).toHaveCount(0);
 });
 
 test("an insider: the card names them and says why it matters; their public page lists every trade with its filing", async ({ page, context }) => {

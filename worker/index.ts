@@ -13,12 +13,18 @@
  *   stocks    with SEC_USER_AGENT: Form 4 insider buys every 2 min, 13F fund adds every 6 h (lib/stocks/jobs.ts);
  *             for profiles, buyers' and companies' Form 4 histories every 5 min and funds' quarters every 30 min
  *   settle    every SETTLE_MS: record how each logged deal resolved
+ *   follow:seen every minute: the price Insidir showed each position at and the tag times of Momentum / Early / Late
+ *             (lib/follow/seen.ts), new positions first, then the backlog
+ *   follow:report every hour: the followable QA sheet (lib/follow/report.ts) into the log, one "FOLLOWABLE-CSV" line
+ *             per row, so it can be read from the deploy logs
  *   accuracy  every hour: 20 random moves and 20 profile facts re-read from their sources (lib/accuracy/check.ts);
  *             moves that don't match are hidden until they do; OWNER_EMAIL gets an email when anything is off
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
 import { tagOnce } from "@/lib/trackers-tag";
 import { marketInfoOnce } from "@/lib/markets/info";
+import { seenOnce, seenProgress } from "@/lib/follow/seen";
+import { followableCsv } from "@/lib/follow/report";
 import { stockPricesOnce } from "@/lib/stocks/prices";
 import { cusipOnce } from "@/lib/stocks/cusip";
 import { marketSplitsOnce, newlyFlagged, provenOpenOnce, resolveSplitsOnce, stockSplitsOnce } from "@/lib/smart/store";
@@ -271,6 +277,18 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const r = await marketInfoOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
         await heartbeat(getDb(), "markets:info", true, null, r);
         if (r.read || r.tagged) log(`markets: ${r.read} markets read, ${r.tagged} moves got Steam / Early / Late tags`);
+      }),
+      // Followable returns (lib/follow): the price Insidir showed each position at, and when after-the-fact tags were
+      // added; new positions a few minutes after they're shown, then the backlog, newest first.
+      every("follow:seen", 60_000, async () => {
+        const r = await seenOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
+        if (r.priced || r.none || r.tags) {
+          const p = await seenProgress(getDb());
+          log(`follow: ${r.priced} seen prices, ${r.none} without one, ${r.tags} tag times (${p.priced} priced, ${p.left} to go)`);
+        }
+      }),
+      every("follow:report", 60 * 60_000, async () => {
+        for (const line of (await followableCsv(getDb(), Date.now())).trimEnd().split("\n")) log(`FOLLOWABLE-CSV ${line}`);
       }),
       // Smart money vs. the crowd (lib/smart): proven traders' open positions, then every split they make, scored
       // when it ends; members are alerted to new ones of SPLIT_ALERT_GAP+ points.

@@ -1,7 +1,7 @@
 /* Trust, in plain words, each claim one we can stand behind in the code:
  *   TrustRow (under the hero): we never touch your money (Insidir only shows math; no deposits, no trading, no
  *   exchange keys); every deal we flag goes in Receipts (each new deal gets a receipt row, wins and misses, see
- *   lib/worker/store.ts); cancel in one click (Settings → Cancel subscription, no extra step, app/api/account/cancel);
+ *   lib/worker/store.ts); cancel anytime (Settings → Manage subscription, Whop's orders page);
  *   payments by Whop. Under it, the real scale line from the markets the scanner saw in the last few minutes
  *   (lib/scale.ts), hidden while the scanner is paused.
  *   MoneySection: subscriptions are the only income. Venue links carry no referral or affiliate tags
@@ -27,7 +27,7 @@ function Icon({ name }: { name: string }) {
 export const TRUST: ReadonlyArray<{ icon: string; text: string; link?: { href: string; label: string } }> = [
   { icon: "money", text: "We never touch your money" },
   { icon: "ledger", text: "Every deal we flag goes in", link: { href: "/receipts", label: "Receipts" } },
-  { icon: "cancel", text: "Cancel in one click" },
+  { icon: "cancel", text: "Cancel anytime" },
   { icon: "lock", text: "Secure checkout" },
 ];
 

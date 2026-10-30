@@ -153,38 +153,18 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 @media (min-width: 1100px) { .fan { margin-top: 120px; } }
 
 /* ---------- tracker covers (components/trackers/TrackerCover.tsx): 4:3, deep colour, a thin white curve ---------- */
-.tcover { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-win); background: var(--tc); color: var(--paper); isolation: isolate; }
-.tcover__curve { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
-.tcover__curve path { fill: none; stroke: var(--paper); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; opacity: .9; }
-.tcover__fig { position: absolute; left: 24px; top: 20px; display: grid; gap: 2px; }
-.tcover__n { font-size: 34px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--paper); }
-.tcover__l { font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, .7); }
-.tcover--sm { aspect-ratio: 1; border-radius: 12px; }
-.tcover--sm .tcover__curve path { stroke-width: 1.25; }
 /* Featured: the name at the bottom of the cover */
 .tfeat { aspect-ratio: 4 / 3 !important; background: none; border-radius: var(--r-win); }
 .tfeat::after { display: none; }
-.tfeat__cover { position: absolute; inset: 0; aspect-ratio: auto; }
 .tfeat__copy { z-index: 1; }
 .tfeat__name { font-weight: 600; color: var(--paper); }
 .tfeat__by { color: rgba(255, 255, 255, .7); opacity: 1; }
-.tfeat:hover .tcover__curve path { opacity: 1; }
 /* rows and tiles */
-.trow__thumb.tcover { width: 48px; height: 48px; }
 .trow { grid-template-columns: auto 48px minmax(0, 1fr) auto 20px; }
-.ttile__cover.tcover { aspect-ratio: 4 / 3; border-radius: var(--r-win); }
 .ttile__link:hover .ttile__cover { box-shadow: none; }
 .ttile__link:hover .ttile__name { text-decoration: underline; text-underline-offset: 3px; }
 .ttile__name { font-weight: 600; }
-.thead__cover.tcover { aspect-ratio: 4 / 3; }
-.thead__cover .tcover__n { font-size: 52px; letter-spacing: -0.038em; }
-@media (min-width: 900px) { .thead__cover .tcover__fig { left: 32px; top: 28px; } }
 /* the phones */
-.ph__cover.tcover { margin: -16px -14px 0; aspect-ratio: 4 / 3; border-radius: 0; }
-.ph__cover .tcover__fig { left: 14px; top: 12px; }
-.ph__cover .tcover__n { font-size: 24px; }
-.ph__cover .tcover__l { font-size: 9px; }
-.ph__thumb.tcover { width: 32px; height: 32px; border-radius: 8px; }
 .ph__trow .res__amt { font-size: 11px; }
 .ph__trow .res__st { font-size: 9px; }
 .ph__row .res__amt { font-size: 13px; }
@@ -215,8 +195,6 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
   padding: 16px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
 @media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 96px 120px; grid-template-areas: "rank thumb who roi res"; } }
 .tbook__rank { grid-area: rank; color: var(--muted); font-variant-numeric: tabular-nums; }
-.tbook__thumb { grid-area: thumb; width: 48px; height: 48px; }
-@media (min-width: 700px) { .tbook__thumb { width: 56px; height: 56px; } }
 .tbook__who { grid-area: who; display: grid; gap: 2px; min-width: 0; }
 .tbook__name { font-size: var(--t17); font-weight: 600; }
 .tbook__row:hover .tbook__name { text-decoration: underline; text-underline-offset: 3px; }
@@ -228,7 +206,6 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .lport__sub { color: var(--muted); font-size: var(--t17); max-width: 60ch; margin: -12px 0 32px; }
 .lport__card { background: var(--paper); border: 1px solid var(--win-border); border-radius: var(--r-win); box-shadow: var(--win-shadow); overflow: hidden; }
 .lport__head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 0 0 20px; color: var(--ink); text-decoration: none; }
-.lport__cover { aspect-ratio: 21 / 9; border-radius: 0; margin-bottom: 16px; }
 .lport__name, .lport__line, .lport__nums { padding: 0 24px; }
 @media (min-width: 900px) { .lport__name, .lport__line, .lport__nums { padding: 0 32px; } }
 .lport__name { font-size: var(--t32); font-weight: 600; letter-spacing: -0.03em; }
@@ -268,8 +245,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 
 /* Trackers list: rank, cover, name and holdings, then two figure columns of the same build (ROI, Net P&L), right-aligned. */
 .tbook__row { grid-template-columns: 20px 44px minmax(0, 1fr) auto auto; grid-template-areas: "rank thumb who roi res"; column-gap: 12px; }
-.tbook__thumb { width: 44px; height: 44px; }
-@media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 112px 112px; column-gap: 16px; } .tbook__thumb { width: 56px; height: 56px; } }
+@media (min-width: 700px) { .tbook__row { grid-template-columns: 24px 56px minmax(0, 1fr) 112px 112px; column-gap: 16px; } }
 .tbook__rank { font-size: var(--t13); font-weight: 500; text-align: right; }
 .tbook__row .res { min-width: 0; }
 .tbook__row .res.tbook__roi { grid-area: roi; }
@@ -302,28 +278,127 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 /* The insider page's month line sat on a dark band that the light theme removed. */
 .sec__month { color: var(--ink); }
 
-/* ---------- Pictures: every image is its subject, drawn (components/SubjectArt) ---------- */
-.art { display: block; width: 100%; height: 100%; }
-.art * { vector-effect: non-scaling-stroke; }
-.tcover__art { position: absolute; inset: 0; z-index: -2; color: var(--paper); opacity: .3; }
-.tcover--sm .tcover__art { inset: 10%; width: 80%; height: 80%; opacity: .75; }
-.tfeat:hover .tcover__art { opacity: .42; transition: opacity var(--dur-small) var(--ease-enter); }
-.artpanel { position: relative; display: block; overflow: hidden; background: var(--cover-styles-1); color: var(--paper); }
-.artpanel .art { position: absolute; inset: 0; opacity: .4; }
 .move__top { align-items: center; gap: 12px; }
-.move__thumb { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--tc); color: var(--paper); padding: 5px; }
-.move__thumb .art { opacity: .85; }
 .move__kind { flex: 1; min-width: 0; }
-.tcover__art { inset: 14% 6% 6%; width: 88%; height: 80%; }
-.tfeat .tcover__art { opacity: .22; inset: 8% 8% 30%; width: 84%; height: 62%; }
-.lport__cover .tcover__art { inset: 12% 10%; width: 80%; height: 76%; }
 
-/* Real logos: on a white badge so every logo keeps its own colours, contained, never cropped. */
-.tcover__logo { position: absolute; left: 50%; top: 50%; z-index: -1; width: 40%; aspect-ratio: 1; transform: translate(-50%, -46%); display: grid; place-items: center;
-  border-radius: 22%; background: var(--paper); box-shadow: 0 12px 32px rgba(0, 0, 0, .22); }
-.tcover__logo img { width: 72%; height: 72%; object-fit: contain; }
-.tcover--sm .tcover__logo { width: 78%; transform: translate(-50%, -50%); box-shadow: none; border-radius: 18%; }
-.tfeat .tcover__logo { width: 34%; top: 44%; }
-.lport__cover .tcover__logo { width: auto; height: 56%; }
-.move__thumb--logo { background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); padding: 4px; display: grid; place-items: center; }
-.move__thumb--logo img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ---------- Pictures: photos are the art, logos are whole (components/Photo, components/Logo) ----------
+ * A photo fills its box edge to edge (cropped by the CDN around its focal point), its colour behind it while it loads.
+ * A tracker's artwork is its photo at every size: 1:1 thumbnails (radius 12, a 0.5px ring), 4:3 cards, the 21:9 page
+ * header; words on a photo sit on a soft scrim. Logos sit whole on a white tile; matchups and filings build on it. */
+.photo { position: relative; display: block; overflow: hidden; }
+.photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The light theme drops the photo behind page bands (app/light.css); .photo above mustn't bring it back. */
+.pband__photo, .trader__photo { display: none; }
+.photo--thumb::after, .tcover::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .08); pointer-events: none; z-index: 2; }
+
+.tcover { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-win); color: var(--paper); isolation: isolate; }
+.tcover .tcover__photo { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.photo--thumb, .tcover.tcover--sm { border-radius: 12px; aspect-ratio: 1; }
+.tcover--sm { aspect-ratio: 1; }
+
+.tcover--top .tcover__photo::before { content: ""; position: absolute; inset: 0 0 auto; height: 55%; z-index: 1; background: linear-gradient(180deg, rgba(0, 0, 0, .45), rgba(0, 0, 0, 0)); }
+.tcover--bottom .tcover__photo::after { content: ""; position: absolute; inset: auto 0 0; height: 60%; z-index: 1; background: linear-gradient(0deg, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)); }
+.tcover__fig { position: absolute; left: 20px; top: 16px; z-index: 2; display: grid; gap: 2px; }
+.tcover__n { font-size: 30px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--paper); }
+.tcover__l { font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, .8); }
+.tfeat__cover { position: absolute; inset: 0; aspect-ratio: auto; border-radius: inherit; }
+.tfeat__copy { z-index: 2; }
+.ttile__cover.tcover { aspect-ratio: 4 / 3; }
+.lport__cover.tcover { aspect-ratio: 21 / 9; border-radius: 0; margin-bottom: 16px; }
+.lport__cover.tcover::after { box-shadow: none; }
+.ph__cover.tcover { margin: -16px -14px 0; aspect-ratio: 4 / 3; border-radius: 0; }
+.ph__cover .tcover__fig { left: 12px; top: 10px; }
+.ph__cover .tcover__n { font-size: 22px; }
+.ph__cover .tcover__l { font-size: 9px; }
+.ph__thumb.tcover { width: 32px; height: 32px; border-radius: 8px; }
+
+/* Row art: 56px on desktop, 48px on phones, everywhere a row has a picture. */
+.art56, .tbook__thumb, .trow__thumb { flex: none; width: 48px; height: 48px; }
+@media (min-width: 700px) { .art56, .tbook__thumb, .trow__thumb { width: 56px; height: 56px; } }
+.tbook__thumb { grid-area: thumb; }
+
+/* A logo: white tile, inset 1px ring, 22% corners, the logo contained at 76%, centred. Never cropped. */
+.logo { display: grid; place-items: center; background: var(--paper); box-shadow: inset 0 0 0 1px var(--grey-2); border-radius: 22%; overflow: hidden; }
+.logo img { display: block; width: 76%; height: 76%; max-width: 44px; max-height: 44px; object-fit: contain; border-radius: 0; }
+/* A matchup: both teams as overlapping white circles, first top-left, second bottom-right. */
+.matchup { position: relative; display: block; }
+.matchup__team { position: absolute; display: grid; place-items: center; width: 71.5%; aspect-ratio: 1; border-radius: 50%; background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--grey-2), 0 2px 6px rgba(11, 11, 18, .12); }
+.matchup__team--a { left: 0; top: 0; }
+.matchup__team--b { right: 0; bottom: 0; }
+.matchup__team img { display: block; width: 70%; height: 70%; object-fit: contain; border-radius: 0; }
+/* A Form 4: the company's tile, the insider's monogram on its corner. */
+.filing { position: relative; display: block; }
+.filing > .logo { width: 100%; height: 100%; }
+.filing__who { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--ink); color: var(--paper); font-size: 10px; font-weight: 600; letter-spacing: .02em; box-shadow: 0 0 0 2px var(--paper); }
+
+/* The card's art sits on the left of its first line. */
+.move__top { align-items: center; gap: 12px; }
+.move__thumb { align-self: flex-start; }
+.move__kind { flex: 1; min-width: 0; }
+
+/* The tracker page header: the photo at 21:9, the name over a bottom scrim, the league's mark small in white. */
+.thead { display: grid; gap: 20px; }
+.thead__art { position: relative; aspect-ratio: 21 / 9; border-radius: var(--r-win); overflow: hidden; color: var(--paper); }
+@media (max-width: 699px) { .thead__art { aspect-ratio: 4 / 3; } }
+.thead__photo { position: absolute; inset: 0; width: 100%; height: 100%; }
+.thead__photo::after { content: ""; position: absolute; inset: auto 0 0; height: 70%; background: linear-gradient(0deg, rgba(0, 0, 0, .62), rgba(0, 0, 0, 0)); }
+.thead__on { position: absolute; left: 24px; right: 24px; bottom: 20px; display: grid; gap: 8px; z-index: 1; }
+@media (min-width: 900px) { .thead__on { left: 40px; right: 40px; bottom: 32px; } }
+.thead__on .thead__by { color: rgba(255, 255, 255, .8); }
+.thead__name { display: flex; align-items: center; gap: 14px; }
+.thead__on .thead__h { color: var(--paper); }
+.thead__logo { width: auto; height: 30px; opacity: .95; }
+@media (min-width: 900px) { .thead__logo { height: 40px; } }
+.thead__on .thead__line { color: rgba(255, 255, 255, .85); }
+.thead__act { margin-top: 0; }
+.thead__roi { display: inline-grid; gap: 2px; margin-left: auto; text-align: right; color: var(--muted); font-size: 12px; font-weight: 500; }
+.thead__roi b { color: var(--ink); font-size: var(--t22); font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+/* Rows with art: the picture, then the words. */
+.dtable__link--art { display: flex; align-items: center; gap: 14px; }
+.dtable__link--art > span { min-width: 0; }
+.lport__row { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+.rlist__row { grid-template-columns: 96px auto minmax(0, 1fr) auto; align-items: center; }
+@media (min-width: 700px) { .rlist__row { grid-template-columns: 184px auto minmax(0, 1fr) auto; } }
+.positions__title:has(.logo) { display: flex; align-items: center; gap: 14px; }
+.logo--mono { color: var(--ink); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+
+/* A loading page fills the screen, so the footer never shows above the fold and then jumps down when the page arrives. */
+main.skel { min-height: 100vh; }
+
+/* Followable returns (lib/follow): the tracker page's block, "Open now" (components/follow/OpenNow.tsx), the
+   leaderboard (/top) and the "Past results, not a promise." line next to every performance figure. */
+.past { display: block; color: var(--muted); font-size: var(--t13); font-weight: var(--w-body); }
+.follow { display: grid; gap: 6px; padding: 20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.follow__roi { margin: 0; display: flex; align-items: baseline; gap: 10px; }
+.follow__roi b { font-size: var(--t32); font-weight: var(--w-num); font-variant-numeric: tabular-nums; letter-spacing: var(--tight); }
+.follow__roi span { color: var(--muted); font-size: var(--t15); }
+.follow--building .follow__roi b { font-size: var(--t22); }
+.follow__line { margin: 0; font-size: var(--t17); }
+.follow__tally { margin: 0; color: var(--muted); font-size: var(--t13); font-variant-numeric: tabular-nums; }
+.opennow { display: grid; gap: 12px; }
+.opennow__from { display: grid; gap: 2px; }
+.opennow__from a { color: var(--text); font-weight: var(--w-label); text-decoration: none; }
+.opennow__note { margin: 0; color: var(--muted); font-size: var(--t13); }
+.opennow__more { margin: 0; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.board__sec { margin-top: 40px; }
+.board__list { list-style: none; margin: 0; padding: 0; }
+.board__row { display: grid; grid-template-columns: 28px 56px 1fr auto; gap: 12px 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
+@media (min-width: 700px) { .board__row { grid-template-columns: 36px 88px 1fr auto; } }
+.board__rank { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.board__art { display: block; width: 56px; height: 56px; }
+@media (min-width: 700px) { .board__art { width: 88px; height: 88px; } }
+.board__art .tcover { width: 100%; height: 100%; }
+.board__who { display: grid; gap: 2px; min-width: 0; }
+.board__name { color: var(--text); font-weight: var(--w-label); text-decoration: none; }
+.board__line { font-size: var(--t13); }
+.board__hold { color: var(--muted); font-size: var(--t13); }
+.board__hold--lock { text-decoration: underline; text-decoration-color: var(--border); }
+.board__fig { display: grid; justify-items: end; gap: 2px; font-variant-numeric: tabular-nums; }
+.board__fig b { font-size: var(--t22); font-weight: var(--w-num); }
+.board__fig span { color: var(--muted); font-size: var(--t13); }
+.board .seg { margin-top: 16px; }
+.plan2__fine { font-size: var(--t13); }

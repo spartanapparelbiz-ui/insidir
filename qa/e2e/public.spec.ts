@@ -10,7 +10,7 @@ test("the app is for members only: visitors are sent to log in, members without 
   }
   for (const api of ["/api/moves", "/api/feed", "/api/live", "/api/receipts/csv"]) expect((await page.request.get(api)).status(), api).toBe(401);
   await signIn(context, "freeUs");
-  for (const path of ["/feed", "/top"]) {
+  for (const path of ["/feed"]) {
     await page.goto(path);
     await expect(page, path).toHaveURL(/\/start$/);
   }

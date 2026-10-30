@@ -1,5 +1,6 @@
 /* /trackers: every tracker (lib/trackers.ts) as a grid of cover cards: name, "by Insidir", one line, its record (or
- * "New" under 20 settled moves) and the money it tracked in the last 30 days. Public. */
+ * "Building record · N of 30" under 30 settled) and the money it tracked in the last 30 days. Losing trackers stay
+ * listed, with their record. Public. */
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";

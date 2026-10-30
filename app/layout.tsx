@@ -5,6 +5,8 @@ import { RegisterSW } from "@/components/app/RegisterSW";
 import { Motion } from "@/components/motion/Motion";
 import { NavProgress } from "@/components/motion/NavProgress";
 import { SiteFooter } from "@/components/SiteFooter";
+import { getDb, hasDatabase } from "@/lib/db";
+import { positioningEdge } from "@/lib/smart/gate";
 import { Beacons } from "@/components/landing/Beacons";
 import { ToastProvider } from "@/components/ui/Toast";
 import { LockProvider } from "@/components/lock/Lock";
@@ -37,10 +39,15 @@ const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weig
 
 export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Whether Positioning has earned its place in the nav (cached for 10 minutes).
+  if (hasDatabase()) await positioningEdge(getDb()).catch(() => null);
   return (
     <html lang="en" className={schibsted.variable} suppressHydrationWarning>
       <head>
+        {/* Every photo comes from Unsplash's image CDN (lib/unsplash.ts): open the connection before the first one is asked for. */}
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
         {/* Before first paint: lets scroll reveals start hidden only when JS will show them (components/motion/Motion.tsx). */}
         <script dangerouslySetInnerHTML={{ __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('js')" }} />
       </head>

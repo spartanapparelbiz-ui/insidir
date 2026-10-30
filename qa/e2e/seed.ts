@@ -4,10 +4,12 @@
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
-import { accuracyChecks, DEFAULT_SETTINGS, fundFilings, fundHoldings, funds, insiderTrades, moves, nearMisses, opportunities, receipts, secHistory, sessions, traderPositions, traderRecords, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { accuracyChecks, DEFAULT_SETTINGS, fundFilings, fundHoldings, funds, insiderTrades, marketInfo, moves, nearMisses, opportunities, receipts, secHistory, sessions, traderPositions, traderRecords, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { marketKey } from "@/lib/engines/common";
+import { TRACKER_RULES_V } from "@/lib/trackers";
 import { scan } from "@/lib/scanner";
 import { saveMarkets } from "@/lib/worker/store";
+import { tagOnce } from "@/lib/trackers-tag";
 import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 import type { Book, Level, MarketPair, Opportunity, Plan, Region, VEvent, VMarket, Venue } from "@/lib/types";
 
@@ -74,7 +76,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks, terminal.market_info, terminal.move_tags CASCADE`);
   const u = universe(now);
   // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
   await saveMarkets(db, u.markets);
@@ -174,6 +176,25 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
       detail: { kind: "fund", company: "E2E Fixture Devices", cusip: "037833100", fund: "E2E Fixture Capital", fundCik: "0000999998", period: "2026-09-30", filedOn: "2026-10-21",
         addedShares: 1_136_364, prevShares: 4_000_000, curShares: 5_136_364, curValue: 1_130_000_080, newPosition: false, accession: "000099999826000002", prevAccession: "000099999826000001" } }),
   ]);
+  // Followable returns (lib/follow): the price Insidir showed each position at, 2 points after the trader's entry.
+  await db.execute(sql`update terminal.moves set seen_at = at, seen_price = least(0.98, avg_price + 0.02), seen_src = 'history' where source in ('polymarket', 'kalshi')`);
+  // A winning tracker for /open and the leaderboard: 32 settled tennis positions from one account (20 won, 12 lost,
+  // each shown at 45%: $100 on each makes +$1,148), and three open ones (one too fresh for a visitor to see).
+  const FOLLOW = "0xe2e00000000000000000000000000000000000dd";
+  const tennis = (i: number, o: Omit<Partial<typeof moves.$inferInsert>, "at" | "lastAt"> & { at: number }) => mv({ id: `e2e:t${i}`, source: "polymarket", marketId: `0xe2etennis${i}`,
+    eventTitle: `E2E fixture: Tennis match ${i}`, marketTitle: `E2E fixture: Tennis match ${i}`, outcome: `Player ${i}`, outcomeSide: "yes", amount: 30_000, avgPrice: 0.43,
+    wallet: FOLLOW, walletName: "E2E-Follow", fills: 1, tab: "sports", league: "tennis", category: "sports", trackers: ["tennis"], trackersV: TRACKER_RULES_V, ...o });
+  await db.insert(moves).values([
+    ...Array.from({ length: 32 }, (_, i) => tennis(i, { at: now - (40 - i) * DAY, result: i < 20 ? "won" : "lost", settledAt: new Date(now - (39 - i) * DAY), seenPrice: 0.45, seenSrc: "history"})),
+    tennis(100, { at: now - 2 * 60 * MIN, amount: 90_000, avgPrice: 0.52, seenPrice: 0.53, seenSrc: "history", outcome: "Player A" }),
+    tennis(101, { at: now - 3 * 60 * MIN, amount: 45_000, avgPrice: 0.3, seenPrice: 0.31, seenSrc: "history", outcome: "Player B" }),
+    tennis(102, { at: now - 5 * MIN, amount: 60_000, avgPrice: 0.6, seenPrice: 0.61, seenSrc: "history", outcome: "Player C" }),
+  ]);
+  await db.execute(sql`update terminal.moves set seen_at = at where id like 'e2e:t%'`);
+  await db.insert(marketInfo).values([100, 101, 102].map(i => ({ source: "polymarket" as const, marketId: `0xe2etennis${i}`, yesPrice: 0.58, closed: false, historyKey: null,
+    endAt: new Date(now + (i - 99) * 26 * 3_600_000), updatedAt: new Date(now) })));
+  // Tracker tags, as the worker stores them (lib/trackers-tag.ts).
+  while (await tagOnce(db) > 0) { /* every untagged move */ }
   await db.insert(traderRecords).values([
     { wallet: TOP, name: "E2E-Top", resolved: 63, won: 41, lost: 22, profit: 1_200_000, biggestWin: 310_000, biggestBet: 500_000, updatedAt: new Date(now) },
     { wallet: NEW, name: null, resolved: 7, won: 5, lost: 2, profit: 9_000, biggestWin: 4_000, biggestBet: 20_000, updatedAt: new Date(now) },

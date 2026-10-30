@@ -6,7 +6,11 @@
  *   2. Webhook: one for <APP_URL>/api/billing/webhook with EVENTS. Created when missing, its secret (only in the
  *      create response) stored encrypted. Never a second one: an existing webhook gets missing events added; one
  *      whose secret we don't hold (and isn't in WHOP_WEBHOOK_SECRET) is replaced, delete first, then create.
- * Ends with one line: "Whop setup: plan ok|wrong, webhook ok|failed". (Log-in is our own: email and password, or Google.) */
+ *   3. Login app (sign-in is Whop's, lib/auth/whop-login.ts): read-only. The app is WHOP_CLIENT_ID, else the stored
+ *      app_id, else the account's app named "Insidir" (then stored). Its redirect URIs must include
+ *      <APP_URL>/reset/callback, already registered; nothing is changed in Whop: when it's missing the log says exactly
+ *      which URI to add, and sign-in stays off until it's there.
+ * Ends with one line: "Whop setup: plan ok|wrong, webhook ok|failed, login app ok|missing redirect|failed". */
 import type { Db } from "@/lib/db";
 import { TRIAL, PLANS } from "@/lib/plans";
 import { encryptSecret, decryptSecret, readConfig, writeConfig, clearConfig } from "./config";
@@ -23,7 +27,8 @@ export interface SetupDeps {
   fetch: typeof fetch;
   log: (line: string) => void;
 }
-export interface SetupResult { plan: "ok" | "wrong"; webhook: "ok" | "failed"; line: string }
+export const APP_NAME = "Insidir";
+export interface SetupResult { plan: "ok" | "wrong"; webhook: "ok" | "failed"; app: "ok" | "missing redirect" | "failed"; line: string }
 
 const num = (v: unknown): number | null => (v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
@@ -135,7 +140,33 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
     log(`Whop webhook: ${e instanceof Error ? e.message : String(e)}.`);
   }
 
-  const line = `Whop setup: plan ${plan}, webhook ${webhook}`;
+  // 3. The login app: checked, never changed.
+  let app: SetupResult["app"] = "failed";
+  const redirect = `${appUrl}/reset/callback`;
+  try {
+    let found: Json | null = null;
+    const id = env.WHOP_CLIENT_ID || stored.app_id || null;
+    if (id) {
+      const r = await call("GET", `/apps/${encodeURIComponent(id)}`);
+      if (!r.ok) throw new Error(`couldn't read app ${id} (${why(r)})`);
+      found = r.json;
+    } else {
+      const q = new URLSearchParams({ first: "100", query: APP_NAME });
+      if (company) q.set("account_id", company);
+      const r = await call("GET", `/apps?${q}`);
+      if (!r.ok) throw new Error(`couldn't list apps (${why(r)})`);
+      found = list(r.json).find(a => str(a.name) === APP_NAME) ?? null;
+      if (!found) throw new Error(`no app named "${APP_NAME}" and no WHOP_CLIENT_ID`);
+    }
+    const uris = Array.isArray(found.redirect_uris) ? (found.redirect_uris as unknown[]).filter((u): u is string => typeof u === "string") : [];
+    if (!env.WHOP_CLIENT_ID && str(found.id) && str(found.id) !== stored.app_id) await writeConfig(db, "app_id", str(found.id)!);
+    if (uris.includes(redirect)) { app = "ok"; log(`Whop login app ${str(found.id)}: redirect URI ${redirect} is registered.`); }
+    else { app = "missing redirect"; log(`Whop login app ${str(found.id)}: ${redirect} is not one of its redirect URIs (${uris.join(", ") || "none"}). Add exactly ${redirect} in the app's OAuth settings on Whop.`); }
+  } catch (e) {
+    log(`Whop login app: ${e instanceof Error ? e.message : String(e)}.`);
+  }
+
+  const line = `Whop setup: plan ${plan}, webhook ${webhook}, login app ${app}`;
   log(line);
-  return { plan, webhook, line };
+  return { plan, webhook, app, line };
 }

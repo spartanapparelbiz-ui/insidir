@@ -56,6 +56,9 @@ export interface Move {
   soldShare?: number | null;
   /** The trackers whose fixed or observed rule it meets (lib/trackers.ts), as the worker stored them. */
   trackers?: string[] | null;
+  /** When Insidir first showed it, and its side's price then (lib/follow): where following it starts. */
+  seenAt?: number | null;
+  seenPrice?: number | null;
 }
 
 /** An SEC Form 4 insider buy, or a fund's 13F add versus its previous 13F (lib/stocks). */

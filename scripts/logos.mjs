@@ -6,6 +6,8 @@
 //                           nhl-team-logos). Those ship as compiled React components; their createElement calls are
 //                           read as text and written out as plain SVG. No package code is ever run.
 //   brands/<slug>.svg       companies and coins named in markets (simple-icons, in the brand's colour)
+//   marks/<id>.svg          single-colour league marks in white for the tracker page header (simple-icons: NBA, MLB,
+//                           NHL, Premier League, UFC, FIFA); leagues without one show their name alone
 //   stocks/<TICKER>.webp    US-listed companies by ticker (us-stock-logos)
 //   manifest.json           what exists, for lib/logos.ts
 // The logos are the trademarks of their leagues, teams and companies, shown only to say which one a position is about.
@@ -90,8 +92,8 @@ const toSvg = (n) => {
 const svgFromComponent = (file) => { const t = readTree(readFileSync(file, "utf8")); return t && t.tag === "svg" ? toSvg(t) : null; };
 
 rmSync(OUT, { recursive: true, force: true });
-for (const d of ["leagues", "brands", "stocks", "teams/nba", "teams/nfl", "teams/mlb", "teams/nhl"]) mkdirSync(join(OUT, d), { recursive: true });
-const manifest = { leagues: {}, teams: { nba: [], nfl: [], mlb: [], nhl: [] }, brands: {}, stocks: [] };
+for (const d of ["leagues", "brands", "marks", "stocks", "teams/nba", "teams/nfl", "teams/mlb", "teams/nhl"]) mkdirSync(join(OUT, d), { recursive: true });
+const manifest = { leagues: {}, teams: { nba: [], nfl: [], mlb: [], nhl: [] }, brands: {}, marks: {}, stocks: [] };
 
 // Teams (and the four leagues' own marks), one component file each.
 const TEAM_DIR = { nba: "dist/logos", nfl: "dist/logos", mlb: "dist/Icons", nhl: "dist/logos" };
@@ -130,6 +132,12 @@ const BRANDS = ["bitcoin", "ethereum", "solana", "dogecoin", "ripple", "nvidia",
   "visa", "x", "tiktok", "youtube", "spotify", "uber", "airbnb", "paypal", "coinbase", "binance", "samsung", "sony", "nintendo", "playstation", "openai", "anthropic",
   "amazon", "microsoft", "ibm", "oracle", "salesforce", "adobe", "shopify", "disney", "warnerbros", "hbo", "nike", "adidas", "boeing", "ford", "toyota", "bmw"];
 for (const b of BRANDS) { const s = simple(b); if (s) { writeFileSync(join(OUT, "brands", `${b}.svg`), s); manifest.brands[b] = `${b}.svg`; } }
+
+// White league marks (one colour, so the cut-outs stay cut out).
+for (const [id, slug] of Object.entries({ nba: "nba", mlb: "mlb", nhl: "nhl", epl: "premierleague", ufc: "ufc", fifa: "fifa" })) {
+  const f = join(dirs.simple, "icons", `${slug}.svg`);
+  if (existsSync(f)) { writeFileSync(join(OUT, "marks", `${id}.svg`), readFileSync(f, "utf8").replace("<svg ", '<svg fill="#ffffff" ')); manifest.marks[id] = `${id}.svg`; }
+}
 
 // Stocks by ticker.
 const webp = join(dirs.stocks, "dist/webp");

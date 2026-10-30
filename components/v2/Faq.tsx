@@ -17,8 +17,8 @@ export const FAQ_V2: Array<{ id: string; q: string; a: string }> = [
 export const FAQ_PRICING: Array<{ id: string; q: string; a: string }> = [
   { id: "price", q: "How much is it?", a: `Try it 7 days for $1, then $${PLANS.insidir.price}/month for everything: every large position live, trader records, follows and alerts. One plan, no tiers. Cancel anytime.` },
   FAQ_V2.find(f => f.id === "cancel")!,
-  { id: "pay", q: "How do I pay?", a: "On our secure checkout, right on this site. Apple Pay, Google Pay or card. We never see or store your card." },
-  { id: "login", q: "How do I log in?", a: "Tap Log in, then Continue with Google, or use the email and password you signed up with. Forgot your password? Email hello@aethric.llc from your sign-up address and we'll reset it within a day." },
+  { id: "pay", q: "How do I pay?", a: "On Whop's secure checkout, right on this site. Apple Pay, Google Pay or card. We never see or store your card. Manage or cancel your subscription anytime on your Whop orders page." },
+  { id: "login", q: "How do I log in?", a: "Tap Log in, then Continue. You sign in with your Whop account: Google, Apple or email. There's no password to remember here." },
   FAQ_V2.find(f => f.id === "advice")!,
 ];
 

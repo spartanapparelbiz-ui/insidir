@@ -1,0 +1,6 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": { "buildCommand": "npm ci" },
+  "deploy": { "startCommand": "npm run art", "cronSchedule": "23 * * * *", "restartPolicyType": "NEVER" },
+  "$comment": "The art job (jobs/art.ts): every hour it makes art for any entity that has none yet, stores it in the insidir-art bucket and records it in terminal.entity_art. Applies pending migrations first."
+}

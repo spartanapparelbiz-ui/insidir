@@ -34,11 +34,11 @@ test("members open the app on Trackers: every tracker ranked by ROI with what it
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("a tracker page: holding now first, then performance, stats, breakdowns, top traders, latest positions; nothing invented under 20 settled", async ({ page, context }) => {
+test("a tracker page: holding now first, then following it, the traders' own return, stats, breakdowns, top traders, latest positions; nothing invented under 30 settled", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/trackers/nfl-big-money");
   await expect(page.getByRole("heading", { level: 1, name: "NFL" })).toBeVisible();
-  const order = ["Holding now", "Performance", "Stats", "Breakdowns", "Top traders in this tracker", "Latest positions", "Similar trackers"];
+  const order = ["Holding now", "Following it", "The traders' own return", "Stats", "Breakdowns", "Top traders in this tracker", "Latest positions", "Similar trackers"];
   expect(await page.locator("h2").allInnerTexts()).toEqual(expect.arrayContaining(order));
   const at = await page.locator("h2").allInnerTexts();
   expect(order.map(h => at.indexOf(h))).toEqual([...order.map(h => at.indexOf(h))].sort((a, b) => a - b));
@@ -49,11 +49,21 @@ test("a tracker page: holding now first, then performance, stats, breakdowns, to
     await expect(page.getByRole("table", { name: "Holding now" }).locator("tbody tr")).toHaveCount(open[0]!.n);
   }
   for (const h of ["By league or topic", "By position size", "Favorite vs underdog", "By day of the week"]) await expect(page.getByRole("heading", { level: 3, name: h })).toBeVisible();
-  await expect(page.getByText("Hypothetical: $100", { exact: false }).or(page.getByText("$100 on every position:"))).toBeVisible();
+  // Following it: under 30 settled, the record being built with the tally so far (3 settled NFL positions), never a return.
+  await expect(page.getByTestId("followable")).toContainText("Building record · 3 of 30");
+  await expect(page.getByTestId("followable")).toContainText("So far: 1 won · 2 lost");
+  await expect(page.locator(".thead__roi")).toContainText("Past results, not a promise.");
+  await expect(page.getByText("$100 at each trader's entry:", { exact: false })).toBeVisible();
   for (const label of ["Win rate", "Edge vs. entry", "Net P&L", "ROI"]) await expect(page.locator(".tile").filter({ has: page.locator("dt", { hasText: label }) }).first()).toContainText("Not enough data yet");
   await page.getByRole("link", { name: "Open", exact: true }).click();
   await expect(page).toHaveURL(/\?show=open/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+  // A tracker with a record: its followable ROI and the $100 line (the tennis fixture).
+  await page.goto("/trackers/tennis");
+  await expect(page.getByTestId("followable")).toContainText("+35.9%");
+  await expect(page.getByTestId("followable")).toContainText("$100 on every position since we started tracking: $3,200 in, +$1,148 back.");
+  await expect(page.getByTestId("followable")).toContainText("20 won · 12 lost · 32 settled");
+  await page.screenshot({ path: `qa/screenshots/tracker-followable-${page.viewportSize()!.width}.png`, fullPage: true });
 });
 
 test("a market: the price chart with its large positions, money by side and the top traders on each side", async ({ page, context }) => {
