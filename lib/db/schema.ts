@@ -681,3 +681,40 @@ export const whopConfig = terminal.table("whop_config", {
   value: text("value"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** One artwork per entity (lib/art): a tracker, person, company, fund, team, league or country, made once by the art
+ *  job (jobs/art.ts) and stored in the art bucket under `key` (<key>/<width>.<avif|webp>). A monogram has no files. */
+export const entityArt = terminal.table("entity_art", {
+  /** lib/art/ids.ts: "company:NVDA", "person:1214156", "team:nba:LAL"… */
+  entityId: text("entity_id").primaryKey(),
+  kind: text("kind").notNull(),
+  label: text("label").notNull(),
+  /** lib/art/ref.ts Treatment. */
+  treatment: text("treatment").notNull(),
+  /** The field and the placeholder, "#RRGGBB". */
+  colour: text("colour").notNull(),
+  /** The brand's own colour (a company's, for its executives' duotones), when it isn't the field. */
+  brandColour: text("brand_colour"),
+  mono: text("mono").notNull(),
+  key: text("key"),
+  /** Widths stored, largest first. */
+  sizes: jsonb("sizes").$type<number[]>(),
+  w: integer("w").notNull().default(0),
+  h: integer("h").notNull().default(0),
+  fx: doublePrecision("fx").notNull().default(0.5),
+  fy: doublePrecision("fy").notNull().default(0.5),
+  /** Where the picture came from: the file itself, its page, its licence and author, for /credits. */
+  sourceUrl: text("source_url"),
+  sourcePage: text("source_page"),
+  license: text("license"),
+  licenseUrl: text("license_url"),
+  author: text("author"),
+  /** Changed from the source (a duotone, a recoloured mark): /credits says so. */
+  adapted: boolean("adapted").notNull().default(false),
+  /** Why it's a monogram or a fallback, in words, for the QA list. */
+  why: text("why"),
+  /** The art job's version when it was made: a newer job remakes it. */
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("entity_art_kind_idx").on(t.kind)]);
