@@ -7,7 +7,7 @@ import { Ago } from "@/components/app/Ago";
 import { Locked } from "@/components/app/Locked";
 import { unlockHref } from "@/components/app/links";
 import { SiteHeader } from "@/components/SiteHeader";
-import { requireMember } from "@/lib/auth/viewer";
+import { getViewer } from "@/lib/auth/viewer";
 import { centsText, usd } from "@/lib/format";
 import { entitlements } from "@/lib/plans";
 import { whales } from "@/lib/queries";
@@ -23,7 +23,7 @@ const short = (w: string): string => (w.length > 12 ? `${w.slice(0, 6)}…${w.sl
 
 export default async function WhalesPage() {
   const now = Date.now();
-  const viewer = await requireMember("/whales");
+  const viewer = await getViewer();
   const allowed = entitlements(viewer.plan).whales;
   const venues = allowedVenues(viewer.region);
   const trades = allowed ? (await whales(100)).filter(t => venues.includes(t.venue)) : [];

@@ -2,9 +2,8 @@
  * all=1 keeps the low-interest markets the default feed leaves out; tracker narrows to one tracker's moves.
  * The feed, gated by plan and region on the server (lib/moves/feed.ts). A tab that isn't live (Crypto; Stocks until
  * it is in FEATURES_READY) returns an empty list. */
-import { MEMBERS_ONLY } from "@/lib/copy";
 import { NextResponse, type NextRequest } from "next/server";
-import { memberOrNull } from "@/lib/auth/viewer";
+import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { feedFor, feedStatus } from "@/lib/moves/feed";
 import { LEAGUES, type League, type Tab } from "@/lib/moves/types";
@@ -27,8 +26,8 @@ export async function GET(req: NextRequest) {
   const all = p.get("all") === "1";
   const tracker = /^[a-z0-9-]{2,40}$/.test(p.get("tracker") ?? "") ? p.get("tracker") : null;
   if (!hasDatabase()) return NextResponse.json({ items: [], status: { state: "behind", lastAt: null, text: "Catching up · waiting for the first update" } });
-  const viewer = await memberOrNull();
-  if (!viewer) return NextResponse.json({ error: MEMBERS_ONLY }, { status: 401 });
+  // Visitors get the 30-minute-delayed view (the plan gates every row); members get it live.
+  const viewer = await getViewer();
   const db = getDb();
   const [items, status] = await Promise.all([
     feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, min, league: league && LEAGUES.includes(league) ? league : undefined, leagues, categories, before, limit, all, tracker }, now),

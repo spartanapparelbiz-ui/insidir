@@ -50,10 +50,10 @@ test("a trader's profile: every stat from their resolved positions, for members"
   await expect(page.getByRole("link", { name: "See their Polymarket profile" })).toHaveCount(0);
 });
 
-test("profiles are members only; the leaderboard is public and no trader's own record reaches a visitor", async ({ page }) => {
+test("a profile opens for a visitor with the record locked; the leaderboard is public and no trader's own record reaches a visitor", async ({ page }) => {
   const bodies = await captureBodies(page, async () => {
-    await page.goto(`/p/${TOP}`);
-    await expect(page).toHaveURL(/\/login\?next=%2Fp%2F/);
+    expect((await page.goto(`/p/${TOP}`))?.status()).toBe(200);
+    await expect(page.getByText(/Their record is for members/)).toBeVisible();
     await page.goto("/top");
     await expect(page.getByRole("heading", { level: 1, name: "Leaderboard" })).toBeVisible();
   });

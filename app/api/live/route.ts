@@ -1,9 +1,8 @@
-import { MEMBERS_ONLY } from "@/lib/copy";
 import { NextResponse } from "next/server";
 /* The live stream (Server-Sent Events). Each connection gets the events its viewer may see, when they may see them
  * (lib/live/view.ts: the free plan's 30-minute delay, the region, redaction), plus the scanner's real status every
  * few seconds. The browser closes it while the tab is hidden (components/live/useLive.ts). */
-import { feedViewer, memberOrNull } from "@/lib/auth/viewer";
+import { feedViewer, getViewer } from "@/lib/auth/viewer";
 import { entitlements } from "@/lib/plans";
 import { hub, ViewerCursor } from "@/lib/live/hub";
 import type { LiveEvent, LiveHello, LiveStatus } from "@/lib/live/types";
@@ -15,8 +14,8 @@ const PING_MS = 15_000;
 const STATUS_EVERY_MS = 2_000;
 
 export async function GET(req: Request) {
-  const viewer = await memberOrNull();
-  if (!viewer) return NextResponse.json({ error: MEMBERS_ONLY }, { status: 401 });
+  // Visitors get the 30-minute-delayed view (the plan gates every row); members get it live.
+  const viewer = await getViewer();
   const fv = feedViewer(viewer);
   const h = hub();
   await h.ready();

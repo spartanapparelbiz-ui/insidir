@@ -9,7 +9,7 @@ import { unlockHref } from "@/components/app/links";
 import { FollowButton } from "@/components/v2/FollowButton";
 import { MarketLinkButton } from "@/components/v2/LocationPill";
 import { MoveCard } from "@/components/v2/MoveCard";
-import { requireMember } from "@/lib/auth/viewer";
+import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import { dollars } from "@/lib/moves/copy";
@@ -63,7 +63,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   if (!/^[\w.\-:]{3,120}$/.test(id)) notFound();
   const source = id.startsWith("0x") ? "polymarket" : "kalshi";
   const now = Date.now();
-  const viewer = await requireMember(`/market/${id}`);
+  const viewer = await getViewer();
   const paid = isPaid(viewer.plan);
   if (!hasDatabase()) notFound();
   const db = getDb();

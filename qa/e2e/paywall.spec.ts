@@ -1,4 +1,4 @@
-/* Paid data never reaches someone without a plan (the app is members only): every response body (HTML, React Server Component payloads, /api/feed
+/* Paid data never reaches someone without a plan (visitors and members without a plan see the 30-minute-delayed view): every response body (HTML, React Server Component payloads, /api/feed
  * JSON) is scanned while a signed-out visitor and a signed-in free member use the site. Fresh deals (under 30
  * minutes old) must not appear at all; delayed deals must not carry their size, cost, fees or profit. */
 import { expect, test } from "@playwright/test";
@@ -31,15 +31,13 @@ for (const who of ["visitor", "member without a plan"] as const) {
     const { fresh, old } = await seeded();
     expect(fresh.length).toBeGreaterThan(0);
     const bodies = await captureBodies(page, async () => {
-      for (const path of ["/", "/pricing", "/sports", "/markets", "/gaps", "/receipts", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`]) {
+      for (const path of ["/", "/pricing", "/sports", "/markets", "/feed", "/whales", "/market/0xe2emarket1", "/gaps", "/receipts", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`]) {
         await page.goto(path);
         await page.waitForTimeout(300);
       }
       await page.evaluate(() => fetch("/api/feed").then(r => r.text()));
     });
     expect(bodies.length).toBeGreaterThan(5);
-    // The live stream says no: members only.
-    expect(bodies.find(b => b.url.endsWith("/api/live"))?.body ?? "").toContain("Members only");
     const found: string[] = [];
     for (const { url, body } of bodies.filter(b => !b.url.includes("/_next/static/"))) {
       for (const f of fresh) {
@@ -54,7 +52,7 @@ for (const who of ["visitor", "member without a plan"] as const) {
       }
     }
     expect(found).toEqual([]);
-    expect((await page.request.get("/api/feed")).status()).toBe(401);
+    expect((await page.request.get("/api/feed")).status()).toBe(200);
   });
 }
 

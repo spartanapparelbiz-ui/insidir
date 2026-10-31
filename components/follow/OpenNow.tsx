@@ -30,7 +30,7 @@ export function OpenNow({ rows, total, member, now, trialHref, more = true }: { 
           <Link key="m" className="dtable__link dtable__link--art" href={`/market/${encodeURIComponent(r.marketId)}`}><MoveArt art={r.art} /><span>{r.headline}<span className="dtable__sub">{r.subline}</span></span></Link>,
           <span key="f" className="opennow__from">{r.from.kind === "tracker" ? <Link href={`/trackers/${r.from.slug}`}>{r.from.name}</Link> : <Link href={`/p/${r.from.wallet}`}>{r.from.name}</Link>}
             <span className="dtable__sub"><span className={tone(r.record.net)}>{roiText(r.record.net, r.record.staked)}</span> followable · {r.record.n} settled</span></span>,
-          dollars(r.amount), pct(r.seenPrice), r.nowPrice === null ? "—" : <span className={r.seenPrice === null ? undefined : tone(r.nowPrice - r.seenPrice)}>{pct(r.nowPrice)}</span>, left(r.endAt, now),
+          r.n > 1 ? <span key="a">{r.n} positions · {dollars(r.amount)}</span> : dollars(r.amount), pct(r.seenPrice), r.nowPrice === null ? "—" : <span className={r.seenPrice === null ? undefined : tone(r.nowPrice - r.seenPrice)}>{pct(r.nowPrice)}</span>, left(r.endAt, now),
         ])} />
       <p className="opennow__note">{PAST} Seen at is the price on their side when Insidir showed the position; following it costs about a point more.</p>
       {!member && more && total > rows.length ? (

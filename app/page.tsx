@@ -41,7 +41,10 @@ import { short as money } from "@/lib/moves/headline";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
 import { visibleTrackers, type Tracker, type TrackerSlug } from "@/lib/trackers";
-import { trackerStats, type TrackerStats } from "@/lib/trackers-store";
+import { trackerHoldings, trackerMoves, trackerStats, type TrackerStats } from "@/lib/trackers-store";
+import { LivePortfolio, type PortfolioData } from "@/components/home/LivePortfolio";
+import { feedItems } from "@/lib/moves/feed";
+import { countsToRecord } from "@/lib/trust";
 import { trustFacts, type TrustFacts } from "@/lib/trust";
 import type { Plan, Region } from "@/lib/types";
 
@@ -49,11 +52,27 @@ export const dynamic = "force-dynamic";
 
 const NO_MARKET = (kind: MarketKind, now: number): MarketPreview => ({ kind, rows: [], total: 0, window: "", proof: [], live: false, at: now });
 interface Board { t: Tracker; s: TrackerStats | undefined; r: FollowRecord }
-interface HomeData { markets: Record<MarketKind, MarketPreview>; board: Board[]; open: { rows: OpenRow[]; total: number }; proof: Proof | null; trust: TrustFacts | null }
+interface HomeData { markets: Record<MarketKind, MarketPreview>; board: Board[]; open: { rows: OpenRow[]; total: number }; proof: Proof | null; trust: TrustFacts | null; portfolio: PortfolioData | null }
 const empty = (now: number): HomeData => ({
   markets: { sports: NO_MARKET("sports", now), markets: NO_MARKET("markets", now), stocks: NO_MARKET("stocks", now), crypto: NO_MARKET("crypto", now) },
-  board: [], open: { rows: [], total: 0 }, proof: null, trust: null,
+  board: [], open: { rows: [], total: 0 }, proof: null, trust: null, portfolio: null,
 });
+
+/** The live portfolio: the best tracker by FOLLOWABLE ROI among those with 30+ settled, and only if that return is
+ *  positive (never the traders' own); none, no section. Its largest open positions and its latest settled results. */
+async function portfolioData(db: Db, board: Board[], stats: Map<TrackerSlug, TrackerStats>, plan: Plan, region: Region | null, now: number): Promise<PortfolioData | null> {
+  const top = board[0];
+  if (!top || top.r.net <= 0) return null;
+  const until = now - movePlan(plan).delayMs;
+  const [holdings, open, settled] = await Promise.all([
+    trackerHoldings(db, until, now).catch(() => new Map()),
+    trackerMoves(db, top.t, { until, since: now - 60 * 86_400_000, byAmount: true, limit: 12 }).then(l => l.filter(m => !m.result).slice(0, 4)).catch(() => []),
+    trackerMoves(db, top.t, { settled: true, limit: 20 }).then(l => l.filter(m => countsToRecord(m)).slice(0, 4)).catch(() => []),
+  ]);
+  const [o, r] = await Promise.all([feedItems(db, open, plan, region, now).catch(() => []), feedItems(db, settled, plan, region, now, now).catch(() => [])]);
+  const h = holdings.get(top.t.slug), s = stats.get(top.t.slug);
+  return { t: top.t, record: s?.records.all ?? null, cover: coverStats(s), open: o, results: r, openCount: h?.open ?? o.length, openAmount: h?.amount ?? o.reduce((a, m) => a + m.amount, 0) };
+}
 
 /** The top 5 trackers by followable ROI, all time, among those with 30+ settled (the same ranking as /top). */
 function topFive(stats: Map<TrackerSlug, TrackerStats>): Board[] {
@@ -72,7 +91,8 @@ async function homeData(db: Db, plan: Plan, region: Region | null, now: number):
     proofStrip(db, now).catch(() => null),
     trustFacts(db).catch(() => null),
   ]);
-  return { markets, board: topFive(stats), open, proof, trust };
+  const board = topFive(stats);
+  return { markets, board, open, proof, trust, portfolio: await portfolioData(db, board, stats, plan, region, now).catch(() => null) };
 }
 
 const STEPS = [
@@ -119,7 +139,7 @@ export default async function Home() {
   }
   const live = movePlan(viewer.plan).delayMs === 0;
   // Every visitor on the same plan and region sees the same home page: computed once per 15 seconds.
-  const { markets, board, open, proof, trust } = hasDatabase()
+  const { markets, board, open, proof, trust, portfolio } = hasDatabase()
     ? await memo(`home:${viewer.plan}:${viewer.region ?? ""}`, 15_000, () => homeData(getDb(), viewer.plan, viewer.region, now))
     : empty(now);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
@@ -149,6 +169,8 @@ export default async function Home() {
             <AsOf at={now} live={live} sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.methodology]} />
           </div>
         </section>
+
+        {portfolio ? <LivePortfolio d={portfolio} /> : null}
 
         <section className="sec3" aria-labelledby="board-h">
           <div className="wrap">

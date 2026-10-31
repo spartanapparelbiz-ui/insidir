@@ -24,14 +24,14 @@ import type { FollowRecord } from "./math";
 
 const DAY = 86_400_000;
 
-/** Positions are the same when the same account takes the same side of the same market within an hour: one row,
- *  the amounts added (the newest time kept). Pure. */
-export function dedupe<T extends Pick<Move, "wallet" | "marketId" | "outcomeSide" | "amount" | "at">>(rows: readonly T[], windowMs = 3_600_000): T[] {
-  const out: T[] = [];
+/** Positions on the same side of the same market within an hour are one row, whoever placed them (Kalshi's have no
+ *  account): the amounts added, how many counted (n), the newest time kept. Pure. */
+export function dedupe<T extends Pick<Move, "marketId" | "outcomeSide" | "amount" | "at">>(rows: readonly T[], windowMs = 3_600_000): Array<T & { n: number }> {
+  const out: Array<T & { n: number }> = [];
   for (const m of [...rows].sort((a, b) => b.at - a.at)) {
-    const same = m.wallet ? out.find(x => x.wallet === m.wallet && x.marketId === m.marketId && x.outcomeSide === m.outcomeSide && Math.abs(x.at - m.at) <= windowMs) : undefined;
-    if (same) (same as { amount: number }).amount = same.amount + m.amount;
-    else out.push({ ...m });
+    const same = out.find(x => x.marketId === m.marketId && x.outcomeSide === m.outcomeSide && x.at - m.at <= windowMs);
+    if (same) { (same as { amount: number }).amount = same.amount + m.amount; same.n += 1; }
+    else out.push({ ...m, n: 1 });
   }
   return out;
 }
@@ -45,6 +45,8 @@ export interface OpenRow {
   headline: string;
   subline: string;
   amount: number;
+  /** How many positions the row adds up (same market and side within an hour). */
+  n: number;
   at: number;
   marketId: string;
   /** The side's price when Insidir showed it, and now (null when the venue hasn't said). */
@@ -86,7 +88,7 @@ export async function openFromWinners(db: Db, plan: Plan, now: number): Promise<
     const yes = i?.yesPrice ?? null;
     rows.push({
       id: m.id, from: tr ? { kind: "tracker", slug: tr.slug, name: tr.name } : { kind: "trader", wallet: td!.wallet, name: walletLabel(td!.wallet, td!.name) },
-      record: tr ? tr.record : td!.all, art: artOfMove(m), headline: headlineOf(m), subline: sublineOf({ ...m, leagueLabel: leagueLabel(m) }), amount: m.amount, at: m.at,
+      record: tr ? tr.record : td!.all, art: artOfMove(m), headline: headlineOf(m), subline: sublineOf({ ...m, leagueLabel: leagueLabel(m) }), amount: m.amount, n: m.n, at: m.at,
       marketId: m.marketId, seenPrice: m.seenPrice ?? null, nowPrice: yes === null ? null : m.outcomeSide === "no" ? 1 - yes : yes, endAt: i?.endAt ?? null,
     });
   }

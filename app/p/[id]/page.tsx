@@ -9,7 +9,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { TraderProfile } from "@/components/v2/profiles/TraderProfile";
-import { requireMember } from "@/lib/auth/viewer";
+import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { walletLabel } from "@/lib/moves/records";
 import { fundHref, insiderHref, parseProfileId } from "@/lib/profiles/name";
@@ -37,7 +37,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   if (!ref) notFound();
   if (ref.kind === "insider") permanentRedirect(insiderHref(ref.cik));
   if (ref.kind === "fund") permanentRedirect(fundHref(ref.cik));
-  const viewer = await requireMember(`/p/${id}`);
+  const viewer = await getViewer();
   const trial = unlockHref();
   const db = hasDatabase() ? getDb() : null;
   const body = <TraderProfile db={db} wallet={ref.wallet} viewer={viewer} trial={trial} now={Date.now()} page={page} />;

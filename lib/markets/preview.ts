@@ -16,6 +16,7 @@ import { movePlan } from "@/lib/moves/gate";
 import { headlineOf, sublineOf } from "@/lib/moves/headline";
 import { leagueLabel } from "@/lib/moves/leagues";
 import { listMoves } from "@/lib/moves/store";
+import { dedupe } from "@/lib/follow/open";
 import type { League, Move } from "@/lib/moves/types";
 import { closesFor } from "@/lib/stocks/prices";
 import { TRACKERS, type TrackerSlug } from "@/lib/trackers";
@@ -41,6 +42,8 @@ export interface PreviewRow {
   headline: string;
   subline: string;
   ago: string;
+  /** How many positions the row adds up: the same market and side within an hour are one row. */
+  n?: number;
   /** Prediction markets: the price on their side when they bought, and now (0..1); null when unknown. */
   entry: number | null;
   now: number | null;
@@ -85,7 +88,7 @@ async function rowsOf(db: Db, moves: Move[], plan: Plan, region: Region | null, 
     const f = items.get(m.id);
     const yes = m.source === "sec" ? null : info.get(m.source)?.get(m.marketId)?.yesPrice ?? null;
     return {
-      id: m.id, art: artOfMove(m), amount: m.amount, headline: headlineOf(m), subline: sublineOf({ ...m, leagueLabel: leagueLabel(m) }), ago: f?.ago ?? "",
+      id: m.id, art: artOfMove(m), amount: m.amount, n: (m as Move & { n?: number }).n ?? 1, headline: headlineOf(m), subline: sublineOf({ ...m, leagueLabel: leagueLabel(m) }), ago: f?.ago ?? "",
       entry: m.source === "sec" ? null : m.avgPrice, now: m.result ? null : sidePrice(yes, m.outcomeSide), result: m.result,
       record: f?.record ?? null, href: m.source === "sec" && m.detail?.kind === "insider" && m.detail.ticker ? `/insider-trading/${encodeURIComponent(m.detail.ticker)}` : `/market/${encodeURIComponent(m.marketId)}`,
     };
@@ -103,6 +106,9 @@ function bestOf(stats: Map<TrackerSlug, { records: { all: { won: number; lost: n
     note: `${hundredLine({ staked: r.staked!, net: r.net })} ${(r.won + r.lost).toLocaleString("en-US")} settled.` }) };
 }
 
+/** Biggest first (after grouping, which keeps the newest time). */
+const byAmount = <T extends { amount: number }>(l: T[]): T[] => [...l].sort((a, b) => b.amount - a.amount);
+
 /** One market's preview for this viewer. */
 export async function marketPreview(db: Db, kind: MarketKind, plan: Plan, region: Region | null, now: number): Promise<MarketPreview> {
   const p = movePlan(plan);
@@ -114,7 +120,8 @@ export async function marketPreview(db: Db, kind: MarketKind, plan: Plan, region
   if (kind === "sports") {
     let window = "Today";
     let all = await listMoves(db, { tab: "sports", leagues: [...SPORTS], since: now - DAY, until, byAmount: true, limit: MEMBER_ROWS }).catch(() => []);
-    if (all.length < VISITOR_ROWS) { window = "This week"; all = await listMoves(db, { tab: "sports", leagues: [...SPORTS], since: now - 7 * DAY, until, byAmount: true, limit: MEMBER_ROWS }).catch(() => []); }
+    all = byAmount(dedupe(all));
+    if (all.length < VISITOR_ROWS) { window = "This week"; all = byAmount(dedupe(await listMoves(db, { tab: "sports", leagues: [...SPORTS], since: now - 7 * DAY, until, byAmount: true, limit: MEMBER_ROWS }).catch(() => []))); }
     const [rows, vol, stats] = await Promise.all([
       rowsOf(db, all.slice(0, limit), plan, region, now),
       db.execute(sql`select coalesce(sum(${T}.amount), 0)::float as v from ${T} where ${base()} and ${T}.tab = 'sports' and ${T}.at > ${new Date(now - 30 * DAY)}`).then(r => Number((r.rows[0] as { v: number }).v)).catch(() => 0),
@@ -127,7 +134,7 @@ export async function marketPreview(db: Db, kind: MarketKind, plan: Plan, region
   }
 
   if (kind === "markets") {
-    const all = await listMoves(db, { tab: "markets", where: sql`${topics()} and ${T}.result is null`, since: now - 60 * DAY, until, byAmount: true, limit: MEMBER_ROWS }).catch(() => []);
+    const all = byAmount(dedupe(await listMoves(db, { tab: "markets", where: sql`${topics()} and ${T}.result is null`, since: now - 60 * DAY, until, byAmount: true, limit: MEMBER_ROWS }).catch(() => [])));
     const [rows, agg, mstats] = await Promise.all([
       rowsOf(db, all.slice(0, limit), plan, region, now),
       db.execute(sql`select coalesce(sum(${T}.amount) filter (where ${T}.at > ${new Date(now - 30 * DAY)}), 0)::float as v,

@@ -90,12 +90,25 @@ export function claimOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" 
     const n = Number.isInteger(line) ? line : Math.ceil(line);
     return giving ? `${o} win by ${n} or more` : `${o} win or lose by ${n - 1 || 0} or less`.replace("lose by 0 or less", "tie");
   }
+  // Kalshi spreads: "Charlotte wins by over 5.5 points?" with "Charlotte wins by over 5.5 Points" (Yes) or "No".
+  const ks = /^(.+?)\s+wins?\s+by\s+over\s+(\d+(?:\.\d+)?)\s+(points?|runs?|goals?)\??$/i.exec(isYes(o) || isNo(o) ? t : o) ?? /^(.+?)\s+wins?\s+by\s+over\s+(\d+(?:\.\d+)?)\s+(points?|runs?|goals?)\??$/i.exec(t);
+  if (ks) {
+    const n = Math.floor(Number(ks[2])) + 1;
+    const no = isNo(o) || (m.outcomeSide === "no" && !/wins? by over/i.test(o));
+    return `${ks[1]} ${no ? "don't win" : "win"} by ${n} or more`;
+  }
   // Draws.
+  if (/^tie$/i.test(o) && m.tab === "sports") return `${m.eventTitle && /\b(vs\.?|at)\b/i.test(m.eventTitle) ? clean(m.eventTitle).replace(/\s+at\s+/i, " vs ") : "it"} ends in a draw`;
   if (/\bdraw\b/i.test(o) || (/\bend in a draw\b/i.test(t) && isYes(o))) return `${m.eventTitle && /\bvs\.?\b/i.test(m.eventTitle) ? clean(m.eventTitle) : "it"} ends in a draw`;
   if (/\bend in a draw\b/i.test(t) && isNo(o)) return "it doesn't end in a draw";
   // "Will Arsenal FC win on 2026-10-30?" Yes / No.
+  // Futures keep what they win: "Will the Knicks win the 2027 NBA Finals?" No → "Knicks don't win the 2027 NBA Finals".
   const wins = /^will\s+(.+?)\s+win\b(.*?)\??$/i.exec(t);
-  if (wins && (isYes(o) || isNo(o)) && m.tab === "sports") return isYes(o) ? `${wins[1]} win` : `${wins[1]} don't win`;
+  if (wins && (isYes(o) || isNo(o)) && m.tab === "sports") {
+    const subj = wins[1]!.replace(/^the\s+/i, ""), rest = wins[2]!.trim();
+    const what = !rest || /^on\s+\d{4}-\d{2}-\d{2}$/i.test(rest) ? "" : ` ${rest}`;
+    return `${subj} ${isYes(o) ? "win" : "don't win"}${what}`;
+  }
   // Yes / No on a question.
   if (isYes(o) || isNo(o)) {
     const q = fromQuestion(t, isYes(o));
@@ -129,7 +142,8 @@ export function roleOf(role: string): string {
   return "an insider";
 }
 
-const US_TEAMS = /^(NFL|NBA|WNBA|MLB|NHL|MLS|college|cfb|cbb|ncaaf|ncaab)$/i;
+/** Pro team nicknames take "the" ("to beat the Lakers"); college schools and clubs don't ("to beat Delaware"). */
+const US_TEAMS = /^(NFL|NBA|WNBA|MLB|NHL|MLS)$/i;
 const cap = (t: string) => t.replace(/^[a-z]/, c => c.toUpperCase());
 
 /** A person in politics by their surname ("James Talarico" → "Talarico"); anything else as written. */
@@ -137,6 +151,11 @@ function who(name: string, category: string | null | undefined): string {
   const w = name.trim().split(/\s+/);
   return category === "politics" && w.length >= 2 && w.length <= 3 && w.every(x => /^[A-ZÀ-Ý][\p{L}'.-]+$/u.test(x)) ? w[w.length - 1]! : name;
 }
+/** Parties read with "the" ("The Republicans"); everything else as written. */
+const PARTIES = /^(the\s+)?(republicans|democrats|gop|tories|conservatives|labour|liberals)$/i;
+const subjectOf = (s: string) => (PARTIES.test(s.trim()) ? `the ${s.trim().replace(/^the\s+/i, "")}` : s.trim());
+/** "the Republicans", "Democrats", "the Knicks": a plural noun, so "win", "don't win". A person's name never is. */
+const isPlural = (s: string) => PARTIES.test(s.trim()) || (/^(the\s+)?[A-Z][a-z]+s$/.test(s.trim()) && !/ss$/.test(s.trim()));
 const office = (s: string) => s.replace(/\b(Election|Race|Primary|Nomination|Seat|Runoff)\b/g, x => x.toLowerCase());
 
 /** Markets that aren't sports, in plain present tense: "Talarico wins the Texas Senate race", "Mamdani doesn't win the
@@ -149,8 +168,9 @@ function plain(m: Pick<Move, "outcome" | "marketTitle" | "eventTitle"> & { categ
   }
   const will = /^(.+?) (will|won't) (win|lose)\b(.*)$/.exec(c);
   if (will) {
-    const verb = will[2] === "will" ? `${will[3]}s` : `doesn't ${will[3]}`;
-    return `${who(will[1]!, m.category)} ${verb}${office(will[4]!)}`;
+    const subj = subjectOf(will[1]!), many = isPlural(subj);
+    const verb = will[2] === "will" ? (many ? will[3] : `${will[3]}s`) : `${many ? "don't" : "doesn't"} ${will[3]}`;
+    return `${who(subj, m.category)} ${verb}${office(will[4]!)}`;
   }
   return c;
 }
@@ -159,21 +179,21 @@ function plain(m: Pick<Move, "outcome" | "marketTitle" | "eventTitle"> & { categ
  *  "No runs in the 1st inning", "Talarico wins the Texas Senate race". The amount is the card's result, not here. */
 export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league"> & { category?: string | null }): string {
   const c = claimOf(m), o = clean(m.outcome);
+  // "Who will win the Super Bowl?" on Chiefs: "Chiefs to win the Super Bowl".
+  const whoWins = /^who will (win|be|become|lead|top)\s+(.+?)\??$/i.exec(clean(m.marketTitle));
+  if (whoWins && (c === o || c === `${o} win`)) return cap(`${o} to ${whoWins[1]!.toLowerCase()} ${whoWins[2]}`);
   if (m.tab === "sports") {
     // A moneyline on one side of "A vs. B": "A to beat (the) B".
-    const vs = /^(.+?)\s+vs\.?\s+(.+?)$/i.exec(clean(m.eventTitle).replace(/^[^:]*:\s*/, ""));
+    const vs = /^(.+?)\s+(?:vs\.?|at)\s+(.+?)$/i.exec(clean(m.eventTitle).replace(/^[^:]*:\s*/, ""));
     if (vs && c === `${o} win`) {
       const [a, b] = [vs[1]!.trim(), vs[2]!.trim()];
       const other = a.toLowerCase() === o.toLowerCase() ? b : b.toLowerCase() === o.toLowerCase() ? a : null;
       if (other) return `${o} to beat ${m.league && US_TEAMS.test(m.league) ? "the " : ""}${other}`;
     }
     const w = /^(.+?) (win|don't win|doesn't win)(.*)$/.exec(c);
-    if (w && w[1] === o || (w && /^will /i.test(m.marketTitle))) return cap(`${w![1]} ${w![2] === "win" ? "to win" : "not to win"}${w![3]}`);
+    if (w) return cap(`${w[1]} ${w[2] === "win" ? "to win" : "not to win"}${w[3]}`);
     if (/ tie$/.test(c)) return cap(c.replace(/ tie$/, " to win or tie"));
   }
-  // "Who will win the Super Bowl?" on Chiefs: "Chiefs to win the Super Bowl".
-  const whoWins = /^who will (win|be|become|lead|top)\s+(.+?)\??$/i.exec(clean(m.marketTitle));
-  if (whoWins && c === o) return cap(`${o} to ${whoWins[1]!.toLowerCase()} ${whoWins[2]}`);
   return cap(plain(m, c));
 }
 

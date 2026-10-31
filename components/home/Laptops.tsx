@@ -78,7 +78,7 @@ function Row({ kind, r }: { kind: MarketKind; r: PreviewRow }) {
           {r.record ? <span className="lrow__rec">{r.record}</span> : null}
         </span>
         <span className="lrow__fig">
-          <b>{dollars(r.amount)}</b>
+          <b>{(r.n ?? 1) > 1 ? `${r.n} positions · ${dollars(r.amount)}` : dollars(r.amount)}</b>
           {kind === "stocks"
             ? <span className={r.change == null ? "lrow__note" : r.change >= 0 ? "lrow__note pos" : "lrow__note neg"}>{r.change == null ? "Price since: —" : `${signedPct(r.change)} since filing`}</span>
             : r.result
