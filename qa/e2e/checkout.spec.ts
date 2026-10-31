@@ -53,7 +53,7 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   // In the moment Whop says so: onboarding, then the feed.
   await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
   await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/\/feed\?first=1/);
+  await expect(page).toHaveURL(/\/following$/);
   expect((await q<{ plan: string }>("select plan from terminal.users where id = $1", [made.id]))[0]!.plan).toBe("insidir");
   const state = await (await whop("/__state")).json() as { payments: Array<{ metadata: Record<string, string> }> };
   expect(state.payments.at(-1)!.metadata).toEqual({ insidir_user_id: made.id });

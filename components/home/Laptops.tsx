@@ -145,7 +145,7 @@ function Value({ kind, d, trialHref, signedIn }: { kind: MarketKind; d: MarketPr
       {info.soon ? null : <AsOf at={d.at} live={d.live} sources={kind === "stocks" ? [SOURCES.sec, SOURCES.methodology] : [SOURCES.polymarket, SOURCES.kalshi, SOURCES.methodology]} />}
       <div className="lval__cta">
         <a className="btn btn--primary" href={trialHref}>Start your 7-day trial</a>
-        <p className="lval__fine">$1 for the first week, then $39 a month. Cancel anytime.</p>
+        <p className="lval__fine">$1 for the first week, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.</p>
       </div>
     </div>
   );

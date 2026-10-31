@@ -29,7 +29,7 @@ import { BAND } from "@/lib/photos";
 import { trackerBySlug, trackerHref, type Tracker } from "@/lib/trackers";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Following" };
+export const metadata: Metadata = { title: "Following", description: "New positions from the trackers, traders and markets you follow.", robots: { index: false } };
 
 /** A filing by someone the member follows: who filed what, why it's here, and links to the page and the filing. */
 function FilingCard({ f, now }: { f: FilingItem; now: number }) {

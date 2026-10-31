@@ -27,7 +27,7 @@ async function title(id: string): Promise<string | null> {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const name = await title(id);
-  return { title: name ?? "Profile", robots: { index: false } };
+  return { title: name ?? "Profile", description: "A verified trader record on Insidir: followable ROI, P&L, open positions and history.", robots: { index: false } };
 }
 
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> }) {

@@ -58,44 +58,15 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
 
-    // Onboarding: 1. pick Sports → NFL (big tap tiles); 2. top traders from those picks, 3 ticked; 3. the phone steps.
-    await expect(page.getByRole("heading", { name: "What do you want to follow?" })).toBeVisible();
+    // Onboarding: trackers by followable ROI, the top three with a record ticked; Follow lands on Following.
+    await expect(page.getByRole("heading", { name: "Pick 3 trackers to follow." })).toBeVisible();
     await shot("onboarding-1");
-    await page.getByRole("button", { name: /^Sports/ }).click();
-    await page.getByRole("button", { name: "NFL", exact: true }).click();
-    await page.getByRole("button", { name: "Next" }).click();
-    // Top traders first, then insiders, companies and funds from SEC filings (none ticked: Stocks wasn't picked).
-    await expect(page.getByRole("heading", { name: "Who to follow" })).toBeVisible();
-    await expect(page.locator("[data-group='insider'] .first__tname").first()).toHaveText("Jane Fixture");
-    await expect(page.locator("[data-group='fund'] .first__tname").first()).toHaveText("E2E Fixture Capital");
-    await expect(page.locator("[data-group='insider'] input:checked, [data-group='company'] input:checked, [data-group='fund'] input:checked")).toHaveCount(0);
-    const boxes = page.locator("[data-group='trader'] .first__trader input");
-    await expect(boxes.first()).toBeVisible();
-    const shown = await boxes.count();
-    expect(shown).toBeGreaterThan(0);
-    expect(shown).toBeLessThanOrEqual(5);
-    await expect(page.locator("[data-group='trader'] .first__trader input:checked")).toHaveCount(Math.min(3, shown));
-    await expect(page.locator(".first__trec").first()).toContainText(/Won \d+ of \d+/);
-    await shot("onboarding-2");
-    await page.getByRole("button", { name: /^Follow \d/ }).click();
-    await expect(page.getByRole("heading", { name: "Get it on your phone" })).toBeVisible();
-    await expect(page.getByText("Add to Home Screen")).toBeVisible();
-    await shot("onboarding-3");
-    await page.getByRole("button", { name: "Done" }).click();
-    // The feed, filtered to their picks, with the one-time hint on the first card.
-    await expect(page).toHaveURL(/\/feed\?first=1/);
-    await expect(page.getByRole("button", { name: "Your picks" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByTestId("first-hint")).toContainText("This is a large position. Tap anyone to see their record.");
-    await shot("feed-first");
-    const settings = (await q<{ settings: { picks?: { tabs: string[]; leagues: string[] } } }>("select settings from terminal.users where id = $1", [MOCK_USER.sub]))[0]!.settings;
-    expect(settings.picks).toMatchObject({ tabs: ["sports"], leagues: ["NFL"] });
-    await expect.poll(async () => (await q<{ n: number }>("select count(*)::int as n from terminal.follows where user_id = $1 and kind = 'trader'", [MOCK_USER.sub]))[0]?.n).toBe(Math.min(3, shown));
-    // Once only: the hint doesn't come back.
-    await page.goto("/feed?first=1");
-    await expect(page.locator(".move").first()).toBeVisible();
-    await expect(page.getByTestId("first-hint")).toHaveCount(0);
-    await page.goto("/following");
-    await expect(page.getByText("E2E-Top").first()).toBeVisible();
+    const ticked = await page.locator("[data-testid=onboarding] input:checked").evaluateAll(els => els.map(e => (e as HTMLInputElement).value));
+    expect(ticked.length).toBeLessThanOrEqual(3);
+    await page.getByRole("button", { name: "Follow and continue" }).click();
+    await expect(page).toHaveURL(/\/following$/);
+    await expect.poll(async () => (await q<{ target: string }>("select target from terminal.follows where user_id = $1 and kind = 'tracker' order by target", [MOCK_USER.sub])).map(r => r.target)).toEqual([...ticked].sort());
+    await shot("following-first");
 
     // Alerts: push on this device, a real test alert, then the history.
     await page.goto("/alerts");

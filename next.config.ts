@@ -20,7 +20,7 @@ const config: NextConfig = {
   // The worker, the scan script and xray/ are not part of the web build.
   outputFileTracingExcludes: { "*": ["xray/**", "worker/**", "scripts/**", "qa/**"] },
   // The share cards' embedded fonts and photo texture (lib/share-card.tsx reads them from disk).
-  outputFileTracingIncludes: { "/api/share/**": ["./lib/og-assets/**"], "/dev/**": ["./lib/og-assets/**"], "/receipts/**": ["./lib/og-assets/**"], "/opengraph-image": ["./lib/og-assets/**"] },
+  outputFileTracingIncludes: { "/api/share/**": ["./lib/og-assets/**"], "/dev/**": ["./lib/og-assets/**"], "/receipts/**": ["./lib/og-assets/**"], "/opengraph-image": ["./lib/og-assets/**"], "/trackers/**": ["./lib/og-assets/**"], "/market/**": ["./lib/og-assets/**"], "/p/**": ["./lib/og-assets/**"], "/insider-trading/**": ["./lib/og-assets/**"] },
   // Title and description always in <head> (not streamed in later), for every visitor and link preview.
   htmlLimitedBots: /.*/,
   // Pages a visitor has already seen (or that were prefetched) open instantly on the way back, for 30 seconds.

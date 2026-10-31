@@ -31,9 +31,14 @@ import { SplitBars } from "@/components/smart/SplitBars";
 import { marketSmart, splitsFor } from "@/lib/smart/store";
 import { positioningOn } from "@/lib/smart/gate";
 import { SMART_MIN_MONEY, SMART_MIN_WALLETS } from "@/lib/smart/splits";
+import { AsOf, SOURCES } from "@/components/data/AsOf";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Market", robots: { index: false } };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const id = decodeURIComponent((await params).id);
+  const m = /^[\w.\-:]{3,120}$/.test(id) && hasDatabase() ? await storedMarket(getDb(), id.startsWith("0x") ? "polymarket" : "kalshi", id).catch(() => null) : null;
+  return { title: m?.title ? `${m.title}: large positions` : "Market", description: m?.title ? `Every large position on "${m.title}", who holds each side and their records.` : undefined, robots: { index: false } };
+}
 
 /** A dot per big move on the YES price line: a NO bet at 30¢ is plotted at YES 70¢. Sized by amount (3–12px). */
 function dotsOf(moves: readonly Move[]): ChartDot[] {
@@ -121,6 +126,8 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
             <FollowButton kind="market" target={id} label="Follow market" state={!isReady("follows") ? "soon" : !paid ? "locked" : following ? "on" : "off"} trialHref={trial} />
             {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
           </div>
+          <p className="mhead__src" data-testid="settlement">Settles by {source === "polymarket" ? "Polymarket" : "Kalshi"}&apos;s resolution of this market; that venue is the source of record.</p>
+          <AsOf at={until} live={paid} sources={[source === "polymarket" ? SOURCES.polymarket : SOURCES.kalshi, SOURCES.methodology]} />
         </header>
 
         {source === "polymarket" && !settled ? (

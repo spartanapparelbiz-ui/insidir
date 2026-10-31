@@ -47,9 +47,9 @@ test("free access: Whop sign-in makes the account; a full member with no payment
 
   // A full member: the feed, never /start, no sign-up pop-up, no sticky bar.
   // A new account goes through onboarding first, like any new member.
-  await expect(page.getByRole("heading", { name: "What do you want to follow?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pick 3 trackers to follow." })).toBeVisible();
   await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/\/feed\?first=1/);
+  await expect(page).toHaveURL(/\/following$/);
   await page.goto("/start");
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/");

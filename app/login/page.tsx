@@ -13,7 +13,7 @@ import { isPaid } from "@/lib/plans";
 import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Log in", robots: { index: false } };
+export const metadata: Metadata = { title: "Sign in", description: "Sign in to Insidir with Whop.", robots: { index: false } };
 
 const ERRORS: Record<string, string> = {
   expired: "That sign-in took too long. Try again.",
