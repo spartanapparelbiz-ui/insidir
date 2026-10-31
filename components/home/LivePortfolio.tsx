@@ -27,8 +27,8 @@ export function LivePortfolio({ d }: { d: PortfolioData }) {
             <span className="lport__name">{d.t.name}</span>
             <span className="lport__line">{d.t.line}</span>
             <span className="lport__nums">
-              <span className="lport__fig"><b className={`lport__v lport__v--${roi ? returnTone(d.record) : "nil"}`}>{roi ?? "—"}</b><span>ROI</span></span>
-              <span className="lport__fig"><b className={`lport__v lport__v--${rec.amount ? rec.tone : "nil"}`}>{rec.amount ?? "—"}</b><span>{rec.amount ? `Net P&L · ${rec.status}` : "Net P&L · under 20 settled"}</span></span>
+              <span className="lport__fig"><b className={`lport__v lport__v--${roi ? returnTone(d.record) : "nil"}`} data-count="">{roi ?? "—"}</b><span>ROI</span></span>
+              <span className="lport__fig"><b className={`lport__v lport__v--${rec.amount ? rec.tone : "nil"}`} data-count="">{rec.amount ?? "—"}</b><span>{rec.amount ? `Net P&L · ${rec.status}` : "Net P&L · under 20 settled"}</span></span>
             </span>
           </Link>
           <div className="lport__body">

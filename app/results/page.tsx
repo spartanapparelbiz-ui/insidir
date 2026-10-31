@@ -73,7 +73,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         <header className="phead"><h1 className="phead__h">Track record</h1></header>
         <p className="results__label">Real past positions. Not a promise.</p>
         {total ? (
-          <section className="results__total" aria-label="Every settled position" data-testid="results-total">
+          <section className="results__total rv" aria-label="Every settled position" data-testid="results-total">
             <RecordCount r={total} />
             <RecordLines r={total} net />
             <p className="trust__fine">Polymarket wallets, every settled position of every size. Kalshi trades are anonymous, so a new position can&apos;t be told apart from a closing trade: they&apos;re listed below but not counted.</p>

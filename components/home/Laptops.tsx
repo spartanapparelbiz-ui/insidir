@@ -212,14 +212,29 @@ export function Laptops({ data, trialHref, signedIn }: { data: Record<MarketKind
     return () => { stop = true; clearInterval(t); };
   }, [open]);
 
+  // Desktop: each laptop leans slowly toward the cursor (a few degrees; transform only; off for touch and under
+  // prefers-reduced-motion, app/laptops.css).
+  const tilt = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse") return;
+    for (const b of Object.values(buttons.current)) {
+      const lap = b?.querySelector<HTMLElement>(".lap"); if (!lap) continue;
+      const r = lap.getBoundingClientRect();
+      const dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width * 1.5)));
+      const dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height * 2)));
+      lap.style.setProperty("--ry", `${(dx * 7).toFixed(2)}deg`);
+      lap.style.setProperty("--rx", `${(-dy * 5).toFixed(2)}deg`);
+    }
+  };
+  const untilt = () => { for (const b of Object.values(buttons.current)) { const lap = b?.querySelector<HTMLElement>(".lap"); lap?.style.removeProperty("--ry"); lap?.style.removeProperty("--rx"); } };
+
   return (
     <section className="lt" aria-labelledby="lt-h">
       <div className="pg">
         <h2 id="lt-h" className="lt__h">Three markets. One membership.</h2>
         <p className="lt__sub">Click a laptop to look inside.</p>
-        <div className={`lt__row${open ? " has-open" : ""}`}>
-          {KINDS.map(k => (
-            <button key={k} id={`lt-${k}`} type="button" ref={el => { buttons.current[k] = el; }} className={`lt__item${open === k ? " is-on" : ""}`}
+        <div className={`lt__row${open ? " has-open" : ""}`} onPointerMove={tilt} onPointerLeave={untilt}>
+          {KINDS.map((k, i) => (
+            <button key={k} id={`lt-${k}`} type="button" ref={el => { buttons.current[k] = el; }} className={`lt__item rv${open === k ? " is-on" : ""}`} style={{ ["--i" as string]: i }}
               aria-expanded={open === k} aria-controls="lt-panel" onClick={() => show(open === k ? null : k)}>
               <Laptop><Mini kind={k} d={live[k]} /></Laptop>
               <span className="lt__name">{INFO[k].name}{INFO[k].soon ? <span className="soon soon--short">Soon</span> : null}</span>

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
+import { RevealGroup } from "@/components/motion/Reveal";
 import "../app/landing.css";
 
 export async function TrustPage({ path, title, updated, lead, children, cta = true }: {
@@ -15,12 +16,12 @@ export async function TrustPage({ path, title, updated, lead, children, cta = tr
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current={path} tone="light" />
       <main className="wrap lp">
-        <article className="lp-legal lp-about">
+        <RevealGroup as="article" className="lp-legal lp-about">
           <h1>{title}</h1>
           {updated ? <p className="lp-legal__date">Last updated {updated}</p> : null}
           {lead ? <p className="lp-about__lead">{lead}</p> : null}
           {children}
-        </article>
+        </RevealGroup>
         {cta && !viewer.user ? (
           <div className="lp-legal__next">
             <Link className="btn btn--primary" href="/start">Start your 7-day trial</Link>

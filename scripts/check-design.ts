@@ -17,7 +17,7 @@ import { DATA_PAGES, entityRoutes, PUBLIC } from "./routes";
  *  photo header band and the scroll story (both replaced by components/page/Page.tsx). */
 export const LEGACY = ["lphone", "phones__", "trail__", "first__", "hero2__", "grain", "cine__", "pband", "story__", "iphone__"] as const;
 /** What the shared motion system reveals (components/motion/Reveal.tsx, and the classes Motion.tsx reveals itself). */
-export const REVEAL = /\bclass="[^"]*\b(rv|rise|sec3__h|dsec__h|tsec__h|tgroup__h|pghead__main|trow|tfeat|ttile|tcard|move|srow|tile|proof__item|board__row|rec__row|anlz__card|faq2__item|phead|thead|mhead)\b|data-reveal=|data-zoom|data-count/;
+export const REVEAL = /\bclass="[^"]*\b(rv|rise|sec3__h|sec2__h|dsec__h|tsec__h|tgroup__h|pghead__main|trow|tfeat|ttile|tcard|move|srow|tile|proof__item|board__row|rec__row|anlz__card|faq2__item|phead|thead|mhead)\b|data-reveal=|data-zoom|data-count/;
 
 /** Sections of a page that nothing in them reveals as it scrolls in. */
 export function unrevealed(html: string): string[] {
@@ -57,8 +57,10 @@ async function pages(BASE: string) {
     const r = await fetch(new URL(p, BASE)).catch(() => null);
     if (!r || r.status !== 200) { fail.push(`${p}: ${r?.status ?? "no answer"}`); continue; }
     const html = (await r.text()).replace(/&#x27;|&apos;/g, "'").replace(/&amp;/g, "&");
+    // The words as a reader sees them: React's text separators and the tags around a link don't count.
+    const words = html.replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
     for (const [what, text] of [["company line", `${COMPANY.name} · ${COMPANY.place} · ${COMPANY.email}`], ["what Insidir isn't", DATA_COMPANY], ["problem gambling", GAMBLER]] as const) {
-      if (!html.includes(text)) fail.push(`${p}: footer missing ${what}`);
+      if (!words.includes(text)) fail.push(`${p}: footer missing ${what}`);
     }
     for (const c of LEGACY) if (new RegExp(`class="[^"]*\\b${c}`).test(html)) fail.push(`${p}: retired class ${c} in the page`);
     const main = /<main\b[\s\S]*<\/main>/.exec(html)?.[0] ?? html;

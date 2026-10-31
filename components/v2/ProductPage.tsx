@@ -92,7 +92,7 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
         {proof.length ? (
           <Sec id="proof-h" title="By the numbers">
             <RevealGroup as="dl" className="proof__grid" data-testid="product-proof">
-              {proof.map(p => <div key={p.label} className="proof__item"><dt>{p.label}</dt><dd className="proof__v">{p.value}</dd>{p.note ? <dd className="proof__note">{p.note}</dd> : null}</div>)}
+              {proof.map(p => <div key={p.label} className="proof__item"><dt>{p.label}</dt><dd className="proof__v" data-count="">{p.value}</dd>{p.note ? <dd className="proof__note">{p.note}</dd> : null}</div>)}
             </RevealGroup>
             <AsOf at={now} live={paid} sources={[...SRC[copy.tab], SOURCES.methodology]} />
           </Sec>

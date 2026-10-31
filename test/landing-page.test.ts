@@ -1,6 +1,6 @@
 /* Source-level checks of the V2 public pages (docs/INSIDIR-V2.md §4, §6, §10): section order, copy rules, location rules and
  * the design tokens. No DOM needed. */
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { bannedPhrases, CANCEL_LINE, FOOTER, GET_CTA, OFFER_BAR } from "@/lib/copy";
@@ -49,9 +49,8 @@ describe("V2 landing page", () => {
     for (const f of ["app/page.tsx", "components/home/HeroCta.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
     for (const h of ['title="Open now from winning trackers"', 'title="Every position, analyzed."', 'title="Leaderboard"', 'title="How Insidir works"', 'title="Track record"', 'title="Pricing"']) expect(src).toContain(h);
     expect(src).toContain("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
-    const story = read("components/home/Story.tsx");
-    expect(story).toContain('id="how"');
-    for (const c of ["A large position is opened.", "Insidir records it within seconds.", "The account and its record, in one view.", "An alert on its next position."]) expect(story).toContain(c);
+    // The old scroll story and photo band are gone for good (scripts/check-design.ts rejects their classes).
+    for (const f of ["components/home/Story.tsx", "components/PageBand.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
     // One offer everywhere: 7 days for $1, then $39/mo. No old price lines, no 3-day trial, no Pro.
     expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');

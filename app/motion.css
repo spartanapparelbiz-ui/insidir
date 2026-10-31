@@ -8,7 +8,7 @@
  *   section rules  a section header's ink rule draws left to right as the section enters
  *   [data-zoom]    photos zoom 1.12 → 1 as they enter
  *   [data-par]     bands and hero photos drift ±6% with scroll (parallax)
- *   [data-settle]  tracker and entity header photos settle from 1.08 on load
+ *   [data-settle]  tracker and entity header photos settle from 1.08 on load (the photo box; its image drifts)
  *   [data-draw]    charts: lines draw left to right; bars grow from 0
  *   .nav--scrolled after 24px of scroll the header shrinks slightly and blurs what's under it
  * Hover: a card's photo scales to 1.04, buttons lift 1px, link arrows nudge 3px. */
@@ -44,12 +44,12 @@
   .js [data-draw=bars].draw--wait > * { transform: scaleX(0); transform-origin: left center; transition: transform .9s var(--ease-rise); }
   .js [data-draw=bars].draw--wait.is-in > * { transform: none; }
 
-  [data-settle] img, .thead__photo img, .mhead [data-photo] img { animation: settle 1.6s var(--ease-rise) both; }
+  [data-settle], .thead__photo, .mhead [data-photo] { animation: settle 1.6s var(--ease-rise) both; }
 
   @supports (animation-timeline: view()) {
     .js .rv.rv--wait { opacity: 1; transform: none; transition: none; animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
     .js [data-zoom].zoom--wait img { transform: none; transition: none; animation: zoom-in linear both; animation-timeline: view(); animation-range: entry 0% cover 45%; }
-    [data-par] { animation: par-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+    [data-par] img { animation: par-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
   }
 
   /* hover */
@@ -66,3 +66,6 @@
 @media (prefers-reduced-motion: no-preference) { .nav--scrolled .nav__in { transform: scale(.97); } }
 .hero3__acts { display: grid; justify-items: center; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+/* Counting figures use tabular digits and hold their final width while they count (components/motion/Motion.tsx). */
+[data-count] { font-variant-numeric: tabular-nums; }
+span[data-count], b[data-count] { display: inline-block; }

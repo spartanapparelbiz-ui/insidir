@@ -143,8 +143,8 @@ async function BoardAndPortfolio({ c }: { c: Ctx }) {
               <li key={t.slug} className="board__row">
                 <span className="board__rank">{i + 1}</span>
                 <Link href={`/trackers/${t.slug}`} className="board__art"><TrackerCover t={t} s={coverStats(s)} small /></Link>
-                <span className="board__who"><Link href={`/trackers/${t.slug}`} className="board__name">{t.name}</Link><span className="board__line">{hundredLine(r)}</span></span>
-                <span className="board__fig"><b className={tone(r.net)}>{roiText(r.net, r.staked)}</b><span>{r.won.toLocaleString("en-US")}–{r.lost.toLocaleString("en-US")} · {r.n.toLocaleString("en-US")} settled</span></span>
+                <span className="board__who"><Link href={`/trackers/${t.slug}`} className="board__name">{t.name}</Link><span className="board__line" data-count="">{hundredLine(r)}</span></span>
+                <span className="board__fig"><b className={tone(r.net)} data-count="">{roiText(r.net, r.staked)}</b><span data-count="">{r.won.toLocaleString("en-US")}–{r.lost.toLocaleString("en-US")} · {r.n.toLocaleString("en-US")} settled</span></span>
               </li>
             ))}
           </ol>
@@ -170,7 +170,7 @@ function ProofStrip({ p, live }: { p: Proof; live: boolean }) {
       <div className="pg">
         <h2 id="proof-h" className="sec3__h">Insidir, live</h2>
         <dl className="proof__grid">
-          {items.map(i => <div key={i.label} className="proof__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
+          {items.map(i => <div key={i.label} className="proof__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num" data-count="">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
         </dl>
         <AsOf at={p.at} live={live} sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.sec, { label: "Accuracy checks", href: "/data" }]} />
       </div>

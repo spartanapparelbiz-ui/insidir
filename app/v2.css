@@ -438,26 +438,7 @@
 /* The dark app's nav sits on the same black as the page: a hairline separates them. */
 :root:has(main.dark) .nav { box-shadow: inset 0 -1px 0 var(--border); }
 
-/* ---------- Scroll motion (components/motion/Motion.tsx). Only transform and opacity; all of it off under
- * prefers-reduced-motion, where everything is static and fully visible. ---------- */
-
-/* Reveal: a quick fade up 8px as it enters, once; siblings stagger 40 ms by --i. Fast enough that nothing ever waits
- * on it. Hidden only when JS will show it. */
-@media (prefers-reduced-motion: no-preference) {
-  /* Content is always there: the reveal only moves it 8px into place, it never starts invisible. */
-  .js .rv { transform: translate3d(0, 8px, 0); transition: transform 260ms var(--ease-enter); transition-delay: calc(var(--i, 0) * 40ms); }
-  .js .rv.is-in { transform: none; }
-}
-
-/* Photos: drift at 0.85x scroll speed with a gentle zoom-in (CSS scroll-driven where supported; Motion.tsx otherwise). */
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    [data-par] { animation: par-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
-  }
-}
-/* ±6% of the photo box as the section crosses the screen (≈ 0.85x scroll speed for a band), zooming 1.14 → 1.2 so the
- * edges never show */
-/* par-drift: app/motion.css */
+/* Scroll motion: app/motion.css (one shared system). */
 
 /* Reading progress: a thin line under the nav. */
 .nav { position: sticky; }

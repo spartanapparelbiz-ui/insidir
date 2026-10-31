@@ -42,7 +42,7 @@ const BILLING = [
   { id: "cancel", q: "How do I cancel?", a: "One tap in Account, or on your Whop orders page. No emails, no calls. You keep access until the end of the period you paid for." },
   { id: "dollar", q: "What is the $1 week?", a: `Your first ${TRIAL.days} days cost $${TRIAL.fee}, with everything a member gets. Cancel inside those ${TRIAL.days} days and $${TRIAL.fee} is all you pay.` },
   { id: "after", q: "What happens after the first week?", a: `It becomes $${PLANS.insidir.price}/month, charged by Whop on the same card, until you cancel.` },
-  { id: "refunds", q: "Can I get a refund?", a: "Payments and refunds are handled by Whop. Ask from your Whop orders page, or write to hello@aethric.llc and we'll sort it out with them." },
+  { id: "refunds", q: "Can I get a refund?", a: "Payments and refunds are handled by Whop. Request one from your Whop orders page, or write to hello@aethric.llc and we'll sort it out with them." },
 ];
 
 const Check = () => <svg className="plan3__check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
@@ -105,7 +105,7 @@ export default async function PricingPage() {
         {items.length ? (
           <Sec id="week-h" title="This week on Insidir">
             <RevealGroup as="dl" className="proof__grid wk__grid">
-              {items.map(i => <div key={i.testid} className="proof__item wk__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
+              {items.map(i => <div key={i.testid} className="proof__item wk__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num" data-count="">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
             </RevealGroup>
             <p className="tcol__note">{PAST}</p>
             <AsOf at={w.at} live sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.sec, SOURCES.methodology]} />

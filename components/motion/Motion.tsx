@@ -8,8 +8,9 @@
  *   .nav          gains .nav--scrolled after 24px of scroll (it shrinks slightly and blurs what's under it).
  *                 Hidden only when JS runs (html.js, set by an inline script before first paint), so without JS, or
  *                 under prefers-reduced-motion, everything is simply there.
- *   [data-count]  counts up once from 0 to its value when it enters view (its server-rendered text is the final
- *                 value, formatted the same way), over 900 ms, easing out.
+ *   [data-count]  counts up once from 0 to its value the first time it enters view, over 900 ms, easing out: every
+ *                 number in its text, in its own format (data-count=""), or data-count="<n>" in data-fmt. Its
+ *                 server-rendered text is always the final value.
  *   [data-par]    parallax fallback for browsers without CSS scroll-driven animations (app/v2.css does it in CSS
  *                 where animation-timeline is supported): the photo drifts ±7% as it crosses the screen.
  *   .nav__prog    the reading-progress line under the nav, same fallback.
@@ -19,7 +20,7 @@ import { useEffect } from "react";
 import { dollars, signedShort } from "@/lib/moves/copy";
 
 /** Section headers, rows and cards: each rises in as it scrolls into view (app/motion.css). */
-const RISE = ".sec3__h, .dsec__h, .tsec__h, .tgroup__h, .pghead__main, .trow, .tfeat, .ttile, .tcard, .move, .srow, .cleg, .tile, .proof__item, .board__row, .rec__row, .anlz__card, .steps__item, .faq2__item, .rtable tbody tr, .plan3, .wk__item";
+const RISE = ".sec3__h, .sec2__h, .dsec__h, .tsec__h, .tgroup__h, .pghead__main, .trow, .tfeat, .ttile, .tcard, .move, .srow, .cleg, .tile, .proof__item, .board__row, .rec__row, .anlz__card, .steps__item, .faq2__item, .rtable tbody tr, .dtable tbody tr, .ptable tbody tr, .block__h, .phead, .trader__id, .lchart, .plan3, .wk__item";
 
 const FORMAT: Record<string, (v: number) => string> = {
   dollars, signed: signedShort,
@@ -27,15 +28,29 @@ const FORMAT: Record<string, (v: number) => string> = {
   pct: v => `${Math.round(v)}%`,
 };
 
+const NUM = /(\d[\d,]*(?:\.\d+)?)/;
+
+/** Counts every number in the element up from 0 at once, keeping its own format ("+$3,200", "+12.4%", "14–6"): the
+ *  text is the final value until then. With data-count="<n>" and data-fmt it counts that value in that format. The
+ *  element is held at its final width while it counts (tabular figures, app/motion.css), so nothing shifts. */
 function countUp(el: HTMLElement) {
-  const target = Number(el.dataset.count), fmt = FORMAT[el.dataset.fmt ?? "int"] ?? FORMAT.int!;
   const final = el.dataset.final ?? el.textContent ?? "";
-  if (!Number.isFinite(target)) return;
+  const explicit = el.dataset.count ? Number(el.dataset.count) : NaN;
+  const parts = final.split(NUM);
+  if (!Number.isFinite(explicit) && parts.length < 2) return;
+  const fmt = FORMAT[el.dataset.fmt ?? "int"] ?? FORMAT.int!;
+  el.style.minWidth = `${el.getBoundingClientRect().width}px`;
   const t0 = performance.now(), dur = 900;
+  const render = (e: number) => Number.isFinite(explicit) ? fmt(explicit * e) : parts.map((p, i) => {
+    if (i % 2 === 0) return p;
+    const dec = /\.(\d+)$/.exec(p)?.[1]?.length ?? 0;
+    const v = Number(p.replace(/,/g, "")) * e;
+    return v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: p.includes(",") });
+  }).join("");
   const step = (t: number) => {
     const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    el.textContent = k < 1 ? fmt(target * e) : final;
-    if (k < 1) requestAnimationFrame(step);
+    el.textContent = k < 1 ? render(e) : final;
+    if (k < 1) requestAnimationFrame(step); else el.style.minWidth = "";
   };
   requestAnimationFrame(step);
 }
@@ -53,7 +68,7 @@ export function Motion() {
         if (!e.isIntersecting) continue;
         const el = e.target as HTMLElement;
         io.unobserve(el);
-        if (el.classList.contains("rv") || el.dataset.zoom !== undefined || el.dataset.draw !== undefined || el.matches(".sec3__h, .dsec__h, .tsec__h, .tgroup__h")) el.classList.add("is-in");
+        if (el.classList.contains("rv") || el.dataset.zoom !== undefined || el.dataset.draw !== undefined || el.matches(".sec3__h, .sec2__h, .dsec__h, .tsec__h, .tgroup__h")) el.classList.add("is-in");
         if (el.dataset.count !== undefined) countUp(el);
       }
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
@@ -96,10 +111,11 @@ export function Motion() {
       const max = root.scrollHeight - innerHeight;
       if (prog) prog.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
       for (const el of parallax) {
-        const box = (el.parentElement ?? el).getBoundingClientRect();
+        const box = el.getBoundingClientRect();
         if (box.bottom < 0 || box.top > innerHeight) continue;
         const travelled = Math.min(1, Math.max(0, (innerHeight - box.top) / (innerHeight + box.height)));
-        el.style.transform = `translate3d(0, ${(-6 + travelled * 12).toFixed(2)}%, 0) scale(1.14)`;
+        const img = el.querySelector<HTMLElement>("img") ?? el;
+        img.style.transform = `translate3d(0, ${(-6 + travelled * 12).toFixed(2)}%, 0) scale(1.14)`;
       }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(frame); };
