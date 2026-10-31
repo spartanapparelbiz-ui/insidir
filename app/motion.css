@@ -48,6 +48,8 @@
 
   @supports (animation-timeline: view()) {
     .js .rv.rv--wait { opacity: 1; transform: none; transition: none; animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
+    /* Once: after it has come in, it stays (Motion.tsx adds .rv--done), even scrolled back out of view. */
+    .js .rv.rv--wait.rv--done { animation: none; opacity: 1; transform: none; }
     .js [data-zoom].zoom--wait img { transform: none; transition: none; animation: zoom-in linear both; animation-timeline: view(); animation-range: entry 0% cover 45%; }
     [data-par] img { animation: par-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
   }

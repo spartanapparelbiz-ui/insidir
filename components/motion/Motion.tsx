@@ -73,6 +73,12 @@ export function Motion() {
       }
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
 
+    // Once: with view() the reveal is tied to scroll, so it would play backwards when scrolled away. When an element
+    // is well inside the screen its reveal has finished: pin it there for good.
+    const done = new IntersectionObserver(entries => {
+      for (const e of entries) if (e.isIntersecting || e.boundingClientRect.bottom < 0) { e.target.classList.add("rv--done"); done.unobserve(e.target); }
+    }, { rootMargin: "0px 0px -45% 0px", threshold: 0 });
+
     const parallax = new Set<HTMLElement>();
     const watch = (scope: ParentNode) => {
       // A RevealGroup's children rise one after another, 60ms apart (at most 8 steps, so long lists don't lag).
@@ -89,7 +95,7 @@ export function Motion() {
         // whether or not the animation ever runs (screenshots, a page read without scrolling, a slow observer).
         if (el.dataset.count !== undefined) el.dataset.final = el.textContent ?? "";
         // Only what starts below the screen waits to fade up as it enters: the first screen paints at once.
-        if (el.classList.contains("rv") && el.getBoundingClientRect().top > innerHeight) el.classList.add("rv--wait");
+        if (el.classList.contains("rv") && el.getBoundingClientRect().top > innerHeight) { el.classList.add("rv--wait"); if (scrollDriven) done.observe(el); }
         // Charts below the screen wait undrawn: lines draw left to right, bars grow from 0.
         if (el.dataset.draw !== undefined && el.getBoundingClientRect().top > innerHeight) el.classList.add("draw--wait");
         io.observe(el);
@@ -120,7 +126,7 @@ export function Motion() {
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(frame); };
     addEventListener("scroll", onScroll, { passive: true }); addEventListener("resize", onScroll); frame();
-    return () => { io.disconnect(); mo.disconnect(); removeEventListener("scroll", onScroll); removeEventListener("resize", onScroll); if (raf) cancelAnimationFrame(raf); };
+    return () => { io.disconnect(); done.disconnect(); mo.disconnect(); removeEventListener("scroll", onScroll); removeEventListener("resize", onScroll); if (raf) cancelAnimationFrame(raf); };
   }, []);
   return null;
 }
