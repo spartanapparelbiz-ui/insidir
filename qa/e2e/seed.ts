@@ -10,6 +10,7 @@ import { TRACKER_RULES_V } from "@/lib/trackers";
 import { scan } from "@/lib/scanner";
 import { saveMarkets } from "@/lib/worker/store";
 import { tagOnce } from "@/lib/trackers-tag";
+import { notesOnce } from "@/lib/analyst/store";
 import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 import type { Book, Level, MarketPair, Opportunity, Plan, Region, VEvent, VMarket, Venue } from "@/lib/types";
 
@@ -243,6 +244,11 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
       planCheckedAt: new Date(now + 365 * DAY), onboardedAt: new Date(now), membershipId: x.plan === "free" ? null : `mem_${x.id}` });
     await db.insert(sessions).values({ tokenHash: createHash("sha256").update(x.token).digest("hex"), userId: x.id, expiresAt: new Date(now + 30 * DAY) });
   }
+  // Analyst notes for the newest positions, as the worker writes them (no model in the browser specs: the template).
+  const prevKey = process.env.OPENROUTER_API_KEY;
+  delete process.env.OPENROUTER_API_KEY;
+  while ((await notesOnce(db, now, { limit: 50 })).written > 0) { /* every position from the last 2 days */ }
+  process.env.OPENROUTER_API_KEY = prevKey;
   return { opps: deals };
 }
 

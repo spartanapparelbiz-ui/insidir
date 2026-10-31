@@ -23,7 +23,7 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   await page.goto("/pricing");
   await page.locator('[data-checkout="pricing"]').first().click();
   await expect(page).toHaveURL(/\/start$/);
-  await expect(page.getByRole("heading", { name: "Try Insidir 7 days for $1." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Follow the big money." })).toBeVisible();
   // Signed out: one button, and who handles sign-in and payment.
   const box = page.getByTestId("start-continue");
   await expect(box.getByRole("link")).toHaveCount(1);
@@ -53,7 +53,7 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   // In the moment Whop says so: onboarding, then the feed.
   await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
   await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/\/feed\?first=1/);
+  await expect(page).toHaveURL(/\/open$/);
   expect((await q<{ plan: string }>("select plan from terminal.users where id = $1", [made.id]))[0]!.plan).toBe("insidir");
   const state = await (await whop("/__state")).json() as { payments: Array<{ metadata: Record<string, string> }> };
   expect(state.payments.at(-1)!.metadata).toEqual({ insidir_user_id: made.id });
@@ -66,16 +66,16 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
 
   // Sign out: members only. /login has one Continue, and it comes back to where they were going.
   await page.getByRole("button", { name: "Sign out" }).click();
-  await page.goto("/feed");
-  await expect(page).toHaveURL(/\/login\?next=%2Ffeed/);
-  await expect(page.getByRole("heading", { name: "Log in to Insidir" })).toBeVisible();
+  await page.goto("/following");
+  await expect(page).toHaveURL(/\/login\?next=%2Ffollowing/);
+  await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   await expect(page.getByTestId("continue")).toHaveText("Continue");
   await expect(page.getByText("Secure sign-in and payments by Whop.")).toBeVisible();
   await expect(page.locator('input[type="password"], input[type="email"]')).toHaveCount(0);
   await expect(page.getByText(/forgot password/i)).toHaveCount(0);
   await page.screenshot({ path: `qa/screenshots/login-${w}.png` });
   await page.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/feed$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/following$/, { timeout: 15_000 });
   const cookie = (await page.context().cookies()).find(c => c.name === "insidir_session")!;
   expect(cookie.httpOnly).toBe(true);
   expect(cookie.expires * 1000 - Date.now()).toBeGreaterThan(29 * 86_400_000);
@@ -86,7 +86,7 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   // A refund ends access: Whop's access check says no.
   await post("/__refund", { email });
   expect((await q<{ plan: string }>("select plan from terminal.users where email = $1", [email]))[0]!.plan).toBe("free");
-  await page.goto("/feed");
+  await page.goto("/following");
   await expect(page).toHaveURL(/\/start$/);
 });
 
@@ -105,7 +105,8 @@ test("a Whop account without Insidir: signed in, sent to /start with the checkou
   // Whop says the sign-in was cancelled: back to /login, nothing set.
   await page.context().clearCookies();
   await page.goto("/reset/callback?error=access_denied");
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/login\?error=cancelled$/);
+  await expect(page.locator(".aerr")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
   // A forged callback (no state cookie): refused.
   await page.goto("/reset/callback?code=wcode_forged&state=abc");
   await expect(page).toHaveURL(/\/login\?error=expired$/);

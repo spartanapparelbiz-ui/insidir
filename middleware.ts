@@ -7,6 +7,9 @@ const YEAR = 365 * 86_400;
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 
 export function middleware(req: NextRequest) {
+  // A bare ticker (/NVDA, crawled from old links) is that company's insider trading page. Upper case only: every page
+  // of ours is lower case.
+  if (/^\/[A-Z][A-Z.]{0,5}$/.test(req.nextUrl.pathname)) return NextResponse.redirect(new URL(`/insider-trading${req.nextUrl.pathname}`, req.url), 308);
   const set: Array<{ name: string; value: string; maxAge: number; httpOnly: boolean }> = [];
   if (!req.cookies.get("insidir_vid")) {
     const bytes = crypto.getRandomValues(new Uint8Array(16));

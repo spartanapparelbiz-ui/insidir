@@ -4,6 +4,13 @@
 export const FOOTER =
   "Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.";
 
+/** What Insidir is and isn't, under every page and on /disclosures. */
+export const DATA_COMPANY = "Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.";
+/** The problem-gambling line: the footer, every sports page and /disclosures. */
+export const GAMBLER = "Gambling problem? Call 1-800-GAMBLER.";
+/** Who builds Insidir. */
+export const COMPANY = { name: "Aethric LLC", place: "Pompano Beach, FL", email: "hello@aethric.llc", founder: "Nicholas" } as const;
+
 /** The thin bar above the nav, and the one paid call to action (docs/INSIDIR-V2.md §6). */
 /** What Insidir is, in one plain sentence: the first FAQ answer, the meta description and link previews. */
 export const WHAT_IS = "Insidir tracks large positions on sports, prediction markets and insider stock trades as they are opened: the account, the size, and its record.";

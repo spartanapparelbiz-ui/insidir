@@ -8,7 +8,7 @@ export const BAND = {
   feed: { sports: 2, markets: 9, stocks: 10 },
   market: { sports: 12, markets: 15, stocks: 10 },
   profile: { sports: 2, markets: 9, stocks: 10 },
-  /* the product pages (/sports, /markets, /stocks, /how-it-works, /faq) */
+  /* the product pages (/sports, /markets, /stocks, /faq) */
   product: { sports: 2, markets: 9, stocks: 10 }, how: 15, faq: 4,
   top: 6, results: 3, following: 7, account: 5, alerts: 14, pricing: 8, signin: 6, about: 13, notFound: 5,
 } as const satisfies Record<string, PhotoN | Record<string, PhotoN>>;

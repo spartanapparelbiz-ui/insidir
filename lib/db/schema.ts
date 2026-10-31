@@ -721,3 +721,30 @@ export const entityArt = terminal.table("entity_art", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("entity_art_kind_idx").on(t.kind)]);
+
+/** Analyst notes (lib/analyst): one per large position, written from its facts by the model and held to the validator,
+ *  or the template. Kept with the facts it used, the model, the rules version and what it cost. */
+export const analystNotes = terminal.table("analyst_notes", {
+  moveId: text("move_id").primaryKey(),
+  note: text("note").notNull(),
+  facts: jsonb("facts").$type<import("@/lib/analyst/types").Facts>().notNull(),
+  model: text("model").notNull(),
+  origin: text("origin").$type<"model" | "template">().notNull(),
+  version: integer("version").notNull(),
+  costUsd: doublePrecision("cost_usd").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("analyst_notes_created_idx").on(t.createdAt)]);
+
+/** Research questions (lib/research): who asked, what, the answer's cost, for limits, spend caps and the QA log. */
+export const researchQueries = terminal.table("research_queries", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"),
+  visitorId: text("visitor_id"),
+  question: text("question").notNull(),
+  /** A hash of the normalised question and the viewer's delay, for the 5-minute cache. */
+  key: text("key").notNull(),
+  answer: jsonb("answer").$type<unknown>(),
+  costUsd: doublePrecision("cost_usd").notNull().default(0),
+  cached: boolean("cached").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("research_user_idx").on(t.userId, t.createdAt), index("research_visitor_idx").on(t.visitorId, t.createdAt), index("research_key_idx").on(t.key, t.createdAt)]);

@@ -25,6 +25,11 @@ import { isPaid } from "@/lib/plans";
 import { companyHref, insiderHref, parseCikSlug, personName } from "@/lib/profiles/name";
 import { afterBuys, freeWindow, insiderTotals, tradesByFiling } from "@/lib/profiles/sec";
 import { historyOf, insiderTradesFor, latestCloses } from "@/lib/profiles/store";
+import { queueHistory } from "@/lib/stocks/history";
+import { SecPending } from "@/components/v2/sec/Pending";
+import { EntityLd } from "@/lib/seo/jsonld";
+import { insiderTitle } from "@/lib/seo/titles";
+import { sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -40,20 +45,30 @@ async function load(id: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const x = await load((await params).id);
-  if (!x) return { title: "Insider", robots: { index: false } };
+  if (!x) return { title: "Insider trades", robots: { index: false } };
   const latest = x.trades[0];
-  const role = latest ? roleLine(latest.role, latest.company) : "SEC filer";
-  return {
-    title: `${x.name}: insider trades`,
-    description: `Every open-market buy and sale ${x.name} (${role}) has reported to the SEC on Form 4, with the price and the filing.`,
-    alternates: { canonical: x.href },
-  };
+  const buy = x.trades.find(t => t.code === "P");
+  const m = insiderTitle(x.name, latest?.company ?? null, latest?.ticker ?? null, latest?.role ?? null, buy ? { owner: x.name, role: buy.role, value: buy.value, filedAt: buy.filedAt } : null);
+  return { title: { absolute: `${m.title} · Insidir` }, description: m.description, alternates: { canonical: x.href }, openGraph: { title: m.title, description: m.description, url: x.href } };
 }
 
 export default async function InsiderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const x = await load(id);
-  if (!x) notFound();
+  if (!x) {
+    // Old or outside links to a filer we hold nothing for: an issuer's CIK goes to its company page; anyone else gets
+    // a page that says so (and their history is queued, so it fills in), never a 404.
+    const ref = parseCikSlug(id);
+    if (!ref) notFound();
+    if (hasDatabase()) {
+      const db = getDb();
+      const co = (await db.execute(sql`select max(ticker) as ticker from terminal.insider_trades where issuer_cik = ${String(Number(ref.cik))}`).catch(() => ({ rows: [] }))).rows[0] as { ticker?: string | null } | undefined;
+      if (co?.ticker) permanentRedirect(companyHref(co.ticker));
+      await queueHistory(db, [{ kind: "owner", cik: ref.cik, name: null }]).catch(() => undefined);
+    }
+    const guess = id.replace(/^\d+-?/, "").split("-").filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    return <SecPending title={guess ? `${guess}: insider trades` : "Insider trades"} what={guess || "this filer"} edgar={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${Number(ref.cik)}&type=4&dateb=&owner=include&count=40`} />;
+  }
   if (`/insiders/${id}` !== x.href) permanentRedirect(x.href);
   const now = Date.now();
   const viewer = await getViewer();
@@ -61,6 +76,7 @@ export default async function InsiderPage({ params }: { params: Promise<{ id: st
   const db = getDb();
   const following = paid && viewer.user ? (await followList(db, viewer.user.id).catch(() => [])).some(f => f.kind === "insider" && f.target === x.ref.cik) : false;
   const all = tradesByFiling(x.trades);
+  const companies = [...new Map(x.trades.filter(t => t.ticker).map(t => [t.ticker!, { ticker: t.ticker!, company: t.company }])).values()].slice(0, 12);
   const { shown, older } = paid ? { shown: all, older: 0 } : freeWindow(all, now);
   const t = insiderTotals(paid ? x.trades : freeWindow(x.trades, now).shown);
   const closes = await latestCloses(db, shown.flatMap(r => (r.code === "P" && r.ticker ? [r.ticker] : []))).catch(() => new Map());
@@ -132,6 +148,14 @@ export default async function InsiderPage({ params }: { params: Promise<{ id: st
         {shown.length ? <TradesTable rows={shown} show="company" since={after.perBuy} /> : <p className="note">{paid ? "No open-market buys or sales of stock on file yet." : "No trades filed in the last 30 days."}</p>}
       </section>
       {paid ? null : <OlderLocked older={older} what="trades" />}
+      {companies.length ? (
+        <section className="block" aria-labelledby="cos-h">
+          <h2 id="cos-h" className="block__h">Companies {x.name} has traded</h2>
+          <ul className="seo__links">{companies.map(c => <li key={c.ticker}><Link href={companyHref(c.ticker)}>{c.company} ({c.ticker})</Link></li>)}</ul>
+        </section>
+      ) : null}
+      <EntityLd trail={[["Stocks", "/stocks"], [x.name, x.href]]} name={`${x.name}: insider trades`} path={x.href}
+        description={`Every open-market Form 4 purchase and sale ${x.name} has reported to the SEC.`} updated={x.trades[0]?.filedAt ?? null} sources={["https://www.sec.gov/edgar/search/"]} keywords={[x.name, "insider trades", "Form 4"]} />
     </SecFrame>
   );
 }

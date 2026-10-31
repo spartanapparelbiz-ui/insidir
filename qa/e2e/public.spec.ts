@@ -1,20 +1,25 @@
-/* The app is members only (visitors are sent to log in); every page has the footer and legal links,
+/* Members-only pages send visitors to log in; the data pages open for them 30 minutes late; every page has the footer and legal links,
  * no internal link 404s, nothing scrolls sideways, and every page is screenshotted at both sizes. */
 import { expect, test } from "@playwright/test";
-import { dealId, footerOk, MEMBER_PAGES, noHorizontalScroll, PRO_PAGES, PUBLIC_PAGES, shotName, signIn } from "./helpers";
+import { dealId, footerOk, MEMBER_PAGES, noHorizontalScroll, OPEN_PAGES, PRO_PAGES, PUBLIC_PAGES, shotName, signIn } from "./helpers";
 
-test("the app is for members only: visitors are sent to log in, members without a plan to Get Insidir, and the APIs say no", async ({ page, context }) => {
+test("members-only pages send visitors to log in; the feed, markets, profiles and Whales open for visitors 30 minutes late; account APIs say no", async ({ page, context }) => {
   for (const path of MEMBER_PAGES) {
     await page.goto(path);
-    await expect(page, path).toHaveURL(new RegExp(`/login\\?next=${encodeURIComponent(path).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+    // The next page, encoded or not (/settings sends "?next=/settings").
+    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    await expect(page, path).toHaveURL(new RegExp(`/login\\?next=(${esc(encodeURIComponent(path))}|${esc(path)})`));
   }
-  for (const api of ["/api/moves", "/api/feed", "/api/live", "/api/receipts/csv"]) expect((await page.request.get(api)).status(), api).toBe(401);
+  for (const path of OPEN_PAGES) {
+    const res = await page.goto(path);
+    expect(res?.status(), path).toBe(200);
+    await expect(page, path).not.toHaveURL(/\/login|\/start/);
+  }
+  for (const api of ["/api/moves", "/api/feed"]) expect((await page.request.get(api)).status(), api).toBe(200);
+  expect((await page.request.get("/api/receipts/csv")).status()).toBe(401);
   await signIn(context, "freeUs");
-  for (const path of ["/feed"]) {
-    await page.goto(path);
-    await expect(page, path).toHaveURL(/\/start$/);
-  }
-  expect((await page.request.get("/api/moves")).status()).toBe(401);
+  await page.goto("/feed");
+  await expect(page).toHaveURL(/\/feed$/);
 });
 
 test("every page: footer disclaimer, privacy and terms links, no sideways scroll, screenshot", async ({ page, context }) => {

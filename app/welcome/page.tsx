@@ -4,22 +4,16 @@
 import type { Metadata } from "next";
 import { Welcome } from "@/components/auth/Welcome";
 import { redirect } from "next/navigation";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AuthSplit } from "@/components/auth/AuthSplit";
+import { safeNext } from "@/lib/auth/next";
 import { getViewer } from "@/lib/auth/viewer";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "You're in", robots: { index: false } };
 
-export default async function WelcomePage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
+export default async function WelcomePage({ searchParams }: { searchParams: Promise<{ status?: string; next?: string }> }) {
   const sp = await searchParams;
   const failed = sp.status === "failed" || sp.status === "canceled";
   if (!failed && !(await getViewer()).user) redirect(`/login/start?next=${encodeURIComponent(`/welcome${sp.status ? `?status=${sp.status}` : ""}`)}`);
-  return (
-    <>
-      <SiteHeader signedIn={false} offer={false} />
-      <main className="dark start start--welcome">
-        <div className="wrap start__in start__in--one"><Welcome status={sp.status ?? null} /></div>
-      </main>
-    </>
-  );
+  return <AuthSplit step={2}><Welcome status={sp.status ?? null} next={safeNext(sp.next ?? "/")} /></AuthSplit>;
 }

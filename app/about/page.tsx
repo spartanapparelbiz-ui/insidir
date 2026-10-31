@@ -1,53 +1,35 @@
-/* About: what Insidir is, where the data comes from, what we will never do, and who is behind it. */
-import { GET_CTA } from "@/lib/copy";
+/* About (/about): what Insidir is, who builds it (Aethric LLC, founder Nicholas, Pompano Beach, FL), why, and how to
+ * reach a person. No team or investors that don't exist. */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteHeader";
-import { SUPPORT_EMAIL } from "@/components/SiteFooter";
-import { getViewer } from "@/lib/auth/viewer";
-import { isReady } from "@/lib/features";
-import "../landing.css";
+import { TrustPage } from "@/components/TrustPage";
+import { COMPANY } from "@/lib/copy";
 
-export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "About", description: "What Insidir is, where the data comes from, and what we will never do." };
+export const metadata: Metadata = { title: "About", description: "What Insidir is, who builds it and why." };
 
-export default async function AboutPage() {
-  const viewer = await getViewer();
+export default function AboutPage() {
   return (
-    <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/about" tone="light" />
-      <main className="wrap lp">
-        <article className="lp-legal lp-about">
-          <h1>About Insidir</h1>
-          <p className="lp-about__lead">Insidir shows you the largest positions on sports and prediction markets the second they happen, in plain English.</p>
+    <TrustPage path="/about" title="About Insidir"
+      lead="Insidir tracks every large position on Polymarket, Kalshi and SEC filings, and shows what following each tracker would have made.">
+      <h2>What it is</h2>
+      <p>A tracker is a live portfolio of large positions that fit one rule: every $100K+ position, the largest NBA positions, CEO purchases of their own stock. Each one has a public record built from settled positions, losses included, and a followable return: what $100 on every position would have made at the price Insidir showed it. Members see every position live; visitors see the same data 30 minutes late.</p>
 
-          <h2>Why it exists</h2>
-          <p>A $100K position on one side of a game or a question is worth knowing about. The data is public, but it&apos;s buried in raw trade logs. Insidir watches them all day and turns each big position into one sentence you can read in a second.</p>
+      <h2>Why</h2>
+      <p>Large positions on prediction markets and insider purchases are public, but they&apos;re buried in raw trade logs and filings, and most &ldquo;smart money&rdquo; claims never show their losses. Insidir reads all of it, checks it against the source every hour, and shows the record, so you can see what following big money would really have done.</p>
 
-          <h2>Where the data comes from</h2>
-          <ul>
-            <li><strong>Polymarket</strong>: public trades, with the wallet that made each one. We show a wallet&apos;s public name or a short address, and its record once it has 20 settled markets.</li>
-            <li><strong>Kalshi</strong>: public trades. They&apos;re anonymous, shown as &ldquo;Anonymous · Kalshi&rdquo;.</li>
-            {isReady("stocks") ? <li><strong>SEC EDGAR</strong>: Form 4 filings, where company insiders report buying their own company&apos;s stock, and Form 13F filings, where big funds report what they held at the end of each quarter (up to 45 days later). Every stock card links to the filing.</li> : null}
-            <li>Every position, amount and record on the site comes from that data. When a market settles, we mark each position won or lost on the <Link href="/results">Results</Link> page, losses included.</li>
-          </ul>
-          <p>How late each source can be, and what it can&apos;t tell you: <Link href="/data">About our data</Link>.</p>
+      <h2>Who builds it</h2>
+      <p>Insidir is built by {COMPANY.name} in {COMPANY.place}. It was founded by {COMPANY.founder}, who builds and runs it. There&apos;s no call centre: when you write, the person who builds Insidir reads it.</p>
 
-          <h2>What we will never do</h2>
-          <ul>
-            <li>Tell you what to buy. We show what happened; you decide.</li>
-            <li>Hold your money or trade for you.</li>
-            <li>Try to work out who is behind a wallet.</li>
-            <li>Sell your data. See <Link href="/privacy">Privacy</Link>.</li>
-          </ul>
+      <h2>What we&apos;ll never do</h2>
+      <ul>
+        <li>Tell you what to buy. We show what happened; you decide.</li>
+        <li>Hold your money or trade for you.</li>
+        <li>Try to work out who is behind a wallet.</li>
+        <li>Sell your data. See <Link href="/privacy">Privacy</Link>.</li>
+      </ul>
 
-          <h2>Who we are</h2>
-          <p>Insidir is built by Aethric LLC, Pompano Beach, FL. Write to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
-        </article>
-        <div className="lp-legal__next">
-          <Link className="btn btn--primary" href="/start">{GET_CTA}</Link>
-        </div>
-      </main>
-    </>
+      <h2>Contact</h2>
+      <p><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>. A person answers within 24 hours. How it all works: <Link href="/methodology">Methodology</Link> and <Link href="/data">Our data</Link>.</p>
+    </TrustPage>
   );
 }

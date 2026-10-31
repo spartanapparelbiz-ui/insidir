@@ -1,4 +1,4 @@
-/* Tracker pieces (lib/trackers.ts): the 4:3 cover card (home "Featured"), the ranked row (Top performers, Popular),
+/* Tracker pieces (lib/trackers.ts): the 4:3 cover card (home "Featured"), the ranked row (rankings by followable ROI),
  * the grid card (/trackers) and the record line. Every number comes from TrackerStats (lib/trackers-store.ts); a
  * tracker's record is its followable one ($100 at the price Insidir showed each position); under 30 settled it shows
  * "Building record · N of 30", never "New" and never a made-up record. */

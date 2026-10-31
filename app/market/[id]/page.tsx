@@ -9,7 +9,7 @@ import { unlockHref } from "@/components/app/links";
 import { FollowButton } from "@/components/v2/FollowButton";
 import { MarketLinkButton } from "@/components/v2/LocationPill";
 import { MoveCard } from "@/components/v2/MoveCard";
-import { requireMember } from "@/lib/auth/viewer";
+import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import { dollars } from "@/lib/moves/copy";
@@ -31,9 +31,17 @@ import { SplitBars } from "@/components/smart/SplitBars";
 import { marketSmart, splitsFor } from "@/lib/smart/store";
 import { positioningOn } from "@/lib/smart/gate";
 import { SMART_MIN_MONEY, SMART_MIN_WALLETS } from "@/lib/smart/splits";
+import { AsOf, SOURCES } from "@/components/data/AsOf";
+import { EntityLd } from "@/lib/seo/jsonld";
+import { TRACKERS } from "@/lib/trackers";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Market", robots: { index: false } };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const id = decodeURIComponent((await params).id);
+  const m = /^[\w.\-:]{3,120}$/.test(id) && hasDatabase() ? await storedMarket(getDb(), id.startsWith("0x") ? "polymarket" : "kalshi", id).catch(() => null) : null;
+  return m?.title ? { title: { absolute: `${m.title}: large positions and who holds each side · Insidir` }, description: `Every large position on "${m.title}" on ${id.startsWith("0x") ? "Polymarket" : "Kalshi"}: who holds each side, their verified records, and the price chart.`, alternates: { canonical: `/market/${encodeURIComponent(id)}` } }
+    : { title: "Market", robots: { index: false } };
+}
 
 /** A dot per big move on the YES price line: a NO bet at 30¢ is plotted at YES 70¢. Sized by amount (3–12px). */
 function dotsOf(moves: readonly Move[]): ChartDot[] {
@@ -58,7 +66,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   if (!/^[\w.\-:]{3,120}$/.test(id)) notFound();
   const source = id.startsWith("0x") ? "polymarket" : "kalshi";
   const now = Date.now();
-  const viewer = await requireMember(`/market/${id}`);
+  const viewer = await getViewer();
   const paid = isPaid(viewer.plan);
   if (!hasDatabase()) notFound();
   const db = getDb();
@@ -74,6 +82,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   if (!moves.length && !market && !anySplit) notFound();
   const info = infos.get(id) ?? null;
   const title = market?.title ?? moves[0]?.marketTitle ?? anySplit!.title;
+  const trackersHere = TRACKERS.filter(t => moves.some(m => (m.trackers ?? []).includes(t.slug))).slice(0, 8);
   const event = market?.eventTitle ?? moves[0]?.eventTitle ?? anySplit?.subtitle ?? null;
   const yesLabel = market?.yesLabel ?? moves.find(m => m.outcomeSide === "yes")?.outcome ?? (anySplit?.detail.yesLabel as string | undefined) ?? smart?.outcomes[0] ?? "Yes";
   const noLabel = market?.noLabel ?? moves.find(m => m.outcomeSide === "no")?.outcome ?? (anySplit?.detail.noLabel as string | undefined) ?? smart?.outcomes[1] ?? "No";
@@ -121,6 +130,8 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
             <FollowButton kind="market" target={id} label="Follow market" state={!isReady("follows") ? "soon" : !paid ? "locked" : following ? "on" : "off"} trialHref={trial} />
             {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
           </div>
+          <p className="mhead__src" data-testid="settlement">Settles by {source === "polymarket" ? "Polymarket" : "Kalshi"}&apos;s resolution of this market; that venue is the source of record.</p>
+          <AsOf at={until} live={paid} sources={[source === "polymarket" ? SOURCES.polymarket : SOURCES.kalshi, SOURCES.methodology]} />
         </header>
 
         {source === "polymarket" && !settled ? (
@@ -165,6 +176,14 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
           {items.length ? <ol className="feed2__list tmoves">{items.map(m => <li key={m.id}><MoveCard m={m} follow={!isReady("follows") ? "soon" : !paid ? "locked" : "off"} trialHref={trial} /></li>)}</ol>
             : <p className="dnote">No large positions here{paid ? "" : " more than 30 minutes ago"} yet.</p>}
         </Section>
+        {trackersHere.length ? (
+          <section className="block" aria-labelledby="mtrk-h">
+            <h2 id="mtrk-h" className="block__h">Trackers holding this market</h2>
+            <ul className="seo__links">{trackersHere.map(t => <li key={t.slug}><Link href={`/trackers/${t.slug}`}>{t.name}</Link></li>)}</ul>
+          </section>
+        ) : null}
+        <EntityLd trail={[[source === "polymarket" ? "Prediction markets" : "Markets", "/markets"], [title, `/market/${encodeURIComponent(id)}`]]} name={`${title}: large positions`} path={`/market/${encodeURIComponent(id)}`}
+          description={`Large positions on "${title}" on ${source === "polymarket" ? "Polymarket" : "Kalshi"}, with who holds each side.`} updated={moves[0]?.at ?? null} sources={[source === "polymarket" ? "https://polygonscan.com" : "https://kalshi.com"]} />
       </main>
     </>
   );

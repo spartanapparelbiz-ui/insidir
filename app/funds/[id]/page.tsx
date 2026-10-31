@@ -6,6 +6,7 @@ import { LineChart } from "@/components/charts/LineChart";
 import { Section, Table } from "@/components/stats/Stats";
 import { quarterSummary } from "@/lib/stocks/quarters";
 import type { Metadata } from "next";
+import { EntityLd } from "@/lib/seo/jsonld";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { CompanyMark } from "@/components/Logo";
@@ -59,6 +60,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: `${x.fund.name}: 13F holdings, biggest adds and new positions`,
     description: `${x.fund.name}'s latest 13F filed with the SEC: what it holds, its biggest adds and its new positions, each linked to the filing.`,
     alternates: { canonical: x.href },
+    openGraph: { url: x.href },
   };
 }
 
@@ -156,6 +158,8 @@ export default async function FundPage({ params }: { params: Promise<{ id: strin
           ) : <OlderLocked older={Math.max(0, quarters.length - 1)} what="filings" />}
         </>
       )}
+      <EntityLd trail={[["Stocks", "/stocks"], [x.fund.name, x.href]]} name={`${x.fund.name}: 13F holdings`} path={x.href}
+        description={`${x.fund.name}'s quarterly 13F holdings as filed with the SEC: what it holds, its biggest adds and new positions.`} sources={["https://www.sec.gov/edgar/search/"]} keywords={[x.fund.name, "13F", "holdings"]} />
     </SecFrame>
   );
 }

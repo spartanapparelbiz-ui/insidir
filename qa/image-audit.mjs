@@ -11,7 +11,7 @@ import { chromium } from "playwright";
 
 const BASE = process.argv[2] ?? "http://localhost:3100";
 const MEMBER = "e2e-insidir-session-token-00000000000000";
-const PAGES = ["/", "/trackers", "/trackers/biggest-bets", "/trackers/nfl-big-money", "/trackers/nba-big-money", "/trackers/ceo-buys", "/trackers/fed-and-rates",
+const PAGES = ["/", "/#sports", "/#markets", "/#stocks", "/#crypto", "/open", "/trackers", "/trackers/biggest-bets", "/trackers/nfl-big-money", "/trackers/nba-big-money", "/trackers/ceo-buys", "/trackers/fed-and-rates",
   "/feed", "/feed?tab=markets", "/feed?tab=stocks", "/results", "/top", "/following", "/pricing", "/how-it-works", "/faq", "/sports", "/markets", "/stocks",
   "/market/0xe2emarket1", "/insider-trading/EXDV", "/data", "/alerts", "/settings", "/login", "/not-a-page"];
 // lib/photos.ts trackerPhoto, mirrored: a tracker shows the photo under its slug (leagues drop "-big-money").

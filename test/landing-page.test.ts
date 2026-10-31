@@ -25,14 +25,14 @@ function literals(src: string): string {
 const V2_UI = [
   "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
-  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/Phones.tsx", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
+  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/Laptops.tsx", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
   "lib/moves/copy.ts", "lib/moves/ticker.ts",
 ];
 
 describe("V2 landing page", () => {
-  it("renders its sections in order: the centred hero with the phones, Featured, Top performers and Popular, pricing, FAQ", () => {
+  it("renders its sections in order: hero, three laptops, Open now, Leaderboard, How Insidir works, the proof strip, track record, pricing, FAQ", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero3"', "<Phones ", 'id="feat-h"', "<PeriodTabs ", "Popular</h2>", "<PricingCards ", "<FaqV2 "];
+    const markers = ['className="hero3"', "<ResearchBar ", "<Laptops ", "<OpenSection ", "<AnalyzedSection ", "<BoardAndPortfolio ", 'id="steps-h"', "<ProofSection ", "<RecordSection ", "<PricingTable ", "<FaqV2 />"];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -41,23 +41,21 @@ describe("V2 landing page", () => {
   it("says the brief's words", () => {
     const src = read("app/page.tsx");
     expect(src).toContain("Follow the big money.");
-    expect(src).toContain("Each one is a live portfolio with a public track record.");
-    expect(src).toContain("<HeroCta />");
-    expect(src).toContain("<LivePortfolio ");
-    // Trackers are the product: the hero's one button opens them, and the position check is not on home at all.
-    expect(read("components/home/HeroCta.tsx")).toMatch(/href="\/trackers" data-cta="hero"/);
-    expect(read("components/home/HeroCta.tsx")).toContain("Explore trackers <span");
-    expect(read("components/home/HeroCta.tsx")).toContain('href="/results">See the track record <span className="arrow"');
-    for (const f of ["app/page.tsx", "components/home/HeroCta.tsx", "components/home/LivePortfolio.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
-    expect(read("components/home/LivePortfolio.tsx")).toContain("A live portfolio of big money");
-    for (const h of [">Featured</h2>", ">Top performers</h2>", ">Popular</h2>"]) expect(src).toContain(h);
+    expect(src).toContain("<HeroCta trialHref={trial} />");
+    // The hero's one black button starts the trial; the trackers are a text link next to it. No position check on home.
+    expect(read("components/home/HeroCta.tsx")).toMatch(/btn btn--primary[^"]*" href=\{trialHref\} data-cta="hero"/);
+    expect(read("components/home/HeroCta.tsx")).toContain("Start your 7-day trial");
+    expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">Explore trackers <span');
+    for (const f of ["app/page.tsx", "components/home/HeroCta.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
+    for (const h of ['title="Open now from winning trackers"', 'title="Every position, analyzed."', 'title="Leaderboard"', 'title="How Insidir works"', 'title="Track record"', 'title="Pricing"']) expect(src).toContain(h);
+    expect(src).toContain("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
     const story = read("components/home/Story.tsx");
     expect(story).toContain('id="how"');
     for (const c of ["A large position is opened.", "Insidir records it within seconds.", "The account and its record, in one view.", "An alert on its next position."]) expect(story).toContain(c);
     // One offer everywhere: 7 days for $1, then $39/mo. No old price lines, no 3-day trial, no Pro.
     expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
-    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/home/ScrollOffer.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
+    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/paywall/PayModal.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
       expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|3 days|Pro\b/);
     }
   });

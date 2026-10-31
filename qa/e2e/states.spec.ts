@@ -4,12 +4,13 @@
 import { expect, test } from "@playwright/test";
 import { footerOk, noHorizontalScroll, q, signIn } from "./helpers";
 
-test("404: on-brand, says what happened, links back to the feed", async ({ page }) => {
+test("404: on-brand, says what happened, links back home", async ({ page }) => {
   const res = await page.goto("/no-such-page-anywhere");
   expect(res?.status()).toBe(404);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Wrong trail.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found.");
   await expect(page.getByText("This page doesn't exist.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Back to the feed" })).toHaveAttribute("href", "/feed");
+  await expect(page.getByRole("link", { name: "Back to home" })).toHaveAttribute("href", "/");
+  await expect(page.getByRole("navigation", { name: "Elsewhere" }).getByRole("link", { name: "Status" })).toHaveAttribute("href", "/status");
   // The site's own page (Schibsted Grotesk), not the framework's default.
   const [body, sans] = await page.evaluate(() => [getComputedStyle(document.body).fontFamily, getComputedStyle(document.documentElement).getPropertyValue("--font-schibsted")]);
   expect(sans.trim()).not.toBe("");
@@ -90,7 +91,7 @@ test("empty: P&L before anything is loaded says what to do first", async ({ page
 test("one primary action: the landing (above the final band), pricing and legal pages each show exactly one", async ({ page }) => {
   for (const path of ["/", "/pricing", "/terms", "/privacy"]) {
     await page.goto(path);
-    // Pictures of the app (the home page's phone mockups) are inert: what they show is not an action on this page.
+    // Pictures of the app are inert, and a closed laptop panel isn't shown: neither is an action on this page.
     const primaries = await page.locator("main .btn--primary:not(.band2 .btn)").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).length);
     expect(primaries, path).toBe(1);
   }

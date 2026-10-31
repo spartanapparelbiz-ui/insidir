@@ -63,6 +63,21 @@ describe("logos", () => {
     expect(readdirSync(pub("/logos/teams/mlb")).length).toBe(30);
     expect(readdirSync(pub("/logos/teams/nhl")).length).toBe(32);
   });
+  it("every raster logo has a logo in it: not blank, not one flat colour (a stock in the manifest has its file)", async () => {
+    const sharp = (await import("sharp")).default;
+    const manifest = JSON.parse(readFileSync("public/logos/manifest.json", "utf8")) as { stocks: string[] };
+    const files = ["leagues", "stocks"].flatMap(d => readdirSync(`public/logos/${d}`).filter(f => /\.(webp|png)$/.test(f)).map(f => `public/logos/${d}/${f}`));
+    const flat: string[] = [];
+    for (const f of files) {
+      const st = await sharp(f).stats();
+      const ch = st.channels;
+      const drawn = ch.slice(0, 3).some(c => c.max - c.min >= 6) || (ch.length > 3 && ch[3]!.max - ch[3]!.min >= 6);
+      if (!drawn || (ch.length > 3 && ch[3]!.max === 0)) flat.push(f);
+    }
+    expect(flat).toEqual([]);
+    for (const t of manifest.stocks) expect(existsSync(`public/logos/stocks/${t}.webp`), t).toBe(true);
+  }, 120_000);
+
   it("a Form 4's insider shows as their initials, first and last name", () => {
     expect(initials("HUANG JEN HSUN")).toBe("JH");
     expect(initials("COOK TIMOTHY D")).toBe("TC");

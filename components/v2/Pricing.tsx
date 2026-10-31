@@ -93,7 +93,7 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
             </div>
             <p className="plan2__pitch">Every open position from the trackers that made money for anyone following them, live, with each one&apos;s record. {PAST}</p>
             <p className="plan2__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month · all {trackerCount()} trackers</span></p>
-            <p className="plan2__sub plan2__fine">First week ${TRIAL.fee}. Cancel anytime.</p>
+            <p className="plan2__sub plan2__fine">First week ${TRIAL.fee}. Cancel anytime. Secure sign-in and payments by Whop.</p>
             {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Manage your plan</Link>
               : <Link className="btn btn--primary btn--big btn--block" href={href} data-checkout="pricing">{GET_CTA}</Link>}
           </div>

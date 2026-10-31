@@ -8,7 +8,6 @@ import { PageBand } from "@/components/PageBand";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { MoveCard } from "@/components/v2/MoveCard";
-import { ScrollOffer } from "@/components/home/ScrollOffer";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isMainstream } from "@/lib/home/curate";
@@ -17,8 +16,19 @@ import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { listMoves } from "@/lib/moves/store";
 import type { PhotoN } from "@/components/Photo";
-import { CANCEL_LINE, GET_CTA } from "@/lib/copy";
+import { CANCEL_LINE, GAMBLER, GET_CTA, PAST } from "@/lib/copy";
 import { isPaid } from "@/lib/plans";
+import { AsOf, SOURCES } from "@/components/data/AsOf";
+import { TrackerTile } from "@/components/trackers/Tracker";
+import { coverStats } from "@/components/trackers/TrackerCover";
+import { isReady } from "@/lib/features";
+import { marketPreview, type ProofItem } from "@/lib/markets/preview";
+import { visibleTrackers, type TrackerGroup, type TrackerSlug } from "@/lib/trackers";
+import { trackerStats, type TrackerStats } from "@/lib/trackers-store";
+
+/** Each page's tracker group, and the sources its numbers come from. */
+const GROUP: Record<ProductCopy["tab"], TrackerGroup> = { sports: "Leagues", markets: "Topics", stocks: "Stocks" };
+const SRC = { sports: [SOURCES.polymarket, SOURCES.kalshi], markets: [SOURCES.polymarket, SOURCES.kalshi], stocks: [SOURCES.sec] } as const;
 
 export interface ProductCopy {
   tab: "sports" | "markets" | "stocks";
@@ -46,6 +56,13 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
       return feedItems(db, list, viewer.plan, viewer.region, now);
     }).catch(() => [])
     : [];
+  const [proof, stats] = hasDatabase()
+    ? await Promise.all([
+      memo(`product-proof:${copy.tab}`, 60_000, () => marketPreview(getDb(), copy.tab, viewer.plan, viewer.region, now).then(p => p.proof)).catch((): ProofItem[] => []),
+      trackerStats(getDb(), now).catch(() => new Map<TrackerSlug, TrackerStats>()),
+    ])
+    : [[] as ProofItem[], new Map<TrackerSlug, TrackerStats>()];
+  const trackers = visibleTrackers(isReady).filter(t => t.group === GROUP[copy.tab]);
   const feed = `/feed?tab=${copy.tab}`;
   const paid = isPaid(viewer.plan);
   return (
@@ -60,7 +77,7 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
             <h2 id="covers-h" className="sr-only">What we cover</h2>
             <ul className="prod__covers">{copy.covers.map(c => <li key={c}>{c}</li>)}</ul>
             <div className="mkt__ctas">{paid ? <Link className="btn btn--primary" href={feed}>See the live {copy.title.toLowerCase()} feed</Link>
-              : <><Link className="btn btn--primary" href={trial} data-checkout={`product-${copy.tab}`}>{GET_CTA}</Link><span className="mkt__fine">{CANCEL_LINE}</span></>}</div>
+              : <><Link className="btn btn--primary" href={trial} data-checkout={`product-${copy.tab}`}>{GET_CTA}</Link><span className="mkt__fine">{CANCEL_LINE} Secure sign-in and payments by Whop.</span></>}</div>
           </div>
         </section>
         <section className="sec2" aria-labelledby="latest-h">
@@ -72,9 +89,32 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
             {items.length ? (
               <ol className="prod__list">{items.map((m, i) => <li key={m.id} className="rv" style={{ ["--i" as string]: i }}><MoveCard m={m} follow={paid ? "off" : "locked"} trialHref={trial} compact /></li>)}</ol>
             ) : <p className="mkt__lead">Catching up with the source. The next large position shows up here the moment it lands.</p>}
+            <AsOf at={until} live={paid} sources={[...SRC[copy.tab]]} />
             <p className="prod__more"><Link href={paid ? feed : trial}>{paid ? "See every position in Activity" : "See every position live with Insidir"} <span aria-hidden="true">→</span></Link></p>
           </div>
         </section>
+        {trackers.length ? (
+          <section className="sec2" aria-labelledby="trk-h">
+            <div className="wrap">
+              <h2 id="trk-h" className="sec2__h">Trackers</h2>
+              <ul className="tgrid" data-testid="product-trackers">
+                {trackers.map((t, i) => { const st = stats.get(t.slug); return <TrackerTile key={t.slug} t={t} r={st?.records.all ?? null} tracked30d={st?.tracked30d ?? 0} s={coverStats(st)} i={Math.min(i, 5)} />; })}
+              </ul>
+              <p className="prod__fine">{PAST} Followable ROI: $100 on every position at the price Insidir showed it, plus one point. <Link href="/methodology">How it&apos;s computed</Link></p>
+            </div>
+          </section>
+        ) : null}
+        {proof.length ? (
+          <section className="sec2" aria-labelledby="proof-h">
+            <div className="wrap">
+              <h2 id="proof-h" className="sec2__h">By the numbers</h2>
+              <dl className="proof__grid" data-testid="product-proof">
+                {proof.map(p => <div key={p.label} className="proof__item"><dt>{p.label}</dt><dd className="proof__v">{p.value}</dd>{p.note ? <dd className="proof__note">{p.note}</dd> : null}</div>)}
+              </dl>
+              <AsOf at={now} live={paid} sources={[...SRC[copy.tab], SOURCES.methodology]} />
+            </div>
+          </section>
+        ) : null}
         <section className="sec2" aria-labelledby="card-h">
           <div className="wrap">
             <h2 id="card-h" className="sec2__h">What every card tells you</h2>
@@ -95,12 +135,12 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
         <section className="sec2">
           <div className="wrap mkt__endIn">
             <h2 className="sec2__h">Follow the big money.</h2>
-            <p className="mkt__lead">{GET_CTA}. {CANCEL_LINE}</p>
+            <p className="mkt__lead">{GET_CTA}. {CANCEL_LINE} Secure sign-in and payments by Whop.</p>
+            {copy.tab === "sports" ? <p className="prod__fine" data-testid="gambler">{GAMBLER}</p> : null}
             <div className="mkt__ctas"><Link className="btn btn--primary" href={paid ? feed : trial}>{paid ? "Open Activity" : GET_CTA}</Link><Link className="btn btn--secondary" href="/pricing">See pricing</Link></div>
           </div>
         </section>
       </main>
-      {paid ? null : <ScrollOffer where={copy.tab} />}
     </>
   );
 }

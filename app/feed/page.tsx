@@ -10,7 +10,7 @@ import { LocationPill } from "@/components/v2/LocationPill";
 import { unlockHref } from "@/components/app/links";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
-import { requireMember } from "@/lib/auth/viewer";
+import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady, liveTabs } from "@/lib/features";
 import { feedFor, feedStatus, type FeedItem, type FeedStatus } from "@/lib/moves/feed";
@@ -25,7 +25,7 @@ export const metadata: Metadata = { title: "Activity", description: "Large posit
 export default async function FeedPage({ searchParams }: { searchParams: Promise<{ first?: string; welcome?: string; tab?: string }> }) {
   const now = Date.now();
   const sp = await searchParams;
-  const viewer = await requireMember("/feed");
+  const viewer = await getViewer();
   const jar = await cookies();
   const paid = isPaid(viewer.plan);
   // A new member goes through onboarding first (three skippable screens), once.

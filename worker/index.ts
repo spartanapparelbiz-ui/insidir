@@ -53,6 +53,7 @@ import { closeDb, getDb } from "@/lib/db";
 import { ACCURACY_MS, runAccuracyCheck } from "@/lib/accuracy/check";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
+import { notesOnce } from "@/lib/analyst/store";
 import type { VMarket, Venue } from "@/lib/types";
 import {
   alertableDeals, alertUsers, claimAlert, deactivateStale, dropPush, heartbeat,
@@ -286,6 +287,11 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
           const p = await seenProgress(getDb());
           log(`follow: ${r.priced} seen prices, ${r.none} without one, ${r.tags} tag times (${p.priced} priced, ${p.left} to go)`);
         }
+      }),
+      // Analyst notes (lib/analyst): a note for each new large position, from its facts only.
+      every("analyst:notes", 60_000, async () => {
+        const r = await notesOnce(getDb(), Date.now(), { log });
+        if (r.written) log(`analyst: ${r.written} notes (${r.model} model, ${r.template} template), $${r.costUsd.toFixed(4)}`);
       }),
       every("follow:report", 60 * 60_000, async () => {
         for (const line of (await followableCsv(getDb(), Date.now())).trimEnd().split("\n")) log(`FOLLOWABLE-CSV ${line}`);

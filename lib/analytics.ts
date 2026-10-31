@@ -43,6 +43,9 @@ export const dropOff = (cur: number, prev: number): number | null => (prev > 0 ?
 export type FunnelEvent = (typeof FUNNEL)[number];
 /** Events the browser may report (the rest are recorded by the server). */
 export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip", "first_feed_hint",
+  // The timed pay prompt (components/paywall): shown, dismissed (how), its button clicked; paid_seen when /welcome
+  // confirms a payment that started from it.
+  "popup_shown", "popup_dismissed", "popup_click", "paid_seen",
   // The home hero: its button, a tap on the ticker strip, and the feed preview scrolled into view.
   "hero_cta_click", "ticker_click", "feed_preview_view", "offer_view",
   // A lock opened (its sheet: what you get, the price, one button); where says which (live, record, follow, alerts).

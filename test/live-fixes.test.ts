@@ -110,10 +110,8 @@ describe("stocks", () => {
 
 describe("alerts copy only when alerts are live", () => {
   it("every alerts promise is behind isReady('alerts_push')", () => {
-    const home = readFileSync("app/page.tsx", "utf8"), how = readFileSync("app/how-it-works/page.tsx", "utf8");
-    // The home page promises no alerts at all (the tracker page's Follow says what following does).
-    expect(home).not.toMatch(/alert to your phone|phone alerts/i);
-    expect(how).toMatch(/isReady\("alerts_push"\) \? \[\["An alert on the next one"/);
+    // The home page and Methodology promise no alerts at all (the tracker page's Follow says what following does).
+    for (const f of ["app/page.tsx", "app/methodology/page.tsx"]) expect(readFileSync(f, "utf8"), f).not.toMatch(/alert to your phone|phone alerts/i);
   });
 });
 

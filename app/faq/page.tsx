@@ -26,7 +26,7 @@ export default async function FaqPage() {
         <section className="sec2">
           <div className="wrap mkt__endIn">
             <h2 className="sec2__h">See it for yourself.</h2>
-            <div className="mkt__ctas"><Link className="btn btn--primary" href="/start">{GET_CTA}</Link><Link className="btn btn--secondary" href="/how-it-works">How it works</Link></div>
+            <div className="mkt__ctas"><Link className="btn btn--primary" href="/start">{GET_CTA}</Link><Link className="btn btn--secondary" href="/methodology">Methodology</Link></div>
           </div>
         </section>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2(FAQ_ALL) }} />

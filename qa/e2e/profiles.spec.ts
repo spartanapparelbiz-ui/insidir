@@ -50,10 +50,10 @@ test("a trader's profile: every stat from their resolved positions, for members"
   await expect(page.getByRole("link", { name: "See their Polymarket profile" })).toHaveCount(0);
 });
 
-test("profiles are members only; the leaderboard is public and no trader's own record reaches a visitor", async ({ page }) => {
+test("a profile opens for a visitor with the record locked; the leaderboard is public and no trader's own record reaches a visitor", async ({ page }) => {
   const bodies = await captureBodies(page, async () => {
-    await page.goto(`/p/${TOP}`);
-    await expect(page).toHaveURL(/\/login\?next=%2Fp%2F/);
+    expect((await page.goto(`/p/${TOP}`))?.status()).toBe(200);
+    await expect(page.getByText(/Their record is for members/)).toBeVisible();
     await page.goto("/top");
     await expect(page.getByRole("heading", { level: 1, name: "Leaderboard" })).toBeVisible();
   });
@@ -171,7 +171,10 @@ test("a company's insider trading page: every insider trade, newest first, and h
   await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(3);
   await expect(page.locator("[data-locked='sec-history']")).toHaveCount(0);
   await page.screenshot({ path: shotName("company-member", page), fullPage: true });
-  expect((await page.goto("/insider-trading/NOPE"))?.status()).toBe(404);
+  // A ticker we hold nothing for: a page that says so, never a 404 (crawlers follow old links), and not indexed.
+  expect((await page.goto("/insider-trading/NOPE"))?.status()).toBe(200);
+  await expect(page.getByTestId("sec-pending")).toContainText("NOPE");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 });
 
 test("a fund: its latest 13F, biggest adds and new positions; members also get top holdings and every quarter", async ({ page, context }) => {
@@ -185,7 +188,7 @@ test("a fund: its latest 13F, biggest adds and new positions; members also get t
   await expect(page.getByRole("heading", { name: "Top 10 holdings" })).toHaveCount(0);
   await signIn(context, "insidir");
   await page.goto("/feed?tab=stocks");
-  await page.locator("[data-move='13f:000099999826000002:037833100']").getByRole("link", { name: "E2E Fixture Capital" }).click();
+  await page.locator("[data-move='13f:000099999826000002:037833100']").getByRole("link", { name: "E2E Fixture Capital", exact: true }).click();
   await expect(page).toHaveURL("/funds/999998-e2e-fixture-capital");
   await expect(page.getByText(/48 quarters on file with the SEC\./)).toBeVisible();
   const top = page.locator("section", { has: page.getByRole("heading", { name: "Top 10 holdings" }) });
@@ -225,16 +228,22 @@ test("following an insider, a company and a fund: on the Following page, and the
   await q("delete from terminal.follows where user_id = 'user_e2e_insidir' and kind in ('insider', 'company', 'fund')");
 });
 
-test("robots.txt and sitemap.xml: public pages and the SEC pages, never the app", async ({ request }) => {
+test("robots.txt and the sitemaps by type: public pages, SEC pages, accounts and markets; never admin or account pages", async ({ request }) => {
   const robots = await request.get("/robots.txt");
   expect(robots.status()).toBe(200);
   const r = await robots.text();
   expect(r).toContain("Sitemap: ");
-  expect(r).toContain("Disallow: /api/");
-  const sm = await request.get("/sitemap.xml");
-  expect(sm.status()).toBe(200);
-  const x = await sm.text();
-  for (const p of ["/insiders/888888-jane-fixture", "/insider-trading/EXDV", "/funds/999998-e2e-fixture-capital", "/pricing</loc>"]) expect(x).toContain(p);
-  for (const p of ["/feed", "/following", "/settings", "/p/"]) expect(x).not.toContain(`${p}</loc>`);
+  for (const d of ["/api/", "/admin", "/settings", "/following", "/start"]) expect(r).toContain(`Disallow: ${d}`);
+  expect(r).not.toContain("Disallow: /p/");
+  const idx = await (await request.get("/sitemap.xml")).text();
+  for (const t of ["pages", "trackers", "companies", "insiders", "funds", "traders", "markets"]) expect(idx).toContain(`/sitemaps/${t}.xml</loc>`);
+  const get = async (t: string) => { const res = await request.get(`/sitemaps/${t}.xml`); expect(res.status(), t).toBe(200); return res.text(); };
+  expect(await get("insiders")).toContain("/insiders/888888-jane-fixture");
+  expect(await get("companies")).toContain("/insider-trading/EXDV");
+  expect(await get("funds")).toContain("/funds/999998-e2e-fixture-capital");
+  expect(await get("pages")).toContain("/pricing</loc>");
+  expect(await get("traders")).toContain("/p/0xe2e");
+  expect(await get("trackers")).toContain("/trackers/biggest-bets</loc>");
+  for (const t of ["pages", "trackers"]) for (const p of ["/following", "/settings", "/admin"]) expect(await get(t)).not.toContain(`${p}</loc>`);
 });
 

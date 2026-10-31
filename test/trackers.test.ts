@@ -11,7 +11,7 @@ import { parseFollow } from "@/lib/follows";
 import { alertJobs, alertMessage, reasonFor, type AlertUser } from "@/lib/moves/alerts";
 import type { Move } from "@/lib/moves/types";
 import {
-  clusterIssuers, FEATURED, fixedTags, GROUPS, hasTrackerRecord, isFixed, isLive, isObserved, isTrackerSlug, observedTags, popular, recordPill, retag, topPerformers,
+  clusterIssuers, FEATURED, fixedTags, GROUPS, hasTrackerRecord, isFixed, isLive, isObserved, isTrackerSlug, observedTags, recordPill, retag, topPerformers,
   TRACKER_MIN_SETTLED, trackerBySlug, TRACKERS, trackersOf, visibleTrackers, winPct, type TrackerCtx, type TrackerRecord,
 } from "@/lib/trackers";
 import { recordOf, countsToRecord } from "@/lib/trust";
@@ -173,9 +173,6 @@ describe("tracker records", () => {
     expect(topPerformers(rows).map(x => x.slug)).toEqual(["pays-best", "wins-often", "loses"]);
   });
 
-  it("Popular: followers first, then money tracked", () => {
-    expect(popular([{ s: "a", followers: 0, tracked30d: 9e6 }, { s: "b", followers: 2, tracked30d: 1 }, { s: "c", followers: 0, tracked30d: 1e7 }]).map(r => r.s)).toEqual(["b", "c", "a"]);
-  });
 });
 
 describe("following a tracker", () => {
