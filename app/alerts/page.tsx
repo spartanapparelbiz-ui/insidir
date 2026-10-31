@@ -15,7 +15,6 @@ import { requireMember } from "@/lib/auth/viewer";
 import { movePlan } from "@/lib/moves/gate";
 import "../app.css";
 import "../account.css";
-import { PageBand } from "@/components/PageBand";
 import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +36,7 @@ export default async function AlertsPage() {
       <>
         <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
         <main className="wrap app acct dark">
-          <PageBand n={BAND.alerts} title="Alerts" />
+          <header className="phead"><h1 className="phead__h">Alerts</h1></header>
           <section className="agroup">
             <div className="agroup__body">
               <p className="asum">Alerts come with Insidir.</p>
@@ -59,7 +58,7 @@ export default async function AlertsPage() {
     <>
       <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
       <main className="wrap app acct dark">
-        <PageBand n={BAND.alerts} title="Alerts" />
+        <header className="phead"><h1 className="phead__h">Alerts</h1></header>
         <p className="asum asum--lead">An alert follows when a trader or market you follow opens a large position.</p>
         <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} pro={viewer.plan === "insidir"} proHref={unlockHref()} ready={ready} />
 

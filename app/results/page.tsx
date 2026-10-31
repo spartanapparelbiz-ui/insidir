@@ -27,8 +27,6 @@ import { avatarsOrNone } from "@/lib/moves/avatar-store";
 import { Avatar } from "@/components/v2/Avatar";
 import { listMoves, recordsFor } from "@/lib/moves/store";
 import type { Move, Tab } from "@/lib/moves/types";
-import { PageBand } from "@/components/PageBand";
-import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Track record", description: "Every large position we've shown that has settled, won or lost. Real past positions. Not a promise." };
@@ -72,7 +70,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/results" trialHref={unlockHref()} />
       <main className="wrap app2 results dark">
-        <PageBand n={BAND.results} title="Track record" />
+        <header className="phead"><h1 className="phead__h">Track record</h1></header>
         <p className="results__label">Real past positions. Not a promise.</p>
         {total ? (
           <section className="results__total" aria-label="Every settled position" data-testid="results-total">

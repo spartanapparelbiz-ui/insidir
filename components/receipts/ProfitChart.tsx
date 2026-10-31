@@ -47,7 +47,7 @@ export function ProfitChart({ points, summary }: { points: ChartPoint[]; summary
       <div className="rx-chart__y mono" aria-hidden="true"><span>{fmtAxis(geo.hi)}</span><span className="rx-chart__axis-t">Cumulative, $</span><span>{fmtAxis(geo.lo)}</span></div>
       <div className="rx-chart__box" ref={box} tabIndex={0} role="img" aria-label={summary} onKeyDown={onKey}
         onPointerMove={(e: PointerEvent) => near(e.clientX)} onPointerLeave={() => setI(null)} onBlur={() => setI(null)}>
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <svg data-draw="" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
           {geo.lo < 0 ? <line x1="0" x2={W} y1={geo.zero} y2={geo.zero} className="rx-chart__zero" vectorEffect="non-scaling-stroke" /> : null}
           <polyline points={geo.xy.map(([x, y]) => `${x},${y}`).join(" ")} className="rx-chart__line" vectorEffect="non-scaling-stroke" />
           {at ? <line x1={at[0]} x2={at[0]} y1="0" y2={H} className="rx-chart__cursor" vectorEffect="non-scaling-stroke" /> : null}

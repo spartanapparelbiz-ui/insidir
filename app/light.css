@@ -4,8 +4,7 @@
 
 /* ---------- type ---------- */
 body { font-size: var(--t15); letter-spacing: -0.005em; }
-h1, h2, .sec2__h, .feed2__h, .pband__h, .trader__name, .market__h, .login__h, .start__h, .split__h, .soonpage__h,
-.empty__h, .block__h, .sheet__h, .side__h, .story__cap, .cmp__t thead th, .inband__h {
+h1, h2, .sec2__h, .feed2__h, .trader__name, .market__h, .login__h, .start__h, .split__h, .soonpage__h, .empty__h, .block__h, .sheet__h, .side__h, .cmp__t thead th, .inband__h {
   font-family: var(--sans); font-weight: 600; letter-spacing: var(--tight); }
 .sec2__h { font-size: var(--t32); line-height: 1.1; }
 @media (min-width: 900px) { .sec2__h { font-size: var(--t56); line-height: 1.05; margin-bottom: 48px; } }
@@ -33,10 +32,9 @@ h1, h2, .sec2__h, .feed2__h, .pband__h, .trader__name, .market__h, .login__h, .s
 a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 
 /* ---------- cards: grey, 24px, no border, soft shadow on hover only ---------- */
-.card, .move, .upsell, .empty, .record div, .flist__row, .pline, .pchart, .trust__card, .prod__tile, .plan2, .side, .deal,
-.start__signup, .start__pay, .inband__card, .psnip, .rcard, .promise__item {
+.card, .move, .upsell, .empty, .record div, .flist__row, .pline, .pchart, .trust__card, .prod__tile, .plan2, .side, .deal, .start__signup, .start__pay, .inband__card, .psnip, .rcard, .promise__item {
   border: 0 !important; box-shadow: none; background: var(--bg); border-radius: var(--r-card); }
-.dash .move, .ios-vp .move { box-shadow: none; }
+.dash .move { box-shadow: none; }
 .move { padding: 24px; transition: box-shadow var(--dur-panel) var(--ease-enter), transform var(--dur-panel) var(--ease-enter); }
 .move:hover, .dash .move:hover, .prod__tile--link:hover, .deal:hover { box-shadow: var(--shadow-hover); background: var(--bg); }
 .plan2--main { box-shadow: none !important; }
@@ -57,8 +55,8 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 .tag, .badge, .soon { box-shadow: none; background: var(--bg); }
 
 /* ---------- nav: white, black logo, a hairline ---------- */
-.nav, .nav--light { background: rgba(255, 255, 255, .86); color: var(--text); box-shadow: inset 0 -1px 0 var(--border);
-  backdrop-filter: saturate(1.8) blur(20px); -webkit-backdrop-filter: saturate(1.8) blur(20px); }
+/* Solid at the top; after 24px of scroll it turns translucent and blurs what's under it (app/motion.css .nav--scrolled). */
+.nav, .nav--light { background: var(--page); color: var(--text); box-shadow: inset 0 -1px 0 var(--border); }
 .nav__in { min-height: 64px; }
 .nav .wordmark svg { height: 26px; }
 .nav__links a, .nav--light .nav__links a { color: var(--muted); font-weight: 500; text-decoration: none; transition: color var(--dur-small); }
@@ -70,16 +68,15 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 .getbar { background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--paper) 40%); }
 
 /* ---------- page headers: one headline on white (the photo bands become plain titles) ---------- */
-.pband, .trader__head { margin-inline: 0; min-height: 0; padding: 0; background: none; color: var(--text); isolation: auto; overflow: visible; }
+.trader__head { margin-inline: 0; min-height: 0; padding: 0; background: none; color: var(--text); isolation: auto; overflow: visible; }
 .trader__head { margin: 0; padding: 0; }
-.pband::after, .trader__head::after, .pband__photo, .trader__photo { display: none; }
-.pband__in { padding: 0 0 8px; }
-.app2 > .pband:first-child, .app > .pband:first-child, .soonpage > .pband:first-child { margin-top: 0; }
-.pband__h, .trader__head .trader__name, .trader__name { color: var(--text); font-size: var(--t32); line-height: 1.05; }
-@media (min-width: 900px) { .pband__h, .trader__name { font-size: var(--t56); } }
-.pband__kicker, .trader__head .trader__kicker, .pband__sub { color: var(--muted); }
-.pband__link, .pband .source--dark, .source--dark { color: var(--muted); text-decoration-color: var(--border); }
-.pband :focus-visible, .trader__head :focus-visible { outline-color: var(--ink); }
+.trader__head::after, .trader__photo { display: none; }
+
+.trader__head .trader__name, .trader__name { color: var(--text); font-size: var(--t32); line-height: 1.05; }
+@media (min-width: 900px) { .trader__name { font-size: var(--t56); } }
+.trader__head .trader__kicker { color: var(--muted); }
+.source--dark { color: var(--muted); text-decoration-color: var(--border); }
+.trader__head :focus-visible { outline-color: var(--ink); }
 
 /* ---------- stat tiles: big number, small grey label under it ---------- */
 .record { gap: 8px; max-width: none; }
@@ -106,7 +103,7 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 .split__line { font-weight: 600; letter-spacing: var(--tight); }
 .login__err { background: var(--bg); box-shadow: inset 3px 0 0 var(--loss); }
 .welcome__bar { background: linear-gradient(90deg, transparent, var(--ink), transparent); background-size: 200% 100%; }
-.start__n, .story__n, .dark .story__n, .prod__n { background: var(--ink); color: var(--paper); }
+.start__n, .prod__n { background: var(--ink); color: var(--paper); }
 
 /* ---------- footer ---------- */
 .foot { background: var(--paper); border-top: 1px solid var(--border); padding: 64px 0 120px; }
@@ -132,7 +129,6 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 .hero3__sub { margin-top: 24px; color: var(--muted); font-size: var(--t17); line-height: 1.5; max-width: 32ch; }
 @media (min-width: 900px) { .hero3__sub { font-size: var(--t22); max-width: none; } }
 .hero3__cta { margin-top: 40px; }
-
 
 /* sections */
 .sec3 { padding: var(--sec) 0 0; }
@@ -252,10 +248,6 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 .uiskel { background: var(--bg-alt); border-radius: 8px; }
 
 /* page titles outside the app's padded main get the same top space */
-.pband { padding-top: 56px; }
-@media (min-width: 900px) { .pband { padding-top: 96px; } }
-.app2 .pband, .app .pband, .soonpage .pband { padding-top: 0; }
-.mkt .pband + .sec2 { padding-top: 56px; }
 
 /* the fan clips only at the bottom (under the fade), never the outer phones' sides */
 

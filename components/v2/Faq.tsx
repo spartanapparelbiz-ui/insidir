@@ -29,7 +29,7 @@ export function FaqV2({ title = "Questions", items = FAQ_V2, level = 2 }: { titl
   const H = level === 1 ? "h1" : "h2";
   return (
     <section className="sec2 sec2--alt" id="faq" aria-labelledby="faq-h">
-      <div className="wrap faq2">
+      <div className="pg faq2">
         <H id="faq-h" className="sec2__h rv">{title}</H>
         <div className="faq2__list">
           {items.map((f, i) => (

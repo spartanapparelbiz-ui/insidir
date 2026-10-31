@@ -2,14 +2,13 @@
  * (components/v2/ProductPage.tsx). */
 import type { Metadata } from "next";
 import { ProductPage } from "@/components/v2/ProductPage";
-import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Prediction markets", description: "The largest positions on elections, the Fed, the economy and world events on Polymarket and Kalshi, live, with each trader's record." };
 
 export default function MarketsPage() {
   return <ProductPage copy={{
-    tab: "markets", photo: BAND.product.markets, title: "Markets",
+    tab: "markets", title: "Markets",
     line: "Large positions on elections, the Fed, the economy and world events, as they are opened.",
     covers: ["Elections", "The Fed", "Economy", "World events", "Companies", "Culture"],
     card: [

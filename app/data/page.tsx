@@ -4,14 +4,12 @@
  * lib/accuracy/check.ts). */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageBand } from "@/components/PageBand";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SUPPORT_EMAIL } from "@/components/SiteFooter";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { clockET, dateTimeET } from "@/lib/moves/copy";
 import { readStatus, type Status } from "@/lib/status-page";
-import { BAND } from "@/lib/photos";
 import "../landing.css";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +22,7 @@ export default async function DataPage() {
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/data" tone="light" />
       <main className="wrap lp">
-        <PageBand n={BAND.about} title="Our data" />
+        <header className="phead"><h1 className="phead__h">Our data</h1></header>
         <article className="lp-legal lp-about">
           <p className="lp-about__lead">Every position, amount and record on Insidir comes from a public record, and every card links to it under &ldquo;Where this comes from&rdquo;.</p>
 

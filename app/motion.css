@@ -1,32 +1,53 @@
-/* Motion (components/motion/Motion.tsx marks the elements). Transform and opacity only, nothing that moves layout
- * (CLS 0), and all of it off under prefers-reduced-motion, where everything is simply there.
- *   .rise          hero text and the live list's first rows: rise 24px into place on load, 0.9s, 80ms apart (--i)
- *   .rv            section headers, rows and cards: the same rise as they scroll into view, once
- *                  (animation-timeline: view() where supported; an IntersectionObserver adds .is-in elsewhere)
- *   [data-zoom]    photos: 1.18 → 1 as they enter
- *   [data-par]     the full-width band: drifts ±7% as it crosses the screen (parallax)
- *   [data-settle]  the tracker header photo: settles from 1.12 on load
+/* Motion: one shared system (components/motion/Reveal.tsx marks sections and rows; components/motion/Motion.tsx runs
+ * them). Transform, opacity and clip only, nothing that moves layout (CLS 0). Hidden only under html.js (set before
+ * first paint), so without JS everything is simply there; all of it is off under prefers-reduced-motion.
+ *   .rise          hero text: rises 24px into place on load, 0.7s, 60ms apart (--i)
+ *   .rv            sections, headers, rows, cards, tiles, table rows: fade + rise 24px as they enter, 0.7s,
+ *                  cubic-bezier(.2,.8,.2,1), once; a group's children 60ms apart (--i). animation-timeline: view()
+ *                  where supported; an IntersectionObserver adds .is-in elsewhere (Safari, Firefox)
+ *   section rules  a section header's ink rule draws left to right as the section enters
+ *   [data-zoom]    photos zoom 1.12 → 1 as they enter
+ *   [data-par]     bands and hero photos drift ±6% with scroll (parallax)
+ *   [data-settle]  tracker and entity header photos settle from 1.08 on load
+ *   [data-draw]    charts: lines draw left to right; bars grow from 0
+ *   .nav--scrolled after 24px of scroll the header shrinks slightly and blurs what's under it
  * Hover: a card's photo scales to 1.04, buttons lift 1px, link arrows nudge 3px. */
-:root { --ease-rise: cubic-bezier(.2, .8, .2, 1); }
+:root { --ease-rise: cubic-bezier(.2, .8, .2, 1); --rise-dur: .7s; --rise-step: 60ms; }
 
 @keyframes rise { from { opacity: 0; transform: translate3d(0, 24px, 0); } to { opacity: 1; transform: none; } }
-@keyframes zoom-in { from { transform: scale(1.18); } to { transform: none; } }
-@keyframes settle { from { transform: scale(1.12); } to { transform: none; } }
-@keyframes par-drift { from { transform: translate3d(0, -7%, 0) scale(1.16); } to { transform: translate3d(0, 7%, 0) scale(1.16); } }
+@keyframes zoom-in { from { transform: scale(1.12); } to { transform: none; } }
+@keyframes settle { from { transform: scale(1.08); } to { transform: none; } }
+@keyframes par-drift { from { transform: translate3d(0, -6%, 0) scale(1.14); } to { transform: translate3d(0, 6%, 0) scale(1.14); } }
+@keyframes ink { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* The section rule is a drawn line, not a border, so it can draw in without moving anything. */
+.sec3__h, .tsec__h, .dsec__h, .tgroup__h, .sec2__h { position: relative; border-bottom: 0 !important; }
+.sec3__h::after, .tsec__h::after, .dsec__h::after, .tgroup__h::after, .sec2__h::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--ink); transform-origin: left center;
+}
 
 @media (prefers-reduced-motion: no-preference) {
-  .rise { animation: rise .9s var(--ease-rise) both; animation-delay: calc(var(--i, 0) * 80ms); }
+  .rise { animation: rise var(--rise-dur) var(--ease-rise) both; animation-delay: calc(var(--i, 0) * var(--rise-step)); }
 
-  .js .rv.rv--wait { opacity: 0; transform: translate3d(0, 24px, 0); transition: opacity .9s var(--ease-rise), transform .9s var(--ease-rise); transition-delay: calc(var(--i, 0) * 80ms); }
+  .js .rv.rv--wait { opacity: 0; transform: translate3d(0, 24px, 0); transition: opacity var(--rise-dur) var(--ease-rise), transform var(--rise-dur) var(--ease-rise); transition-delay: calc(var(--i, 0) * var(--rise-step)); }
   .js .rv.rv--wait.is-in { opacity: 1; transform: none; }
 
-  .js [data-zoom].zoom--wait img, .js [data-zoom].zoom--wait > :not(picture) { transform: scale(1.18); transition: transform 1.4s var(--ease-rise); }
+  .js :is(.sec3__h, .tsec__h, .dsec__h, .tgroup__h, .sec2__h).rv--wait::after { transform: scaleX(0); transition: transform 1s var(--ease-rise) .15s; }
+  .js :is(.sec3__h, .tsec__h, .dsec__h, .tgroup__h, .sec2__h).rv--wait.is-in::after { transform: none; }
+
+  .js [data-zoom].zoom--wait img, .js [data-zoom].zoom--wait > :not(picture) { transform: scale(1.12); transition: transform 1.4s var(--ease-rise); }
   .js [data-zoom].zoom--wait.is-in img, .js [data-zoom].zoom--wait.is-in > :not(picture) { transform: none; }
 
-  [data-settle] img { animation: settle 1.6s var(--ease-rise) both; }
+  .js [data-draw].draw--wait:not([data-draw=bars]) { clip-path: inset(0 100% 0 0); transition: clip-path 1.2s var(--ease-rise); }
+  .js [data-draw].draw--wait.is-in:not([data-draw=bars]) { clip-path: inset(0 0 0 0); }
+  .js [data-draw=bars].draw--wait > * { transform: scaleX(0); transform-origin: left center; transition: transform .9s var(--ease-rise); }
+  .js [data-draw=bars].draw--wait.is-in > * { transform: none; }
+
+  [data-settle] img, .thead__photo img, .mhead [data-photo] img { animation: settle 1.6s var(--ease-rise) both; }
 
   @supports (animation-timeline: view()) {
-    .js .rv.rv--wait { opacity: 1; transform: none; transition: none; animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+    .js .rv.rv--wait { opacity: 1; transform: none; transition: none; animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
     .js [data-zoom].zoom--wait img { transform: none; transition: none; animation: zoom-in linear both; animation-timeline: view(); animation-range: entry 0% cover 45%; }
     [data-par] { animation: par-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
   }
@@ -37,6 +58,11 @@
   .btn { transition: transform var(--dur-small) var(--ease-rise), background-color var(--dur-small), color var(--dur-small); }
   .btn:hover { transform: translateY(-1px); }
   a:hover > .arrow, button:hover > .arrow, a:hover::after { transform: translateX(3px); }
+
+  .nav { transition: background-color .3s var(--ease-rise), backdrop-filter .3s var(--ease-rise); }
+  .nav__in { transition: transform .3s var(--ease-rise); transform-origin: center top; }
 }
+.nav.nav--scrolled { background: color-mix(in srgb, var(--page) 84%, transparent); backdrop-filter: saturate(1.8) blur(20px); -webkit-backdrop-filter: saturate(1.8) blur(20px); }
+@media (prefers-reduced-motion: no-preference) { .nav--scrolled .nav__in { transform: scale(.97); } }
 .hero3__acts { display: grid; justify-items: center; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

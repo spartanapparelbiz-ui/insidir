@@ -18,7 +18,7 @@ export function LivePortfolio({ d }: { d: PortfolioData }) {
   const roi = returnPct(d.record), rec = recordResult(d.record);
   return (
     <section className="sec3 lport" aria-labelledby="lport-h">
-      <div className="wrap">
+      <div className="pg">
         <h2 id="lport-h" className="sec3__h">A live portfolio of big money</h2>
         <p className="lport__sub">Each tracker holds every large position that fits its rule, opened and settled in public. This is one of them, now.</p>
         <article className="lport__card">

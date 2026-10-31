@@ -85,7 +85,7 @@ export function LineChart({ points, dots = [], windows, format, baseline = "zero
       <figure className="lchart__fig">
         <p className="lchart__now"><span className={up ? "money" : "loss"}>{fmt(h?.v ?? view.at(-1)!.v)}</span>
           <span className="lchart__when">{h ? (time ? DATE_TIME : DATE).format(new Date(h.t)) : label}</span></p>
-        <svg ref={ref} key={`${win}-${id}`} className={`lchart__svg ${up ? "lchart--up" : "lchart--down"}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
+        <svg ref={ref} key={`${win}-${id}`} data-draw="" className={`lchart__svg ${up ? "lchart--up" : "lchart--down"}`} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
           role="img" aria-label={`${label}: ${fmt(view[0]!.v)} to ${fmt(view.at(-1)!.v)}`}
           onPointerMove={move} onPointerDown={move} onPointerLeave={() => setHover(null)}>
           <line className="lchart__base" x1="0" x2={W} y1={base} y2={base} />

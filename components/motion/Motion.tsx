@@ -2,7 +2,10 @@
 /* The page's scroll motion, one small client component for the whole site (mounted once in app/layout.tsx).
  *   .rv           rises 24px as it enters the screen, once (app/motion.css); section headers, rows and cards get it
  *                 here (RISE); items stagger 80 ms by their --i (set in markup).
- *   [data-zoom]   a photo zooms 1.18 → 1 as it enters.
+ *   [data-reveal=group]  each direct child gets .rv, staggered 60 ms (components/motion/Reveal.tsx).
+ *   [data-zoom]   a photo zooms 1.12 → 1 as it enters.
+ *   [data-draw]   a chart: its lines draw left to right and its bars grow from 0 as it enters.
+ *   .nav          gains .nav--scrolled after 24px of scroll (it shrinks slightly and blurs what's under it).
  *                 Hidden only when JS runs (html.js, set by an inline script before first paint), so without JS, or
  *                 under prefers-reduced-motion, everything is simply there.
  *   [data-count]  counts up once from 0 to its value when it enters view (its server-rendered text is the final
@@ -16,7 +19,7 @@ import { useEffect } from "react";
 import { dollars, signedShort } from "@/lib/moves/copy";
 
 /** Section headers, rows and cards: each rises in as it scrolls into view (app/motion.css). */
-const RISE = ".sec3__h, .dsec__h, .tsec__h, .tgroup__h, .trow, .tfeat, .ttile, .tcard, .move, .srow, .cleg, .tile";
+const RISE = ".sec3__h, .dsec__h, .tsec__h, .tgroup__h, .pghead__main, .trow, .tfeat, .ttile, .tcard, .move, .srow, .cleg, .tile, .proof__item, .board__row, .rec__row, .anlz__card, .steps__item, .faq2__item, .rtable tbody tr, .plan3, .wk__item";
 
 const FORMAT: Record<string, (v: number) => string> = {
   dollars, signed: signedShort,
@@ -50,14 +53,18 @@ export function Motion() {
         if (!e.isIntersecting) continue;
         const el = e.target as HTMLElement;
         io.unobserve(el);
-        if (el.classList.contains("rv") || el.dataset.zoom !== undefined) el.classList.add("is-in");
+        if (el.classList.contains("rv") || el.dataset.zoom !== undefined || el.dataset.draw !== undefined || el.matches(".sec3__h, .dsec__h, .tsec__h, .tgroup__h")) el.classList.add("is-in");
         if (el.dataset.count !== undefined) countUp(el);
       }
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
 
     const parallax = new Set<HTMLElement>();
     const watch = (scope: ParentNode) => {
-      scope.querySelectorAll<HTMLElement>(`.rv, [data-count], [data-zoom], ${RISE}`).forEach(el => {
+      // A RevealGroup's children rise one after another, 60ms apart (at most 8 steps, so long lists don't lag).
+      scope.querySelectorAll<HTMLElement>("[data-reveal=group]").forEach(g => {
+        Array.from(g.children).forEach((c, i) => { const el = c as HTMLElement; el.classList.add("rv"); if (!el.style.getPropertyValue("--i")) el.style.setProperty("--i", String(Math.min(i, 8))); });
+      });
+      scope.querySelectorAll<HTMLElement>(`.rv, [data-count], [data-zoom], [data-draw], ${RISE}`).forEach(el => {
         if (seen.has(el)) return;
         seen.add(el);
         if (el.matches(RISE) && !el.classList.contains("rise")) el.classList.add("rv");
@@ -68,6 +75,8 @@ export function Motion() {
         if (el.dataset.count !== undefined) el.dataset.final = el.textContent ?? "";
         // Only what starts below the screen waits to fade up as it enters: the first screen paints at once.
         if (el.classList.contains("rv") && el.getBoundingClientRect().top > innerHeight) el.classList.add("rv--wait");
+        // Charts below the screen wait undrawn: lines draw left to right, bars grow from 0.
+        if (el.dataset.draw !== undefined && el.getBoundingClientRect().top > innerHeight) el.classList.add("draw--wait");
         io.observe(el);
       });
       if (!scrollDriven) scope.querySelectorAll<HTMLElement>("[data-par]").forEach(el => parallax.add(el));
@@ -79,8 +88,10 @@ export function Motion() {
     // Fallbacks for continuous effects when CSS scroll-driven animations aren't supported.
     let raf = 0;
     const prog = document.querySelector<HTMLElement>(".nav__prog");
+    const head = document.querySelector<HTMLElement>(".nav");
     const frame = () => {
       raf = 0;
+      head?.classList.toggle("nav--scrolled", scrollY > 24);
       if (scrollDriven) return;
       const max = root.scrollHeight - innerHeight;
       if (prog) prog.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
@@ -88,11 +99,11 @@ export function Motion() {
         const box = (el.parentElement ?? el).getBoundingClientRect();
         if (box.bottom < 0 || box.top > innerHeight) continue;
         const travelled = Math.min(1, Math.max(0, (innerHeight - box.top) / (innerHeight + box.height)));
-        el.style.transform = `translate3d(0, ${(-7 + travelled * 14).toFixed(2)}%, 0) scale(1.16)`;
+        el.style.transform = `translate3d(0, ${(-6 + travelled * 12).toFixed(2)}%, 0) scale(1.14)`;
       }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(frame); };
-    if (!scrollDriven) { addEventListener("scroll", onScroll, { passive: true }); addEventListener("resize", onScroll); frame(); }
+    addEventListener("scroll", onScroll, { passive: true }); addEventListener("resize", onScroll); frame();
     return () => { io.disconnect(); mo.disconnect(); removeEventListener("scroll", onScroll); removeEventListener("resize", onScroll); if (raf) cancelAnimationFrame(raf); };
   }, []);
   return null;

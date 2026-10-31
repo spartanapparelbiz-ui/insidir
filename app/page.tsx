@@ -11,11 +11,13 @@
  *   9. Track record: the latest settled positions, wins and losses.  10. Pricing: visitor vs. member.  11. FAQ.
  * The hero and laptops render first; every section below streams on its own (Suspense), each cached for 20 seconds. */
 import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
+import { Sec } from "@/components/page/Page";
+import { RevealGroup } from "@/components/motion/Reveal";
 import { unlockHref } from "@/components/app/links";
 import { AsOf, SOURCES } from "@/components/data/AsOf";
 import { Discover } from "@/components/home/Discover";
@@ -32,8 +34,7 @@ import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase, type Db } from "@/lib/db";
-import { isReady } from "@/lib/features";
-import { hundredLine, MIN_SETTLED, roiText, type FollowRecord } from "@/lib/follow/math";
+import { hundredLine, roiText } from "@/lib/follow/math";
 import { openFromWinners } from "@/lib/follow/open";
 import { proofStrip, type Proof } from "@/lib/home/proof";
 import { marketPreviews, type MarketKind, type MarketPreview } from "@/lib/markets/preview";
@@ -41,7 +42,7 @@ import { movePlan } from "@/lib/moves/gate";
 import { short as money } from "@/lib/moves/headline";
 import { isPaid } from "@/lib/plans";
 import { memo } from "@/lib/memo";
-import { visibleTrackers, type Tracker, type TrackerSlug } from "@/lib/trackers";
+import type { TrackerSlug } from "@/lib/trackers";
 import { trackerHoldings, trackerMoves, trackerStats, type TrackerStats } from "@/lib/trackers-store";
 import { LivePortfolio, type PortfolioData } from "@/components/home/LivePortfolio";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
@@ -54,6 +55,7 @@ import { dollars } from "@/lib/money";
 import { signedShort } from "@/lib/moves/copy";
 import { PLANS, TRIAL } from "@/lib/plans";
 import { countsToRecord } from "@/lib/trust";
+import { topTrackers, type Board } from "@/lib/follow/board";
 import { trustFacts } from "@/lib/trust";
 import type { Plan, Region } from "@/lib/types";
 
@@ -65,16 +67,7 @@ type Ctx = { db: Db; plan: Plan; region: Region | null; now: number; live: boole
 const key = (c: Ctx, k: string) => `home:${k}:${c.plan}:${c.region ?? ""}`;
 
 const NO_MARKET = (kind: MarketKind, now: number): MarketPreview => ({ kind, rows: [], total: 0, window: "", proof: [], live: false, at: now });
-interface Board { t: Tracker; s: TrackerStats | undefined; r: FollowRecord }
-
-/** The top 5 trackers by followable ROI, all time, among those with 30+ settled (the same ranking as /top). */
-function topFive(stats: Map<TrackerSlug, TrackerStats>): Board[] {
-  return visibleTrackers(isReady).filter(t => t.kind === "bets").map(t => {
-    const a = stats.get(t.slug)?.records.all;
-    return { t, s: stats.get(t.slug), r: a ? { n: a.won + a.lost, won: a.won, lost: a.lost, staked: a.staked ?? 0, net: a.net } : null };
-  }).filter((x): x is Board => Boolean(x.r && x.r.n >= MIN_SETTLED && x.r.staked > 0))
-    .sort((a, b) => b.r.net / b.r.staked - a.r.net / a.r.staked).slice(0, 5);
-}
+const topFive = (stats: Map<TrackerSlug, TrackerStats>): Board[] => topTrackers(stats, 5);
 
 /** The live portfolio: the best tracker by FOLLOWABLE ROI among those with 30+ settled, and only if that return is
  *  positive (never the traders' own); none, no section. Its largest open positions and its latest settled results. */
@@ -99,15 +92,6 @@ const STEPS = [
 ] as const;
 
 /* ---------- sections ---------- */
-const Sec = ({ id, title, sub, children, className = "" }: { id: string; title: string; sub?: ReactNode; children: ReactNode; className?: string }) => (
-  <section className={`sec3 ${className}`.trim()} aria-labelledby={id}>
-    <div className="wrap">
-      <h2 id={id} className="sec3__h">{title}</h2>
-      {sub ? <p className="tcol__note">{sub}</p> : null}
-      {children}
-    </div>
-  </section>
-);
 /** What a streaming section shows until its data arrives: its title and a block of its usual height. */
 const Wait = ({ id, title, h }: { id: string; title: string; h: number }) => <Sec id={id} title={title}><div className="sec3__wait" style={{ minHeight: h }} aria-busy="true" /></Sec>;
 
@@ -139,7 +123,7 @@ async function AnalyzedSection({ c }: { c: Ctx }) {
   if (!items.length) { console.log(`home: "Every position, analyzed." hidden: 0 noted positions for ${c.plan} (the worker's analyst:notes job writes them; see /admin/ai)`); return null; }
   return (
     <Sec id="anlz-h" title="Every position, analyzed." sub="Each large position gets a short note from its facts: who placed it, their verified record, and what moved since. Every fact links its source.">
-      <div className="anlz__grid">{items.map((m, i) => <Analyzed key={m.id} m={m} open={i === 0} />)}</div>
+      <RevealGroup className="anlz__grid">{items.map((m, i) => <Analyzed key={m.id} m={m} open={i === 0} />)}</RevealGroup>
       <AsOf at={c.now - movePlan(c.plan).delayMs} live={c.live} sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.sec, { label: "How notes are written", href: "/methodology#analyst-notes" }]} />
     </Sec>
   );
@@ -183,7 +167,7 @@ function ProofStrip({ p, live }: { p: Proof; live: boolean }) {
   ];
   return (
     <section className="sec3 proof" aria-labelledby="proof-h">
-      <div className="wrap">
+      <div className="pg">
         <h2 id="proof-h" className="sec3__h">Insidir, live</h2>
         <dl className="proof__grid">
           {items.map(i => <div key={i.label} className="proof__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
@@ -279,7 +263,7 @@ export default async function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
       <main className="lp3">
         <section className="hero3" aria-labelledby="hero-h">
-          <div className="wrap hero3__in">
+          <div className="pg hero3__in">
             <span className="hero3__mark rise" style={{ ["--i" as string]: 0 }} aria-hidden="true"><svg viewBox={LOGO.markViewBox}><path fillRule="evenodd" d={LOGO.mark} fill="currentColor" /></svg></span>
             <h1 id="hero-h" className="hero3__h rise" style={{ ["--i" as string]: 1 }}>Follow the big money.</h1>
             <p className="hero3__sub rise" style={{ ["--i" as string]: 2 }}>Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.</p>

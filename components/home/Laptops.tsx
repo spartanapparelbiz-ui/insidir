@@ -214,7 +214,7 @@ export function Laptops({ data, trialHref, signedIn }: { data: Record<MarketKind
 
   return (
     <section className="lt" aria-labelledby="lt-h">
-      <div className="wrap">
+      <div className="pg">
         <h2 id="lt-h" className="lt__h">Three markets. One membership.</h2>
         <p className="lt__sub">Click a laptop to look inside.</p>
         <div className={`lt__row${open ? " has-open" : ""}`}>

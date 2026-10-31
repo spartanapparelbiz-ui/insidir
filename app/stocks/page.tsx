@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductPage } from "@/components/v2/ProductPage";
 import { isReady } from "@/lib/features";
-import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Insider stock trades", description: "Company insiders buying and selling their own stock (SEC Form 4) and the biggest funds' holdings (13F), the day they're filed." };
@@ -12,7 +11,7 @@ export const metadata: Metadata = { title: "Insider stock trades", description: 
 export default function StocksPage() {
   if (!isReady("stocks")) notFound();
   return <ProductPage copy={{
-    tab: "stocks", photo: BAND.product.stocks, title: "Stocks",
+    tab: "stocks", title: "Stocks",
     line: "When a CEO buys their own company's stock, you'll know the day it's filed. Plus what the biggest funds hold.",
     covers: ["CEO and director trades", "Form 4 filings", "Big funds' 13F holdings", "S&P 500 and well-known names"],
     card: [
