@@ -228,3 +228,8 @@ export function headlineOf(m: Move): string {
 
 /** "62% chance": the price paid, as the chance the market gave it then. */
 export const chance = (p: number): string | null => (p > 0 && p < 1 ? `${Math.round(p * 100)}%` : null);
+
+/** A headline that reads as a sentence: no quoted market question, no bare "Yes on", not too long. */
+export function cleanHeadline(h: string): boolean {
+  return h.length <= 80 && !/[“”"]/.test(h) && !/^(yes|no) on\b/i.test(h);
+}

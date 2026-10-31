@@ -1,4 +1,6 @@
 /* GET /api/moves?tab=sports|markets&min=10000&league=NFL&before=<ms>&limit=30&all=1&tracker=fed-rates
+ * GET /api/moves?best=24h  the largest position of the last 24 hours (as this viewer sees them: visitors 30 minutes
+ * late) whose headline reads cleanly (no quoted question, no "Yes on"), for the pay prompt.
  * all=1 keeps the low-interest markets the default feed leaves out; tracker narrows to one tracker's moves.
  * The feed, gated by plan and region on the server (lib/moves/feed.ts). A tab that isn't live (Crypto; Stocks until
  * it is in FEATURES_READY) returns an empty list. */
@@ -6,10 +8,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { feedFor, feedStatus } from "@/lib/moves/feed";
+import { cleanHeadline } from "@/lib/moves/headline";
 import { LEAGUES, type League, type Tab } from "@/lib/moves/types";
 import { liveTabs } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
+
 
 
 export async function GET(req: NextRequest) {
@@ -29,6 +33,11 @@ export async function GET(req: NextRequest) {
   // Visitors get the 30-minute-delayed view (the plan gates every row); members get it live.
   const viewer = await getViewer();
   const db = getDb();
+  if (p.get("best") === "24h") {
+    const list = await feedFor(db, viewer.plan, viewer.region, { min: 10_000, limit: 50 }, now);
+    const best = list.filter(m => m.at > now - 86_400_000 && cleanHeadline(m.headline)).sort((a, b) => b.amount - a.amount)[0];
+    return NextResponse.json({ items: best ? [best] : [] }, { headers: { "Cache-Control": "no-store" } });
+  }
   const [items, status] = await Promise.all([
     feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, min, league: league && LEAGUES.includes(league) ? league : undefined, leagues, categories, before, limit, all, tracker }, now),
     feedStatus(db, now, tab ?? undefined),

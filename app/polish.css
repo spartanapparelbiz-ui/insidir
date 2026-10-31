@@ -4,7 +4,7 @@
  * - Colour only on gains and losses; big stats and headline numbers are ink.
  * - No grey section cards: white, separated by 1px #EAEAEE lines; a section header has a 1px ink line under it.
  *   The live list and the position check sit in white "windows".
- * - Secondary actions are text links with an arrow; one black button per screen, plus the nav's 36px "Get started".
+ * - Secondary actions are text links with an arrow; one black button per screen, plus the nav's 36px "Start for $1".
  * - Section spacing 168px on desktop, 112px on phones. */
 :root {
   --line: var(--grey-2);
@@ -663,3 +663,14 @@ a.rtable__a:hover span { text-decoration: underline; }
 .vm__t th[scope=col]:not(:first-child), .vm__t td { width: 28%; }
 .wk__grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .wk__item .proof__note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* The visitors' bottom bar (components/paywall/LateBar.tsx): slides up after 30% of the page. */
+.latebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--ink); color: var(--paper); padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+  transform: translate3d(0, 110%, 0); transition: transform .45s var(--ease-rise, ease); pointer-events: none; }
+.latebar--on { transform: none; pointer-events: auto; }
+.latebar__in { display: flex; align-items: center; gap: 12px 20px; }
+.latebar__t { flex: 1; font-size: var(--t15); line-height: 1.35; }
+.latebar__cta.btn--primary { flex: none; background: var(--paper); color: var(--ink); min-height: 40px; height: 40px; padding: 0 18px; }
+.latebar__x { flex: none; width: 40px; height: 40px; border: 0; background: none; color: inherit; font-size: 24px; line-height: 1; cursor: pointer; }
+@media (max-width: 640px) { .latebar__t { font-size: var(--t13); } .latebar__in { gap: 10px; } }
+@media (prefers-reduced-motion: reduce) { .latebar { transition: none; } }

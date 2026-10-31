@@ -1,5 +1,5 @@
 /* The home page, for visitors (members open on Discover), all real data, each figure with its source and "as of":
- *   1. The sticky header (Trackers · Open now · Leaderboard · Research · Pricing · Log in · Get started).
+ *   1. The sticky header (Trackers · Open now · Leaderboard · Research · Pricing · Log in · Start for $1).
  *   2. Hero: "Follow the big money.", the line, Start your 7-day trial (the one black button) and Explore trackers, then
  *      the Research bar (its placeholder cycles through real suggested questions; it opens the Research palette).
  *   3. Three laptops (components/home/Laptops.tsx): Sports, Prediction markets, Stocks; "Crypto · Soon" under them.

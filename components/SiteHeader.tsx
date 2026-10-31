@@ -1,5 +1,5 @@
 /* The top of every page: the nav, white with the black logo and a hairline. Visitors: logo, Trackers, Activity, Open
- * now, Leaderboard, Pricing, Log in, and "Get started" (36px, the one button besides each page's own).
+ * now, Leaderboard, Pricing, Log in, and "Start for $1" (36px, the one button besides each page's own).
  * Members: logo, Trackers (their home), Activity, Following, Leaderboard, Track record, Account; the menu also holds
  * Position check (/check), reachable only from there. On phones: logo, the button and a menu; on the app pages,
  * members and visitors get a bottom tab bar within thumb reach: Trackers, Activity, Following, Account.
@@ -21,7 +21,7 @@ const APP_SECTIONS = new Set(["/discover", "/feed", "/trackers", "/top", "/open"
 
 export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
-  /** The nav's "Get started" button for visitors (off where a page has nothing to sell, like the checkout). */
+  /** The nav's "Start for $1" button for visitors (off where a page has nothing to sell, like the checkout). */
   offer?: boolean;
   /** Just the logo on white (sign-in): nothing to distract from the one thing on the page. */
   minimal?: boolean;
