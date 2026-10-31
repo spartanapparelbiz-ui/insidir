@@ -70,15 +70,17 @@ test("close: × and the backdrop close it; once per session", async ({ browser }
   await ctx.close();
 });
 
-test("never: members, /start, /login and legal pages", async ({ browser }) => {
+test("never: members, /start, /login; every other public page has it, legal pages included", async ({ browser }) => {
   const v = await browser.newContext();
   await fast(v, 500);
   const vp = await v.newPage();
-  for (const path of ["/start", "/login", "/terms", "/privacy", "/disclosures"]) {
+  for (const path of ["/start", "/login"]) {
     await vp.goto(path);
     await vp.waitForTimeout(1200);
     await expect(prompt(vp), path).toHaveCount(0);
   }
+  await vp.goto("/terms");
+  await expect(prompt(vp)).toBeVisible({ timeout: 5000 });
   await v.close();
   const m = await browser.newContext();
   await signIn(m, "insidir");

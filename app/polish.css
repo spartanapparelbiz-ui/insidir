@@ -659,8 +659,9 @@ a.rtable__a:hover span { text-decoration: underline; }
 .plan3__list li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; font-size: var(--t15); line-height: 1.4; }
 .plan3__check { width: 16px; height: 16px; margin-top: 2px; color: var(--money); }
 
-.vm__t { width: 100%; }
-.vm__t th[scope=col]:not(:first-child), .vm__t td { width: 28%; }
+.vm__t { width: 100%; min-width: 0; table-layout: fixed; }
+.vm__t th[scope=col]:not(:first-child), .vm__t td { width: 30%; }
+@media (max-width: 640px) { .vm__t th, .vm__t td { white-space: normal; padding-left: 6px; padding-right: 6px; font-size: var(--t13); overflow-wrap: anywhere; } .vm__t th[scope=col]:not(:first-child), .vm__t td { width: 32%; } }
 .wk__grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .wk__item .proof__note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 
