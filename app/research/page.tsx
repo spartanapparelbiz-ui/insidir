@@ -1,6 +1,6 @@
 /* Research (/research): ask a plain-English question over Insidir's data and get 1–2 sentences and the rows as
- * tables, with sources and "as of" times (lib/research). Works without JavaScript (a GET form); ⌘K opens the same
- * from anywhere. Visitors: 3 questions a day on data 30 minutes late; members: live, with Export CSV. */
+ * tables, with sources and "as of" times (lib/research). Works without JavaScript (a GET form); the same opens from the header
+ * anywhere (and Cmd/Ctrl+K, silently). Visitors: 3 questions a day on data 30 minutes late; members: live, with Export CSV. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -37,7 +37,7 @@ export default async function ResearchPage({ searchParams }: { searchParams: Pro
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/research" trialHref={unlockHref()} tone="light" />
       <main className="wrap research">
         <h1 className="research__h">Research</h1>
-        <p className="research__sub">Ask about large positions, trackers, account records and SEC filings. The answer is the rows themselves, with their sources. Insidir describes data; it doesn&apos;t give advice. <kbd>⌘K</kbd> opens this anywhere.</p>
+        <p className="research__sub">Ask about large positions, trackers, account records and SEC filings. The answer is the rows themselves, with their sources. Insidir describes data; it doesn&apos;t give advice.</p>
         <form className="research__form" action="/research" method="get" role="search">
           <label className="sr-only" htmlFor="research-q">Your question</label>
           <input id="research-q" name="q" className="input research__input" defaultValue={q} placeholder={EXAMPLES[0]} maxLength={300} autoComplete="off" />

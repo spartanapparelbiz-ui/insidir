@@ -64,7 +64,7 @@ export default function MethodologyPage() {
         <li><strong>The validator.</strong> A note is published only if every number and every name in it appears in its facts, it has at most 3 sentences, and it uses none of the banned words (advice, predictions, certainty, &ldquo;smart money&rdquo;, anything about identity). One that fails is written again once, with the problems listed; a second failure is replaced by a fixed template built from the same facts.</li>
         <li><strong>The model.</strong> Notes are written by {model} through OpenRouter, at temperature 0, under rules version {NOTE_VERSION}. Each note is stored with the facts it used, the model, the rules version and what it cost. Visitors see notes on positions 30 minutes late; members on live ones.</li>
       </ul>
-      <p>Research (⌘K) follows the same rules: it reads Insidir&apos;s data through read-only tools, shows the rows themselves, and keeps its 1–2 sentences to numbers that are in those rows. If the data doesn&apos;t cover a question, it says &ldquo;Not in Insidir&apos;s data.&rdquo;</p>
+      <p>Research follows the same rules: it reads Insidir&apos;s data through read-only tools, shows the rows themselves, and keeps its 1–2 sentences to numbers that are in those rows. If the data doesn&apos;t cover a question, it says &ldquo;Not in Insidir&apos;s data.&rdquo;</p>
 
       <h2>Delays</h2>
       <ul>

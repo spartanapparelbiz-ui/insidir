@@ -54,15 +54,20 @@ export interface NoteDeps { f?: typeof fetch }
 export async function writeNote(facts: Facts, deps: NoteDeps = {}): Promise<Note> {
   const base = { moveId: facts.moveId, facts, version: NOTE_VERSION };
   const messages: ChatMessage[] = [{ role: "system", content: SYSTEM }, { role: "user", content: factsPrompt(facts) }];
-  let cost = 0;
+  let cost = 0, error: string | undefined, failed = false;
   for (let attempt = 0; attempt < 2; attempt++) {
     const r = await chat(messages, { maxTokens: 160, f: deps.f });
     cost += r.costUsd;
-    if (!r.ok) break;
+    if (!r.ok) { error = r.error; break; }
     const text = r.text.replace(/^["“]|["”]$/g, "").replace(/\s+/g, " ").trim();
     const v = validateNote(text, facts);
     if (v.ok) return { ...base, text, model: r.model, costUsd: cost, origin: "model" };
+    failed = true;
+    error = `validator: ${v.problems.slice(0, 3).join("; ")}`;
     messages.push({ role: "assistant", content: r.text }, { role: "user", content: `That note failed: ${v.problems.join("; ")}. Write it again following every rule.` });
   }
-  return { ...base, text: templateNote(facts), model: "template", costUsd: cost, origin: "template" };
+  // "template" after the model failed the validator twice; "template-nokey" when there was no model to ask (the worker
+  // rewrites those once OPENROUTER_API_KEY is set); "template-error" when the call itself failed (retried later).
+  const model = failed ? "template" : error === "no_key" ? "template-nokey" : "template-error";
+  return { ...base, text: templateNote(facts), model, costUsd: cost, origin: "template", ...(error && error !== "no_key" ? { error } : {}) };
 }

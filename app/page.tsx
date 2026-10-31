@@ -1,7 +1,7 @@
 /* The home page, for visitors (members open on Discover), all real data, each figure with its source and "as of":
- *   1. The sticky header (Trackers · Open now · Leaderboard · Research ⌘K · Pricing · Log in · Get started).
+ *   1. The sticky header (Trackers · Open now · Leaderboard · Research · Pricing · Log in · Get started).
  *   2. Hero: "Follow the big money.", the line, Start your 7-day trial (the one black button) and Explore trackers, then
- *      the Research bar (its placeholder cycles through real suggested questions; it opens ⌘K).
+ *      the Research bar (its placeholder cycles through real suggested questions; it opens the Research palette).
  *   3. Three laptops (components/home/Laptops.tsx): Sports, Prediction markets, Stocks; "Crypto · Soon" under them.
  *   4. Open now from winning trackers (the first row's analyst note shown).
  *   5. Every position, analyzed: the newest analysed position per market, one with its Sources open.
@@ -134,8 +134,9 @@ function Analyzed({ m, open }: { m: FeedItem; open: boolean }) {
 }
 
 async function AnalyzedSection({ c }: { c: Ctx }) {
-  const items = await memo(key(c, "analyzed"), TTL, () => analyzedPositions(c.db, c.plan, c.region, c.now)).catch(() => []);
-  if (!items.length) return null;
+  const items = await memo(key(c, "analyzed"), TTL, () => analyzedPositions(c.db, c.plan, c.region, c.now)).catch(e => { console.error("home: analyzed failed", e instanceof Error ? e.message : e); return []; });
+  // Hidden only when there's nothing to show: no position in the viewer's window has a note yet.
+  if (!items.length) { console.log(`home: "Every position, analyzed." hidden: 0 noted positions for ${c.plan} (the worker's analyst:notes job writes them; see /admin/ai)`); return null; }
   return (
     <Sec id="anlz-h" title="Every position, analyzed." sub="Each large position gets a short note from its facts: who placed it, their verified record, and what moved since. Every fact links its source.">
       <div className="anlz__grid">{items.map((m, i) => <Analyzed key={m.id} m={m} open={i === 0} />)}</div>
@@ -232,7 +233,7 @@ function PricingTable({ trial }: { trial: string }) {
     ["Large positions", "30 minutes late", "Live"],
     ["Open now from winning trackers", "3 newest", "Every one"],
     ["Analyst notes", "On delayed positions", "On every position, live"],
-    ["Research (⌘K)", "3 questions a day", "As many as you like, Export CSV"],
+    ["Research", "3 questions a day", "As many as you like, Export CSV"],
     ["Account records and follows", "—", "Yes"],
   ];
   return (

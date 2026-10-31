@@ -62,7 +62,7 @@ const ROWS: Row[] = [
   ["pm", "markets", null, "politics", "NYC Mayoral Election", "Will Zohran Mamdani win the NYC mayoral election?", "Yes", "yes", "Mamdani wins the NYC mayoral election"],
   ["k", "markets", null, "politics", "House control 2026", "Will Democrats win the House in 2026?", "Yes", "yes", "The Democrats win the House in 2026"],
   ["k", "markets", null, "politics", "House control 2026", "Will Democrats win the House in 2026?", "No", "no", "The Democrats don't win the House in 2026"],
-  ["pm", "markets", null, "politics", "Presidential Election Winner 2028", "Who will win the 2028 presidential election?", "JD Vance", "yes", "JD Vance to win the 2028 presidential election"],
+  ["pm", "markets", null, "politics", "Presidential Election Winner 2028", "Who will win the 2028 presidential election?", "JD Vance", "yes", "JD Vance wins the 2028 presidential election"],
   ["pm", "markets", null, "economics", "Fed decision in December", "Will the Fed cut rates in December?", "Yes", "yes", "The Fed will cut rates in December"],
   ["pm", "markets", null, "economics", "Fed decision in December", "Will the Fed cut rates in December?", "No", "no", "The Fed won't cut rates in December"],
   ["k", "markets", null, "economics", "Fed rate decision", "Will the Fed hike rates in December 2026?", "No", "no", "The Fed won't hike rates in December 2026"],
@@ -72,6 +72,37 @@ const ROWS: Row[] = [
   ["k", "markets", null, "politics", "Government shutdown", "Will the government shut down by Nov 21?", "Yes", "yes", "Yes on “Will the government shut down by Nov 21?”"],
   ["pm", "markets", null, "tech", "OpenAI announcements", "Will OpenAI release GPT-6 in 2026?", "No", "no", "OpenAI won't release GPT-6 in 2026"],
   ["pm", "markets", null, "politics", "Next UK Prime Minister", "Who will be the next UK Prime Minister?", "Keir Starmer", "yes", "Keir Starmer to be the next UK Prime Minister"],
+  // Candidate markets (Kalshi: title + yes_sub_title / no_sub_title; Polymarket: "Who will win…" outcomes)
+  ["k", "markets", null, "politics", "Michigan Senate", "Will Democrats win the Senate race in Michigan?", "Abdul El-Sayed", "yes", "Abdul El-Sayed wins the Michigan Senate race"],
+  ["k", "markets", null, "politics", "Michigan Senate", "Will Democrats win the Senate race in Michigan?", "Abdul El-Sayed", "no", "Abdul El-Sayed doesn't win the Michigan Senate race"],
+  ["k", "markets", null, "politics", "Michigan Senate", "Will Democratics win the Senate race in Michigan?", "Haley Stevens", "yes", "Haley Stevens wins the Michigan Senate race"],
+  ["k", "markets", null, "politics", "Michigan Senate", "Will Republicans win the Senate race in Michigan?", "Mike Rogers", "yes", "Mike Rogers wins the Michigan Senate race"],
+  ["k", "markets", null, "politics", "Michigan Senate", "Will Republicans win the Senate race in Michigan?", "Mike Rogers", "no", "Mike Rogers doesn't win the Michigan Senate race"],
+  ["k", "markets", null, "politics", "Georgia Senate", "Will Republicans win the Senate race in Georgia?", "Buddy Carter", "yes", "Buddy Carter wins the Georgia Senate race"],
+  ["k", "markets", null, "politics", "Georgia Senate", "Will Democrats win the Senate race in Georgia?", "Jon Ossoff", "yes", "Jon Ossoff wins the Georgia Senate race"],
+  ["k", "markets", null, "politics", "Maine Senate", "Will Democrats win the Senate race in Maine?", "Janet Mills", "no", "Janet Mills doesn't win the Maine Senate race"],
+  ["k", "markets", null, "politics", "Texas Senate", "Will Republicans win the Senate race in Texas?", "Ken Paxton", "yes", "Ken Paxton wins the Texas Senate race"],
+  ["k", "markets", null, "politics", "Texas Senate", "Will Republicans win the Senate race in Texas?", "John Cornyn", "no", "John Cornyn doesn't win the Texas Senate race"],
+  ["k", "markets", null, "politics", "North Carolina Senate", "Will Democrats win the Senate race in North Carolina?", "Roy Cooper", "yes", "Roy Cooper wins the North Carolina Senate race"],
+  ["k", "markets", null, "politics", "New Hampshire Senate", "Will Democrats win the Senate race in New Hampshire?", "Chris Pappas", "yes", "Chris Pappas wins the New Hampshire Senate race"],
+  ["k", "markets", null, "politics", "Ohio Governor", "Will Republicans win the governor race in Ohio?", "Vivek Ramaswamy", "yes", "Vivek Ramaswamy wins the Ohio governor race"],
+  ["k", "markets", null, "politics", "Georgia Governor", "Will Democrats win the governor race in Georgia?", "Keisha Lance Bottoms", "no", "Keisha Lance Bottoms doesn't win the Georgia governor race"],
+  ["k", "markets", null, "politics", "NYC Mayor", "Will Democrats win the mayoral race in New York City?", "Zohran Mamdani", "yes", "Zohran Mamdani wins the New York City mayoral race"],
+  ["k", "markets", null, "politics", "California Governor", "Who will win the California governor race?", "Katie Porter", "yes", "Katie Porter wins the California governor race"],
+  ["k", "markets", null, "politics", "Michigan Senate primary", "Michigan Senate Democratic primary winner?", "Mallory McMorrow", "yes", "Mallory McMorrow wins the Michigan Senate Democratic primary"],
+  ["k", "markets", null, "politics", "Michigan Senate primary", "Michigan Senate Democratic primary winner?", "Mallory McMorrow", "no", "Mallory McMorrow doesn't win the Michigan Senate Democratic primary"],
+  ["k", "markets", null, "politics", "2028 Democratic nominee", "Who will win the 2028 Democratic presidential nomination?", "Gavin Newsom", "yes", "Gavin Newsom wins the 2028 Democratic presidential nomination"],
+  ["k", "markets", null, "politics", "2028 Republican nominee", "Who will win the 2028 Republican presidential nomination?", "Marco Rubio", "no", "Marco Rubio doesn't win the 2028 Republican presidential nomination"],
+  ["pm", "markets", null, "politics", "Presidential Election Winner 2028", "Who will win the 2028 presidential election?", "Gavin Newsom", "no", "Gavin Newsom doesn't win the 2028 presidential election"],
+  ["pm", "markets", null, "politics", "Democratic Nominee 2028", "Who will win the Democratic nomination in 2028?", "Josh Shapiro", "yes", "Josh Shapiro wins the Democratic nomination in 2028"],
+  ["pm", "markets", null, "politics", "Texas Senate primary", "Who will win the Texas Republican Senate primary?", "Ken Paxton", "yes", "Ken Paxton wins the Texas Republican Senate primary"],
+  ["pm", "markets", null, "politics", "Texas Senate primary", "Who will win the Texas Republican Senate primary?", "John Cornyn", "no", "John Cornyn doesn't win the Texas Republican Senate primary"],
+  ["pm", "markets", null, "politics", "NYC Mayoral Election", "Who will win the NYC mayoral election?", "Andrew Cuomo", "no", "Andrew Cuomo doesn't win the NYC mayoral election"],
+  ["pm", "markets", null, "politics", "NYC Mayoral Election", "Who will win the NYC mayoral election?", "Zohran Mamdani", "yes", "Zohran Mamdani wins the NYC mayoral election"],
+  ["pm", "markets", null, "politics", "Georgia Senate Election", "Who will win the Georgia Senate election?", "Jon Ossoff", "yes", "Jon Ossoff wins the Georgia Senate election"],
+  ["pm", "markets", null, "politics", "Michigan Senate Election", "Who will win the Michigan Senate election?", "Mike Rogers", "no", "Mike Rogers doesn't win the Michigan Senate election"],
+  ["pm", "markets", null, "politics", "Maine Senate Election", "Who will win the Maine Senate race?", "Susan Collins", "yes", "Susan Collins wins the Maine Senate race"],
+  ["pm", "markets", null, "politics", "Canada election", "Who will win the Canadian federal election?", "Pierre Poilievre", "no", "Pierre Poilievre doesn't win the Canadian federal election"],
 ];
 
 const move = ([src, tab, league, category, event, title, outcome, side]: Row): Move => ({
@@ -80,8 +111,8 @@ const move = ([src, tab, league, category, event, title, outcome, side]: Row): M
 } as unknown as Move);
 
 describe("headlines for real market titles", () => {
-  it("has 60 cases, both venues, sports and politics", () => {
-    expect(ROWS).toHaveLength(60);
+  it("has 90 cases, both venues, sports and politics", () => {
+    expect(ROWS).toHaveLength(90);
     expect(ROWS.filter(r => r[0] === "k").length).toBeGreaterThanOrEqual(15);
     expect(ROWS.filter(r => r[3] === "politics").length).toBeGreaterThanOrEqual(10);
   });
