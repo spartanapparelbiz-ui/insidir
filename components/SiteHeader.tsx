@@ -40,9 +40,11 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
     <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
   // Trackers first: each one is a live portfolio of large positions. Members open the app on Trackers (home).
+  // Research opens the ⌘K palette (components/research/ResearchPalette.tsx); without JavaScript, the /research page.
+  const research = <Link key="research" href="/research" data-research-open aria-current={at === "/research" ? "page" : undefined}>Research <kbd className="nav__kbd" aria-label="Command K">⌘K</kbd></Link>;
   const links = signedIn
-    ? [link(paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"), link("/feed", "Activity"), link("/following", "Following"), link("/top", "Leaderboard"), ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/results", "Track record"), link("/settings", "Account", "/account")]
-    : [link("/trackers", "Trackers"), link("/feed", "Activity"), link("/open", "Open now"), link("/top", "Leaderboard"), ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
+    ? [link(paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"), link("/feed", "Activity"), link("/following", "Following"), link("/top", "Leaderboard"), research, ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/results", "Track record"), link("/settings", "Account", "/account")]
+    : [link("/trackers", "Trackers"), link("/open", "Open now"), link("/top", "Leaderboard"), research, ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
   // The app menu also holds the position check, which lives only here.
   const menu = signedIn ? [...links.slice(0, -1), link("/check", "Position check"), links[links.length - 1]!] : links;
   return (
