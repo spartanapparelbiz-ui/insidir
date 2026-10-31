@@ -13,6 +13,8 @@ import { groupBets, groupTitle } from "./group";
 import { infoFor } from "@/lib/markets/info";
 import { trackerBySlug, trackerWhere } from "@/lib/trackers";
 import { inArray } from "drizzle-orm";
+import { notesFor, type StoredNote } from "@/lib/analyst/store";
+import type { Fact } from "@/lib/analyst/types";
 import type { Db } from "@/lib/db";
 import { workerHeartbeats } from "@/lib/db/schema";
 import type { Plan, Region } from "@/lib/types";
@@ -32,6 +34,8 @@ import type { League, Move, Tab } from "./types";
 
 export interface FeedItem {
   id: string;
+  /** Its analyst note (lib/analyst), with every fact it used and that fact's link; null until the worker writes one. */
+  analyst?: { text: string; facts: Fact[]; at: number } | null;
   source: Move["source"];
   tab: Tab;
   league: League | null;
@@ -189,11 +193,13 @@ export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, regi
     if (open.length) for (const [id, i] of await infoFor(db, source, open).catch(() => new Map())) prices.set(`${source}:${id}`, i.yesPrice);
   }
   const splitBy = await splitsFor(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId)).catch(() => new Map());
+  const notes = await notesFor(db, moves.map(m => m.id)).catch(() => new Map<string, StoredNote>());
   return moves.map(m => {
+    const n = notes.get(m.id);
     const rec = m.wallet ? recs.get(m.wallet) ?? null : null;
     const shown = p.records && hasRecord(rec) ? rec : null;
     return {
-      id: m.id, source: m.source, tab: m.tab, league: m.league, leagueLabel: leagueLabel(m),
+      id: m.id, analyst: n ? { text: n.text, facts: n.facts.facts, at: n.at } : null, source: m.source, tab: m.tab, league: m.league, leagueLabel: leagueLabel(m),
       sentence: moveSentence(m, shown, now - m.at < 3_600_000, now), payout: payoutLine(m), record: recordLine(shown), topTrader: isTopTrader(shown),
       amount: m.amount, at: m.at, ago: agoText(m.at, now), eventTitle: m.eventTitle, marketTitle: m.marketTitle, outcome: m.outcome, marketId: m.marketId,
       wallet: m.wallet, walletLabel: m.wallet ? walletLabel(m.wallet, m.walletName) : null,

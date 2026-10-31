@@ -460,3 +460,20 @@ main.skel { min-height: 100vh; }
 .onb__ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 24px; }
 .onb__skip { min-height: var(--tap); border: 0; background: none; color: var(--text); font: inherit; text-decoration: underline; cursor: pointer; }
 .mhead__src { margin-top: 12px; color: var(--muted); font-size: var(--t13); } .mhead__src a { color: var(--text); }
+
+/* Analyst notes (components/analyst/AnalystNote.tsx). */
+.anote { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--bg); text-align: left; }
+.anote__label { color: var(--muted); font-size: var(--t13); font-weight: 600; letter-spacing: .01em; }
+.anote__text { margin-top: 4px; font-size: var(--t15); line-height: 1.45; font-variant-numeric: tabular-nums; }
+.anote__src { margin-top: 8px; font-size: var(--t13); }
+.anote__src summary { display: inline-flex; align-items: center; min-height: 32px; cursor: pointer; color: var(--text); font-weight: 600; }
+.anote__facts { display: grid; gap: 6px; margin: 8px 0 0; }
+.anote__fact { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; padding-top: 6px; box-shadow: inset 0 1px 0 var(--border); }
+.anote__fact dt { color: var(--muted); }
+.anote__fact dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.anote__fact a { color: var(--text); }
+@media (max-width: 599px) { .anote__fact { grid-template-columns: 1fr; gap: 2px; } }
+.anote__fine { margin-top: 8px; color: var(--muted); }
+.anote__fine a { color: var(--text); }
+.position { max-width: 760px; padding-top: 32px; padding-bottom: 64px; } .position__links { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 16px; }
+.move__headlink { color: inherit; text-decoration: none; } .move__headlink:hover { text-decoration: underline; }

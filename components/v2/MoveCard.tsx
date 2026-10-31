@@ -15,6 +15,7 @@ import { FollowButton, type FollowState } from "./FollowButton";
 import { LockedRecord } from "./LockedRecord";
 import { Avatar } from "./Avatar";
 import { short } from "@/lib/moves/headline";
+import { AnalystNote } from "@/components/analyst/AnalystNote";
 import { Result } from "@/components/ui/Result";
 
 const TAG: Record<string, { text: string }> = {
@@ -87,11 +88,12 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
         <span className="move__kind">{tag.text}{sub ? ` · ${sub}` : ""}</span>
       </div>
       <div className="move__hrow">
-        <h3 className="move__head">{m.headline}</h3>
+        <h3 className="move__head"><Link className="move__headlink" href={`/position/${encodeURIComponent(m.id)}`}>{m.headline}</Link></h3>
         <CardResult m={m} />
       </div>
       <p className="move__meta"><span>{short(m.amount)}</span> · <span>{m.who.name}</span> · <TimeAgo className="move__ago" at={m.at} initial={m.ago} /></p>
       <p className="move__subl">{m.subline}</p>
+      {m.analyst && !compact ? <AnalystNote text={m.analyst.text} facts={m.analyst.facts} at={m.analyst.at} /> : null}
       <Standing m={m} now={now} />
       {m.split ? <p className="move__split"><Link href={`/market/${encodeURIComponent(m.marketId)}#smart-h`}>{m.split}</Link></p> : null}
       {m.bets ? (
