@@ -2,7 +2,8 @@
  * wrote it. */
 
 /** Bump when the facts, prompt, validator or template change in a way that should rewrite notes. */
-export const NOTE_VERSION = 1;
+/** 2: the position line uses the race headline ("Brent Taylor wins the House race for TN-09"), not "“Brent Taylor” on …". */
+export const NOTE_VERSION = 2;
 
 /** One fact a note may use: what it is, how it reads (the exact text a note may quote), and where it comes from. */
 export interface Fact {
