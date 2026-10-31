@@ -6,6 +6,7 @@ import { Motion } from "@/components/motion/Motion";
 import { NavProgress } from "@/components/motion/NavProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ResearchPalette } from "@/components/research/ResearchPalette";
+import { JsonLd, organizationLd } from "@/lib/seo/jsonld";
 import { getDb, hasDatabase } from "@/lib/db";
 import { positioningEdge } from "@/lib/smart/gate";
 import { Beacons } from "@/components/landing/Beacons";
@@ -60,6 +61,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <SiteFooter />
           </LockProvider>
         </ToastProvider>
+        <JsonLd data={organizationLd()} />
         <RegisterSW />
         <ResearchPalette />
         <Motion />

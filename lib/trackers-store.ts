@@ -1,4 +1,4 @@
-/* Trackers in the database (lib/trackers.ts): each tracker's record per window, money tracked, followers, and its
+/* Trackers in the database (lib/trackers.ts): each tracker's record per window, money tracked, and its
  * moves. One query per tracker, every number from terminal.moves and terminal.follows. Server only. */
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { moves as movesT, traderRecords } from "@/lib/db/schema";
@@ -28,7 +28,6 @@ export interface TrackerStats {
   /** Every move it holds. */
   moves: number;
   lastAt: number | null;
-  followers: number;
   /** Its cover's curve, 26 weekly points: what its settled bets have made so far (cumulative, by settlement week);
    *  for filings, which never settle, the money its moves have put in. Empty when nothing is in the window yet. */
   curve: number[];
@@ -60,8 +59,7 @@ export async function trackerStatsOne(db: Db, t: Tracker, now: number): Promise<
   const r = (await db.execute(sql`select ${sql.join(windows.map(w => windowCols(w.key, w.since, counted)), sql`, `)},
       count(*)::int as moves, max(terminal.moves.at) as last_at,
       coalesce(sum(terminal.moves.amount) filter (where terminal.moves.at >= ${since30}), 0)::float as tracked30,
-      count(*) filter (where terminal.moves.at >= ${since30})::int as moves30,
-      (select count(*)::int from terminal.follows f where f.kind = 'tracker' and f.target = ${t.slug}) as followers
+      count(*) filter (where terminal.moves.at >= ${since30})::int as moves30
     from terminal.moves
     where terminal.moves.hidden_at is null and ${notComboSql} and terminal.moves.tab in (${sql.join(tabs.map(x => sql`${x}`), sql`, `)}) and ${trackerWhere(t)}`)).rows[0] as Record<string, unknown> | undefined;
   const rec = (k: string): TrackerRecord => {
@@ -79,7 +77,7 @@ export async function trackerStatsOne(db: Db, t: Tracker, now: number): Promise<
     })) as Record<PeriodKey, TrackerRecord>,
     own,
     tracked30d: n(r?.tracked30), moves30d: n(r?.moves30), moves: n(r?.moves),
-    lastAt: r?.last_at ? new Date(r.last_at as string).getTime() : null, followers: n(r?.followers), curve,
+    lastAt: r?.last_at ? new Date(r.last_at as string).getTime() : null, curve,
   };
 }
 

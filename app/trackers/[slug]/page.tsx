@@ -12,6 +12,8 @@
  * Every number comes from terminal.moves (lib/trackers-store.ts → lib/stats.ts); anything built on under 20
  * settled moves says "Not enough data yet". Public: visitors see moves 30 minutes late (lib/moves/feed.ts). */
 import type { Metadata } from "next";
+import { EntityLd } from "@/lib/seo/jsonld";
+import { trackerTitle } from "@/lib/seo/titles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LineChart } from "@/components/charts/LineChart";
@@ -44,14 +46,17 @@ import {
   activity, bestDay, biggestLoss, biggestWin, breakdown, CHART_WINDOWS, dayOf, leaders, NOT_ENOUGH, perf, pnlSeries, priceMove, sideOf, SIDES, sizeOf, SIZES,
   streak, topShare, WEEKDAYS,
 } from "@/lib/stats";
-import { buildingLine, hasTrackerRecord, OBSERVED_TRACKERS, trackerBySlug, TRACKER_MIN_SETTLED, TRACKERS } from "@/lib/trackers";
+import { buildingLine, hasTrackerRecord, OBSERVED_TRACKERS, trackerBySlug, trackerHref, TRACKER_MIN_SETTLED, TRACKERS } from "@/lib/trackers";
 import { trackerMoves, trackerPage, trackerStats, type TrackerPageData, type TrackerStats } from "@/lib/trackers-store";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const t = trackerBySlug((await params).slug);
-  return t ? { title: t.name, description: `${t.name}, by Insidir: ${t.line}` } : { title: "Tracker" };
+  if (!t) return { title: "Tracker" };
+  const r = hasDatabase() ? (await trackerStats(getDb(), Date.now()).catch(() => null))?.get(t.slug)?.records.all ?? null : null;
+  const m = trackerTitle(t.name, t.line, r, TRACKER_MIN_SETTLED);
+  return { title: { absolute: `${m.title} · Insidir` }, description: m.description, alternates: { canonical: trackerHref(t.slug) }, openGraph: { title: m.title, description: m.description, url: trackerHref(t.slug) } };
 }
 
 const SHOW = ["all", "open", "won", "lost"] as const;
@@ -126,7 +131,6 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
           </div>
           <div className="thead__act">
             <FollowButton kind="tracker" target={t.slug} state={follow} trialHref={trial} />
-            {stats ? <span className="thead__meta">{stats.followers.toLocaleString("en-US")} {stats.followers === 1 ? "follower" : "followers"}</span> : null}
             <span className="thead__roi"><b>{fig.figure}</b>{fig.label ?? (t.kind === "filings" ? "30-day volume" : null)}{t.kind === "bets" ? <span className="past">{PAST}</span> : null}</span>
           </div>
         </header>
@@ -167,7 +171,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
               : <div className="lchart__empty">{NOT_ENOUGH}: the chart starts at 20 settled positions ({p.settled} so far).</div>}
             <div className="dsub"><Tiles tiles={perfTiles(p)} cols={3} label="Record" /></div>
             <p className="hypo">{p.hundred !== null
-              ? <><b>$100 at each trader&apos;s entry: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>On all {p.settled.toLocaleString("en-US")} settled positions, at the price they paid (not one a follower could get). {PAST}</span></>
+              ? <><b>$100 at each trader&apos;s entry: <span className={tone(p.hundred)}>{signed(p.hundred)}</span></b> <span>On all {p.settled.toLocaleString("en-US")} settled positions, at the price they paid (not one you could get by following). {PAST}</span></>
               : <><b>$100 at each trader&apos;s entry:</b> <span>{NOT_ENOUGH}.</span></>}</p>
           </Section>
         ) : null}
@@ -223,6 +227,8 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
             <p className="tsec__foot"><Link className="btn btn--secondary" href="/trackers">All trackers <span className="arrow" aria-hidden="true">→</span></Link></p>
           </Section>
         ) : null}
+        <EntityLd trail={[["Trackers", "/trackers"], [t.name, trackerHref(t.slug)]]} name={`${t.name} tracker`} path={trackerHref(t.slug)} description={`${t.name}: ${t.line}`}
+          updated={stats?.lastAt ?? null} sources={t.kind === "filings" ? ["https://www.sec.gov/edgar/search/"] : ["https://polygonscan.com", "https://kalshi.com"]} keywords={[t.name, t.group, "large positions"]} />
       </main>
     </>
   );

@@ -560,3 +560,4 @@ a.rtable__a:hover span { text-decoration: underline; }
 .ptable__t { margin-top: 20px; font-size: var(--t15); }
 .ptable__t th[scope="row"] { font-weight: 500; text-align: left; }
 .rbar { text-align: left; }
+.seo__links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 12px 0 0; padding: 0; list-style: none; font-size: var(--t15); } .seo__links a { color: var(--text); } .seo__links span { color: var(--muted); }

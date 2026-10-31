@@ -44,7 +44,7 @@ export default function MethodologyPage() {
         <li><strong>Each position is ${STAKE}</strong>, held to settlement. A win pays ${STAKE} divided by that price; a loss pays nothing.</li>
         <li><strong>Followable ROI</strong> is what all those positions made, divided by the money in. The <strong>$100 line</strong> says the same in dollars: &ldquo;$100 on every position since we started tracking: $3,200 in, +$420 back.&rdquo;</li>
         <li><strong>A record needs {MIN_SETTLED} settled positions.</strong> Until then a tracker says &ldquo;Building record · N of {MIN_SETTLED}&rdquo; with the tally so far, never a return.</li>
-        <li>The traders&apos; own return, from their entry prices, is shown separately and smaller. It&apos;s what they made, not what a follower could have.</li>
+        <li>The traders&apos; own return, from their entry prices, is shown separately and smaller. It&apos;s what they made, not what someone following them could have.</li>
       </ul>
       <p>{PAST}</p>
 

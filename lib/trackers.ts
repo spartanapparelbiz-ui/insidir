@@ -267,7 +267,3 @@ export function topPerformers<T extends { slug: string; record: TrackerRecord | 
     (returnOf(b.record!) - returnOf(a.record!) || 0) || winPct(b.record!) - winPct(a.record!) || settledOf(b.record) - settledOf(a.record));
 }
 
-/** Popular: most followers first, then most money tracked in the last 30 days. */
-export function popular<T extends { followers: number; tracked30d: number }>(rows: readonly T[]): T[] {
-  return [...rows].sort((a, b) => b.followers - a.followers || b.tracked30d - a.tracked30d);
-}

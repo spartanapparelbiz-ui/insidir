@@ -225,16 +225,22 @@ test("following an insider, a company and a fund: on the Following page, and the
   await q("delete from terminal.follows where user_id = 'user_e2e_insidir' and kind in ('insider', 'company', 'fund')");
 });
 
-test("robots.txt and sitemap.xml: public pages and the SEC pages, never the app", async ({ request }) => {
+test("robots.txt and the sitemaps by type: public pages, SEC pages, accounts and markets; never admin or account pages", async ({ request }) => {
   const robots = await request.get("/robots.txt");
   expect(robots.status()).toBe(200);
   const r = await robots.text();
   expect(r).toContain("Sitemap: ");
-  expect(r).toContain("Disallow: /api/");
-  const sm = await request.get("/sitemap.xml");
-  expect(sm.status()).toBe(200);
-  const x = await sm.text();
-  for (const p of ["/insiders/888888-jane-fixture", "/insider-trading/EXDV", "/funds/999998-e2e-fixture-capital", "/pricing</loc>"]) expect(x).toContain(p);
-  for (const p of ["/feed", "/following", "/settings", "/p/"]) expect(x).not.toContain(`${p}</loc>`);
+  for (const d of ["/api/", "/admin", "/settings", "/following", "/start"]) expect(r).toContain(`Disallow: ${d}`);
+  expect(r).not.toContain("Disallow: /p/");
+  const idx = await (await request.get("/sitemap.xml")).text();
+  for (const t of ["pages", "trackers", "companies", "insiders", "funds", "traders", "markets"]) expect(idx).toContain(`/sitemaps/${t}.xml</loc>`);
+  const get = async (t: string) => { const res = await request.get(`/sitemaps/${t}.xml`); expect(res.status(), t).toBe(200); return res.text(); };
+  expect(await get("insiders")).toContain("/insiders/888888-jane-fixture");
+  expect(await get("companies")).toContain("/insider-trading/EXDV");
+  expect(await get("funds")).toContain("/funds/999998-e2e-fixture-capital");
+  expect(await get("pages")).toContain("/pricing</loc>");
+  expect(await get("traders")).toContain("/p/0xe2e");
+  expect(await get("trackers")).toContain("/trackers/biggest-bets</loc>");
+  for (const t of ["pages", "trackers"]) for (const p of ["/following", "/settings", "/admin"]) expect(await get(t)).not.toContain(`${p}</loc>`);
 });
 
