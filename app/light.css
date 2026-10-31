@@ -5,7 +5,7 @@
 /* ---------- type ---------- */
 body { font-size: var(--t15); letter-spacing: -0.005em; }
 h1, h2, .sec2__h, .feed2__h, .pband__h, .trader__name, .market__h, .login__h, .start__h, .split__h, .soonpage__h,
-.empty__h, .block__h, .sheet__h, .side__h, .story__cap, .cmp__t thead th, .trail__h, .inband__h, .cine__h {
+.empty__h, .block__h, .sheet__h, .side__h, .story__cap, .cmp__t thead th, .inband__h {
   font-family: var(--sans); font-weight: 600; letter-spacing: var(--tight); }
 .sec2__h { font-size: var(--t32); line-height: 1.1; }
 @media (min-width: 900px) { .sec2__h { font-size: var(--t56); line-height: 1.05; margin-bottom: 48px; } }
@@ -260,13 +260,6 @@ a:hover > .arrow, button:hover > .arrow { transform: translateX(3px); }
 /* the fan clips only at the bottom (under the fade), never the outer phones' sides */
 
 /* 404 and 500: white, one headline, one button */
-.trail { background: var(--paper); color: var(--text); min-height: 0; }
-.trail::after, .trail__photo { display: none; }
-.trail__in { padding-top: 120px; padding-bottom: 120px; }
-.trail__code, .trail__p { color: var(--muted); }
-.trail .btn--secondary { background: var(--bg); color: var(--text); box-shadow: none; }
-.trail .btn--onDark, .trail .btn--primary { background: var(--ink); color: var(--paper); }
-.trail :focus-visible { outline-color: var(--ink); }
 
 /* ---------- charts (components/charts/LineChart.tsx) ---------- */
 .lchart { display: grid; gap: 16px; }

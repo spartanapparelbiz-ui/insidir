@@ -3,54 +3,56 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: the centred hero, one button to the trackers, the four laptops, the live portfolio, then Featured, Top performers and Popular", async ({ page }) => {
+test("landing: hero with one black button, three laptops and Crypto · Soon, Open now, the leaderboard, how it works, the proof strip, all stamped", async ({ page }) => {
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
-  await expect(page.getByText("Trackers follow large positions on Polymarket, Kalshi and SEC filings as they are opened and settled. Each one is a live portfolio with a public track record.")).toBeVisible();
+  await expect(page.getByText("Insidir tracks every large position on Polymarket, Kalshi and SEC filings, and shows what following each tracker would have made.")).toBeVisible();
   const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toContainText("Explore trackers");
-  await expect(cta).toHaveAttribute("href", "/trackers");
-  await expect(page.getByRole("link", { name: "See the track record" })).toHaveAttribute("href", "/results");
-  await expect(page.getByRole("heading", { level: 2, name: "A live portfolio of big money" })).toBeVisible();
-  await expect(page.locator('main a[href="/check"]')).toHaveCount(0);
+  await expect(cta).toHaveText("Start your 7-day trial");
+  await expect(page.getByRole("link", { name: /^Explore trackers/ })).toHaveAttribute("href", "/trackers");
+  await expect(page.getByText("$1 for the first week, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.").first()).toBeVisible();
   // One black button (plus the nav's Get started): no offer bar, no sticky bar.
   await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
   await expect(page.locator(".trialbar")).toHaveCount(0);
-  await expect(page.locator("main .btn--primary")).toHaveCount(1);
-  // Featured leads with stocks, then prediction markets, then sports.
-  await expect(page.locator(".tfeat .tfeat__name")).toHaveText(["CEO Purchases", "Fed & Rates", "Whales ($100K+)", "NBA"]);
+  const primaries = await page.locator("main .btn--primary").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).length);
+  expect(primaries).toBe(1);
   // No pills, no 700 weights.
   await expect(page.locator(".rpill")).toHaveCount(0);
   expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  await expect(page.locator(".lt__item")).toHaveCount(4);
-  await expect(page.locator(".lt__item").first()).toBeVisible();
-  await expect(page.locator(".tfeat")).toHaveCount(4);
-  await expect(page.locator(".tfeat").first()).toContainText("by Insidir");
-  for (const h of ["Open now from winning trackers", "Featured", "Top performers", "Popular"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
+  // Three laptops; crypto is one line.
+  await expect(page.locator(".lt__item .lt__name")).toHaveText(["Sports", "Prediction markets", "Stocks"]);
+  await expect(page.locator(".lt__soon summary")).toContainText("Crypto · Soon");
+  for (const h of ["Open now from winning trackers", "Leaderboard", "How Insidir works", "Insidir, live"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
   // Open now: the newest from winning trackers (the tennis fixture), how many more, and past results beside it.
   await expect(page.getByTestId("open-now").locator("tbody tr").first()).toContainText("Tennis");
   await expect(page.getByTestId("open-more")).toContainText("1 more open.");
   await expect(page.getByText(/Past results, not a promise\./).first()).toBeVisible();
-  // The live portfolio is a winning tracker, never a losing one.
-  await expect(page.locator(".lport")).toContainText("Tennis");
-  for (const t of ["1W", "1M", "3M", "6M", "1Y"]) await expect(page.getByRole("tab", { name: t })).toBeVisible();
+  // The leaderboard: Tennis is the one tracker with 30+ settled.
+  await expect(page.getByTestId("home-board").locator(".board__name").first()).toHaveText("Tennis");
+  await expect(page.locator(".board__row")).toHaveCount(1);
+  await expect(page.locator(".steps__item")).toHaveCount(3);
+  for (const id of ["proof-volume", "proof-week", "proof-accounts", "proof-check"]) await expect(page.getByTestId(id)).toBeVisible();
+  // Every figure says when it was read, in Eastern Time, and that visitors see it 30 minutes late.
+  expect(await page.locator("main [data-asof]").count()).toBeGreaterThanOrEqual(3);
+  await expect(page.locator(".asof").first()).toContainText(/As of \d{1,2}:\d{2}\s?(AM|PM) ET/);
+  await expect(page.locator(".asof").first()).toContainText("30-min delay");
   // No page sideways scroll at any width.
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("home hero: Explore trackers is recorded and opens /trackers, every tracker listed with its record or the record being built; the track record link opens /results", async ({ page }) => {
+test("home hero: Start your 7-day trial is recorded and opens /start; Explore trackers lists every tracker with its record or the record being built", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("hero_cta_click");
   await page.goto("/");
   await page.locator('[data-cta="hero"]').click();
-  await expect(page).toHaveURL(/\/trackers$/);
+  await expect(page).toHaveURL(/\/start(\?|$)/);
   await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
   await page.goto("/");
-  await page.getByRole("link", { name: "See the track record" }).click();
-  await expect(page).toHaveURL(/\/results$/);
+  await page.getByRole("link", { name: /^Explore trackers/ }).click();
+  await expect(page).toHaveURL(/\/trackers$/);
   await page.goto("/trackers");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.

@@ -72,11 +72,11 @@ export async function noHorizontalScroll(page: Page): Promise<void> {
 
 export async function footerOk(page: Page): Promise<void> {
   const footer = page.locator("footer").last();
-  await expect(footer).toContainText("Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.");
-  await expect(footer).toContainText("Insidir is built by Aethric LLC, Pompano Beach, FL.");
+  await expect(footer).toContainText("Aethric LLC · Pompano Beach, FL · hello@aethric.llc");
+  await expect(footer).toContainText("Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.");
+  await expect(footer).toContainText("Gambling problem? Call 1-800-GAMBLER.");
   await expect(footer.locator('a[href="mailto:hello@aethric.llc"]')).toHaveCount(1);
-  await expect(footer.locator('a[href="/privacy"]')).toHaveCount(1);
-  await expect(footer.locator('a[href="/terms"]')).toHaveCount(1);
+  for (const href of ["/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog"]) await expect(footer.locator(`a[href="${href}"]`), href).toHaveCount(1);
 }
 
 export const shotName = (name: string, page: Page): string => `qa/screenshots/${name}-${page.viewportSize()!.width}.png`;

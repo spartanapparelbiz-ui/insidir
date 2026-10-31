@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Credits", description: "Every photo,
 const label = (name: string): string => { const s = name.replace(/^home-/, "Home: ").replace(/-/g, " "); return s.charAt(0).toUpperCase() + s.slice(1); };
 
 /** The logo packages scripts/logos.mjs builds public/logos from, with the license each publishes on npm. */
-export const LOGO_SOURCES = [
+const LOGO_SOURCES = [
   { pkg: "simple-icons", version: "16.36.0", license: "CC0-1.0", what: "FIFA, F1, esports titles, single-colour league marks, company and coin marks" },
   { pkg: "sports-assets", version: "0.9.0", license: "MIT", what: "Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, UFC, college football" },
   { pkg: "nba-team-logos", version: "3.8.0", license: "ISC", what: "NBA and every NBA team" },

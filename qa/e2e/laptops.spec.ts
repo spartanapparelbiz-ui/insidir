@@ -1,5 +1,5 @@
-/* The home page's four laptops (components/home/Laptops.tsx): each is a button whose screen previews its market from
- * real rows; clicking one opens the panel below (the big laptop and the value), the others fade; clicking it again, ×
+/* The home page's three laptops (components/home/Laptops.tsx): each is a button whose screen previews its market from
+ * real rows (crypto is one "Crypto · Soon" line); clicking one opens the panel below (the big laptop and the value), the others fade; clicking it again, ×
  * or Esc closes it and focus goes back; another switches; the URL hash opens one; keyboard works; motion is off under
  * reduced motion; crypto's Notify me saves the email. Each run is recorded (qa/screenshots/laptops-*.webm). */
 import { copyFileSync, mkdirSync } from "node:fs";
@@ -21,21 +21,20 @@ test.afterEach(async ({ page }, info) => {
   copyFileSync(await v.path(), `qa/screenshots/laptops-${(info.title.split(":")[0] ?? info.title).replace(/\W+/g, "-").toLowerCase()}-${info.project.name}.webm`);
 });
 
-test("click: four laptops with live screens; each opens its panel, the others fade, another switches, the same one closes", async ({ page }) => {
+test("click: three laptops with live screens; each opens its panel, the others fade, another switches, the same one closes", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 2, name: "Four markets. One membership." })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Three markets. One membership." })).toBeVisible();
   await expect(page.getByText("Click a laptop to look inside.")).toBeVisible();
   const items = page.locator(".lt__item");
-  await expect(items).toHaveCount(4);
-  await expect(items.locator(".lt__name")).toHaveText(["Sports", "Prediction markets", "Stocks", "CryptoSoon"]);
+  await expect(items).toHaveCount(3);
+  await expect(items.locator(".lt__name")).toHaveText(["Sports", "Prediction markets", "Stocks"]);
   for (const b of await items.all()) {
     await expect(b).toHaveAttribute("aria-expanded", "false");
     await expect(b).toHaveAttribute("aria-controls", "lt-panel");
   }
-  // Never blank: real rows on the sports, markets and stocks screens; crypto says Soon.
+  // Never blank: real rows on every screen.
   for (const n of [/^Sports$/, /^Prediction markets$/, /^Stocks$/]) await expect(laptop(page, n).locator(".lmini__row").first()).toBeVisible();
-  await expect(laptop(page, /^Crypto/).locator(".lcrypto__soon")).toHaveText("Soon");
   await expect(panel(page)).toBeHidden();
   await page.locator(".lt").scrollIntoViewIfNeeded();
 
@@ -72,16 +71,8 @@ test("click: four laptops with live screens; each opens its panel, the others fa
   await page.waitForTimeout(600);
   await page.screenshot({ path: shotName("laptops-stocks", page) });
 
-  // Crypto: Soon, no rows.
-  await laptop(page, /^Crypto/).click();
-  await expect(panel(page).getByRole("heading", { level: 3 })).toHaveText("Large positions on crypto price markets, and the wallets behind them.");
-  await expect(panel(page).getByText("Included in your membership when it launches.")).toBeVisible();
-  await expect(panel(page).locator(".lrow")).toHaveCount(0);
-  await page.waitForTimeout(600);
-  await page.screenshot({ path: shotName("laptops-crypto", page) });
-
   // The same laptop again closes it; × closes too.
-  await laptop(page, /^Crypto/).click();
+  await laptop(page, /^Stocks$/).click();
   await expect(panel(page)).toBeHidden();
   await expect(page).not.toHaveURL(/#/);
   await laptop(page, /^Sports$/).click();
@@ -137,12 +128,14 @@ test("reduced motion: no lift, no lid tilt, no rise or fade", async ({ page }) =
   await expect(panel(page).locator(".lscreen")).toHaveCSS("animation-name", "none");
 });
 
-test("crypto: Notify me saves the email to the waitlist", async ({ page }) => {
+test("crypto: one Crypto · Soon line; #crypto opens it and Notify me saves the email to the waitlist", async ({ page }) => {
   const email = `laptops-${Date.now()}@example.com`;
   await page.goto("/#crypto");
-  await panel(page).getByPlaceholder("you@example.com").fill(email);
-  await panel(page).getByRole("button", { name: "Notify me" }).click();
-  await expect(panel(page).getByRole("status")).toHaveText("Thanks. You're on the list.");
+  const soon = page.locator("#crypto");
+  await expect(soon).toHaveAttribute("open", "");
+  await soon.getByPlaceholder("you@example.com").fill(email);
+  await soon.getByRole("button", { name: "Notify me" }).click();
+  await expect(soon.getByRole("status")).toHaveText("Thanks. You're on the list.");
   expect(await q("select feature from terminal.waitlist where email = $1", [email])).toEqual([{ feature: "crypto" }]);
 });
 
@@ -155,7 +148,7 @@ test("accessibility: no axe violations in the laptops, closed or with any panel 
     expect(r.violations.flatMap(v => v.nodes.map(n => `${v.id}: ${n.target.join(" ")} ${n.any[0]?.message ?? ""}`)), label).toEqual([]);
   };
   await scan("closed");
-  for (const k of ["sports", "markets", "stocks", "crypto"]) {
+  for (const k of ["sports", "markets", "stocks"]) {
     await page.goto(`/#${k}`);
     await expect(panel(page)).toBeVisible();
     await page.waitForTimeout(600);

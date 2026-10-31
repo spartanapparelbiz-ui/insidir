@@ -183,7 +183,8 @@ export function Laptops({ data, trialHref, signedIn }: { data: Record<MarketKind
   useEffect(() => {
     const read = () => {
       const h = window.location.hash.slice(1);
-      if (isKind(h)) { reveal.current = true; setOpen(h); }
+      if (h === "crypto") (document.getElementById("crypto") as HTMLDetailsElement | null)?.setAttribute("open", "");
+      else if (isKind(h)) { reveal.current = true; setOpen(h); }
     };
     read();
     window.addEventListener("hashchange", read);
@@ -225,7 +226,7 @@ export function Laptops({ data, trialHref, signedIn }: { data: Record<MarketKind
             </button>
           ))}
         </div>
-        <details className="lt__soon">
+        <details className="lt__soon" id="crypto">
           <summary>Crypto · Soon</summary>
           <p>Large positions on crypto price markets, and the wallets behind them. Included in your membership when it launches.</p>
           <Notify signedIn={signedIn} />
