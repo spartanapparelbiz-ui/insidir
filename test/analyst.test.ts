@@ -1,5 +1,6 @@
 /* Analyst notes (lib/analyst): facts from raw numbers, the template, the validator (every number and name from the
  * facts, nothing banned, 3 sentences), one retry then the template, and prompt injection through market titles. */
+import { NOTE_VERSION } from "@/lib/analyst/types";
 import { describe, expect, it } from "vitest";
 import { buildBetFacts, buildInsiderFacts, type BetRaw } from "@/lib/analyst/facts";
 import { templateNote, writeNote } from "@/lib/analyst/note";
@@ -92,7 +93,7 @@ describe("writing a note", () => {
     process.env.OPENROUTER_API_KEY = "test";
     const { f, sent } = fake(["googleplay's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6."]);
     const n = await writeNote(buildBetFacts(raw(), NOW), { f });
-    expect(n).toMatchObject({ origin: "model", model: "test/model", costUsd: 0.0004, version: 1 });
+    expect(n).toMatchObject({ origin: "model", model: "test/model", costUsd: 0.0004, version: NOTE_VERSION });
     expect(JSON.parse(sent[0]!).messages[1].content).not.toMatch(/0x|https?:/);
     process.env.OPENROUTER_API_KEY = prev;
   });

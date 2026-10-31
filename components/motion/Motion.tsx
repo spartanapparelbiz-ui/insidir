@@ -30,26 +30,38 @@ const FORMAT: Record<string, (v: number) => string> = {
 
 const NUM = /(\d[\d,]*(?:\.\d+)?)/;
 
-/** Counts every number in the element up from 0 at once, keeping its own format ("+$3,200", "+12.4%", "14–6"): the
- *  text is the final value until then. With data-count="<n>" and data-fmt it counts that value in that format. The
- *  element is held at its final width while it counts (tabular figures, app/motion.css), so nothing shifts. */
+/** The text of a counting figure at progress k (0–1, clamped): every number in `final` scaled by the eased progress,
+ *  in its own format ("+$3,200", "+12.4%", "14–6"); at 1 it is exactly `final`. Pure, so it can be tested. */
+export function countText(final: string, k: number): string {
+  const p = Math.min(1, Math.max(0, Number.isFinite(k) ? k : 1));
+  if (p >= 1) return final;
+  const e = 1 - Math.pow(1 - p, 3);
+  return final.split(NUM).map((part, i) => {
+    if (i % 2 === 0) return part;
+    const dec = /\.(\d+)$/.exec(part)?.[1]?.length ?? 0;
+    return (Number(part.replace(/,/g, "")) * e).toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: part.includes(",") });
+  }).join("");
+}
+
+/** Counts every number in the element up from 0 the first time it's seen, keeping its own format; with
+ *  data-count="<n>" and data-fmt it counts that value in that format. Held at its final width while it counts
+ *  (tabular figures, app/motion.css), so nothing shifts. The text is the final value before and after. Not for
+ *  automated or hidden pages (a crawler's snapshot must read the real numbers). */
 function countUp(el: HTMLElement) {
+  if (navigator.webdriver || document.visibilityState !== "visible") return;
   const final = el.dataset.final ?? el.textContent ?? "";
   const explicit = el.dataset.count ? Number(el.dataset.count) : NaN;
-  const parts = final.split(NUM);
-  if (!Number.isFinite(explicit) && parts.length < 2) return;
+  if (!Number.isFinite(explicit) && final.split(NUM).length < 2) return;
   const fmt = FORMAT[el.dataset.fmt ?? "int"] ?? FORMAT.int!;
   el.style.minWidth = `${el.getBoundingClientRect().width}px`;
-  const t0 = performance.now(), dur = 900;
-  const render = (e: number) => Number.isFinite(explicit) ? fmt(explicit * e) : parts.map((p, i) => {
-    if (i % 2 === 0) return p;
-    const dec = /\.(\d+)$/.exec(p)?.[1]?.length ?? 0;
-    const v = Number(p.replace(/,/g, "")) * e;
-    return v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: p.includes(",") });
-  }).join("");
+  // The clock starts at the first frame's own timestamp (rAF and performance.now() can disagree), and progress is
+  // clamped to 0–1, so the text only ever shows a value between 0 and the real one.
+  let t0 = -1;
+  const dur = 900;
   const step = (t: number) => {
-    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    el.textContent = k < 1 ? render(e) : final;
+    if (t0 < 0) t0 = t;
+    const k = Math.min(1, Math.max(0, (t - t0) / dur));
+    el.textContent = k >= 1 ? final : Number.isFinite(explicit) ? fmt(explicit * (1 - Math.pow(1 - k, 3))) : countText(final, k);
     if (k < 1) requestAnimationFrame(step); else el.style.minWidth = "";
   };
   requestAnimationFrame(step);
