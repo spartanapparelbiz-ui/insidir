@@ -32,4 +32,6 @@ export interface Note {
   costUsd: number;
   /** How it got there: written by the model and passed the validator, or the template after the model failed twice. */
   origin: "model" | "template";
+  /** Why the model's note wasn't used, when it wasn't (an HTTP error, a timeout, the validator's problems). */
+  error?: string;
 }

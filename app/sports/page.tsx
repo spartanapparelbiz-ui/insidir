@@ -1,14 +1,13 @@
 /* Sports (/sports): the biggest bets on games, the second they're placed (components/v2/ProductPage.tsx). */
 import type { Metadata } from "next";
 import { ProductPage } from "@/components/v2/ProductPage";
-import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sports", description: "The largest positions on NFL, NBA, MLB, NHL, college, soccer, UFC, tennis and golf, the second they're placed, and whether the bettor usually wins." };
 
 export default function SportsPage() {
   return <ProductPage copy={{
-    tab: "sports", photo: BAND.product.sports, title: "Sports",
+    tab: "sports", title: "Sports",
     line: "Large positions on the games as they are opened: the account, the size, and its record.",
     covers: ["NFL", "NBA", "MLB", "NHL", "College", "Soccer", "UFC", "Tennis", "Golf"],
     card: [

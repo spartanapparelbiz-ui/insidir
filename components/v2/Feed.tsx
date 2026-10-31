@@ -10,8 +10,7 @@ import type { FeedItem, FeedStatus } from "@/lib/moves/feed";
 import type { League, Tab } from "@/lib/moves/types";
 import { topicCategories, type Picks } from "@/lib/picks";
 import { Photo } from "@/components/Photo";
-import { BAND, SPOT } from "@/lib/photos";
-import { PageBand } from "@/components/PageBand";
+import { SPOT } from "@/lib/photos";
 import { LockButton } from "@/components/lock/Lock";
 import { ComingSoon } from "./ComingSoon";
 import type { FollowState } from "./FollowButton";
@@ -137,7 +136,7 @@ export function Feed({ pill, initial, status: initialStatus, initialTab, stocks 
 
   return (
     <section className="feed2" aria-labelledby="feed-h">
-      <PageBand n={BAND.feed[tab === "markets" || tab === "stocks" ? tab : "sports"]} title="Activity" id="feed-h" />
+      <header className="phead"><h1 id="feed-h" className="phead__h">Activity</h1></header>
       <div className="dash">
         <div className="dash__main">
           <div className="dash__bar">

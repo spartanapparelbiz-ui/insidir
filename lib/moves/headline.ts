@@ -65,6 +65,21 @@ function fromQuestion(q: string, yes: boolean): string | null {
   return null;
 }
 
+/** The race in a candidate market's question, as a headline says it: "Will Democrats win the Senate race in
+ *  Michigan?" → "the Michigan Senate race"; "Who will win the 2028 presidential election?" → "the 2028 presidential
+ *  election"; "Michigan Senate Democratic primary winner?" → "the Michigan Senate Democratic primary". */
+export function raceOf(title: string): string | null {
+  const t = clean(title).replace(/^[“"]|[”"]$/g, "");
+  const m = /^(?:will\s+.+?\s+win|who\s+will\s+win)\s+(.+?)\??$/i.exec(t) ?? /^(.+?)\s+winner\??$/i.exec(t);
+  if (!m) return null;
+  let r = m[1]!.trim().replace(/\s+in\s+(\d{4})$/i, " in $1");
+  if (!/\b(race|election|primary|nomination|runoff|seat|governorship|mayoralty|caucus)\b/i.test(r)) return null;
+  const moved = /^(?:the\s+)?(.+?)\s+(race|election|primary|seat|runoff)\s+in\s+([A-Z][\w.' -]+?)$/.exec(r);
+  if (moved) r = `${moved[3]} ${moved[1]} ${moved[2]}`;
+  r = r.replace(/^the\s+/i, "");
+  return `the ${r.replace(/\b(Election|Race|Primary|Nomination|Seat|Runoff)\b/g, x => x.toLowerCase())}`;
+}
+
 /** What the money says, after "says". */
 export function claimOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league">): string {
   const o = clean(m.outcome), t = clean(m.marketTitle), words = `${t} ${m.eventTitle}`;
@@ -115,6 +130,9 @@ export function claimOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" 
     if (q) return q;
     return `${isYes(o) ? "Yes" : "No"} on “${t.replace(/\?$/, "")}?”`;
   }
+  // A candidate as the outcome of a race ("Abdul El-Sayed" on "Will Democrats win the Senate race in Michigan?", or on
+  // "Who will win the Michigan Senate race?"): "Abdul El-Sayed wins the Michigan Senate race"; the No side "doesn't win".
+  if (m.tab !== "sports") { const race = raceOf(t); if (race) return `${o} ${m.outcomeSide === "no" ? "doesn't win" : "wins"} ${race}`; }
   // A team or a name as the outcome: moneylines ("Brewers vs. Cubs") and multi-outcome markets.
   if (m.tab !== "sports") return /\?$/.test(t) && !/^who\b/i.test(t) ? `“${o}” on ${t.replace(/\?$/, "")}` : o;
   return `${o} win${/\b(map|game|set)\s*\d/i.test(t) ? ` ${t.match(/\b(map|game|set)\s*\d+/i)![0]!.replace(/^\w/, c => c.toLowerCase())}` : ""}`;
@@ -182,6 +200,7 @@ export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle
   // "Who will win the Super Bowl?" on Chiefs: "Chiefs to win the Super Bowl".
   const whoWins = /^who will (win|be|become|lead|top)\s+(.+?)\??$/i.exec(clean(m.marketTitle));
   if (whoWins && (c === o || c === `${o} win`)) return cap(`${o} to ${whoWins[1]!.toLowerCase()} ${whoWins[2]}`);
+  if (/ (wins|doesn't win) the /.test(c) && m.tab !== "sports") return cap(c);
   if (m.tab === "sports") {
     // A moneyline on one side of "A vs. B": "A to beat (the) B".
     const vs = /^(.+?)\s+(?:vs\.?|at)\s+(.+?)$/i.exec(clean(m.eventTitle).replace(/^[^:]*:\s*/, ""));
@@ -209,3 +228,8 @@ export function headlineOf(m: Move): string {
 
 /** "62% chance": the price paid, as the chance the market gave it then. */
 export const chance = (p: number): string | null => (p > 0 && p < 1 ? `${Math.round(p * 100)}%` : null);
+
+/** A headline that reads as a sentence: no quoted market question, no bare "Yes on", not too long. */
+export function cleanHeadline(h: string): boolean {
+  return h.length <= 80 && !/[“”"]/.test(h) && !/^(yes|no) on\b/i.test(h);
+}

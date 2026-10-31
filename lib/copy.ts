@@ -22,7 +22,7 @@ export const GET_CTA = "Try 7 days for $1";
 /** Next to every performance figure. */
 export const PAST = "Past results, not a promise.";
 /** The nav's one button, for visitors on every page. */
-export const NAV_CTA = "Get started";
+export const NAV_CTA = "Start for $1";
 /** What comes after, said next to every price. */
 export const THEN_LINE = "then $39/mo, cancel anytime";
 /** The small line under a button. */

@@ -19,8 +19,6 @@ import { isPaid, PLANS } from "@/lib/plans";
 import { eq } from "drizzle-orm";
 import "../app.css";
 import "../account.css";
-import { PageBand } from "@/components/PageBand";
-import { BAND } from "@/lib/photos";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Account", robots: { index: false } };
@@ -56,7 +54,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     <>
       <SiteHeader plan={viewer.plan} signedIn current="/settings" />
       <main className="wrap app acct dark">
-        <PageBand n={BAND.account} title="Account" />
+        <header className="phead"><h1 className="phead__h">Account</h1></header>
         {notice ? <p className="banner" role="status">{notice}</p> : null}
 
         <section className="agroup" aria-labelledby="g-alerts">

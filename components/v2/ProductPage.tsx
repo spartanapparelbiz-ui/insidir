@@ -1,10 +1,11 @@
 /* One page per thing Insidir tracks (/sports, /markets, /stocks), all on one template so they read as one product:
- * the header band, what it is in one line, the latest real big moves from that tab (the same cards as the feed),
- * what every card tells you, where the numbers come from, then one action: Get Insidir (members: the live feed on that tab).
+ * the page head, what it is in one line, the latest real big moves from that tab (the same cards as the feed),
+ * what every card tells you, where the numbers come from, then one action: Start for $1 (members: the live feed on that tab).
  * Every move is a row from terminal.moves on the viewer's clock (free: 30 minutes late). Server component. */
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { PageBand } from "@/components/PageBand";
+import { PageHead, Sec } from "@/components/page/Page";
+import { RevealGroup } from "@/components/motion/Reveal";
 import { SiteHeader } from "@/components/SiteHeader";
 import { unlockHref } from "@/components/app/links";
 import { MoveCard } from "@/components/v2/MoveCard";
@@ -15,8 +16,7 @@ import { memo } from "@/lib/memo";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { listMoves } from "@/lib/moves/store";
-import type { PhotoN } from "@/components/Photo";
-import { CANCEL_LINE, GAMBLER, GET_CTA, PAST } from "@/lib/copy";
+import { CANCEL_LINE, GAMBLER, PAST } from "@/lib/copy";
 import { isPaid } from "@/lib/plans";
 import { AsOf, SOURCES } from "@/components/data/AsOf";
 import { TrackerTile } from "@/components/trackers/Tracker";
@@ -32,7 +32,6 @@ const SRC = { sports: [SOURCES.polymarket, SOURCES.kalshi], markets: [SOURCES.po
 
 export interface ProductCopy {
   tab: "sports" | "markets" | "stocks";
-  photo: PhotoN;
   title: string;
   /** One line under the title, on the band. */
   line: string;
@@ -68,78 +67,52 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current={`/${copy.tab}`} trialHref={trial} />
-      <main className="dark mkt">
-        <PageBand n={copy.photo} title={copy.title} kicker="What we track">
-          <p className="pband__sub">{copy.line}</p>
-        </PageBand>
-        <section className="sec2" aria-labelledby="covers-h">
-          <div className="wrap prod__intro">
-            <h2 id="covers-h" className="sr-only">What we cover</h2>
-            <ul className="prod__covers">{copy.covers.map(c => <li key={c}>{c}</li>)}</ul>
-            <div className="mkt__ctas">{paid ? <Link className="btn btn--primary" href={feed}>See the live {copy.title.toLowerCase()} feed</Link>
-              : <><Link className="btn btn--primary" href={trial} data-checkout={`product-${copy.tab}`}>{GET_CTA}</Link><span className="mkt__fine">{CANCEL_LINE} Secure sign-in and payments by Whop.</span></>}</div>
-          </div>
-        </section>
-        <section className="sec2" aria-labelledby="latest-h">
-          <div className="wrap">
-            <div className="prod__head">
-              <h2 id="latest-h" className="sec2__h">Latest large positions</h2>
-              {!paid ? <p className="prod__note">Preview: 30 minutes late</p> : null}
-            </div>
-            {items.length ? (
-              <ol className="prod__list">{items.map((m, i) => <li key={m.id} className="rv" style={{ ["--i" as string]: i }}><MoveCard m={m} follow={paid ? "off" : "locked"} trialHref={trial} compact /></li>)}</ol>
-            ) : <p className="mkt__lead">Catching up with the source. The next large position shows up here the moment it lands.</p>}
-            <AsOf at={until} live={paid} sources={[...SRC[copy.tab]]} />
-            <p className="prod__more"><Link href={paid ? feed : trial}>{paid ? "See every position in Activity" : "See every position live with Insidir"} <span aria-hidden="true">→</span></Link></p>
-          </div>
-        </section>
+      <main className="lp3 pgpage">
+        <PageHead kicker="What we track" title={copy.title} sub={copy.line} />
+        <div className="pg prod__intro">
+          <p className="prod__covers" data-testid="product-covers">{copy.covers.join(" · ")}</p>
+          <div className="mkt__ctas">{paid ? <Link className="btn btn--primary" href={feed}>See the live {copy.title.toLowerCase()} feed</Link>
+            : <><Link className="btn btn--primary" href={trial} data-checkout={`product-${copy.tab}`}>Start for $1</Link><span className="mkt__fine">{CANCEL_LINE} Secure sign-in and payments by Whop.</span></>}</div>
+        </div>
+        <Sec id="latest-h" title="Latest large positions" sub={!paid ? "Preview: 30 minutes late" : undefined}>
+          {items.length ? (
+            <RevealGroup as="ol" className="prod__list">{items.map(m => <li key={m.id}><MoveCard m={m} follow={paid ? "off" : "locked"} trialHref={trial} compact /></li>)}</RevealGroup>
+          ) : <p className="mkt__lead">Catching up with the source. The next large position shows up here the moment it lands.</p>}
+          <AsOf at={until} live={paid} sources={[...SRC[copy.tab]]} />
+          <p className="prod__more"><Link href={paid ? feed : trial}>{paid ? "See every position in Activity" : "See every position live with Insidir"} <span aria-hidden="true">→</span></Link></p>
+        </Sec>
         {trackers.length ? (
-          <section className="sec2" aria-labelledby="trk-h">
-            <div className="wrap">
-              <h2 id="trk-h" className="sec2__h">Trackers</h2>
-              <ul className="tgrid" data-testid="product-trackers">
-                {trackers.map((t, i) => { const st = stats.get(t.slug); return <TrackerTile key={t.slug} t={t} r={st?.records.all ?? null} tracked30d={st?.tracked30d ?? 0} s={coverStats(st)} i={Math.min(i, 5)} />; })}
-              </ul>
-              <p className="prod__fine">{PAST} Followable ROI: $100 on every position at the price Insidir showed it, plus one point. <Link href="/methodology">How it&apos;s computed</Link></p>
-            </div>
-          </section>
+          <Sec id="trk-h" title="Trackers">
+            <ul className="tgrid" data-testid="product-trackers">
+              {trackers.map((t, i) => { const st = stats.get(t.slug); return <TrackerTile key={t.slug} t={t} r={st?.records.all ?? null} tracked30d={st?.tracked30d ?? 0} s={coverStats(st)} i={Math.min(i, 5)} />; })}
+            </ul>
+            <p className="prod__fine">{PAST} Followable ROI: $100 on every position at the price Insidir showed it, plus one point. <Link href="/methodology">How it&apos;s computed</Link></p>
+          </Sec>
         ) : null}
         {proof.length ? (
-          <section className="sec2" aria-labelledby="proof-h">
-            <div className="wrap">
-              <h2 id="proof-h" className="sec2__h">By the numbers</h2>
-              <dl className="proof__grid" data-testid="product-proof">
-                {proof.map(p => <div key={p.label} className="proof__item"><dt>{p.label}</dt><dd className="proof__v">{p.value}</dd>{p.note ? <dd className="proof__note">{p.note}</dd> : null}</div>)}
-              </dl>
-              <AsOf at={now} live={paid} sources={[...SRC[copy.tab], SOURCES.methodology]} />
-            </div>
-          </section>
+          <Sec id="proof-h" title="By the numbers">
+            <RevealGroup as="dl" className="proof__grid" data-testid="product-proof">
+              {proof.map(p => <div key={p.label} className="proof__item"><dt>{p.label}</dt><dd className="proof__v" data-count="">{p.value}</dd>{p.note ? <dd className="proof__note">{p.note}</dd> : null}</div>)}
+            </RevealGroup>
+            <AsOf at={now} live={paid} sources={[...SRC[copy.tab], SOURCES.methodology]} />
+          </Sec>
         ) : null}
-        <section className="sec2" aria-labelledby="card-h">
-          <div className="wrap">
-            <h2 id="card-h" className="sec2__h">What every card tells you</h2>
-            <ol className="prod__grid">{copy.card.map(([h, p], i) => (
-              <li key={h} className="prod__tile rv" style={{ ["--i" as string]: i }}><span className="prod__n">{i + 1}</span><p className="prod__h">{h}</p><p className="prod__p">{p}</p></li>
-            ))}</ol>
-          </div>
-        </section>
-        <section className="sec2" aria-labelledby="src-h">
-          <div className="wrap">
-            <h2 id="src-h" className="sec2__h">Where it comes from</h2>
-            <div className="prod__grid prod__grid--2">{copy.sources.map(([h, p]) => (
-              <div key={h} className="prod__tile"><p className="prod__h">{h}</p><p className="prod__p">{p}</p></div>
-            ))}</div>
-            <p className="prod__more"><Link href="/data">How we check every number <span aria-hidden="true">→</span></Link></p>
-          </div>
-        </section>
-        <section className="sec2">
-          <div className="wrap mkt__endIn">
-            <h2 className="sec2__h">Follow the big money.</h2>
-            <p className="mkt__lead">{GET_CTA}. {CANCEL_LINE} Secure sign-in and payments by Whop.</p>
-            {copy.tab === "sports" ? <p className="prod__fine" data-testid="gambler">{GAMBLER}</p> : null}
-            <div className="mkt__ctas"><Link className="btn btn--primary" href={paid ? feed : trial}>{paid ? "Open Activity" : GET_CTA}</Link><Link className="btn btn--secondary" href="/pricing">See pricing</Link></div>
-          </div>
-        </section>
+        <Sec id="card-h" title="What every card tells you">
+          <RevealGroup as="ol" className="prod__grid">{copy.card.map(([h, p], i) => (
+            <li key={h} className="prod__tile"><span className="prod__n">{i + 1}</span><p className="prod__h">{h}</p><p className="prod__p">{p}</p></li>
+          ))}</RevealGroup>
+        </Sec>
+        <Sec id="src-h" title="Where it comes from">
+          <RevealGroup className="prod__grid prod__grid--2">{copy.sources.map(([h, p]) => (
+            <div key={h} className="prod__tile"><p className="prod__h">{h}</p><p className="prod__p">{p}</p></div>
+          ))}</RevealGroup>
+          <p className="prod__more"><Link href="/data">How we check every number <span aria-hidden="true">→</span></Link></p>
+        </Sec>
+        <Sec id="end-h" title="Follow the big money.">
+          <p className="mkt__lead">Your first week is $1, then $39/month. Cancel anytime. Secure sign-in and payments by Whop.</p>
+          {copy.tab === "sports" ? <p className="prod__fine" data-testid="gambler">{GAMBLER}</p> : null}
+          <div className="mkt__ctas sec3__foot"><Link className="btn btn--primary" href={paid ? feed : trial}>{paid ? "Open Activity" : "Start for $1"}</Link><Link className="btn btn--secondary" href="/pricing">See pricing</Link></div>
+        </Sec>
       </main>
     </>
   );

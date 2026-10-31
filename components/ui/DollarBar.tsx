@@ -43,7 +43,7 @@ export function DollarBar({ legs, feesCents = 0, size = "card", animate = false,
   const labels = s !== "inline";
   return (
     <figure className={`dbar dbar--${s}${animate && s === "hero" ? " dbar--animate" : ""}${gap > 0 ? "" : " dbar--over"}`} role="img" aria-label={dollarBarLabel(legs, feesCents)}>
-      <div className="dbar__track" aria-hidden="true">
+      <div className="dbar__track" data-draw="bars" aria-hidden="true">
         {legs.map((l, i) => (
           <span key={i} className={`dbar__seg dbar__seg--${i % 2 ? "b" : "a"}`} style={{ width: w(l.cents) }}>
             {s === "hero" ? <span className="dbar__in mono">{c1(l.cents)}</span> : null}

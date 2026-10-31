@@ -4,7 +4,7 @@
  * - Colour only on gains and losses; big stats and headline numbers are ink.
  * - No grey section cards: white, separated by 1px #EAEAEE lines; a section header has a 1px ink line under it.
  *   The live list and the position check sit in white "windows".
- * - Secondary actions are text links with an arrow; one black button per screen, plus the nav's 36px "Get started".
+ * - Secondary actions are text links with an arrow; one black button per screen, plus the nav's 36px "Start for $1".
  * - Section spacing 168px on desktop, 112px on phones. */
 :root {
   --line: var(--grey-2);
@@ -21,10 +21,10 @@
 body { font-weight: 400; }
 b, strong { font-weight: 600; }
 h1, h2, h3, .num, [data-count] { font-weight: 600; }
-h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .pband__h, .trader__name, .login__h, .start__h, .soonpage__h {
+h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .trader__name, .login__h, .start__h, .soonpage__h {
   font-size: 52px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; }
 @media (min-width: 900px) {
-  h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .pband__h, .trader__name, .login__h, .start__h, .soonpage__h {
+  h1, .hero3__h, .phead__h, .thead__h, .mhead__h, .cres__h, .phead2__h, .trader__name, .login__h, .start__h, .soonpage__h {
     font-size: 96px; line-height: 1; letter-spacing: -0.048em; }
 }
 h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h, .block__h {
@@ -41,8 +41,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .dsec__h + .dsec__note { margin-top: -16px; }
 
 /* ---------- colour: only on gains and losses; big numbers are ink ---------- */
-.tile dd, .tile dd.money, .tile dd.loss, .record dd, .record dd.money, .record dd.loss, .lchart__now, .lchart__now .money, .lchart__now .loss,
-.mhead__now, .hypo b, .hypo b .money, .hypo b .loss, .sbars__row dd b, .ticket__price { color: var(--ink); }
+.tile dd, .tile dd.money, .tile dd.loss, .record dd, .record dd.money, .record dd.loss, .lchart__now, .lchart__now .money, .lchart__now .loss, .mhead__now, .hypo b, .hypo b .money, .hypo b .loss, .sbars__row dd b, .ticket__price { color: var(--ink); }
 .hypo b > span { color: inherit; }
 
 /* ---------- results: plain text on the right ---------- */
@@ -54,8 +53,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .res__st--only { font-size: var(--t13); }
 
 /* pills, badges and chips become plain text */
-.rpill, .rpill--won, .rpill--lost, .rpill--new, .rpill--sm, .tag, .badge, .soon, .cleg__v, .srow__gap, .srow__gap--big, .srow__gap--won, .srow__gap--lost,
-.cleg--with .cleg__v, .cleg--against .cleg__v {
+.rpill, .rpill--won, .rpill--lost, .rpill--new, .rpill--sm, .tag, .badge, .soon, .cleg__v, .srow__gap, .srow__gap--big, .srow__gap--won, .srow__gap--lost, .cleg--with .cleg__v, .cleg--against .cleg__v {
   display: inline; height: auto; padding: 0; border-radius: 0; background: none !important; box-shadow: none !important; color: var(--muted);
   font-size: var(--t13); font-weight: 500; }
 .cleg__v { color: var(--ink); font-size: var(--t15); font-weight: 600; text-align: right; }
@@ -78,9 +76,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .tgroups { padding: 0; box-shadow: inset 0 -1px 0 var(--line); }
 
 /* ---------- surfaces: white, 1px lines, no grey cards ---------- */
-.card, .move, .upsell, .empty, .record div, .flist__row, .pline, .pchart, .trust__card, .prod__tile, .side, .deal, .start__signup, .start__pay,
-.inband__card, .psnip, .rcard, .promise__item, .tile, .dnote, .hypo, .tnew, .tempty, .lchart__empty, .cluster, .sbars__row, .sflag, .srow, .cleg,
-.checkf__err, .login__err, .cmp__scroll, .trialbar {
+.card, .move, .upsell, .empty, .record div, .flist__row, .pline, .pchart, .trust__card, .prod__tile, .side, .deal, .start__signup, .start__pay, .inband__card, .psnip, .rcard, .promise__item, .tile, .dnote, .hypo, .tnew, .tempty, .lchart__empty, .cluster, .sbars__row, .sflag, .srow, .cleg, .checkf__err, .login__err, .cmp__scroll, .trialbar {
   background: none !important; border-radius: 0; box-shadow: none !important; }
 .move:hover, .dash .move:hover, .prod__tile--link:hover, .deal:hover, .srow:hover { background: none; box-shadow: none !important; }
 .ptable tbody tr:hover, .table tbody tr:hover, .dtable tbody tr:hover, .trow:hover { background: none; }
@@ -274,7 +270,6 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .move__top { align-items: center; gap: 12px; }
 .move__kind { flex: 1; min-width: 0; }
 
-
 /* ---------- Pictures: photos are the art, logos are whole (components/Photo, components/Logo) ----------
  * A photo fills its box edge to edge (cropped by the CDN around its focal point), its colour behind it while it loads.
  * A tracker's artwork is its photo at every size: 1:1 thumbnails (radius 12, a 0.5px ring), 4:3 cards, the 21:9 page
@@ -282,7 +277,7 @@ h2, .sec3__h, .sec3__h--sm, .sec2__h, .tsec__h, .dsec__h, .tgroup__h, .feed2__h,
 .photo { position: relative; display: block; overflow: hidden; }
 .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* The light theme drops the photo behind page bands (app/light.css); .photo above mustn't bring it back. */
-.pband__photo, .trader__photo { display: none; }
+.trader__photo { display: none; }
 .photo--thumb::after, .tcover::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .08); pointer-events: none; z-index: 2; }
 
 .tcover { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-win); color: var(--paper); isolation: isolate; }
@@ -480,8 +475,6 @@ main.skel { min-height: 100vh; }
 
 /* The header: sticky, blurred over the page. */
 .nav--light { background: color-mix(in srgb, var(--paper) 84%, transparent); -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px); }
-.nav__kbd { margin-left: 4px; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--border); color: var(--muted); font: 500 11px/1.4 var(--sans); }
-@media (max-width: 899px) { .nav__kbd { display: none; } }
 
 /* Research (components/research). */
 .rpal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-start; justify-content: center; padding: 8vh 16px 16px; background: color-mix(in srgb, var(--ink) 40%, transparent); }
@@ -531,7 +524,6 @@ a.rtable__a:hover span { text-decoration: underline; }
 .rbar__input:focus { outline: none; }
 .rbar:focus-within { box-shadow: inset 0 0 0 1px var(--text); }
 .rbar__go { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--bg); color: var(--text); font: 600 var(--t15)/1 var(--sans); cursor: pointer; }
-.rbar__kbd { color: var(--muted); font: 500 11px/1 var(--sans); }
 .opennow__first { margin-top: 16px; } .opennow__firsth { font-size: var(--t15); font-weight: 600; }
 
 /* Home: streaming placeholders, "Every position, analyzed.", the track record, the pricing table. */
@@ -639,3 +631,47 @@ a.rtable__a:hover span { text-decoration: underline; }
 @keyframes paym-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes paym-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .paym__box { animation: paym-fade 350ms both; } }
+
+
+/* ---------- The page system (components/page/Page.tsx): pricing, FAQ, the product pages ---------- */
+.pg { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 40px; box-sizing: border-box; }
+@media (max-width: 640px) { .pg { padding: 0 20px; } }
+.pgpage { padding-bottom: var(--sec); }
+.pghead { padding-top: 72px; }
+@media (min-width: 900px) { .pghead { padding-top: 112px; } }
+.pghead__kicker { font: 600 var(--t13)/1.2 var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.pghead__h { font: 600 var(--t56)/1.02 var(--sans); letter-spacing: -0.035em; max-width: 14ch; }
+@media (max-width: 640px) { .pghead__h { font-size: var(--t40); } }
+.pghead__sub { margin-top: 20px; font-size: var(--t20); line-height: 1.45; color: var(--muted); max-width: 46ch; }
+.pghead--aside { display: grid; gap: 48px; align-items: start; }
+@media (min-width: 900px) { .pghead--aside { grid-template-columns: minmax(0, 1fr) 420px; gap: 64px; } }
+
+.plan3 { border: 1px solid var(--border); border-radius: var(--r-card); padding: 32px; background: var(--page); }
+@media (max-width: 640px) { .plan3 { padding: 24px 20px; } }
+.plan3__name { font: 600 var(--t17)/1.2 var(--sans); }
+.plan3__price { margin-top: 12px; display: flex; align-items: baseline; gap: 4px; }
+.plan3__price b { font: 600 var(--t56)/1 var(--sans); letter-spacing: -0.04em; }
+.plan3__price span { font-size: var(--t17); color: var(--muted); }
+.plan3__trial { margin-top: 8px; font-size: var(--t15); }
+.plan3__cta { display: flex; width: 100%; height: 52px; min-height: 52px; margin-top: 24px; border-radius: var(--r-btn); font-size: var(--t17); }
+.plan3__fine { margin-top: 12px; font-size: var(--t13); color: var(--muted); text-align: center; }
+.plan3__list { list-style: none; margin: 24px 0 0; padding: 24px 0 0; border-top: 1px solid var(--border); display: grid; gap: 12px; }
+.plan3__list li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; font-size: var(--t15); line-height: 1.4; }
+.plan3__check { width: 16px; height: 16px; margin-top: 2px; color: var(--money); }
+
+.vm__t { width: 100%; min-width: 0; table-layout: fixed; }
+.vm__t th[scope=col]:not(:first-child), .vm__t td { width: 30%; }
+@media (max-width: 640px) { .vm__t th, .vm__t td { white-space: normal; padding-left: 6px; padding-right: 6px; font-size: var(--t13); overflow-wrap: anywhere; } .vm__t th[scope=col]:not(:first-child), .vm__t td { width: 32%; } }
+.wk__grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.wk__item .proof__note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* The visitors' bottom bar (components/paywall/LateBar.tsx): slides up after 30% of the page. */
+.latebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--ink); color: var(--paper); padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+  transform: translate3d(0, 110%, 0); transition: transform .45s var(--ease-rise, ease); pointer-events: none; }
+.latebar--on { transform: none; pointer-events: auto; }
+.latebar__in { display: flex; align-items: center; gap: 12px 20px; }
+.latebar__t { flex: 1; font-size: var(--t15); line-height: 1.35; }
+.latebar__cta.btn--primary { flex: none; background: var(--paper); color: var(--ink); min-height: 40px; height: 40px; padding: 0 18px; }
+.latebar__x { flex: none; width: 40px; height: 40px; border: 0; background: none; color: inherit; font-size: 24px; line-height: 1; cursor: pointer; }
+@media (max-width: 640px) { .latebar__t { font-size: var(--t13); } .latebar__in { gap: 10px; } }
+@media (prefers-reduced-motion: reduce) { .latebar { transition: none; } }

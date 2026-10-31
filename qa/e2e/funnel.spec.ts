@@ -140,19 +140,38 @@ test("signed in without paying: back later, /start opens the checkout already si
 });
 
 
-test("one action per page: no offer bar or sticky bar anywhere; the nav's 36px Get started on public pages, home included, but not /start or /login", async ({ page }) => {
+test("the nav's 36px Start for $1 on public pages, home included, but not /start or /login; no old offer bars", async ({ page }) => {
   for (const path of ["/", "/trackers", "/sports", "/markets", "/results", "/pricing", "/faq", "/start", "/login"]) {
     await page.goto(path);
     await expect(page.getByTestId("sticky-cta"), path).toHaveCount(0);
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
   await page.goto("/");
-  await expect(page.locator(".nav__cta")).toHaveText("Get started");
+  await expect(page.locator(".nav__cta")).toHaveText("Start for $1");
   if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
   await page.goto("/pricing");
   await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");
   await page.goto("/login");
   await expect(page.locator(".nav__cta")).toHaveCount(0);
+});
+
+test("the late bar: after 30% of the page, \"30 minutes late\" + Start for $1; × hides it for the session; never on /start or /login", async ({ page }) => {
+  await page.goto("/pricing");
+  const bar = page.getByTestId("late-bar");
+  await expect(bar).toHaveAttribute("aria-hidden", "true");
+  await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.5));
+  await expect(bar).toHaveAttribute("aria-hidden", "false");
+  await expect(bar).toContainText("You're seeing data 30 minutes late. Live for $1 this week.");
+  await expect(bar.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", /^\/start\?next=%2Fpricing/);
+  await bar.getByRole("button", { name: "Hide for this visit" }).click();
+  await expect(bar).toHaveCount(0);
+  await page.goto("/faq");
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await expect(page.getByTestId("late-bar")).toHaveCount(0);
+  for (const path of ["/start", "/login"]) {
+    await page.goto(path);
+    await expect(page.getByTestId("late-bar"), path).toHaveCount(0);
+  }
 });
 
 test("/admin/funnel: the eight steps with the drop-off between each", async ({ page }) => {

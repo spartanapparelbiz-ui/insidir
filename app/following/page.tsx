@@ -24,8 +24,6 @@ import { MoveCard } from "@/components/v2/MoveCard";
 import { TimeAgo } from "@/components/TimeAgo";
 import { agoText } from "@/lib/moves/copy";
 import { isPaid } from "@/lib/plans";
-import { PageBand } from "@/components/PageBand";
-import { BAND } from "@/lib/photos";
 import { trackerBySlug, trackerHref, type Tracker } from "@/lib/trackers";
 
 export const dynamic = "force-dynamic";
@@ -71,7 +69,7 @@ export default async function FollowingPage() {
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/following" trialHref={trial} />
       <main className="wrap app2 following dark">
-        <PageBand n={BAND.following} title="Following" />
+        <header className="phead"><h1 className="phead__h">Following</h1></header>
         {!paid ? (
           <section className="upsell upsell--big">
             <p className="upsell__text">Follow top-ranked traders, markets, insiders, companies and funds, and see their positions and filings in one feed. Following is for members.</p>

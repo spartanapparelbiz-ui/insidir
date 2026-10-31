@@ -161,7 +161,7 @@ test("location is asked once, as a sheet, the first time a market link is tapped
   }
 });
 
-test("results are public: totals match the trust block on /pricing, refunds labelled, pages instead of a cap", async ({ page }) => {
+test("results are public: totals, refunds labelled, pages instead of a cap; /pricing's live week numbers", async ({ page }) => {
   await page.goto("/results");
   await expect(page).toHaveURL(/\/results$/);
   await expect(page.locator(".rlist__res--won").first()).toBeVisible();
@@ -174,14 +174,11 @@ test("results are public: totals match the trust block on /pricing, refunds labe
   await expect(page.getByTestId("record-net")).toContainText("Net for these traders: +$126K");
   await expect(total).toContainText("What these positions realized");
   await expect(page.locator(".rlist__res--sold").first()).toHaveText("Closed before settlement");
-  const totalText = await total.innerText();
+  // /pricing's "This week on Insidir": live numbers only, the last accuracy check among them.
   await page.goto("/pricing");
-  const home = await page.getByTestId("trust-record").innerText();
-  for (const line of totalText.split("\n").filter(l => /Average odds|won, \d+ lost/.test(l))) expect(home).toContain(line.trim());
-  expect(home).not.toContain("Net for");
-  const check = page.getByTestId("trust-check");
-  await expect(check).toContainText(/matched/);
-  await expect(check.getByRole("link", { name: "How we check" })).toHaveAttribute("href", "/data");
+  await expect(page.getByTestId("week-positions")).toContainText(/\d/);
+  await expect(page.getByTestId("week-check")).toContainText(/\d+ of \d+/);
+  await expect(page.getByTestId("week-check")).toContainText("matched");
   await page.goto("/results?page=99");
   expect((await page.goto("/results?page=99"))?.status()).toBeLessThan(400);
 });
@@ -253,16 +250,18 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   expect(sports.items.every(i => i.tab === "sports")).toBe(true);
 });
 
-test("home: no zero trader box or 0 won · 0 lost; the pricing page's plan card, and /start's three lines", async ({ page }) => {
+test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan card, and /start's three lines", async ({ page }) => {
   await page.goto("/");
   const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
   await page.goto("/pricing");
-  const plan = page.locator(".plan2 .start__list li");
-  const n = await plan.count();
-  expect(n).toBeGreaterThan(0);
-  expect(n).toBeLessThanOrEqual(5);
-  await expect(page.locator(".plan2 .start__more")).toHaveText(/^More coming: /);
+  // One plan card: $39/month, the $1 week, Start for $1, five checkmarks; no "More coming" line.
+  const card = page.getByTestId("plan-card");
+  await expect(card).toContainText("$39/month");
+  await expect(card).toContainText("Your first week is $1. Cancel anytime.");
+  await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
+  await expect(card.locator("li")).toHaveCount(5);
+  await expect(page.locator("main")).not.toContainText("More coming");
   // /start keeps it to three lines (qa/e2e/funnel.spec.ts checks them).
   await page.goto("/start");
   await expect(page.getByTestId("start-list").locator("li")).toHaveCount(3);

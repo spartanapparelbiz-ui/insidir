@@ -5,7 +5,6 @@ import { SiteHeader } from "@/components/SiteHeader";
 import type { Feature } from "@/lib/features";
 import type { Plan } from "@/lib/types";
 import { Photo, type PhotoN } from "@/components/Photo";
-import { PageBand } from "@/components/PageBand";
 import { SPOT } from "@/lib/photos";
 import { SoonBadge, SoonForm } from "./ComingSoon";
 
@@ -14,7 +13,7 @@ export function ComingSoonPage({ feature, title, text, signedIn, plan, visual, b
     <>
       <SiteHeader signedIn={signedIn} plan={plan} current={current} />
       <main className={band ? "wrap app2 soonpage dark" : "wrap soonpage"}>
-        {band ? <PageBand n={band} title={title} /> : <Photo n={SPOT.comingSoonPage} className="soonpage__photo" wideOnly />}
+        {band ? <header className="phead"><h1 className="phead__h">{title}</h1></header> : <Photo n={SPOT.comingSoonPage} className="soonpage__photo" wideOnly />}
         <p><SoonBadge /></p>
         {band ? null : <h1 className="soonpage__h">{title}</h1>}
         <p className="soonpage__p">{text}</p>

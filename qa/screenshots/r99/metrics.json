@@ -1,0 +1,122 @@
+[
+  {
+    "page": "/",
+    "size": "1440",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 1,
+    "longest": 58,
+    "reveals": 46,
+    "stillHidden": 0
+  },
+  {
+    "page": "/trackers/biggest-bets",
+    "size": "1440",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 1,
+    "longest": 57,
+    "reveals": 37,
+    "stillHidden": 0
+  },
+  {
+    "page": "/market/0xe2emarket1",
+    "size": "1440",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 14,
+    "stillHidden": 0
+  },
+  {
+    "page": "/insider-trading/EXDV",
+    "size": "1440",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 6,
+    "stillHidden": 0
+  },
+  {
+    "page": "/pricing",
+    "size": "1440",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 18,
+    "stillHidden": 0
+  },
+  {
+    "page": "/open",
+    "size": "1440",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 3,
+    "stillHidden": 0
+  },
+  {
+    "page": "/",
+    "size": "390",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 46,
+    "stillHidden": 0
+  },
+  {
+    "page": "/trackers/biggest-bets",
+    "size": "390",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 37,
+    "stillHidden": 0
+  },
+  {
+    "page": "/market/0xe2emarket1",
+    "size": "390",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 14,
+    "stillHidden": 0
+  },
+  {
+    "page": "/insider-trading/EXDV",
+    "size": "390",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 6,
+    "stillHidden": 0
+  },
+  {
+    "page": "/pricing",
+    "size": "390",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 1,
+    "longest": 50,
+    "reveals": 18,
+    "stillHidden": 0
+  },
+  {
+    "page": "/open",
+    "size": "390",
+    "status": 200,
+    "cls": 0,
+    "longTasks": 0,
+    "longest": 0,
+    "reveals": 3,
+    "stillHidden": 0
+  }
+]

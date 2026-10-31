@@ -41,7 +41,7 @@ export function PayModal({ path, variant, onClose }: { path: string; variant: st
     const html = document.documentElement, prev = html.style.overflow;
     html.style.overflow = "hidden";
     box.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
-    void fetch("/api/moves?limit=1&min=50000", { cache: "no-store" }).then(r => r.json() as Promise<{ items?: Pos[] }>).then(b => setPos(b.items?.[0] ?? null)).catch(() => undefined);
+    void fetch("/api/moves?best=24h", { cache: "no-store" }).then(r => r.json() as Promise<{ items?: Pos[] }>).then(b => setPos(b.items?.[0] ?? null)).catch(() => undefined);
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.preventDefault(); close("escape"); return; }
       if (e.key !== "Tab" || !box.current) return;

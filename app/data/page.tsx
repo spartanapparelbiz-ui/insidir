@@ -4,15 +4,14 @@
  * lib/accuracy/check.ts). */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageBand } from "@/components/PageBand";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SUPPORT_EMAIL } from "@/components/SiteFooter";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { clockET, dateTimeET } from "@/lib/moves/copy";
 import { readStatus, type Status } from "@/lib/status-page";
-import { BAND } from "@/lib/photos";
 import "../landing.css";
+import { RevealGroup } from "@/components/motion/Reveal";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Our data", description: "Every source behind Insidir with its live freshness, how late each can be, its limits, and the hourly accuracy checks." };
@@ -24,8 +23,8 @@ export default async function DataPage() {
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/data" tone="light" />
       <main className="wrap lp">
-        <PageBand n={BAND.about} title="Our data" />
-        <article className="lp-legal lp-about">
+        <header className="phead"><h1 className="phead__h">Our data</h1></header>
+        <RevealGroup as="article" className="lp-legal lp-about">
           <p className="lp-about__lead">Every position, amount and record on Insidir comes from a public record, and every card links to it under &ldquo;Where this comes from&rdquo;.</p>
 
           {status ? <>
@@ -33,7 +32,7 @@ export default async function DataPage() {
             <ul className="stat__list" data-testid="data-fresh">
               {status.sources.map(x => <li key={x.key} className="stat__row"><span className={`stat__dot stat__dot--${x.light}`} aria-hidden="true" /><span className="stat__name">{x.label}</span><span className="stat__note">{x.lastAt ? `${x.note.replace("Latest seen", "Latest seen")} (${clockET(x.lastAt)})` : x.note}</span></li>)}
             </ul>
-            <p className="stat__fine">As of {clockET(now)}. Health of every job: <Link href="/status">Status</Link>.</p>
+            <p className="stat__fine">As of {clockET(now)}. Sources: Polymarket, Kalshi and SEC EDGAR, read by our own jobs. Health of every job: <Link href="/status">Status</Link>.</p>
           </> : null}
 
           <h2>Where it comes from</h2>
@@ -69,7 +68,7 @@ export default async function DataPage() {
             </ul>
           </> : null}
           <p>The rules behind every number: <Link href="/methodology">Methodology</Link>.</p>
-        </article>
+        </RevealGroup>
         <div className="lp-legal__next">
           <Link className="btn btn--primary" href="/start">Start your 7-day trial</Link>
         </div>

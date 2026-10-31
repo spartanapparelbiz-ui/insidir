@@ -62,11 +62,13 @@ describe.skipIf(!URL0)("analyst notes in Postgres", () => {
     const { notesOnce, notesFor } = await import("@/lib/analyst/store");
     const { validateNote } = await import("@/lib/analyst/validate");
     const r = await notesOnce(db, NOW, { limit: 50 });
-    // The last 2 days only: "before" (3 days old) gets none.
-    expect(r.written).toBe(3);
-    expect(r.template).toBe(3);
-    const notes = await notesFor(db, ["now", "p1", "p2", "before"]);
-    expect([...notes.keys()].sort()).toEqual(["now", "p1", "p2"]);
+    // The backfill: every open position ("before" is 3 days old but still open) and positions settled in the last
+    // 7 days (h18, h19); older settled history gets none.
+    expect(r.written).toBe(6);
+    expect(r.template).toBe(6);
+    expect(r.left).toBe(0);
+    const notes = await notesFor(db, ["now", "p1", "p2", "before", "h17", "h18", "h19", "h0"]);
+    expect([...notes.keys()].sort()).toEqual(["before", "h18", "h19", "now", "p1", "p2"]);
     for (const n of notes.values()) expect(validateNote(n.text, n.facts), n.text).toMatchObject({ ok: true });
     expect(notes.get("now")!.text).toMatch(/^googleplay's largest position this month, 3\.\d× their median\. Their NBA record: 14–6, followable ROI/);
     // Nothing new: nothing written.

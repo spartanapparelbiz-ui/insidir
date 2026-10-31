@@ -9,7 +9,7 @@ export function Sparkline({ points, w = 56, h = 16, label }: { points: ReadonlyA
   const d = points.map((p, i) => `${i ? "L" : "M"}${x(p.at).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ");
   const last = points[points.length - 1]!;
   return (
-    <svg className="spark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label}>
+    <svg className="spark" data-draw="" width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label}>
       <path d={d} fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={x(last.at)} cy={y(last.v)} r="1.75" fill="currentColor" />
     </svg>

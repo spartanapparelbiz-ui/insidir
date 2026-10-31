@@ -3,7 +3,7 @@
  *   When: `delayMs` after a visitor lands on a public page (PAYWALL_POPUP_DELAY_MS, 6s; an A/B arm gets 12s), or on a
  *   desktop when the cursor leaves the top of the window, whichever comes first; if they're scrolling then, it waits
  *   until they've stopped for 1 second.
- *   Never: for anyone signed in, on the sign-up, legal and account pages.
+ *   Never: for anyone signed in, on sign-up, sign-in, checkout and account pages. Every other public page has it.
  *   How often: once per session; after a dismiss, not for 24 hours (localStorage; without storage, once per page load).
  * Rendered by app/layout.tsx for visitors only. */
 import { usePathname } from "next/navigation";
@@ -15,7 +15,7 @@ export const SEEN_KEY = "insidir_pay_seen";
 export const DISMISS_KEY = "insidir_pay_dismissed";
 const DAY = 86_400_000;
 /** Pages where it never shows. */
-export const NEVER = /^\/(start|login|welcome|checkout|onboarding|signin|reset|auth|terms|privacy|disclosures|security|settings|following|alerts|admin|dev|research)(\/|$)/;
+export const NEVER = /^\/(start|login|welcome|checkout|onboarding|signin|reset|auth|settings|following|alerts|admin|dev)(\/|$)/;
 
 const store = {
   get(k: "s" | "l", key: string): string | null { try { return (k === "s" ? sessionStorage : localStorage).getItem(key); } catch { return null; } },

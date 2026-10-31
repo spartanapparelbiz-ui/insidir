@@ -29,7 +29,7 @@ export default async function StatusPage() {
         <ul className="stat__list" data-testid="status-sources">
           {s.sources.map(x => <li key={x.key} className="stat__row"><Dot l={x.light} /><span className="stat__name">{x.label}</span><span className="stat__note">{x.note}</span><span className="stat__word">{WORD[x.light]}</span></li>)}
         </ul>
-        <p className="stat__fine">13F filings arrive quarterly, so a quiet week there is normal and doesn&apos;t change the overall status.</p>
+        <p className="stat__fine">Sources: each job's own last successful read of Polymarket, Kalshi and SEC EDGAR. 13F filings arrive quarterly, so a quiet week there is normal and doesn&apos;t change the overall status.</p>
 
         <h2>Worker jobs</h2>
         {s.jobs.length ? (

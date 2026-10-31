@@ -7,6 +7,7 @@ import { NavProgress } from "@/components/motion/NavProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ResearchPalette } from "@/components/research/ResearchPalette";
 import { PayPrompt } from "@/components/paywall/PayPrompt";
+import { LateBar } from "@/components/paywall/LateBar";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, VISITOR_COOKIE } from "@/lib/auth/session";
 import { JsonLd, organizationLd } from "@/lib/seo/jsonld";
@@ -75,6 +76,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <RegisterSW />
         <ResearchPalette />
         {visitor ? <PayPrompt delayMs={delay} variant={`delay_${Math.round(delay / 1000)}s`} /> : null}
+        {visitor ? <LateBar /> : null}
         <Motion />
         <Suspense fallback={null}><NavProgress /></Suspense>
         <Beacons />
