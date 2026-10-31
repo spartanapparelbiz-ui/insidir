@@ -185,7 +185,7 @@ test("a fund: its latest 13F, biggest adds and new positions; members also get t
   await expect(page.getByRole("heading", { name: "Top 10 holdings" })).toHaveCount(0);
   await signIn(context, "insidir");
   await page.goto("/feed?tab=stocks");
-  await page.locator("[data-move='13f:000099999826000002:037833100']").getByRole("link", { name: "E2E Fixture Capital" }).click();
+  await page.locator("[data-move='13f:000099999826000002:037833100']").getByRole("link", { name: "E2E Fixture Capital", exact: true }).click();
   await expect(page).toHaveURL("/funds/999998-e2e-fixture-capital");
   await expect(page.getByText(/48 quarters on file with the SEC\./)).toBeVisible();
   const top = page.locator("section", { has: page.getByRole("heading", { name: "Top 10 holdings" }) });

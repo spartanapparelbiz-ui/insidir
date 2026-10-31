@@ -42,6 +42,8 @@ export interface PreviewRow {
   headline: string;
   subline: string;
   ago: string;
+  /** Its analyst note, when the worker has written one. */
+  note?: string | null;
   /** How many positions the row adds up: the same market and side within an hour are one row. */
   n?: number;
   /** Prediction markets: the price on their side when they bought, and now (0..1); null when unknown. */
@@ -82,13 +84,14 @@ const sidePrice = (yes: number | null | undefined, side: Move["outcomeSide"]): n
 
 async function rowsOf(db: Db, moves: Move[], plan: Plan, region: Region | null, now: number): Promise<PreviewRow[]> {
   const items = new Map((await feedItems(db, moves, plan, region, now).catch(() => [])).map(f => [f.id, f]));
+  // feedItems carries each one's analyst note.
   const info = new Map<string, Awaited<ReturnType<typeof infoFor>>>();
   for (const source of ["polymarket", "kalshi"] as const) info.set(source, await infoFor(db, source, moves.filter(m => m.source === source).map(m => m.marketId)).catch(() => new Map()));
   return moves.map(m => {
     const f = items.get(m.id);
     const yes = m.source === "sec" ? null : info.get(m.source)?.get(m.marketId)?.yesPrice ?? null;
     return {
-      id: m.id, art: artOfMove(m), amount: m.amount, n: (m as Move & { n?: number }).n ?? 1, headline: headlineOf(m), subline: sublineOf({ ...m, leagueLabel: leagueLabel(m) }), ago: f?.ago ?? "",
+      id: m.id, note: items.get(m.id)?.analyst?.text ?? null, art: artOfMove(m), amount: m.amount, n: (m as Move & { n?: number }).n ?? 1, headline: headlineOf(m), subline: sublineOf({ ...m, leagueLabel: leagueLabel(m) }), ago: f?.ago ?? "",
       entry: m.source === "sec" ? null : m.avgPrice, now: m.result ? null : sidePrice(yes, m.outcomeSide), result: m.result,
       record: f?.record ?? null, href: m.source === "sec" && m.detail?.kind === "insider" && m.detail.ticker ? `/insider-trading/${encodeURIComponent(m.detail.ticker)}` : `/market/${encodeURIComponent(m.marketId)}`,
     };

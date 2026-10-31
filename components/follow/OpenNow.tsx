@@ -9,6 +9,7 @@ import { Refresh } from "@/components/follow/Refresh";
 import { PAST } from "@/lib/copy";
 import { roiText } from "@/lib/follow/math";
 import type { OpenRow } from "@/lib/follow/open";
+import { AnalystNote } from "@/components/analyst/AnalystNote";
 import { dollars } from "@/lib/moves/copy";
 
 const pct = (p: number | null) => (p === null ? "—" : `${Math.round(p * 100)}%`);
@@ -32,6 +33,12 @@ export function OpenNow({ rows, total, member, now, trialHref, more = true }: { 
             <span className="dtable__sub"><span className={tone(r.record.net)}>{roiText(r.record.net, r.record.staked)}</span> followable · {r.record.n} settled</span></span>,
           r.n > 1 ? <span key="a">{r.n} positions · {dollars(r.amount)}</span> : dollars(r.amount), pct(r.seenPrice), r.nowPrice === null ? "—" : <span className={r.seenPrice === null ? undefined : tone(r.nowPrice - r.seenPrice)}>{pct(r.nowPrice)}</span>, left(r.endAt, now),
         ])} />
+      {rows[0]?.analyst ? (
+        <div className="opennow__first" data-testid="open-first-note">
+          <p className="opennow__firsth">{rows[0].headline}</p>
+          <AnalystNote text={rows[0].analyst.text} facts={rows[0].analyst.facts} at={rows[0].analyst.at} />
+        </div>
+      ) : null}
       <p className="opennow__note">{PAST} Seen at is the price on their side when Insidir showed the position; following it costs about a point more.</p>
       {!member && more && total > rows.length ? (
         <p className="opennow__more" data-testid="open-more"><b>{(total - rows.length).toLocaleString("en-US")} more open.</b> Members see every one, live. <a className="tlink tlink--go" href={trialHref}>Try 7 days for $1 <span className="arrow" aria-hidden="true">→</span></a></p>

@@ -37,8 +37,12 @@ export default async function globalSetup() {
     const chunks: Buffer[] = [];
     req.on("data", c => chunks.push(c as Buffer));
     req.on("end", () => {
-      const body = JSON.parse(Buffer.concat(chunks).toString() || "{}") as { model?: string; response_format?: { type?: string }; messages?: Array<{ content: Array<{ type: string; image_url?: { url?: string } }> }> };
-      const image = body.messages?.[0]?.content.find(c => c.type === "image_url")?.image_url?.url ?? "";
+      const body = JSON.parse(Buffer.concat(chunks).toString() || "{}") as { model?: string; response_format?: { type?: string }; messages?: Array<{ content: string | Array<{ type: string; image_url?: { url?: string } }> }> };
+      // Text-only requests (analyst notes, Research) get a 503: the browser specs check the planner and template paths
+      // (the model paths are unit-tested with their own stand-ins).
+      const first = body.messages?.[0]?.content;
+      if (!Array.isArray(first)) { res.writeHead(503, { "content-type": "application/json" }); res.end(JSON.stringify({ error: { message: "e2e: text requests are not served" } })); return; }
+      const image = first.find(c => c.type === "image_url")?.image_url?.url ?? "";
       asked.push({ path: req.url, model: body.model, format: body.response_format?.type ?? null, image: /^data:([^;]+);base64,/.exec(image)?.[1] ?? null,
         auth: req.headers.authorization, referer: req.headers["http-referer"], title: req.headers["x-title"] });
       writeFileSync(join(OUT, "openrouter.json"), JSON.stringify(asked, null, 2));

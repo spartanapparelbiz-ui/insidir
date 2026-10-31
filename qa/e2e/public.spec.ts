@@ -6,7 +6,9 @@ import { dealId, footerOk, MEMBER_PAGES, noHorizontalScroll, OPEN_PAGES, PRO_PAG
 test("members-only pages send visitors to log in; the feed, markets, profiles and Whales open for visitors 30 minutes late; account APIs say no", async ({ page, context }) => {
   for (const path of MEMBER_PAGES) {
     await page.goto(path);
-    await expect(page, path).toHaveURL(new RegExp(`/login\\?next=${encodeURIComponent(path).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+    // The next page, encoded or not (/settings sends "?next=/settings").
+    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    await expect(page, path).toHaveURL(new RegExp(`/login\\?next=(${esc(encodeURIComponent(path))}|${esc(path)})`));
   }
   for (const path of OPEN_PAGES) {
     const res = await page.goto(path);

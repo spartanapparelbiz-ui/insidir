@@ -67,11 +67,11 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await expect(page.getByTestId("view-as").getByRole("button", { name: "Visitor" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator('a[href="/signin"]').first()).toBeAttached();
   await page.screenshot({ path: `qa/screenshots/view-as-visitor-${w}.png` });
-  await page.goto("/feed");
-  await expect(page).toHaveURL(/\/login\?next=%2Ffeed/);
+  await page.goto("/following");
+  await expect(page).toHaveURL(/\/login\?next=%2Ffollowing/);
   await page.getByTestId("view-as").getByRole("button", { name: "Member" }).click();
-  await page.goto("/feed");
-  await expect(page).toHaveURL(/\/feed$/);
+  await page.goto("/following");
+  await expect(page).toHaveURL(/\/following$/);
 
   // Signing in with Whop again is the same account.
   await page.context().clearCookies();

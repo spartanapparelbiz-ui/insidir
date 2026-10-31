@@ -76,6 +76,7 @@ function Row({ kind, r }: { kind: MarketKind; r: PreviewRow }) {
           <span className="lrow__h">{r.headline}</span>
           <span className="lrow__sub">{kind === "stocks" ? [r.insider, r.filed ? `filed ${r.filed}` : null].filter(Boolean).join(" · ") : r.subline}</span>
           {r.record ? <span className="lrow__rec">{r.record}</span> : null}
+          {r.note ? <span className="lrow__an"><span className="lrow__anl">Analyst note</span> {r.note}</span> : null}
         </span>
         <span className="lrow__fig">
           <b>{(r.n ?? 1) > 1 ? `${r.n} positions · ${dollars(r.amount)}` : dollars(r.amount)}</b>

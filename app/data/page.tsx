@@ -60,7 +60,7 @@ export default async function DataPage() {
             <li><strong>It&apos;s a record of what happened, not advice.</strong> Large positions lose too: the <Link href="/results">Track record</Link> page shows every settled position, losses included.</li>
           </ul>
 
-          <h2>How we check it</h2>
+          <h2 id="checks">How we check it</h2>
           <p>Every hour we re-read 20 random positions and 20 profile numbers from their sources. Anything that doesn&apos;t match is hidden until it does, and we get an email. Spotted something wrong? Write to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
           {status?.checks.length ? <>
             <h3>The last checks</h3>

@@ -3,6 +3,8 @@
  * outcome, the price Insidir showed it at, the price now, the time left to settle, and that tracker's followable
  * record. Visitors see the 3 newest (and how many more), on their usual 30-minute delay; members see every one, live.
  * Losing trackers never appear here. Server only. */
+import { notesFor } from "@/lib/analyst/store";
+import type { Fact } from "@/lib/analyst/types";
 import { desc, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { moves as movesT } from "@/lib/db/schema";
@@ -54,6 +56,8 @@ export interface OpenRow {
   nowPrice: number | null;
   /** When the market is due to settle. */
   endAt: number | null;
+  /** Its analyst note, when the worker has written one. */
+  analyst?: { text: string; facts: Fact[]; at: number } | null;
 }
 
 export async function openFromWinners(db: Db, plan: Plan, now: number): Promise<{ rows: OpenRow[]; total: number }> {
@@ -94,5 +98,8 @@ export async function openFromWinners(db: Db, plan: Plan, now: number): Promise<
   }
   // The count is every open one; a visitor sees the 3 newest of those old enough for them (30 minutes late).
   const total = rows.length;
-  return { rows: movePlan(plan).delayMs > 0 ? rows.filter(r => r.at <= until).slice(0, 3) : rows, total };
+  const shown = movePlan(plan).delayMs > 0 ? rows.filter(r => r.at <= until).slice(0, 3) : rows;
+  const notes = await notesFor(db, shown.slice(0, 10).map(r => r.id)).catch(() => new Map());
+  for (const r of shown) { const n = notes.get(r.id); if (n) r.analyst = { text: n.text, facts: n.facts.facts, at: n.at }; }
+  return { rows: shown, total };
 }

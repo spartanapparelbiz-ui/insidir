@@ -135,3 +135,6 @@
 .lt__soon summary::-webkit-details-marker { display: none; }
 .lt__soon[open] p { margin-top: 4px; }
 .lt__soon .lval__notify { justify-content: center; }
+/* The analyst note under a row on the big screen. */
+.lrow__an { margin-top: 4px; color: var(--text); font-size: 12px; line-height: 1.4; white-space: normal; }
+.lrow__anl { color: var(--muted); font-weight: 600; }

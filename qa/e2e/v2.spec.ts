@@ -7,7 +7,7 @@ test("landing: hero with one black button, three laptops and Crypto · Soon, Ope
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
-  await expect(page.getByText("Insidir tracks every large position on Polymarket, Kalshi and SEC filings, and shows what following each tracker would have made.")).toBeVisible();
+  await expect(page.getByText("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.")).toBeVisible();
   const cta = page.locator('[data-cta="hero"]');
   await expect(cta).toHaveText("Start your 7-day trial");
   await expect(page.getByRole("link", { name: /^Explore trackers/ })).toHaveAttribute("href", "/trackers");
@@ -323,10 +323,11 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   expect(sports.items.every(i => i.tab === "sports")).toBe(true);
 });
 
-test("home: no zero trader box or 0 won · 0 lost, and the plan card lists what /start lists", async ({ page }) => {
+test("home: no zero trader box or 0 won · 0 lost; the pricing page's plan card lists what /start lists", async ({ page }) => {
   await page.goto("/");
   const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
+  await page.goto("/pricing");
   const plan = page.locator(".plan2 .start__list li");
   const n = await plan.count();
   expect(n).toBeGreaterThan(0);
@@ -334,6 +335,6 @@ test("home: no zero trader box or 0 won · 0 lost, and the plan card lists what 
   await expect(page.locator(".plan2 .start__more")).toHaveText(/^More coming: /);
   await page.goto("/start");
   const start = await page.getByTestId("start-list").locator("li").allInnerTexts();
-  await page.goto("/");
+  await page.goto("/pricing");
   expect(await plan.allInnerTexts()).toEqual(start);
 });

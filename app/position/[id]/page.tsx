@@ -49,6 +49,7 @@ export default async function PositionPage({ params }: { params: Promise<{ id: s
       <main className="wrap app2 position">
         {item ? (
           <>
+            <h1 className="sr-only">{item.headline}</h1>
             <MoveCard m={item} follow={paid ? "off" : "locked"} trialHref={trial} />
             <AsOf at={until} live={paid} sources={[m.source === "sec" ? SOURCES.sec : m.source === "polymarket" ? SOURCES.polymarket : SOURCES.kalshi, SOURCES.methodology]} />
             <p className="position__links">

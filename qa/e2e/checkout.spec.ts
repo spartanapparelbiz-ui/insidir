@@ -66,8 +66,8 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
 
   // Sign out: members only. /login has one Continue, and it comes back to where they were going.
   await page.getByRole("button", { name: "Sign out" }).click();
-  await page.goto("/feed");
-  await expect(page).toHaveURL(/\/login\?next=%2Ffeed/);
+  await page.goto("/following");
+  await expect(page).toHaveURL(/\/login\?next=%2Ffollowing/);
   await expect(page.getByRole("heading", { name: "Log in to Insidir" })).toBeVisible();
   await expect(page.getByTestId("continue")).toHaveText("Continue");
   await expect(page.getByText("Secure sign-in and payments by Whop.")).toBeVisible();
@@ -75,7 +75,7 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   await expect(page.getByText(/forgot password/i)).toHaveCount(0);
   await page.screenshot({ path: `qa/screenshots/login-${w}.png` });
   await page.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/feed$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/following$/, { timeout: 15_000 });
   const cookie = (await page.context().cookies()).find(c => c.name === "insidir_session")!;
   expect(cookie.httpOnly).toBe(true);
   expect(cookie.expires * 1000 - Date.now()).toBeGreaterThan(29 * 86_400_000);
@@ -86,7 +86,7 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   // A refund ends access: Whop's access check says no.
   await post("/__refund", { email });
   expect((await q<{ plan: string }>("select plan from terminal.users where email = $1", [email]))[0]!.plan).toBe("free");
-  await page.goto("/feed");
+  await page.goto("/following");
   await expect(page).toHaveURL(/\/start$/);
 });
 

@@ -532,3 +532,31 @@ a.rtable__a:hover span { text-decoration: underline; }
 .rbar:focus-within { box-shadow: inset 0 0 0 1px var(--text); }
 .rbar__go { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--bg); color: var(--text); font: 600 var(--t15)/1 var(--sans); cursor: pointer; }
 .rbar__kbd { color: var(--muted); font: 500 11px/1 var(--sans); }
+.opennow__first { margin-top: 16px; } .opennow__firsth { font-size: var(--t15); font-weight: 600; }
+
+/* Home: streaming placeholders, "Every position, analyzed.", the track record, the pricing table. */
+.sec3__wait { border-radius: var(--r-card); background: var(--bg); }
+.sec3__foot { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.anlz__grid { display: grid; gap: 16px; margin-top: 24px; }
+@media (min-width: 1000px) { .anlz__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; } }
+.anlz__card { padding: 20px; border-radius: var(--r-card); background: var(--paper); box-shadow: inset 0 0 0 1px var(--border); text-align: left; }
+.anlz__top { display: flex; align-items: center; gap: 10px; }
+.anlz__kind { color: var(--muted); font-size: var(--t13); }
+.anlz__h { margin-top: 12px; font-size: var(--t17); font-weight: 600; line-height: 1.25; }
+.anlz__h a { color: inherit; text-decoration: none; }
+.anlz__h a:hover { text-decoration: underline; }
+.anlz__meta, .anlz__sub { margin-top: 4px; color: var(--muted); font-size: var(--t13); }
+.rec__list { margin: 24px 0 0; padding: 0; list-style: none; }
+.rec__row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 12px 0; box-shadow: inset 0 -1px 0 var(--border); text-align: left; }
+.rec__main { display: flex; flex-direction: column; min-width: 0; }
+.rec__h { overflow: hidden; color: var(--text); font-size: var(--t15); font-weight: 600; white-space: nowrap; text-overflow: ellipsis; text-decoration: none; }
+.rec__h:hover { text-decoration: underline; }
+.rec__sub { overflow: hidden; color: var(--muted); font-size: var(--t13); white-space: nowrap; text-overflow: ellipsis; }
+.rec__fig { display: flex; flex-direction: column; align-items: flex-end; font-size: var(--t13); font-variant-numeric: tabular-nums; }
+.rec__fig b { font-size: var(--t15); font-weight: 600; }
+.ptable__price { margin-top: 16px; font-size: var(--t22); }
+.ptable__price b { font-weight: 600; }
+.ptable__fine { margin-top: 4px; color: var(--muted); font-size: var(--t13); }
+.ptable__t { margin-top: 20px; font-size: var(--t15); }
+.ptable__t th[scope="row"] { font-weight: 500; text-align: left; }
+.rbar { text-align: left; }

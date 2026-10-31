@@ -32,7 +32,7 @@ const V2_UI = [
 describe("V2 landing page", () => {
   it("renders its sections in order: hero, three laptops, Open now, Leaderboard, How Insidir works, the proof strip, track record, pricing, FAQ", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero3"', "<Laptops ", 'id="open-h"', 'id="board-h"', 'id="steps-h"', "<ProofStrip ", "<TrustBlock ", "<PricingCards ", "<FaqV2 "];
+    const markers = ['className="hero3"', "<ResearchBar ", "<Laptops ", "<OpenSection ", "<AnalyzedSection ", "<BoardAndPortfolio ", 'id="steps-h"', "<ProofSection ", "<RecordSection ", "<PricingTable ", "<FaqV2 />"];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -47,7 +47,8 @@ describe("V2 landing page", () => {
     expect(read("components/home/HeroCta.tsx")).toContain("Start your 7-day trial");
     expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">Explore trackers <span');
     for (const f of ["app/page.tsx", "components/home/HeroCta.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
-    for (const h of [">Open now from winning trackers</h2>", ">Leaderboard</h2>", ">How Insidir works</h2>"]) expect(src).toContain(h);
+    for (const h of ['title="Open now from winning trackers"', 'title="Every position, analyzed."', 'title="Leaderboard"', 'title="How Insidir works"', 'title="Track record"', 'title="Pricing"']) expect(src).toContain(h);
+    expect(src).toContain("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
     const story = read("components/home/Story.tsx");
     expect(story).toContain('id="how"');
     for (const c of ["A large position is opened.", "Insidir records it within seconds.", "The account and its record, in one view.", "An alert on its next position."]) expect(story).toContain(c);
