@@ -6,7 +6,7 @@ import { clockET, dateTimeET } from "@/lib/moves/copy";
 export interface Source { label: string; href: string }
 
 export const SOURCES = {
-  polymarket: { label: "Polymarket", href: "https://docs.polymarket.com" },
+  polymarket: { label: "Polymarket (Polygonscan)", href: "https://polygonscan.com" },
   kalshi: { label: "Kalshi", href: "https://kalshi.com" },
   sec: { label: "SEC EDGAR", href: "https://www.sec.gov/edgar/search/" },
   methodology: { label: "How it's computed", href: "/methodology" },
