@@ -67,3 +67,4 @@
 .post__caption { display: grid; gap: 8px; width: 100%; }
 .post__text { width: 100%; min-height: 200px; resize: vertical; font-family: var(--sans); line-height: 1.5; padding: 12px; }
 @media (min-width: 800px) { .post { grid-template-columns: 270px minmax(0, 1fr); } }
+.adelete { display: grid; gap: 8px; max-width: 320px; }

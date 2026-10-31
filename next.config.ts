@@ -25,6 +25,10 @@ const config: NextConfig = {
   htmlLimitedBots: /.*/,
   // Pages a visitor has already seen (or that were prefetched) open instantly on the way back, for 30 seconds.
   experimental: { staleTimes: { dynamic: 30, static: 180 } },
+  // How it works became Methodology.
+  async redirects() {
+    return [{ source: "/how-it-works", destination: "/methodology", permanent: true }];
+  },
   // Apple Pay's domain verification file (from Whop, public/.well-known): exactly as is, as plain text.
   async headers() {
     return [{ source: "/.well-known/apple-developer-merchantid-domain-association", headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }, { key: "Cache-Control", value: "public, max-age=3600" }] }];

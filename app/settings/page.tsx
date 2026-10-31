@@ -50,6 +50,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   // Notices from the no-JS form fallbacks (saved).
   const notice = q.saved ? "Saved." : null;
+  const confirmDelete = q.delete === "confirm";
 
   return (
     <>
@@ -128,6 +129,19 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               </div>
             ) : null}
             <form method="post" action="/auth/logout"><button type="submit" className="btn btn--secondary">Sign out</button></form>
+          </div>
+        </section>
+
+        <section className="agroup" aria-labelledby="g-delete" id="delete">
+          <h2 id="g-delete" className="agroup__h">Delete account</h2>
+          <div className="agroup__body">
+            <p className="asum">Removes your account, follows, alerts and checked bets from Insidir right away. It doesn&apos;t cancel your membership: {paid ? <>cancel it first on your <a href={MANAGE_URL} target="_blank" rel="noopener noreferrer">Whop orders page</a>.</> : "you have none."}</p>
+            <form method="post" action="/auth/delete" className="adelete" data-testid="delete-account">
+              <label className="afield__hint" htmlFor="confirm-delete">Type DELETE to confirm</label>
+              <input id="confirm-delete" className="input" name="confirm" autoComplete="off" required pattern="DELETE" aria-invalid={confirmDelete || undefined} />
+              {confirmDelete ? <p className="afield__hint" role="alert">Type DELETE in capitals to delete your account.</p> : null}
+              <button type="submit" className="btn btn--secondary">Delete account</button>
+            </form>
           </div>
         </section>
       </main>

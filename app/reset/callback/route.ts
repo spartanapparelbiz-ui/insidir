@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 /** Pages a signed-in non-member asked for that they can still use; anywhere else (the home page included) they go to
  *  /start to get Insidir. */
-const OPEN_TO_ALL = /^\/(start|welcome|settings|pricing|terms|privacy|faq|how-it-works|about)(\/|\?|$)/;
+const OPEN_TO_ALL = /^\/(start|welcome|settings|pricing|terms|privacy|faq|help|methodology|data|status|security|disclosures|credits|changelog|about)(\/|\?|$)/;
 
 export async function GET(req: NextRequest) {
   const to = (path: string) => NextResponse.redirect(new URL(path, appUrl()), 303);

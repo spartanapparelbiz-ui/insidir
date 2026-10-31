@@ -324,3 +324,21 @@
 .lp-legal ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
 .lp-legal ol li strong, .lp-legal ul li strong { color: var(--text); }
 .lp-about__lead { color: var(--text) !important; font-size: var(--t24); line-height: 1.5; }
+
+.lp-legal__date { margin-top: 8px; color: var(--muted); font-size: var(--t13); }
+.lp-legal__fine { margin-top: 10px; color: var(--muted); font-size: var(--t13); }
+
+/* /status and /data: one row per source, job or check, a coloured dot (green working, amber behind, red failing). */
+.stat__head { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; }
+.stat__list { margin: 12px 0 0; padding: 0 !important; list-style: none !important; }
+.stat__row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: baseline; gap: 4px 12px; padding: 12px 0; box-shadow: inset 0 -1px 0 var(--border); }
+.stat__row::before { display: none !important; }
+.stat__name { font-weight: 600; }
+.stat__note { grid-column: 2; color: var(--muted); font-size: var(--t13); font-variant-numeric: tabular-nums; }
+.stat__word { grid-column: 3; grid-row: 1; font-size: var(--t13); font-weight: 600; }
+.stat__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--grey-4); align-self: center; }
+.stat__dot--green { background: var(--money); }
+.stat__dot--amber { background: var(--grey-3); box-shadow: 0 0 0 3px var(--grey-2); }
+.stat__dot--red { background: var(--loss); }
+.stat__fine { color: var(--muted); font-size: var(--t13); }
+.credits { columns: 2 280px; column-gap: 32px; } .credits li { break-inside: avoid; }

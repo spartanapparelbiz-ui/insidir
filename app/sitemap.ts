@@ -13,7 +13,7 @@ import { trackerHref, TRACKERS } from "@/lib/trackers";
 export const dynamic = "force-dynamic";
 
 /** Pages anyone can open (no log-in), newest content first in importance. */
-const PUBLIC_PATHS = ["/", "/trackers", ...TRACKERS.map(t => trackerHref(t.slug)), "/sports", "/markets", "/results", "/how-it-works", "/pricing", "/faq", "/about", "/data", "/privacy", "/terms"];
+const PUBLIC_PATHS = ["/", "/trackers", ...TRACKERS.map(t => trackerHref(t.slug)), "/sports", "/markets", "/results", "/methodology", "/pricing", "/faq", "/help", "/about", "/data", "/status", "/security", "/disclosures", "/credits", "/changelog", "/privacy", "/terms"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = appUrl();

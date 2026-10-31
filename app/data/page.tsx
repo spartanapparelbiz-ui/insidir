@@ -1,28 +1,40 @@
-/* About our data (/data): where every number comes from, how late each source can be, and what it can't tell you.
- * Linked from the footer and from every profile. Plain words; every claim here matches what the worker actually does
- * (worker/index.ts, lib/accuracy/check.ts). */
-import { GET_CTA } from "@/lib/copy";
+/* Our data (/data): every source with its live freshness ("Latest Polymarket trade seen 40s ago"), how late each
+ * can be, what it can't tell you, and the history of the hourly accuracy checks (lib/status-page.ts). Linked from the
+ * footer and from every profile. Every claim matches what the worker actually does (worker/index.ts,
+ * lib/accuracy/check.ts). */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageBand } from "@/components/PageBand";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SUPPORT_EMAIL } from "@/components/SiteFooter";
 import { getViewer } from "@/lib/auth/viewer";
+import { getDb, hasDatabase } from "@/lib/db";
+import { clockET, dateTimeET } from "@/lib/moves/copy";
+import { readStatus, type Status } from "@/lib/status-page";
 import { BAND } from "@/lib/photos";
 import "../landing.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "About our data", description: "Where Insidir's data comes from, how late each source can be, and its limits." };
+export const metadata: Metadata = { title: "Our data", description: "Every source behind Insidir with its live freshness, how late each can be, its limits, and the hourly accuracy checks." };
 
 export default async function DataPage() {
-  const viewer = await getViewer();
+  const now = Date.now();
+  const [viewer, status] = await Promise.all([getViewer(), hasDatabase() ? readStatus(getDb(), now).catch(() => null) : Promise.resolve<Status | null>(null)]);
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/data" tone="light" />
       <main className="wrap lp">
-        <PageBand n={BAND.about} title="About our data" />
+        <PageBand n={BAND.about} title="Our data" />
         <article className="lp-legal lp-about">
           <p className="lp-about__lead">Every position, amount and record on Insidir comes from a public record, and every card links to it under &ldquo;Where this comes from&rdquo;.</p>
+
+          {status ? <>
+            <h2>Freshness, live</h2>
+            <ul className="stat__list" data-testid="data-fresh">
+              {status.sources.map(x => <li key={x.key} className="stat__row"><span className={`stat__dot stat__dot--${x.light}`} aria-hidden="true" /><span className="stat__name">{x.label}</span><span className="stat__note">{x.lastAt ? `${x.note.replace("Latest seen", "Latest seen")} (${clockET(x.lastAt)})` : x.note}</span></li>)}
+            </ul>
+            <p className="stat__fine">As of {clockET(now)}. Health of every job: <Link href="/status">Status</Link>.</p>
+          </> : null}
 
           <h2>Where it comes from</h2>
           <ul>
@@ -50,9 +62,16 @@ export default async function DataPage() {
 
           <h2>How we check it</h2>
           <p>Every hour we re-read 20 random positions and 20 profile numbers from their sources. Anything that doesn&apos;t match is hidden until it does, and we get an email. Spotted something wrong? Write to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
+          {status?.checks.length ? <>
+            <h3>The last checks</h3>
+            <ul className="stat__list" data-testid="data-checks">
+              {status.checks.slice(0, 24).map(c => <li key={c.runAt} className="stat__row"><span className={`stat__dot stat__dot--${c.mismatch ? "amber" : "green"}`} aria-hidden="true" /><span className="stat__name">{dateTimeET(c.runAt)}</span><span className="stat__note">{c.ok} of {c.checked} matched the source{c.mismatch ? `, ${c.mismatch} hidden until ${c.mismatch === 1 ? "it matches" : "they match"}` : ""}</span></li>)}
+            </ul>
+          </> : null}
+          <p>The rules behind every number: <Link href="/methodology">Methodology</Link>.</p>
         </article>
         <div className="lp-legal__next">
-          <Link className="btn btn--primary" href="/start">{GET_CTA}</Link>
+          <Link className="btn btn--primary" href="/start">Start your 7-day trial</Link>
         </div>
       </main>
     </>

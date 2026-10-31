@@ -60,7 +60,7 @@ export async function readLive(page: Page, ms = 3000): Promise<string> {
 }
 
 /** Pages every visitor can open, and the ones a signed-in Pro member adds. */
-export const PUBLIC_PAGES = ["/", "/open", "/top", "/results", "/pricing", "/sports", "/markets", "/stocks", "/how-it-works", "/faq", "/data", "/terms", "/privacy", "/about", "/login", "/start"];
+export const PUBLIC_PAGES = ["/", "/open", "/top", "/results", "/pricing", "/sports", "/markets", "/stocks", "/methodology", "/faq", "/help", "/data", "/status", "/security", "/disclosures", "/credits", "/changelog", "/terms", "/privacy", "/about", "/login", "/start"];
 /** Members only: a visitor is sent to log in, a member without a plan to /start. */
 export const MEMBER_PAGES = ["/feed", "/following", "/alerts", "/p/0xe2e00000000000000000000000000000000000aa", "/market/0xe2emarket1", "/receipts", "/gaps", "/whales", "/pnl"];
 export const PRO_PAGES = ["/feed", "/results", "/top", "/following", "/gaps", "/settings", "/alerts", "/pnl", "/whales", "/market/0xe2emarket1"];
