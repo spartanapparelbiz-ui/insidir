@@ -5,8 +5,9 @@
  * (3-D Secure, a bank page) didn't go through: then nothing was charged and they can try again. */
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { beacon } from "@/components/app/beacon";
 
-export function Welcome({ status }: { status: string | null }) {
+export function Welcome({ status, next = "/" }: { status: string | null; next?: string }) {
   const failed = status === "failed" || status === "canceled";
   const [slow, setSlow] = useState(false);
   useEffect(() => {
@@ -15,7 +16,8 @@ export function Welcome({ status }: { status: string | null }) {
     const tick = async () => {
       if (gone) return;
       const r = await fetch("/api/checkout/status", { method: "POST" }).then(x => x.json() as Promise<{ member: boolean; next?: string }>).catch(() => ({ member: false } as { member: boolean; next?: string }));
-      if (r.member) { location.replace(r.next ?? "/feed?welcome=1"); return; }
+      if (r.member) {
+        try { const from = sessionStorage.getItem("insidir_pay_from"); if (from) { beacon("paid_seen", "popup", { page: from }); sessionStorage.removeItem("insidir_pay_from"); } } catch { /* attribution only */ } const to = r.next ?? "/onboarding"; location.replace(next !== "/" ? `${to}${to.includes("?") ? "&" : "?"}next=${encodeURIComponent(next)}` : to); return; }
       if (++n === 30) setSlow(true);
       setTimeout(tick, n < 30 ? 1000 : 3000);
     };
@@ -23,16 +25,16 @@ export function Welcome({ status }: { status: string | null }) {
     return () => { gone = true; };
   }, [failed]);
   if (failed) return (
-    <div className="login">
-      <h1 className="login__h">Payment didn&apos;t go through.</h1>
-      <p className="login__p">Nothing was charged. You can try again with another card.</p>
-      <Link className="btn btn--primary btn--big btn--block" href="/start">Try again</Link>
+    <div className="astart rise-in">
+      <h1 className="astart__h">Payment didn&apos;t go through.</h1>
+      <p className="aerr" role="alert">Nothing was charged. Try again, or use another card.</p>
+      <div className="astart__cta"><Link className="btn btn--primary btn--big btn--block acta" href="/start">Try again</Link></div>
     </div>
   );
   return (
-    <div className="login" aria-live="polite" data-testid="setting-up">
-      <h1 className="login__h">{slow ? "Payment received, finishing up" : "Setting up your account…"}</h1>
-      {slow ? <p className="login__p">Your payment went through. Your account is still being set up; this page keeps checking. Refresh in a moment, or write to <a href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : null}
+    <div className="astart rise-in" aria-live="polite" data-testid="setting-up">
+      <h1 className="astart__h">{slow ? "Payment received, finishing up" : "Setting up your account…"}</h1>
+      {slow ? <p className="astart__sub">Your payment went through. Your account is still being set up; this page keeps checking. Refresh in a moment, or write to <a href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : null}
       <span className="welcome__bar" aria-hidden="true" />
       {slow ? <button type="button" className="btn btn--primary btn--block" onClick={() => location.reload()}>Refresh</button> : null}
     </div>

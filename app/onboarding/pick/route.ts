@@ -1,9 +1,11 @@
 /* POST /onboarding/pick (the form on /onboarding): follows the trackers ticked (t=<slug>, up to 10, known slugs only),
- * marks the member onboarded, records onboarding_done or onboarding_skip, and lands on Following. Skip follows none. */
+ * marks the member onboarded, records onboarding_done or onboarding_skip, and lands on Open now (or the page they
+ * came from, ?next). Skip follows none. */
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { recordEvent } from "@/lib/analytics";
 import { appUrl } from "@/lib/app-url";
+import { safeNext } from "@/lib/auth/next";
 import { SESSION_COOKIE, userForToken, VISITOR_COOKIE } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -23,5 +25,5 @@ export async function POST(req: NextRequest) {
   await db.update(users).set({ onboardedAt: new Date() }).where(eq(users.id, user.id));
   await recordEvent({ name: skipped ? "onboarding_skip" : "onboarding_done", visitorId: req.cookies.get(VISITOR_COOKIE)?.value ?? null, userId: user.id, props: { trackers: picks.length } })
     .catch(() => undefined);
-  return NextResponse.redirect(new URL("/following", appUrl()), 303);
+  return NextResponse.redirect(new URL(safeNext(String(form?.get("next") ?? "/open")), appUrl()), 303);
 }

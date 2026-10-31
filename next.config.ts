@@ -29,8 +29,6 @@ const config: NextConfig = {
   async redirects() {
     return [
       { source: "/how-it-works", destination: "/methodology", permanent: true },
-      // A bare ticker (/NVDA, crawled from old links) is that company's insider trading page.
-      { source: "/:ticker([A-Z][A-Z.]{0,5})", destination: "/insider-trading/:ticker", permanent: true },
     ];
   },
   // Apple Pay's domain verification file (from Whop, public/.well-known): exactly as is, as plain text.

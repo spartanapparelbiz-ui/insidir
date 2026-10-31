@@ -26,7 +26,7 @@ function loadScript(src: string): Promise<void> {
 
 type State = "opening" | "ready" | "error" | "unconfigured";
 
-export function StartCheckout({ elementsUrl, signedInAs }: { elementsUrl: string; signedInAs: string }) {
+export function StartCheckout({ elementsUrl, signedInAs, next = "/" }: { elementsUrl: string; signedInAs: string; next?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<State>("opening");
   const [error, setError] = useState<string | null>(null);
@@ -37,34 +37,34 @@ export function StartCheckout({ elementsUrl, signedInAs }: { elementsUrl: string
     const o = (await res?.json().catch(() => null)) as { planId?: string; metadata?: Record<string, string>; email?: string | null; returnUrl?: string; message?: string } | null;
     if (!res?.ok || !o?.planId) {
       if (res?.status === 503) { setState("unconfigured"); return; }
-      setError(o?.message ?? "Something went wrong. Try again."); setState("error");
+      setError(res ? "The checkout didn't open. Try again." : "We couldn't reach the checkout. Check your connection and try again."); setState("error");
       return;
     }
-    await loadScript(elementsUrl);
+    try { await loadScript(elementsUrl); } catch { setError("We couldn't reach the checkout. Check your connection and try again."); setState("error"); return; }
     if (!box.current || !window.WhopElements) { setState("error"); return; }
     const checkout = window.WhopElements({ appearance: APPEARANCE }).checkout.create({
       plan: o.planId, metadata: o.metadata, returnUrl: o.returnUrl,
-      onComplete: (c: { result?: string }) => { if (c.result === "payment") location.assign("/welcome?status=succeeded"); },
+      onComplete: (c: { result?: string }) => { if (c.result === "payment") location.assign(`/welcome?status=succeeded${next && next !== "/" ? `&next=${encodeURIComponent(next)}` : ""}`); },
     });
     checkout.create("checkout", o.email ? { buyerEmail: o.email, lockBuyerEmail: true } : {}).mount(box.current);
     setState("ready");
-    beacon("checkout_start", "start");
+    let from: string | null = null;
+    try { from = sessionStorage.getItem("insidir_pay_from"); } catch { from = null; }
+    beacon("checkout_start", from ? "popup" : "start", from ? { page: from } : undefined);
   }, [elementsUrl]);
 
   useEffect(() => { void open().catch(() => setState("error")); }, [open]);
 
   return (
-    <div className="start__flow">
-      <p className="start__who" data-testid="start-signed-in">Signed in as <b>{signedInAs}</b>. <a href="/login/start?next=%2Fstart&amp;fresh=1">Use a different account</a></p>
-      <section className="start__pay" aria-label="Payment">
-        <p className="start__step">Pay $1 today · then $39/mo, cancel anytime</p>
-        {state === "opening" ? <p className="start__note" role="status">Opening secure checkout…</p> : null}
-        {state === "error" ? <p className="login__err" role="alert">{error ?? "The checkout didn't load. Refresh the page; if it keeps happening, write to hello@aethric.llc."}</p> : null}
-        {state === "unconfigured" ? <p className="login__err" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
-        <div ref={box} className="start__frame" hidden={state !== "ready"} />
-        <p className="start__charge" data-testid="charge-line" suppressHydrationWarning>{chargeLine(Date.now())}</p>
-        <p className="continue__by">Secure sign-in and payments by Whop. Cancel anytime from your Whop orders.</p>
-      </section>
+    <div className="astart astart--pay" data-testid="start-pay">
+      <h1 className="astart__h astart__h--small">Start for $1.</h1>
+      <p className="astart__plan" data-testid="charge-line" suppressHydrationWarning>{chargeLine(Date.now())}</p>
+      {state === "opening" ? <p className="astart__note" role="status"><span className="acta__spin acta__spin--ink" aria-hidden="true" /> Opening secure checkout…</p> : null}
+      {state === "error" ? <p className="aerr" role="alert">{error ?? "The checkout didn't open. Try again."} <button type="button" className="aerr__retry" onClick={() => void open()}>Try again</button></p> : null}
+      {state === "unconfigured" ? <p className="aerr" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
+      <div ref={box} className="astart__frame" hidden={state !== "ready"} />
+      <p className="astart__who" data-testid="start-signed-in">Signed in as <b>{signedInAs}</b> · <a href="/login/start?next=%2Fstart&amp;fresh=1">Change account</a></p>
+      <p className="continue__by">Secure sign-in and payments by Whop.</p>
     </div>
   );
 }

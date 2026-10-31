@@ -1,67 +1,56 @@
-/* Get Insidir (/start). Left: what you get (only what's live) and one real big move from the last 24 hours, its
- * trader's record locked. Right: signed out, one button, "Continue", to Whop's sign-in (it comes back here); signed in
- * without Insidir, the embedded Whop checkout opens in place (components/auth/StartCheckout.tsx), 7 days for $1, then
- * $39/month, carrying our account id so the billing webhook links the membership. Members go straight to the feed. */
+/* Get Insidir (/start), never more than 2 steps (components/auth/AuthSplit.tsx frames it):
+ *   1. Signed out: "Follow the big money.", the price, 3 checkmarks, "Continue" to Whop's sign-in (it comes back here).
+ *   2. Signed in without Insidir: the embedded Whop checkout (components/auth/StartCheckout.tsx), email prefilled,
+ *      the plan line and "Change account", nothing else. On payment, /welcome.
+ * Members (and FREE_ACCESS_EMAILS) go straight into the app. ?error= from a cancelled sign-in says so, with a retry. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AuthSplit } from "@/components/auth/AuthSplit";
 import { ContinueButton } from "@/components/auth/ContinueButton";
 import { StartCheckout } from "@/components/auth/StartCheckout";
-import { SiteHeader } from "@/components/SiteHeader";
-import { MoveCard } from "@/components/v2/MoveCard";
-import { StartList } from "@/components/v2/Pricing";
 import { AB_COOKIE, recordEvent } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
+import { safeNext } from "@/lib/auth/next";
 import { getViewer } from "@/lib/auth/viewer";
 import { ELEMENTS_URL } from "@/lib/billing/whop";
-import { getDb, hasDatabase } from "@/lib/db";
-import { feedFor, type FeedItem } from "@/lib/moves/feed";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
-import { CANCEL_LINE } from "@/lib/copy";
+import { isFreeAccess } from "@/lib/billing/free";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Get Insidir", description: `Try Insidir 7 days for $${TRIAL.fee}, then $${PLANS.insidir.price}/month. Cancel anytime.`, robots: { index: false } };
+export const metadata: Metadata = { title: "Get Insidir", description: `Insidir: $${TRIAL.fee} for your first week, then $${PLANS.insidir.price}/month. Cancel anytime.`, robots: { index: false } };
 
-const DAY = 86_400_000;
+const CHECKS = [
+  "Every large position across sports, prediction markets and stocks",
+  "Verified records and followable returns for every tracker and trader",
+  "What the winning trackers hold right now",
+];
+const ERRORS: Record<string, string> = {
+  cancelled: "Sign-in was cancelled. Continue when you're ready.",
+  failed: "Sign-in didn't go through. Try again.",
+  expired: "That sign-in took too long. Try again.",
+  network: "We couldn't reach Whop. Check your connection and try again.",
+};
 
-export default async function StartPage() {
-  const viewer = await getViewer();
-  if (viewer.user && isPaid(viewer.plan)) redirect("/");
-  const jar = await cookies();
-  const now = Date.now();
-  let move: FeedItem | null = null;
-  if (hasDatabase()) {
-    // The biggest real move of the last 24 hours that a visitor may see (30 minutes late, the record locked).
-    move = (await feedFor(getDb(), "free", viewer.region, { byAmount: true, since: now - DAY, limit: 1 }, now).catch(() => []))[0] ?? null;
-  }
+export default async function StartPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
+  const [viewer, jar, sp] = await Promise.all([getViewer(), cookies(), searchParams]);
+  const next = safeNext(sp.next ?? "/");
+  if (viewer.user && (isPaid(viewer.plan) || isFreeAccess(viewer.user.email))) redirect(next === "/" ? "/" : next);
   void recordEvent({ name: "start_view", visitorId: jar.get(VISITOR_COOKIE)?.value ?? null, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined);
+  const error = sp.error ? ERRORS[sp.error] ?? ERRORS.failed : null;
   return (
-    <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/start" offer={false} />
-      <main className="dark start">
-        <div className="wrap start__in">
-          <section className="start__what" aria-labelledby="start-h">
-            <p className="start__kicker">Insidir</p>
-            <h1 id="start-h" className="start__h">Try Insidir 7 days for $1.</h1>
-            <p className="start__price"><span className="plan2__amt">${TRIAL.fee}</span> <span className="plan2__unit">for {TRIAL.days} days</span></p>
-            <p className="start__then">{CANCEL_LINE}</p>
-            <StartList />
-            <p className="start__fine">Already a member? <Link href="/login">Log in</Link>.</p>
-          </section>
-          <div className="start__checkout">
-            {move ? (
-              <div className="start__move" data-testid="start-move">
-                <p className="start__movelabel">A real position from the last 24 hours</p>
-                <MoveCard m={move} follow="locked" trialHref="/start" compact />
-              </div>
-            ) : null}
-            {viewer.user
-              ? <StartCheckout elementsUrl={ELEMENTS_URL} signedInAs={viewer.user.email ?? viewer.user.name ?? "your Whop account"} />
-              : <div className="start__flow start__signin" data-testid="start-continue"><ContinueButton next="/start" /></div>}
-          </div>
+    <AuthSplit step={viewer.user ? 2 : 1}>
+      {viewer.user ? (
+        <StartCheckout elementsUrl={ELEMENTS_URL} signedInAs={viewer.user.email ?? viewer.user.name ?? "your Whop account"} next={next} />
+      ) : (
+        <div className="astart rise-in" data-testid="start-continue">
+          <h1 className="astart__h">Follow the big money.</h1>
+          <p className="astart__sub">${TRIAL.fee} for your first week, then ${PLANS.insidir.price}/month. Cancel anytime.</p>
+          <ul className="astart__checks" data-testid="start-list">{CHECKS.map(c => <li key={c}>{c}</li>)}</ul>
+          {error ? <p className="aerr" role="alert">{error}</p> : null}
+          <div className="astart__cta"><ContinueButton next={next === "/" ? "/start" : `/start?next=${encodeURIComponent(next)}`} /></div>
         </div>
-      </main>
-    </>
+      )}
+    </AuthSplit>
   );
 }

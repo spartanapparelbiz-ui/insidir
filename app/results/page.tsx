@@ -17,7 +17,6 @@ import { memo } from "@/lib/memo";
 import { trustFacts } from "@/lib/trust";
 import { RecordCount, RecordLines } from "@/components/TrustBlock";
 import { SOLD_EARLY_SHARE } from "@/lib/moves/realize";
-import { ScrollOffer } from "@/components/home/ScrollOffer";
 import { isPaid } from "@/lib/plans";
 import { getDb, hasDatabase } from "@/lib/db";
 import { agoText, dollars } from "@/lib/moves/copy";
@@ -122,7 +121,6 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
           </div>
         )}
       </main>
-      {member ? null : <ScrollOffer where="results" />}
     </>
   );
 }

@@ -47,15 +47,15 @@ test("free access: Whop sign-in makes the account; a full member with no payment
 
   // A full member: the feed, never /start, no sign-up pop-up, no sticky bar.
   // A new account goes through onboarding first, like any new member.
-  await expect(page.getByRole("heading", { name: "Pick 3 trackers to follow." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You're in." })).toBeVisible();
   await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/\/following$/);
+  await expect(page).toHaveURL(/\/open$/);
   await page.goto("/start");
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/");
   await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(400);
-  await expect(page.getByTestId("signup-popup")).toHaveCount(0);
+  await expect(page.getByTestId("pay-prompt")).toHaveCount(0);
   await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
 
   // View as: Visitor shows the logged-out site; Member brings it back.
@@ -94,21 +94,25 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await expect(page.getByTestId("free-access")).toContainText("Free access");
 });
 
-test("/start: five live lines, one 'More coming' line, a real move with its record locked, and the payment line", async ({ page }) => {
+test("/start: one screen, the price, three checkmarks, one Continue, the Whop line, and the live strip", async ({ page }) => {
   await page.goto("/start");
-  const list = page.getByTestId("start-list").locator("li");
-  const n = await list.count();
-  expect(n).toBeGreaterThan(0);
-  expect(n).toBeLessThanOrEqual(5);
-  const lines = await list.allInnerTexts();
-  expect(new Set(lines).size).toBe(lines.length);
-  await expect(page.getByTestId("start-list")).not.toContainText(/coming soon/i);
-  await expect(page.locator(".start__more")).toHaveText(/^More coming: .*crypto\.$/);
-  const move = page.getByTestId("start-move");
-  await expect(move.locator(".move")).toBeVisible();
-  await expect(move.getByTestId("locked-record")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Follow the big money." })).toBeVisible();
+  await expect(page.getByText("$1 for your first week, then $39/month. Cancel anytime.")).toBeVisible();
+  await expect(page.getByTestId("start-list").locator("li")).toHaveText(["Every large position across sports, prediction markets and stocks", "Verified records and followable returns for every tracker and trader", "What the winning trackers hold right now"]);
+  const btn = page.getByTestId("continue");
+  await expect(btn).toHaveText("Continue");
+  expect((await btn.boundingBox())!.height).toBeGreaterThanOrEqual(52);
   await expect(page.getByText("Secure sign-in and payments by Whop.")).toBeVisible();
+  await expect(page.locator(".asplit__steps span")).toHaveCount(2);
+  if (page.viewportSize()!.width >= 900) await expect(page.locator(".astrip__row").first()).toBeVisible();
+  else expect((await page.locator(".asplit__photo").boundingBox())!.height).toBe(220);
   await page.screenshot({ path: `qa/screenshots/start-${page.viewportSize()!.width}.png`, fullPage: true });
+  await page.goto("/start?error=cancelled");
+  await expect(page.getByRole("alert")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { level: 1, name: "Welcome back." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
+  await page.screenshot({ path: `qa/screenshots/login-${page.viewportSize()!.width}.png`, fullPage: true });
 });
 
 test("signed in without paying: back later, /start opens the checkout already signed in; funnel events are recorded", async ({ page }) => {

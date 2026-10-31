@@ -1,12 +1,13 @@
-/* Onboarding (/onboarding): straight after the first payment, one screen: pick trackers to follow, ranked by
- * followable ROI (those with 30+ settled positions first), the top three already ticked. Follow (or Skip) lands on
- * Following (app/onboarding/pick). Works without JavaScript. Members only; someone already onboarded goes home. */
+/* Onboarding (/onboarding): straight after the first payment, one screen: "You're in." and the top 6 trackers by
+ * followable ROI (those with 30+ settled positions first), the best three already ticked. Start (or Skip) lands on
+ * Open now, or the page they came from (app/onboarding/pick). Works without JavaScript. Members only; someone already onboarded goes home. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TrackerCover, coverStats } from "@/components/trackers/TrackerCover";
 import { requireMember } from "@/lib/auth/viewer";
+import { safeNext } from "@/lib/auth/next";
 import { PAST } from "@/lib/copy";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
@@ -18,19 +19,22 @@ import { trackerStats, type TrackerStats } from "@/lib/trackers-store";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pick your trackers", robots: { index: false } };
 
-export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ again?: string }> }) {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ again?: string; next?: string }> }) {
   const viewer = await requireMember("/onboarding");
-  if (viewer.user?.onboarded && !(await searchParams).again) redirect("/");
+  const sp = await searchParams;
+  if (viewer.user?.onboarded && !sp.again) redirect("/");
+  const next = safeNext(sp.next ?? "/open");
   const stats = hasDatabase() ? await trackerStats(getDb(), Date.now()).catch(() => new Map<TrackerSlug, TrackerStats>()) : new Map<TrackerSlug, TrackerStats>();
-  const ranked = rankForOnboarding(visibleTrackers(isReady), stats);
+  const ranked = rankForOnboarding(visibleTrackers(isReady), stats).slice(0, 6);
   return (
     <>
       <SiteHeader signedIn plan={viewer.plan} offer={false} tone="light" />
       <main className="wrap onb">
-        <h1 className="onb__h">Pick 3 trackers to follow.</h1>
-        <p className="onb__sub">Ranked by followable ROI: what $100 on every position would have made at the price Insidir showed it, plus one point. Their new positions show up in Following.</p>
+        <h1 className="onb__h">You&apos;re in.</h1>
+        <p className="onb__sub">The top trackers by followable ROI: what $100 on every position would have made at the price Insidir showed it, plus one point. The best three are picked; their new positions show up in Following.</p>
         <form method="post" action="/onboarding/pick" className="onb__form" data-testid="onboarding">
-          <ul className="onb__list">
+          <input type="hidden" name="next" value={next} />
+          <ul className="onb__list onb__tiles">
             {ranked.map(({ t, roi, s }, i) => {
               const r = s?.records.all;
               return (
@@ -50,7 +54,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           </ul>
           <p className="onb__fine">{PAST}</p>
           <div className="onb__ctas">
-            <button type="submit" className="btn btn--primary">Follow and continue</button>
+            <button type="submit" className="btn btn--primary btn--big acta">Start</button>
             <button type="submit" name="skip" value="1" className="onb__skip">Skip</button>
           </div>
         </form>

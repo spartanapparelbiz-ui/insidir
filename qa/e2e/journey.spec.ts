@@ -59,12 +59,12 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
 
     // Onboarding: trackers by followable ROI, the top three with a record ticked; Follow lands on Following.
-    await expect(page.getByRole("heading", { name: "Pick 3 trackers to follow." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "You're in." })).toBeVisible();
     await shot("onboarding-1");
     const ticked = await page.locator("[data-testid=onboarding] input:checked").evaluateAll(els => els.map(e => (e as HTMLInputElement).value));
     expect(ticked.length).toBeLessThanOrEqual(3);
-    await page.getByRole("button", { name: "Follow and continue" }).click();
-    await expect(page).toHaveURL(/\/following$/);
+    await page.getByRole("button", { name: "Start" }).click();
+    await expect(page).toHaveURL(/\/open$/);
     await expect.poll(async () => (await q<{ target: string }>("select target from terminal.follows where user_id = $1 and kind = 'tracker' order by target", [MOCK_USER.sub])).map(r => r.target)).toEqual([...ticked].sort());
     await shot("following-first");
 

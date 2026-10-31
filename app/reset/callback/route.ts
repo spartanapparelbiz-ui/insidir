@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   try { saved = JSON.parse(req.cookies.get(LOGIN_COOKIE)?.value ?? "{}") as typeof saved; } catch { saved = {}; }
   const done = (res: NextResponse) => { res.cookies.delete({ name: LOGIN_COOKIE, path: "/" }); return res; };
   const denied = req.nextUrl.searchParams.get("error");
-  if (denied) { logLine(`cancelled at Whop (${denied.slice(0, 60)})`); return done(to("/login")); }
+  if (denied) { logLine(`cancelled at Whop (${denied.slice(0, 60)})`); return done(to(safeNext(saved.next).startsWith("/start") ? "/start?error=cancelled" : "/login?error=cancelled")); }
   if (!code || !state || state !== saved.state || !saved.verifier) { logLine("expired or mismatched state"); return done(to("/login?error=expired")); }
   if (!hasDatabase()) return done(to("/login?error=unavailable"));
   const db = getDb(), ip = clientIp(req);
