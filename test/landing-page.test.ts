@@ -30,9 +30,9 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("renders its sections in order: the centred hero with the four laptops, Featured, Top performers and Popular, pricing, FAQ", () => {
+  it("renders its sections in order: hero, three laptops, Open now, Leaderboard, How Insidir works, the proof strip, track record, pricing, FAQ", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero3"', "<Laptops ", 'id="feat-h"', "<PeriodTabs ", "Popular</h2>", "<PricingCards ", "<FaqV2 "];
+    const markers = ['className="hero3"', "<Laptops ", 'id="open-h"', 'id="board-h"', 'id="steps-h"', "<ProofStrip ", "<TrustBlock ", "<PricingCards ", "<FaqV2 "];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -41,16 +41,13 @@ describe("V2 landing page", () => {
   it("says the brief's words", () => {
     const src = read("app/page.tsx");
     expect(src).toContain("Follow the big money.");
-    expect(src).toContain("Each one is a live portfolio with a public track record.");
-    expect(src).toContain("<HeroCta />");
-    expect(src).toContain("<LivePortfolio ");
-    // Trackers are the product: the hero's one button opens them, and the position check is not on home at all.
-    expect(read("components/home/HeroCta.tsx")).toMatch(/href="\/trackers" data-cta="hero"/);
-    expect(read("components/home/HeroCta.tsx")).toContain("Explore trackers <span");
-    expect(read("components/home/HeroCta.tsx")).toContain('href="/results">See the track record <span className="arrow"');
-    for (const f of ["app/page.tsx", "components/home/HeroCta.tsx", "components/home/LivePortfolio.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
-    expect(read("components/home/LivePortfolio.tsx")).toContain("A live portfolio of big money");
-    for (const h of [">Featured</h2>", ">Top performers</h2>", ">Popular</h2>"]) expect(src).toContain(h);
+    expect(src).toContain("<HeroCta trialHref={trial} />");
+    // The hero's one black button starts the trial; the trackers are a text link next to it. No position check on home.
+    expect(read("components/home/HeroCta.tsx")).toMatch(/btn btn--primary[^"]*" href=\{trialHref\} data-cta="hero"/);
+    expect(read("components/home/HeroCta.tsx")).toContain("Start your 7-day trial");
+    expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">Explore trackers <span');
+    for (const f of ["app/page.tsx", "components/home/HeroCta.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
+    for (const h of [">Open now from winning trackers</h2>", ">Leaderboard</h2>", ">How Insidir works</h2>"]) expect(src).toContain(h);
     const story = read("components/home/Story.tsx");
     expect(story).toContain('id="how"');
     for (const c of ["A large position is opened.", "Insidir records it within seconds.", "The account and its record, in one view.", "An alert on its next position."]) expect(story).toContain(c);

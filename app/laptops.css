@@ -7,8 +7,9 @@
 @media (min-width: 900px) { .lt__h { font-size: var(--t56); } }
 .lt__sub { margin-top: 12px; color: var(--muted); font-size: var(--t17); text-align: center; }
 
-.lt__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 16px; margin-top: 40px; }
-@media (min-width: 900px) { .lt__row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; margin-top: 56px; } }
+.lt__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 10px; margin-top: 40px; }
+@media (min-width: 900px) { .lt__row { gap: 40px; margin-top: 56px; } }
+@media (max-width: 599px) { .lt__name { font-size: var(--t13); margin-top: 8px; } .lt__src { display: none; } }
 
 .lt__item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; border: 0; background: none; color: var(--text);
   font: inherit; cursor: pointer; text-align: center; border-radius: 16px;
@@ -127,3 +128,10 @@
 .lt__panel { scroll-margin-top: 88px; }
 .lt__panel { text-align: left; }
 .lscreen__bar svg { min-width: 56px; }
+
+/* Crypto: one line under the laptops, opening a heads-up form. */
+.lt__soon { margin: 24px auto 0; max-width: 560px; text-align: center; color: var(--muted); font-size: var(--t15); }
+.lt__soon summary { display: inline-flex; align-items: center; min-height: var(--tap); cursor: pointer; color: var(--text); font-weight: 600; list-style: none; }
+.lt__soon summary::-webkit-details-marker { display: none; }
+.lt__soon[open] p { margin-top: 4px; }
+.lt__soon .lval__notify { justify-content: center; }

@@ -65,6 +65,8 @@ export interface MarketPreview {
   window: string;
   proof: ProofItem[];
   live: boolean;
+  /** When the numbers were read (the "as of" stamp). */
+  at: number;
 }
 
 const T = sql`terminal.moves`;
@@ -90,13 +92,24 @@ async function rowsOf(db: Db, moves: Move[], plan: Plan, region: Region | null, 
   });
 }
 
+/** The best tracker in a group by followable ROI, among those with a record (30+ settled). */
+function bestOf(stats: Map<TrackerSlug, { records: { all: { won: number; lost: number; net: number; staked?: number } } }>, group: string) {
+  const best = TRACKERS.filter(t => t.group === group && t.kind === "bets").map(t => ({ t, r: stats.get(t.slug)?.records.all }))
+    .filter(x => x.r && x.r.won + x.r.lost >= MIN_SETTLED && (x.r.staked ?? 0) > 0)
+    .sort((a, b) => b.r!.net / b.r!.staked! - a.r!.net / a.r!.staked!)[0];
+  if (!best) return null;
+  const r = best.r!;
+  return { item: (what: string): ProofItem => ({ label: `Best ${what} tracker: ${best.t.name}`, value: `${roiText(r.net, r.staked!)} followable ROI`,
+    note: `${hundredLine({ staked: r.staked!, net: r.net })} ${(r.won + r.lost).toLocaleString("en-US")} settled.` }) };
+}
+
 /** One market's preview for this viewer. */
 export async function marketPreview(db: Db, kind: MarketKind, plan: Plan, region: Region | null, now: number): Promise<MarketPreview> {
   const p = movePlan(plan);
   const live = p.delayMs === 0;
   const until = now - p.delayMs;
   const limit = live ? MEMBER_ROWS : VISITOR_ROWS;
-  if (kind === "crypto") return { kind, rows: [], total: 0, window: "", proof: [], live };
+  if (kind === "crypto") return { kind, rows: [], total: 0, window: "", proof: [], live, at: now };
 
   if (kind === "sports") {
     let window = "Today";
@@ -107,25 +120,25 @@ export async function marketPreview(db: Db, kind: MarketKind, plan: Plan, region
       db.execute(sql`select coalesce(sum(${T}.amount), 0)::float as v from ${T} where ${base()} and ${T}.tab = 'sports' and ${T}.at > ${new Date(now - 30 * DAY)}`).then(r => Number((r.rows[0] as { v: number }).v)).catch(() => 0),
       trackerStats(db, now).catch(() => new Map()),
     ]);
-    // The best league tracker by followable ROI, among those with a record (30+ settled).
-    const best = TRACKERS.filter(t => t.group === "Leagues").map(t => ({ t, r: stats.get(t.slug)?.records.all }))
-      .filter(x => x.r && x.r.won + x.r.lost >= MIN_SETTLED && (x.r.staked ?? 0) > 0)
-      .sort((a, b) => b.r!.net / b.r!.staked! - a.r!.net / a.r!.staked!)[0];
     const proof: ProofItem[] = [{ label: "Sports volume tracked, last 30 days", value: volume(vol) }];
-    if (best) proof.push({ label: `Best sports tracker: ${best.t.name}`, value: `${roiText(best.r!.net, best.r!.staked!)} followable ROI`, note: `${hundredLine({ staked: best.r!.staked!, net: best.r!.net })} ${best.r!.won + best.r!.lost} settled.` });
-    return { kind, rows, total: all.length, window, proof, live };
+    const best = bestOf(stats, "Leagues");
+    if (best) proof.push(best.item("sports"));
+    return { kind, rows, total: all.length, window, proof, live, at: now };
   }
 
   if (kind === "markets") {
     const all = await listMoves(db, { tab: "markets", where: sql`${topics()} and ${T}.result is null`, since: now - 60 * DAY, until, byAmount: true, limit: MEMBER_ROWS }).catch(() => []);
-    const [rows, agg] = await Promise.all([
+    const [rows, agg, mstats] = await Promise.all([
       rowsOf(db, all.slice(0, limit), plan, region, now),
       db.execute(sql`select coalesce(sum(${T}.amount) filter (where ${T}.at > ${new Date(now - 30 * DAY)}), 0)::float as v,
           count(*) filter (where ${T}.result is null and ${T}.at > ${new Date(now - 60 * DAY)})::int as open
         from ${T} where ${base()} and ${topics()}`).then(r => r.rows[0] as { v: number; open: number }).catch(() => ({ v: 0, open: 0 })),
+      trackerStats(db, now).catch(() => new Map()),
     ]);
-    return { kind, rows, total: all.length, window: "Open now", live,
-      proof: [{ label: "Volume on these topics, last 30 days", value: volume(Number(agg.v)) }, { label: "Open positions right now", value: Number(agg.open).toLocaleString("en-US") }] };
+    const bestTopic = bestOf(mstats, "Topics");
+    return { kind, rows, total: all.length, window: "Open now", live, at: now,
+      proof: [{ label: "Volume on these topics, last 30 days", value: volume(Number(agg.v)) }, { label: "Open positions right now", value: Number(agg.open).toLocaleString("en-US") },
+        ...(bestTopic ? [bestTopic.item("topic")] : [])] };
   }
 
   // Stocks: the latest insider purchases, newest filing first.
@@ -148,13 +161,13 @@ export async function marketPreview(db: Db, kind: MarketKind, plan: Plan, region
     const last = d.ticker ? closes.get(d.ticker)?.at(-1)?.close : undefined;
     r.change = last && d.pricePerShare > 0 ? last / d.pricePerShare - 1 : null;
   }
-  return { kind, rows, total: all.length, window: "Latest filings", live,
+  return { kind, rows, total: all.length, window: "Latest filings", live, at: now,
     proof: [{ label: "CEO purchases, last 30 days", value: volume(Number(agg.v)) }, { label: "Insider purchases filed this week", value: Number(agg.week).toLocaleString("en-US") }] };
 }
 
 /** All four, for the home page. */
 export async function marketPreviews(db: Db, plan: Plan, region: Region | null, now: number): Promise<Record<MarketKind, MarketPreview>> {
   const out = {} as Record<MarketKind, MarketPreview>;
-  for (const k of MARKET_KINDS) out[k] = await marketPreview(db, k, plan, region, now).catch(() => ({ kind: k, rows: [], total: 0, window: "", proof: [], live: movePlan(plan).delayMs === 0 }));
+  for (const k of MARKET_KINDS) out[k] = await marketPreview(db, k, plan, region, now).catch(() => ({ kind: k, rows: [], total: 0, window: "", proof: [], live: movePlan(plan).delayMs === 0, at: now }));
   return out;
 }

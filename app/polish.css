@@ -395,3 +395,35 @@ main.skel { min-height: 100vh; }
 .board__fig span { color: var(--muted); font-size: var(--t13); }
 .board .seg { margin-top: 16px; }
 .plan2__fine { font-size: var(--t13); }
+
+/* ---------- footer: who, three link columns, the legal lines ---------- */
+.foot__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+@media (min-width: 700px) { .foot__cols { grid-template-columns: repeat(3, minmax(0, auto)); gap: 0 48px; } }
+.foot__cols .foot__links { display: grid; align-content: start; gap: 0; }
+.foot__cols .foot__links a { min-height: 36px; }
+.foot__legal { display: grid; gap: 8px; font-size: var(--t13); line-height: 1.5; }
+.foot__gambler { color: var(--text); font-weight: 600; }
+
+/* ---------- the data stamp: live dot or 30-min delay, as of, source ---------- */
+.asof { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 12px; color: var(--muted); font-size: var(--t13); font-variant-numeric: tabular-nums; }
+.asof a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.asof a:hover { color: var(--text); }
+.asof__live { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-weight: 600; }
+.asof__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text); }
+@media (prefers-reduced-motion: no-preference) { .asof__dot { animation: pulse2 2s ease-in-out infinite; } }
+.asof__delay { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); color: var(--text); font-weight: 600; }
+
+/* ---------- home: hero fine print, how it works, the live proof strip ---------- */
+.hero3__fine { margin-top: 16px; color: var(--muted); font-size: var(--t13); max-width: 40ch; text-align: center; }
+.steps__list { display: grid; gap: 32px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 900px) { .steps__list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; } }
+.steps__item { padding-top: 20px; box-shadow: inset 0 1px 0 var(--text); }
+.steps__n { display: block; font-size: var(--t32); font-weight: 600; letter-spacing: var(--tight); }
+.steps__h { margin-top: 12px; font-size: var(--t22); font-weight: 600; letter-spacing: var(--tight); line-height: 1.2; }
+.steps__p { margin-top: 8px; color: var(--muted); font-size: var(--t15); line-height: 1.5; }
+.proof__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; margin: 0; }
+@media (min-width: 900px) { .proof__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; } }
+.proof__item { padding-top: 16px; box-shadow: inset 0 1px 0 var(--border); }
+.proof__item dt { color: var(--muted); font-size: var(--t13); }
+.proof__item dd { margin: 6px 0 0; font-size: var(--t32); font-weight: 600; letter-spacing: var(--tight); font-variant-numeric: tabular-nums; }
+.proof__item dd.proof__note { margin-top: 4px; color: var(--muted); font-size: var(--t13); font-weight: 400; letter-spacing: 0; }

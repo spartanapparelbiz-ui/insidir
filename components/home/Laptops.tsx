@@ -4,17 +4,19 @@
  * preview of that market from real rows (lib/markets/preview.ts), never blank. A laptop is a button: clicking it opens
  * a full-width panel below the row with a large laptop whose screen is the scrollable preview (left, ~60%) and what a
  * member gets with live proof (right, ~40%). Click it again, press × or Esc to close; click another to switch. The URL
- * hash (#sports, #markets, #stocks, #crypto) opens a panel, so it can be linked to. Visitors see 3 rows, 30 minutes late;
+ * hash (#sports, #markets, #stocks) opens a panel, so it can be linked to. Visitors see 3 rows, 30 minutes late;
  * members every row, live; the open panel re-reads every 30 seconds. Motion is off under prefers-reduced-motion. */
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { MoveArt } from "@/components/MoveArt";
 import { Wordmark } from "@/components/Wordmark";
 import { PAST } from "@/lib/copy";
+import { AsOf, SOURCES } from "@/components/data/AsOf";
 import type { MarketKind, MarketPreview, PreviewRow } from "@/lib/markets/preview";
 import { dollars } from "@/lib/moves/copy";
 
 interface Info { name: string; sources: string; title: string; bullets: string[]; soon?: boolean }
-const KINDS: readonly MarketKind[] = ["sports", "markets", "stocks", "crypto"];
+/** The three laptops; crypto isn't live, so it's one "Crypto · Soon" line under them. */
+const KINDS: readonly MarketKind[] = ["sports", "markets", "stocks"];
 const INFO: Record<MarketKind, Info> = {
   sports: { name: "Sports", sources: "Polymarket · Kalshi", title: "Every large bet on every game.",
     bullets: ["Every position over $10K, as it's placed.", "Who placed it, and their full record.", "How it settled.", "League trackers ranked by followable ROI."] },
@@ -140,6 +142,7 @@ function Value({ kind, d, trialHref, signedIn }: { kind: MarketKind; d: MarketPr
           </dl>
         ) : null}
       </>}
+      {info.soon ? null : <AsOf at={d.at} live={d.live} sources={kind === "stocks" ? [SOURCES.sec, SOURCES.methodology] : [SOURCES.polymarket, SOURCES.kalshi, SOURCES.methodology]} />}
       <div className="lval__cta">
         <a className="btn btn--primary" href={trialHref}>Start your 7-day trial</a>
         <p className="lval__fine">$1 for the first week, then $39 a month. Cancel anytime.</p>
@@ -210,7 +213,7 @@ export function Laptops({ data, trialHref, signedIn }: { data: Record<MarketKind
   return (
     <section className="lt" aria-labelledby="lt-h">
       <div className="wrap">
-        <h2 id="lt-h" className="lt__h">Four markets. One membership.</h2>
+        <h2 id="lt-h" className="lt__h">Three markets. One membership.</h2>
         <p className="lt__sub">Click a laptop to look inside.</p>
         <div className={`lt__row${open ? " has-open" : ""}`}>
           {KINDS.map(k => (
@@ -222,6 +225,11 @@ export function Laptops({ data, trialHref, signedIn }: { data: Record<MarketKind
             </button>
           ))}
         </div>
+        <details className="lt__soon">
+          <summary>Crypto · Soon</summary>
+          <p>Large positions on crypto price markets, and the wallets behind them. Included in your membership when it launches.</p>
+          <Notify signedIn={signedIn} />
+        </details>
         <div id="lt-panel" ref={panel} role="region" aria-labelledby={open ? "lt-panel-h" : undefined} aria-label={open ? undefined : "Market preview"} className="lt__panel" hidden={!open} data-kind={open ?? undefined}>
           {open ? <div className="lt__panelin">
             <button type="button" className="lt__x" aria-label="Close preview" onClick={() => show(null, true)}>×</button>
