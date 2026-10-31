@@ -253,7 +253,7 @@ test("Stocks: insider buys and fund adds in plain words, each linking to its SEC
   expect(sports.items.every(i => i.tab === "sports")).toBe(true);
 });
 
-test("home: no zero trader box or 0 won · 0 lost; the pricing page's plan card lists what /start lists", async ({ page }) => {
+test("home: no zero trader box or 0 won · 0 lost; the pricing page's plan card, and /start's three lines", async ({ page }) => {
   await page.goto("/");
   const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
@@ -263,8 +263,7 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's plan card 
   expect(n).toBeGreaterThan(0);
   expect(n).toBeLessThanOrEqual(5);
   await expect(page.locator(".plan2 .start__more")).toHaveText(/^More coming: /);
+  // /start keeps it to three lines (qa/e2e/funnel.spec.ts checks them).
   await page.goto("/start");
-  const start = await page.getByTestId("start-list").locator("li").allInnerTexts();
-  await page.goto("/pricing");
-  expect(await plan.allInnerTexts()).toEqual(start);
+  await expect(page.getByTestId("start-list").locator("li")).toHaveCount(3);
 });

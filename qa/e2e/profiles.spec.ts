@@ -171,7 +171,10 @@ test("a company's insider trading page: every insider trade, newest first, and h
   await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(3);
   await expect(page.locator("[data-locked='sec-history']")).toHaveCount(0);
   await page.screenshot({ path: shotName("company-member", page), fullPage: true });
-  expect((await page.goto("/insider-trading/NOPE"))?.status()).toBe(404);
+  // A ticker we hold nothing for: a page that says so, never a 404 (crawlers follow old links), and not indexed.
+  expect((await page.goto("/insider-trading/NOPE"))?.status()).toBe(200);
+  await expect(page.getByTestId("sec-pending")).toContainText("NOPE");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 });
 
 test("a fund: its latest 13F, biggest adds and new positions; members also get top holdings and every quarter", async ({ page, context }) => {

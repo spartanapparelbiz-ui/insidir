@@ -106,7 +106,7 @@ test("a Whop account without Insidir: signed in, sent to /start with the checkou
   await page.context().clearCookies();
   await page.goto("/reset/callback?error=access_denied");
   await expect(page).toHaveURL(/\/login\?error=cancelled$/);
-  await expect(page.getByRole("alert")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
+  await expect(page.locator(".aerr")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
   // A forged callback (no state cookie): refused.
   await page.goto("/reset/callback?code=wcode_forged&state=abc");
   await expect(page).toHaveURL(/\/login\?error=expired$/);

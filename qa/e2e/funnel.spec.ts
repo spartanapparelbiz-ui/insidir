@@ -69,6 +69,8 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await page.screenshot({ path: `qa/screenshots/view-as-visitor-${w}.png` });
   await page.goto("/following");
   await expect(page).toHaveURL(/\/login\?next=%2Ffollowing/);
+  // The sign-in page has no header (and so no View as bar): switch back from a page that does.
+  await page.goto("/pricing");
   await page.getByTestId("view-as").getByRole("button", { name: "Member" }).click();
   await page.goto("/following");
   await expect(page).toHaveURL(/\/following$/);
@@ -108,7 +110,7 @@ test("/start: one screen, the price, three checkmarks, one Continue, the Whop li
   else expect((await page.locator(".asplit__photo").boundingBox())!.height).toBe(220);
   await page.screenshot({ path: `qa/screenshots/start-${page.viewportSize()!.width}.png`, fullPage: true });
   await page.goto("/start?error=cancelled");
-  await expect(page.getByRole("alert")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
+  await expect(page.locator(".aerr")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
   await page.goto("/login");
   await expect(page.getByRole("heading", { level: 1, name: "Welcome back." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");

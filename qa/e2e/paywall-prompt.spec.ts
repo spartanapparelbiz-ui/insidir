@@ -13,7 +13,8 @@ test.afterEach(async ({ page }, info) => {
   await page.close();
   if (!v) return;
   mkdirSync("qa/screenshots", { recursive: true });
-  copyFileSync(await v.path(), `qa/screenshots/paywall-${info.title.split(":")[0]!.replace(/\W+/g, "-").toLowerCase()}-${info.project.name}.webm`);
+  // Tests that open their own browser contexts leave this page blank: no recording to keep.
+  try { copyFileSync(await v.path(), `qa/screenshots/paywall-${info.title.split(":")[0]!.replace(/\W+/g, "-").toLowerCase()}-${info.project.name}.webm`); } catch { /* none */ }
 });
 
 const fast = (ctx: BrowserContext, ms = 1500) => ctx.addInitScript(d => { try { sessionStorage.setItem("insidir_pay_delay_test", String(d)); } catch { /* none */ } }, ms);
