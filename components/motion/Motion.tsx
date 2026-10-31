@@ -56,13 +56,18 @@ function countUp(el: HTMLElement) {
   el.style.minWidth = `${el.getBoundingClientRect().width}px`;
   // The clock starts at the first frame's own timestamp (rAF and performance.now() can disagree), and progress is
   // clamped to 0–1, so the text only ever shows a value between 0 and the real one.
-  let t0 = -1;
+  let t0 = -1, done = false;
   const dur = 900;
+  const finish = () => { done = true; el.textContent = final; el.style.minWidth = ""; };
+  // Whatever happens to the frames (a renderer or background tab that stops them after the first), the real value is
+  // back in place once the count's time is up.
+  setTimeout(finish, dur + 250);
   const step = (t: number) => {
+    if (done) return;
     if (t0 < 0) t0 = t;
     const k = Math.min(1, Math.max(0, (t - t0) / dur));
     el.textContent = k >= 1 ? final : Number.isFinite(explicit) ? fmt(explicit * (1 - Math.pow(1 - k, 3))) : countText(final, k);
-    if (k < 1) requestAnimationFrame(step); else el.style.minWidth = "";
+    if (k < 1) requestAnimationFrame(step); else finish();
   };
   requestAnimationFrame(step);
 }
