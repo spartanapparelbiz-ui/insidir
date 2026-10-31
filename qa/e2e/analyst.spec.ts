@@ -4,35 +4,31 @@
  * home link opening for a visitor, and screenshots of a position, a market, a tracker and /research. */
 import { expect, test } from "@playwright/test";
 import { APP_URL } from "./env";
-import { shotName, signIn } from "./helpers";
+import { q, shotName, signIn } from "./helpers";
 
-test("home: the sections in order, each with its stamp; every position analyzed, one with its sources open", async ({ page }) => {
+test("home: the six sections in order; the analyst note on Open now's first row, with its sources", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".hero3__sub")).toHaveText("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
   await expect(page.locator(".rbar input")).toHaveAttribute("placeholder", /.{10,}/);
-  const order = ["Three markets. One membership.", "Open now from winning trackers", "Every position, analyzed.", "Leaderboard", "How Insidir works", "Insidir, live", "Track record", "Pricing", "Questions"];
+  // The data sections stream in after the hero: measure once they've replaced their placeholders.
+  for (const id of ["open-now", "home-board", "proof-links"]) await page.getByTestId(id).waitFor();
+  const order = ["Open now from winning trackers", "Leaderboard", "How Insidir works", "Where the data comes from", "Pricing", "Questions"];
   const tops: number[] = [];
   for (const h of order) { const el = page.getByRole("heading", { level: 2, name: h, exact: true }).first(); await expect(el, h).toBeVisible(); tops.push((await el.boundingBox())!.y); }
   expect([...tops].sort((a, b) => a - b)).toEqual(tops);
-  const cards = page.getByTestId("analyzed");
-  expect(await cards.count()).toBeGreaterThanOrEqual(1);
-  await expect(cards.first().getByText("Analyst note", { exact: true })).toBeVisible();
-  await expect(cards.first().locator("details.anote__src")).toHaveAttribute("open", "");
-  await expect(cards.first().locator(".anote__fact").first()).toBeVisible();
-  // The pricing table: $39/month, the $1 week small, Whop.
-  await expect(page.locator(".ptable__price")).toContainText("$39/month · every tracker");
-  await expect(page.locator(".ptable__fine")).toContainText("Secure sign-in and payments by Whop.");
-  // The header: Research ⌘K, no Activity for visitors.
+  const note = page.getByTestId("open-first-note");
+  await expect(note.getByText("Analyst note", { exact: true })).toBeVisible();
+  await note.getByText("Sources").click();
+  await expect(note.locator(".anote__fact").first()).toBeVisible();
+  // The header: Research, no Activity for visitors.
   await expect(page.locator('header nav a[href="/research"]').first()).toContainText("Research");
   await expect(page.locator('header nav a[href="/feed"]')).toHaveCount(0);
   await page.screenshot({ path: shotName("home-final", page), fullPage: true });
 });
 
 test("a position: its card, the analyst note under the headline, and Sources with each fact's link", async ({ page }) => {
-  await page.goto("/");
-  const card = page.getByTestId("analyzed").first();
-  await card.locator(".anlz__h a").click();
-  await expect(page).toHaveURL(/\/position\//);
+  const id = (await q<{ id: string }>("select move_id as id from terminal.analyst_notes order by created_at desc limit 1"))[0]!.id;
+  await page.goto(`/position/${encodeURIComponent(id)}`);
   const note = page.getByTestId("analyst-note").first();
   await expect(note.getByText("Analyst note", { exact: true })).toBeVisible();
   await note.getByText("Sources").click();

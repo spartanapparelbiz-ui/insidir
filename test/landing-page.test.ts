@@ -25,14 +25,14 @@ function literals(src: string): string {
 const V2_UI = [
   "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
-  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/Laptops.tsx", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
+  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/MarketTabs.tsx", "lib/home/ref.ts", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
   "lib/moves/copy.ts", "lib/moves/ticker.ts",
 ];
 
 describe("V2 landing page", () => {
-  it("renders its sections in order: hero, three laptops, Open now, Leaderboard, How Insidir works, the proof strip, track record, pricing, FAQ", () => {
+  it("renders six sections in order: hero (with the market tabs), Open now, Leaderboard, How Insidir works, Proof, pricing + FAQ", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero3"', "<ResearchBar ", "<Laptops ", "<OpenSection ", "<AnalyzedSection ", "<BoardAndPortfolio ", 'id="steps-h"', "<ProofSection ", "<RecordSection ", "<PricingTable ", "<FaqV2 />"];
+    const markers = ['className="hero3"', "<ResearchBar ", "<MarketTabs ", "<OpenSection ", "<BoardSection ", 'id="steps-h"', "<ProofSection ", "<PricingCard ", "<FaqV2 />"];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -47,14 +47,23 @@ describe("V2 landing page", () => {
     expect(read("components/home/HeroCta.tsx")).toContain("Start your 7-day trial");
     expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">Explore trackers <span');
     for (const f of ["app/page.tsx", "components/home/HeroCta.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
-    for (const h of ['title="Open now from winning trackers"', 'title="Every position, analyzed."', 'title="Leaderboard"', 'title="How Insidir works"', 'title="Track record"', 'title="Pricing"']) expect(src).toContain(h);
-    expect(src).toContain("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
+    for (const h of ['title="Open now from winning trackers"', 'title="Leaderboard"', 'title="How Insidir works"']) expect(src).toContain(h);
+    // Gone from home (linked from Proof instead): the analyzed cards, the live strip, the track record list.
+    for (const h of ['title="Every position, analyzed."', ">Insidir, live</h2>", 'title="Track record"', "<Laptops ", "PayPrompt"]) expect(src).not.toContain(h);
+    const ref = read("lib/home/ref.ts");
+    expect(ref).toContain("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
+    expect(ref).toContain("See when CEOs buy and sell their own stock.");
+    for (const r of ["insidirfinance", "marketreceipts", "wallstreetdecoded", "companybriefdaily", "marketexplaineddaily"]) expect(ref).toContain(`"${r}"`);
+    // Nothing counts up anywhere: every figure is final in the server's HTML.
+    for (const f of ["app/page.tsx", "components/motion/Motion.tsx", "components/follow/OpenNow.tsx", "app/pricing/page.tsx", "components/stats/Stats.tsx"]) expect(read(f), f).not.toMatch(/data-count|countUp/);
+    // The hero is there on first paint: no entrance animation on the H1, the line or the button.
+    expect(src).not.toMatch(/hero3__(h|sub|acts|mark) rise/);
     // The old scroll story and photo band are gone for good (scripts/check-design.ts rejects their classes).
     for (const f of ["components/home/Story.tsx", "components/PageBand.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
     // One offer everywhere: 7 days for $1, then $39/mo. No old price lines, no 3-day trial, no Pro.
     expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
-    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/paywall/PayModal.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
+    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
       expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|3 days|Pro\b/);
     }
   });

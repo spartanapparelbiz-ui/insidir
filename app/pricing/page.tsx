@@ -105,7 +105,7 @@ export default async function PricingPage() {
         {items.length ? (
           <Sec id="week-h" title="This week on Insidir">
             <RevealGroup as="dl" className="proof__grid wk__grid">
-              {items.map(i => <div key={i.testid} className="proof__item wk__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num" data-count="">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
+              {items.map(i => <div key={i.testid} className="proof__item wk__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
             </RevealGroup>
             <p className="tcol__note">{PAST}</p>
             <AsOf at={w.at} live sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.sec, SOURCES.methodology]} />

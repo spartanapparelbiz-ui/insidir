@@ -1,13 +1,15 @@
 "use client";
-/* The visitors' bottom bar: once they've scrolled 30% of a public page, "You're seeing data 30 minutes late. Live for
- * $1 this week." with "Start for $1". × hides it for the rest of the session. Never on sign-up, sign-in, checkout or
- * account pages (the pay prompt's NEVER list), and not while the pay prompt is open. It slides up with transform
- * only, so nothing on the page moves. Rendered by app/layout.tsx for visitors only. */
+/* The visitors' bottom bar: "You're seeing data 30 minutes late. Live for $1 this week." with "Start for $1". On a page
+ * with a hero ([data-hero], the home page) it comes up once the hero has scrolled out of view; elsewhere after 30% of
+ * the page. Never at load. × hides it for the rest of the session. Never on sign-up, sign-in, checkout or account
+ * pages. It slides up with transform only, so nothing on the page moves. Rendered by app/layout.tsx for visitors. */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { beacon } from "@/components/app/beacon";
-import { NEVER } from "./PayPrompt";
+
+/** Pages where it never shows. */
+export const NEVER = /^\/(start|login|welcome|checkout|onboarding|signin|reset|auth|settings|following|alerts|admin|dev)(\/|$)/;
 
 export const LATE_KEY = "insidir_latebar_closed";
 const closed = () => { try { return sessionStorage.getItem(LATE_KEY) === "1"; } catch { return false; } };
@@ -23,6 +25,8 @@ export function LateBar() {
     let raf = 0;
     const check = () => {
       raf = 0;
+      const hero = document.querySelector<HTMLElement>("[data-hero]");
+      if (hero) { setOn(hero.getBoundingClientRect().bottom < 0); return; }
       const max = document.documentElement.scrollHeight - innerHeight;
       setOn(max > 0 && scrollY / max >= 0.3);
     };

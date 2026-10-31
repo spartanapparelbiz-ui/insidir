@@ -6,6 +6,7 @@ import { appUrl } from "@/lib/app-url";
 import { recordEvent } from "@/lib/analytics";
 import { safeNext } from "@/lib/auth/next";
 import { createSession, setSessionCookie } from "@/lib/auth/session";
+import { readUtm, UTM_COOKIE } from "@/lib/analytics";
 import { finishLogin, LOGIN_COOKIE, LoginFailed, logLine, rateLimited, signInAs } from "@/lib/auth/whop-login";
 import { getDb, hasDatabase } from "@/lib/db";
 import { clientIp } from "@/lib/http";
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   const db = getDb(), ip = clientIp(req);
   if (await rateLimited(db, ip)) { logLine("rate limited"); return done(to("/login?error=rate_limited")); }
   try {
-    const r = await signInAs(db, await finishLogin(code, saved.verifier), ip);
+    const r = await signInAs(db, await finishLogin(code, saved.verifier), ip, Date.now(), readUtm(req.cookies.get(UTM_COOKIE)?.value));
     const { token, expires } = await createSession(r.userId);
     void recordEvent({ name: r.created ? "account_created" : "login", userId: r.userId }).catch(() => undefined);
     logLine(`signed in (${r.member ? "member" : "no membership"}${r.created ? ", new account" : ""})`);

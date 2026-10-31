@@ -22,7 +22,6 @@ export const SERVER_ENV: Record<string, string> = {
   OPENROUTER_API_KEY: "sk-or-e2e",
   // The pay prompt waits an hour in the browser specs (so it never covers a test); qa/e2e/paywall-prompt.spec.ts sets
   // its own delay through the test hook.
-  PAYWALL_POPUP_DELAY_MS: "3600000", PAYWALL_POPUP_DELAY_B_MS: "3600000",
   OPENROUTER_BASE_URL: `http://localhost:${OPENROUTER_PORT}/api/v1`,
   WHOP_COMPANY_ID: "biz_e2e",
   WHOP_PLAN_INSIDIR: "plan_e2e_insidir",

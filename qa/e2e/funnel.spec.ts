@@ -156,6 +156,11 @@ test("the nav's 36px Start for $1 on public pages, home included, but not /start
 });
 
 test("the late bar: after 30% of the page, \"30 minutes late\" + Start for $1; × hides it for the session; never on /start or /login", async ({ page }) => {
+  // Home: not at load; once the hero has scrolled out of view.
+  await page.goto("/");
+  await expect(page.getByTestId("late-bar")).toHaveAttribute("aria-hidden", "true");
+  await page.evaluate(() => { const h = document.querySelector("[data-hero]")!; scrollTo(0, h.getBoundingClientRect().bottom + scrollY + 10); });
+  await expect(page.getByTestId("late-bar")).toHaveAttribute("aria-hidden", "false");
   await page.goto("/pricing");
   const bar = page.getByTestId("late-bar");
   await expect(bar).toHaveAttribute("aria-hidden", "true");

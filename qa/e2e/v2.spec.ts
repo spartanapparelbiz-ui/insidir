@@ -3,44 +3,82 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: hero with one black button, three laptops and Crypto · Soon, Open now, the leaderboard, how it works, the proof strip, all stamped", async ({ page }) => {
+test("landing: six sections, the hero final on first paint, market tabs, Open now as cards on phones, #1 expanded, proof links, one pricing card; no pop-up, nothing counts up", async ({ page }) => {
+  // The hero as the server sends it, before any script runs.
+  const html = await (await page.request.get("/")).text();
+  expect(html).toContain("Follow the big money.");
+  expect(html).not.toMatch(/data-count|hero3__h rise|hero3__sub rise|hero3__acts rise/);
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
   await expect(h1).toBeVisible();
-  await expect(page.getByText("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.")).toBeVisible();
+  expect(await h1.evaluate(e => getComputedStyle(e).opacity)).toBe("1");
+  await expect(page.getByTestId("hero-sub")).toHaveText("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
   const cta = page.locator('[data-cta="hero"]');
   await expect(cta).toHaveText("Start your 7-day trial");
   await expect(page.getByRole("link", { name: /^Explore trackers/ })).toHaveAttribute("href", "/trackers");
   await expect(page.getByText("$1 for the first week, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.").first()).toBeVisible();
-  // One black button (plus the nav's Get started): no offer bar, no sticky bar.
-  await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
-  await expect(page.locator(".trialbar")).toHaveCount(0);
-  const primaries = await page.locator("main .btn--primary").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).length);
-  expect(primaries).toBe(1);
-  // No pills, no 700 weights.
-  await expect(page.locator(".rpill")).toHaveCount(0);
-  expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  // Three laptops; crypto is one line.
-  await expect(page.locator(".lt__item .lt__name")).toHaveText(["Sports", "Prediction markets", "Stocks"]);
-  await expect(page.locator(".lt__soon summary")).toContainText("Crypto · Soon");
-  for (const h of ["Open now from winning trackers", "Leaderboard", "How Insidir works", "Insidir, live"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
-  // Open now: the newest from winning trackers (the tennis fixture), how many more, and past results beside it.
-  await expect(page.getByTestId("open-now").locator("tbody tr").first()).toContainText("Tennis");
+  // Market tabs: Sports first by default, one card each.
+  await expect(page.getByRole("tab")).toHaveText(["Sports", "Prediction markets", "Stocks"]);
+  await expect(page.getByRole("tab", { name: "Sports" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "Stocks" }).click();
+  await expect(page.getByRole("tabpanel", { name: "Stocks" })).toBeVisible();
+  // Six sections, in order; the old ones are gone.
+  const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
+  expect(h2s.slice(0, 4)).toEqual(["Open now from winning trackers", "Leaderboard", "How Insidir works", "Where the data comes from"]);
+  expect(h2s).toContain("Pricing");
+  for (const gone of ["Every position, analyzed.", "Insidir, live", "Track record", "A live portfolio of big money"]) expect(h2s, gone).not.toContain(gone);
+  for (const [name, href] of [["Every position, analyzed", "/feed"], ["The whole track record", "/results"], ["Insidir, live: freshness and checks", "/data"]] as const) {
+    await expect(page.getByTestId("proof-links").getByRole("link", { name: new RegExp(`^${name}`) })).toHaveAttribute("href", href);
+  }
+  // Open now: the newest from winning trackers, how many more; on phones each row is a card.
+  const row = page.getByTestId("open-now").locator("tbody tr.otable__row").first();
+  await expect(row).toContainText("Tennis");
   await expect(page.getByTestId("open-more")).toContainText("1 more open.");
-  await expect(page.getByText(/Past results, not a promise\./).first()).toBeVisible();
-  // The leaderboard: Tennis is the one tracker with 30+ settled.
+  if (page.viewportSize()!.width < 640) {
+    expect(await row.evaluate(e => getComputedStyle(e).display)).toBe("grid");
+    expect(await page.locator(".otable thead").evaluate(e => (e as HTMLElement).getBoundingClientRect().height)).toBeLessThanOrEqual(1);
+  }
+  // The leaderboard: Tennis is the one tracker with 30+ settled, its row expanded into its portfolio.
   await expect(page.getByTestId("home-board").locator(".board__name").first()).toHaveText("Tennis");
-  await expect(page.locator(".board__row")).toHaveCount(1);
+  await expect(page.getByTestId("board-portfolio")).toBeVisible();
   await expect(page.locator(".steps__item")).toHaveCount(3);
-  for (const id of ["proof-volume", "proof-week", "proof-accounts", "proof-check"]) await expect(page.getByTestId(id)).toBeVisible();
-  // Every figure says when it was read, in Eastern Time, and that visitors see it 30 minutes late.
-  expect(await page.locator("main [data-asof]").count()).toBeGreaterThanOrEqual(3);
+  expect(await page.locator(".steps__h a").first().evaluate(e => getComputedStyle(e).textDecorationLine)).toBe("none");
+  // Pricing: one card with the button.
+  const plan = page.getByTestId("home-plan");
+  await expect(plan).toContainText("$39/mo");
+  await expect(plan).toContainText("$1 for your first week");
+  await expect(plan.locator("li")).toHaveCount(4);
+  await expect(plan.getByRole("link", { name: "Start for $1" })).toBeVisible();
+  // No pop-up, no old offer bars; every figure stamped; no sideways scroll.
+  await page.waitForTimeout(1500);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
+  await expect(page.locator(".rpill")).toHaveCount(0);
+  expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
+  expect(await page.locator("main [data-asof]").count()).toBeGreaterThanOrEqual(2);
   await expect(page.locator(".asof").first()).toContainText(/As of \d{1,2}:\d{2}\s?(AM|PM) ET/);
   await expect(page.locator(".asof").first()).toContainText("30-min delay");
-  // No page sideways scroll at any width.
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+});
+
+test("landing from a stock account (?ref=insidirfinance): the insider-trading line, Stocks first, a stock Research example; the ref is kept for attribution", async ({ page, context }) => {
+  await page.goto("/?ref=insidirfinance");
+  await expect(page.getByTestId("hero-sub")).toHaveText(/^See when CEOs buy and sell their own stock\./);
+  await expect(page.getByRole("tab").first()).toHaveText("Stocks");
+  await expect(page.getByRole("tab", { name: "Stocks" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#rbar-q")).toHaveAttribute("placeholder", /CEO purchases|insider|Director/i);
+  const cookies = await context.cookies();
+  expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
+  expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
+  // Later visits without the ref keep it (first touch); an unknown ref gets the standard page.
+  await page.goto("/");
+  await expect(page.getByRole("tab").first()).toHaveText("Stocks");
+  await context.clearCookies();
+  await page.goto("/?ref=someoneelse");
+  await expect(page.getByTestId("hero-sub")).toHaveText(/^Insidir analyzes every large position/);
+  await expect(page.getByRole("tab").first()).toHaveText("Sports");
 });
 
 test("home hero: Start your 7-day trial is recorded and opens /start; Explore trackers lists every tracker with its record or the record being built", async ({ page }) => {

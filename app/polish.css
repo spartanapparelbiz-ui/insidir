@@ -675,3 +675,87 @@ a.rtable__a:hover span { text-decoration: underline; }
 .latebar__x { flex: none; width: 40px; height: 40px; border: 0; background: none; color: inherit; font-size: 24px; line-height: 1; cursor: pointer; }
 @media (max-width: 640px) { .latebar__t { font-size: var(--t13); } .latebar__in { gap: 10px; } }
 @media (prefers-reduced-motion: reduce) { .latebar { transition: none; } }
+
+/* ---------- Home (app/page.tsx) ---------- */
+/* How it works: the step titles are links without the underline. */
+.steps__h a, .steps__h a:hover { color: inherit; text-decoration: none; }
+
+/* The markets as tabs (components/home/MarketTabs.tsx): one readable live card each. */
+.mtabs { margin-top: 56px; }
+@media (min-width: 900px) { .mtabs { margin-top: 72px; } }
+.mtabs__list { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-input); background: var(--bg); width: fit-content; max-width: 100%; margin: 0 auto; overflow-x: auto; }
+.mtabs__tab { flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: calc(var(--r-input) - 4px); background: none; color: var(--muted); font: 600 var(--t15)/1 var(--sans); cursor: pointer; }
+.mtabs__tab.is-on { background: var(--page); color: var(--text); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 12%, transparent); }
+.mtabs__tab:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.mtabs__panel { max-width: 640px; margin: 20px auto 0; text-align: left; }
+.mtabs__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: 12px; color: var(--muted); font-size: var(--t13); }
+.mtab__empty { padding: 32px 24px; border: 1px solid var(--border); border-radius: var(--r-card); color: var(--muted); text-align: center; }
+.mcard { display: grid; gap: 10px; padding: 24px; border: 1px solid var(--border); border-radius: var(--r-card); background: var(--page); }
+@media (max-width: 640px) { .mcard { padding: 20px; } }
+.mcard__top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: var(--t13); }
+.mcard__h { font-size: var(--t22); line-height: 1.25; letter-spacing: var(--tight); }
+.mcard__h a { color: var(--text); text-decoration: none; }
+.mcard__amt { font-size: var(--t32); font-weight: 600; letter-spacing: -0.02em; }
+.mcard__sub { color: var(--muted); font-size: var(--t15); }
+.mcard__facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 4px 0 0; padding-top: 14px; border-top: 1px solid var(--border); }
+.mcard__facts dt { color: var(--muted); font-size: var(--t13); }
+.mcard__facts dd { margin: 2px 0 0; font-size: var(--t17); font-weight: 600; overflow-wrap: anywhere; }
+.mcard__rec { font-size: var(--t13); color: var(--muted); }
+.mcard__note { font-size: var(--t15); line-height: 1.5; padding: 12px 14px; border-radius: var(--r-input); background: var(--bg); }
+.mcard__note span { display: block; color: var(--muted); font-size: var(--t13); font-weight: 600; margin-bottom: 2px; }
+
+/* Open now (components/follow/OpenNow.tsx): a table that becomes stacked cards under 640px. The header row stays in
+   place (it never floats over the rows). */
+.otable { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: var(--t15); }
+.otable th, .otable td { font-weight: 400; padding: 14px 16px 14px 0; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--border); }
+.otable td:last-child, .otable th:last-child { padding-right: 0; }
+.otable thead th { position: static; color: var(--muted); font-size: var(--t13); font-weight: 500; padding-top: 0; }
+.otable .r { text-align: right; white-space: nowrap; }
+.otable__link { display: flex; align-items: center; gap: 14px; color: var(--text); text-decoration: none; font-weight: 600; }
+.otable__what { display: grid; gap: 2px; min-width: 0; }
+.otable__h { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.otable__sub { display: block; color: var(--muted); font-size: var(--t13); font-weight: 400; }
+.otable__from a { color: var(--text); font-weight: 600; text-decoration: none; }
+.otable__noterow td { padding-top: 0; }
+@media (max-width: 640px) {
+  .otable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .otable, .otable tbody { display: block; }
+  .otable__row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 8px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .otable__row > th, .otable__row > td { display: block; padding: 0; border: 0; }
+  .otable__pos, .otable__from { grid-column: 1 / -1; }
+  .otable__row > td.r { text-align: left !important; font-weight: 600; }
+  .otable__row > td.r::before { content: attr(data-label); display: block; color: var(--muted); font-size: var(--t13); font-weight: 400; }
+  .otable__noterow { display: block; }
+  .otable__noterow td { display: block; padding: 0 0 16px; }
+}
+
+/* The leaderboard's #1 row, expanded into its live portfolio. */
+.board__row--open { border-bottom-color: var(--border); }
+.board__port { grid-column: 1 / -1; display: grid; gap: 20px; margin-top: 8px; padding: 20px; border-radius: var(--r-card); background: var(--bg); }
+@media (min-width: 900px) { .board__port { grid-template-columns: 1fr 1fr; gap: 32px; } }
+.board__colh { display: flex; justify-content: space-between; gap: 8px; font-size: var(--t15); font-weight: 600; margin-bottom: 8px; }
+.board__colh span { color: var(--muted); font-weight: 400; }
+.board__items { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.board__items li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; font-size: var(--t15); }
+.board__itemh { display: grid; min-width: 0; font-weight: 600; }
+.board__itemh span { color: var(--muted); font-size: var(--t13); font-weight: 400; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.board__none { color: var(--muted); font-size: var(--t15); }
+
+/* Proof: links to the full pages under the four cards. */
+.trust__more { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 24px; }
+
+/* Pricing: one card. */
+.hprice__card { max-width: 480px; margin: 0 auto; padding: 32px; border: 1px solid var(--border); border-radius: var(--r-card); background: var(--page); }
+@media (max-width: 640px) { .hprice__card { padding: 24px 20px; } }
+.hprice__name { font-weight: 600; }
+.hprice__price { margin-top: 8px; display: flex; align-items: baseline; gap: 2px; }
+.hprice__price b { font-size: var(--t56); font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
+.hprice__price span { color: var(--muted); font-size: var(--t17); }
+.hprice__trial { margin-top: 8px; font-size: var(--t17); font-weight: 600; }
+.hprice__list { list-style: none; margin: 20px 0 0; padding: 20px 0 0; border-top: 1px solid var(--border); display: grid; gap: 12px; }
+.hprice__list li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; font-size: var(--t15); line-height: 1.4; }
+.hprice__list svg { width: 16px; height: 16px; margin-top: 2px; color: var(--money); }
+.hprice__cta { display: flex; width: 100%; min-height: 52px; margin-top: 24px; font-size: var(--t17); }
+.hprice__fine { margin-top: 12px; color: var(--muted); font-size: var(--t13); text-align: center; }
+.hprice__fine a { color: inherit; }
+.board__items b { font-weight: 600; white-space: nowrap; }

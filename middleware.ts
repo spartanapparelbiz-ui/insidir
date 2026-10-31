@@ -1,5 +1,5 @@
 /* Sets the random visitor id, keeps first-touch UTM tags, and assigns the A/B variant. Cookies only; no tracking
- * beyond our own first-party events. New cookies are also passed on the request, so the very first render already
+ * beyond our own first-party events. ?ref= (our accounts' links) is kept first-touch too. New cookies are also passed on the request, so the very first render already
  * sees its variant (otherwise the page would render "a" while the cookie says "b"). */
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -20,6 +20,13 @@ export function middleware(req: NextRequest) {
   }
   const utm: Record<string, string> = {};
   for (const k of UTM_KEYS) { const v = req.nextUrl.searchParams.get(k); if (v) utm[k] = v.slice(0, 100); }
+  // ?ref= from our accounts (lib/home/ref.ts): kept first-touch for the home page, and counted as the UTM source when
+  // there are no UTM tags, so signups and members are attributed to it (lib/analytics.ts utmStats).
+  const ref = (req.nextUrl.searchParams.get("ref") ?? "").trim().toLowerCase();
+  if (/^[a-z0-9._-]{2,40}$/.test(ref)) {
+    if (!req.cookies.get("insidir_ref")) set.push({ name: "insidir_ref", value: ref, maxAge: 90 * 86_400, httpOnly: true });
+    if (!utm.utm_source) { utm.utm_source = ref; utm.utm_medium ??= "ref"; }
+  }
   if (Object.keys(utm).length && !req.cookies.get("insidir_utm")) {
     set.push({ name: "insidir_utm", value: JSON.stringify(utm), maxAge: 90 * 86_400, httpOnly: true });
   }

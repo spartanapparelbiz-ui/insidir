@@ -88,7 +88,8 @@ export async function rateLimited(db: Db, ip: string | null, now = Date.now()): 
 
 /** Who just signed in at Whop → our account: by Whop user, else by email (linked now), else a new one. Then their
  *  access, read from Whop now (not the 5-minute cache), so a new member is in at once. */
-export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now = Date.now()): Promise<{ userId: string; member: boolean; created: boolean }> {
+/** `utm`: the first-touch UTM tags (or ?ref=) from their cookie, stored on a new account for attribution. */
+export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now = Date.now(), utm: Record<string, string> | null = null): Promise<{ userId: string; member: boolean; created: boolean }> {
   const email = who.email ? normEmail(who.email) : null;
   let u = (await db.select().from(users).where(eq(users.whopUserId, who.id)).limit(1))[0];
   let created = false;
@@ -103,7 +104,7 @@ export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now
   if (!u) {
     // Their email belongs to an account linked to another Whop user: this one gets an account without it.
     const free = email && !(await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1))[0];
-    const made = await db.insert(users).values({ id: newUserId(), email: free ? email : null, name: who.name, whopUserId: who.id, settings: DEFAULT_SETTINGS })
+    const made = await db.insert(users).values({ id: newUserId(), email: free ? email : null, name: who.name, whopUserId: who.id, settings: DEFAULT_SETTINGS, utm })
       .onConflictDoNothing().returning();
     u = made[0] ?? (await db.select().from(users).where(eq(users.whopUserId, who.id)).limit(1))[0];
     created = Boolean(made[0]);
