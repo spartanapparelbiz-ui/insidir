@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const [[main], field] = await Promise.all([copyPnl(db, copies.slice(0, 1), size, now), fieldWeek(db, size, now)]);
   const mine = main!.week;
   const box = (label: string, big: string, small: string, v: number) => (
-    <div style={{ display: "flex", flexDirection: "column", background: BG, borderRadius: 40, padding: "48px 56px", flex: 1 }}>
+    <div style={{ display: "flex", flexDirection: "column", background: BG, borderRadius: 40, padding: "48px 56px" }}>
       <div style={{ display: "flex", fontSize: 32, color: MUTED }}>{label}</div>
       <div style={{ display: "flex", fontSize: 104, fontWeight: 600, letterSpacing: -4, color: col(v), marginTop: 12 }}>{big}</div>
       <div style={{ display: "flex", fontSize: 30, color: MUTED, marginTop: 8 }}>{small}</div>
