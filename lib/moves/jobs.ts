@@ -16,7 +16,7 @@ import { recordFrom } from "./records";
 import { readLeaderboard } from "./sources";
 import { profileAvatar, profileBlocked } from "./avatar";
 import { saveAvatar, walletsDueForAvatar } from "./avatar-store";
-import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
+import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToBackfill, walletsToRecord } from "./store";
 import { readWalletFills, realizeMove } from "./realize";
 import { fromParts, MERGE_WINDOW_MS, sortParts } from "./detect";
 import { readPolymarketFills } from "./sources";
@@ -32,6 +32,9 @@ import { saveOpen } from "@/lib/smart/store";
 
 export const MOVES_MS = Number(process.env.MOVES_MS ?? 15_000);
 export const RECORD_STALE_MS = 12 * 3_600_000;
+/** A wallet's public Polymarket record (closed markets, all-time profit) is cached this long for the Read's proven
+ *  wallets; the backfill re-reads every wallet from the last 90 days at this age. */
+export const PROVEN_RECORD_TTL_MS = 24 * 3_600_000;
 /** Closed-position pages read per wallet (50 each). A wallet with more history than this gets no record rather than
  *  a partial one. */
 export const RECORD_MAX_PAGES = 100;
@@ -176,9 +179,11 @@ export async function realizeOnce(db: Db, poly: PolymarketClient, now: number, p
 
 /** Each due wallet: every resolved position (kept for the profile), its record, and its biggest bet ever (closed
  *  positions' money in and open positions' initial value). */
-export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, perRun = 10): Promise<number> {
+export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, perRun = 10,
+  pick: (db: Db, now: number, limit: number) => Promise<Array<{ wallet: string; name: string | null }>> = (d, t, l) => walletsToRecord(d, t, RECORD_STALE_MS, l),
+  incomplete?: Set<string>): Promise<number> {
   let n = 0;
-  for (const w of await walletsToRecord(db, now, RECORD_STALE_MS, perRun)) {
+  for (const w of await pick(db, now, perRun)) {
     const closed: ClosedPosition[] = [];
     let complete = false;
     for (let page = 0; page < RECORD_MAX_PAGES; page++) {
@@ -186,7 +191,7 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
       closed.push(...readClosedRows(raw));
       if (rows(raw).length < 50) { complete = true; break; }
     }
-    if (!complete) continue;
+    if (!complete) { incomplete?.add(w.wallet); continue; }
     const open = await poly.getPositions(w.wallet, { sizeThreshold: 0 });
     const biggestBet = Math.max(0, ...closed.map(p => p.moneyIn), ...open.map(p => p.initialValue ?? 0));
     const record = recordFrom(w.wallet, w.name, closed.map(p => ({ marketId: p.marketId, realizedPnl: p.pnl })), now);
@@ -197,6 +202,14 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
     n++;
   }
   return n;
+}
+
+/** Wallets whose history is longer than RECORD_MAX_PAGES: skipped by the backfill until the process restarts. */
+const tooLong = new Set<string>();
+/** The 90-day backfill of public Polymarket records (lib/read proven wallets): every wallet with a large position in the
+ *  last 90 days, read again once its record is a day old. */
+export function provenBackfillOnce(db: Db, poly: PolymarketClient, now: number, perRun = 10): Promise<number> {
+  return recordsOnce(db, poly, now, perRun, (d, t, l) => walletsToBackfill(d, t, PROVEN_RECORD_TTL_MS, l, tooLong), tooLong);
 }
 
 /** LEADERBOARD_WALLETS per window from Polymarket's public leaderboard, so /top covers the real top traders. Their

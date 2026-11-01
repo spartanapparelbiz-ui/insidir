@@ -3,7 +3,7 @@
  * the template, and the validator (one sentence, only the facts' numbers and names, no advice, no promises). */
 import { describe, expect, it } from "vitest";
 import { validateLine, writeLine } from "@/lib/read/line";
-import { choose, pricesFor, provenSplit, readFacts, sidePrices, templateLine, textScore, UNUSUAL_TEXT, unusualOf } from "@/lib/read/math";
+import { bigSplitOf, choose, pmProven, pricesFor, provenFrom, provenSplit, readFacts, readHasMoney, sidePrices, signedPct, signedUsd, templateLine, textScore, UNUSUAL_TEXT, unusualOf } from "@/lib/read/math";
 
 describe("proven money", () => {
   it("splits proven wallets' dollars by side; a wallet on both sides counts once", () => {
@@ -61,11 +61,63 @@ const read = {
   prices: sidePrices(0.62, 0.6),
 };
 
+describe("proven money from winning trackers and proven wallets", () => {
+  const short = (w: string) => `${w.slice(0, 4)}…`;
+  const T = new Map([["underdog-hunters", { name: "Long Shots", returnPct: 0.189, settled: 493 }]]);
+  it("trackers show which side their open positions are on, with their record; Kalshi trades count through trackers", () => {
+    const p = provenFrom({ short, trackers: T, records: new Map(), follow: new Map(), walletOpen: [], positions: [
+      { id: "k1", venue: "kalshi", wallet: null, side: "yes", dollars: 50_000, trackers: ["underdog-hunters"] },
+      { id: "p1", venue: "polymarket", wallet: "0xnobody", side: "no", dollars: 20_000, trackers: ["underdog-hunters", "favorites-only"] },
+      { id: "p2", venue: "polymarket", wallet: "0xother", side: "no", dollars: 90_000, trackers: ["favorites-only"] },
+    ] });
+    expect(p.trackers).toEqual([{ slug: "underdog-hunters", name: "Long Shots", returnPct: 0.189, settled: 493, sides: [{ side: "yes", dollars: 50_000, positions: 1 }, { side: "no", dollars: 20_000, positions: 1 }] }]);
+    // Only positions in a winning tracker count; nobody here is a proven wallet.
+    expect([p.yes.dollars, p.no.dollars, p.wallets, p.walletRows]).toEqual([50_000, 20_000, 0, []]);
+    expect(p.yesShare).toBeCloseTo(50 / 70, 9);
+  });
+  it("a wallet is proven at 30+ closed Polymarket markets and positive all-time profit, or a winning followable record", () => {
+    expect(pmProven({ closed: 30, profit: 1 })).toBe(true);
+    expect(pmProven({ closed: 29, profit: 1e6 })).toBe(false);
+    expect(pmProven({ closed: 300, profit: 0 })).toBe(false);
+    const p = provenFrom({ short, trackers: new Map(), positions: [
+      { id: "a", venue: "polymarket", wallet: "0xrec", side: "yes", dollars: 30_000, trackers: [] },
+      { id: "b", venue: "polymarket", wallet: "0xrec", side: "yes", dollars: 10_000, trackers: [] },
+      { id: "c", venue: "polymarket", wallet: "0xfol", side: "no", dollars: 5_000, trackers: [] },
+      { id: "d", venue: "polymarket", wallet: "0xlose", side: "no", dollars: 80_000, trackers: [] },
+    ],
+      // Polymarket says 0xrec holds $55K: the larger of the two counts, once.
+      walletOpen: [{ wallet: "0xrec", side: "yes", dollars: 55_000 }],
+      records: new Map([["0xrec", { closed: 41, profit: 52_340.4 }], ["0xlose", { closed: 90, profit: -10 }]]),
+      follow: new Map([["0xfol", { returnPct: 0.12, settled: 31, winner: true }], ["0xrec", { returnPct: -0.05, settled: 30, winner: false }]]) });
+    expect(p.walletRows).toEqual([
+      { wallet: "0xre…", side: "yes", dollars: 55_000, profit: 52_340, closed: 41, follow: { returnPct: -0.05, settled: 30 } },
+      { wallet: "0xfo…", side: "no", dollars: 5_000, profit: null, closed: null, follow: { returnPct: 0.12, settled: 31 } },
+    ]);
+    expect([p.yes.dollars, p.no.dollars, p.wallets]).toEqual([55_000, 5_000, 2]);
+  });
+  it("the big-money split counts every open tracked position; a Read with neither proven money nor big bets has nothing", () => {
+    const b = bigSplitOf([{ id: "a", venue: "kalshi", wallet: null, side: "no", dollars: 25_000, trackers: [] }, { id: "b", venue: "polymarket", wallet: "0x1", side: "yes", dollars: 75_000, trackers: [] }]);
+    expect(b).toEqual({ yes: { dollars: 75_000, positions: 1 }, no: { dollars: 25_000, positions: 1 }, yesShare: 0.75 });
+    const empty = provenFrom({ short, trackers: T, records: new Map(), follow: new Map(), walletOpen: [], positions: [] });
+    expect(readHasMoney({ proven: empty, bets: [], big: bigSplitOf([]) })).toBe(false);
+    expect(readHasMoney({ proven: empty, bets: [], big: b })).toBe(true);
+  });
+  it("the tracker fact and its line pass the validator", () => {
+    const proven = provenFrom({ short, trackers: T, records: new Map(), follow: new Map(), walletOpen: [], positions: [{ id: "k1", venue: "kalshi", wallet: null, side: "yes", dollars: 50_000, trackers: ["underdog-hunters"] }] });
+    const f = readFacts({ ...read, proven });
+    expect(f.facts.map(x => x.text)).toContain("Long Shots (+18.9% over 493 settled) is on Chiefs");
+    expect(f.facts.map(x => x.text)).toContain("$50K of proven money from 1 winning tracker");
+    expect(validateLine("Long Shots (+18.9% over 493 settled) is on Chiefs, and 100% of proven money is on Chiefs.", f).ok).toBe(true);
+    expect(signedPct(-0.042)).toBe("−4.2%");
+    expect(signedUsd(52_340)).toBe("+$52.3K");
+  });
+});
+
 describe("the analyst line", () => {
   it("facts are exact texts; the template is one sentence that passes the validator", () => {
     const f = readFacts(read);
     expect(f.facts.map(x => x.text)).toEqual([
-      "64% of proven money is on Chiefs", "2 proven wallets, $100K in all", "1 big bet in the last 24 hours, $412K in all",
+      "64% of proven money is on Chiefs", "$100K of proven money from 2 proven wallets", "1 big bet in the last 24 hours, $412K in all",
       "the largest is $412K on Chiefs at 62¢", "1 flagged unusual", "Chiefs costs 60¢ on Kalshi and 62¢ on Polymarket", "Bills costs 40¢ on Kalshi and 38¢ on Polymarket",
     ]);
     const t = templateLine(f);

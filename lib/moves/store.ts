@@ -131,6 +131,19 @@ export async function walletsToRecord(db: Db, now: number, staleMs: number, limi
   return (r.rows as Array<{ wallet: string; name: string | null }>);
 }
 
+/** Every Polymarket wallet with a large position in the last BACKFILL_DAYS whose public record is missing or older than
+ *  staleMs (the 24-hour cache behind proven wallets on the Read): never-read wallets first, then the most recent. */
+export const BACKFILL_DAYS = 90;
+export async function walletsToBackfill(db: Db, now: number, staleMs: number, limit: number, skip: ReadonlySet<string> = new Set()): Promise<Array<{ wallet: string; name: string | null }>> {
+  const r = await db.execute(sql`select m.wallet, max(m.wallet_name) as name from terminal.moves m
+      left join terminal.trader_records t on t.wallet = m.wallet
+    where m.source = 'polymarket' and m.wallet is not null and m.at > ${new Date(now - BACKFILL_DAYS * 86_400_000)}
+      and (t.wallet is null or t.updated_at < ${new Date(now - staleMs)})
+      ${skip.size ? sql`and m.wallet not in (${sql.join([...skip].map(w => sql`${w}`), sql`, `)})` : sql``}
+    group by m.wallet order by bool_or(t.wallet is null) desc, max(m.at) desc limit ${limit}`);
+  return r.rows as Array<{ wallet: string; name: string | null }>;
+}
+
 export async function saveRecord(db: Db, r: TraderRecord): Promise<void> {
   const v = { name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, biggestBet: r.biggestBet ?? null, avgPrice: r.avgPrice ?? null, proven: r.proven ?? false, updatedAt: new Date(r.updatedAt) };
   await db.insert(traderRecords).values({ wallet: r.wallet, ...v }).onConflictDoUpdate({ target: traderRecords.wallet, set: v });

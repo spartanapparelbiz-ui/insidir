@@ -10,6 +10,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { buildRead, type Clients } from "@/lib/read/build";
+import { readFacts, readHasMoney, templateLine } from "@/lib/read/math";
+import type { PolymarketClient } from "@/lib/exchanges";
+import { PROVEN_RECORD_TTL_MS, provenBackfillOnce } from "@/lib/moves/jobs";
+import { recordsFor, walletsToBackfill } from "@/lib/moves/store";
 import { resolveText } from "@/lib/read/resolve";
 import { cancelReasonCounts, duration, postFunnel, readTimings, retention } from "@/lib/read/admin";
 import { refreshWatched, tonightFor, weeklyRecap, yourMarkets } from "@/lib/read/member";
@@ -19,15 +23,15 @@ const URL0 = process.env.E2E_DATABASE_URL;
 const NAME = `terminal_read_${process.pid}`;
 let admin: pg.Client, pool: pg.Pool, db: Db;
 const H = 3_600_000, NOW = Date.UTC(2026, 10, 1, 18);
-const PROVEN = "0xaaaa" + "1".repeat(34) + "aa", NOBODY = "0xbbbb" + "2".repeat(34) + "bb", FRESH = "0xcccc" + "3".repeat(34) + "cc";
+const PROVEN = "0xaaaa" + "1".repeat(34) + "aa", NOBODY = "0xbbbb" + "2".repeat(34) + "bb", FRESH = "0xcccc" + "3".repeat(34) + "cc", RECORDW = "0xdddd" + "4".repeat(34) + "dd";
 const dead = () => Promise.reject(new Error("offline"));
 const clients = { polymarket: { getMarketsById: dead, getEventBySlug: dead, searchEvents: dead }, kalshi: { getMarketsById: dead } } as unknown as Clients;
 
-async function move(id: string, o: { source?: "polymarket" | "kalshi"; market: string; side: "yes" | "no"; amount: number; price: number; at: number; wallet?: string | null; result?: "won" | "lost" | null; settled?: number; seen?: number; fresh?: boolean; title?: string }) {
-  await pool.query(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, wallet, at, last_at, tab, category, result, settled_at, seen_at, seen_price, new_wallet, url)
-    values ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9, $10, $10, 'sports', 'sports', $11, $12, $10, $13, $14, $15)`,
-    [id, o.source ?? "polymarket", o.market, o.title ?? "Chiefs vs. Bills", o.side === "yes" ? "Chiefs" : "Bills", o.side, o.amount, o.price, o.wallet === undefined ? null : o.wallet, new Date(o.at),
-      o.result ?? null, o.settled ? new Date(o.settled) : null, o.seen ?? null, o.fresh ?? null, o.source === "kalshi" ? "https://kalshi.com/markets/kxnfl/kc" : "https://polymarket.com/event/chiefs-bills"]);
+async function move(id: string, o: { source?: "polymarket" | "kalshi"; market: string; side: "yes" | "no"; amount: number; price: number; at: number; wallet?: string | null; result?: "won" | "lost" | null; settled?: number; seen?: number; fresh?: boolean; title?: string; trackers?: string[]; outcome?: string; url?: string }) {
+  await pool.query(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, wallet, at, last_at, tab, category, result, settled_at, seen_at, seen_price, new_wallet, url, trackers)
+    values ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9, $10, $10, 'sports', 'sports', $11, $12, $10, $13, $14, $15, $16)`,
+    [id, o.source ?? "polymarket", o.market, o.title ?? "Chiefs vs. Bills", o.outcome ?? (o.side === "yes" ? "Chiefs" : "Bills"), o.side, o.amount, o.price, o.wallet === undefined ? null : o.wallet, new Date(o.at),
+      o.result ?? null, o.settled ? new Date(o.settled) : null, o.seen ?? null, o.fresh ?? null, o.url ?? (o.source === "kalshi" ? "https://kalshi.com/markets/kxnfl/kc" : "https://polymarket.com/event/chiefs-bills"), o.trackers ?? []]);
 }
 
 describe.skipIf(!URL0)("The Read, in Postgres", () => {
@@ -41,16 +45,24 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     db = drizzle(pool, { schema });
     await migrate(db, { migrationsFolder: "drizzle", migrationsSchema: "terminal" });
     // PROVEN: 32 settled, 22 won at a 49¢ seen price → positive followable return. NOBODY: 32 settled, 5 won → negative.
+    // The same positions make Long Shots a winning tracker (+37.5% over 32) and Heavy Favorites a losing one.
     for (let i = 0; i < 32; i++) {
-      await move(`p${i}`, { market: `0xold${i}`, side: "yes", amount: 20_000, price: 0.48, at: NOW - (200 - i) * H, wallet: PROVEN, result: i < 22 ? "won" : "lost", settled: NOW - (190 - i) * H, seen: 0.49 });
-      await move(`n${i}`, { market: `0xold${i}`, side: "yes", amount: 20_000, price: 0.48, at: NOW - (200 - i) * H, wallet: NOBODY, result: i < 5 ? "won" : "lost", settled: NOW - (190 - i) * H, seen: 0.49 });
+      await move(`p${i}`, { market: `0xold${i}`, side: "yes", amount: 20_000, price: 0.48, at: NOW - (200 - i) * H, wallet: PROVEN, result: i < 22 ? "won" : "lost", settled: NOW - (190 - i) * H, seen: 0.49, trackers: ["underdog-hunters"] });
+      await move(`n${i}`, { market: `0xold${i}`, side: "yes", amount: 20_000, price: 0.48, at: NOW - (200 - i) * H, wallet: NOBODY, result: i < 5 ? "won" : "lost", settled: NOW - (190 - i) * H, seen: 0.49, trackers: ["favorites-only"] });
     }
+    // Public Polymarket records (Data API /closed-positions → trader_records): RECORDW is proven (41 closed, +$52,340);
+    // NOBODY has 50 closed and lost money.
+    await pool.query(`insert into terminal.trader_records (wallet, resolved, won, lost, profit, biggest_win, updated_at) values
+      ($1, 41, 25, 16, 52340, 9000, $3), ($2, 50, 20, 30, -1000, 500, $3)`, [RECORDW, NOBODY, new Date(NOW - H)]);
     // The market now: PROVEN $60K on Chiefs (open); NOBODY $90K on Bills; a fresh wallet's $30K long shot; a Kalshi YES
     // (which pays like Polymarket's NO: the pair is inverted) $45K.
     await move("m1", { market: "0xkcbuf", side: "yes", amount: 60_000, price: 0.6, at: NOW - 2 * H, wallet: PROVEN });
     await move("m2", { market: "0xkcbuf", side: "no", amount: 90_000, price: 0.4, at: NOW - 3 * H, wallet: NOBODY });
-    await move("m3", { market: "0xkcbuf", side: "no", amount: 30_000, price: 0.12, at: NOW - 4 * H, wallet: FRESH, fresh: true });
-    await move("m4", { source: "kalshi", market: "KXNFL-KCBUF", side: "yes", amount: 45_000, price: 0.41, at: NOW - 5 * H });
+    await move("m3", { market: "0xkcbuf", side: "no", amount: 30_000, price: 0.12, at: NOW - 4 * H, wallet: FRESH, fresh: true, trackers: ["underdog-hunters"] });
+    await move("m4", { source: "kalshi", market: "KXNFL-KCBUF", side: "yes", amount: 45_000, price: 0.41, at: NOW - 5 * H, trackers: ["underdog-hunters"] });
+    await move("rec1", { market: "0xkcbuf", side: "no", amount: 40_000, price: 0.4, at: NOW - 26 * H, wallet: RECORDW });
+    // A market with no proven money: only NOBODY's $25K on No.
+    await move("none1", { market: "0xnone", side: "no", amount: 25_000, price: 0.3, at: NOW - 2 * H, wallet: NOBODY, title: "Curling final: Sweden?", outcome: "No", url: "https://polymarket.com/event/curling-final" });
     await move("m5", { market: "0xkcbuf", side: "yes", amount: 99_000, price: 0.55, at: NOW - 30 * H, wallet: PROVEN }); // older than 24h
     await pool.query(`insert into terminal.markets (venue, id, data) values ('polymarket', '0xkcbuf', $1), ('kalshi', 'KXNFL-KCBUF', $2), ('polymarket', '0xsen1', $3), ('polymarket', '0xsen2', $4)`, [
       JSON.stringify({ venue: "polymarket", id: "0xkcbuf", title: "Chiefs vs. Bills", eventTitle: "NFL: Chiefs vs. Bills", yesLabel: "Chiefs", noLabel: "Bills", url: "https://polymarket.com/event/chiefs-bills", yesPrice: 0.62, volume24h: 140_000, active: true, result: null, closeTime: NOW + 30 * H }),
@@ -67,8 +79,21 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(r.key).toBe("p:0xkcbuf");
     expect(r).toMatchObject({ question: "Chiefs vs. Bills", yesLabel: "Chiefs", noLabel: "Bills" });
     expect(r.kalshi).toMatchObject({ id: "KXNFL-KCBUF", inverted: true, url: "https://kalshi.com/markets/kxnfl/kc" });
-    // PROVEN's open Chiefs money (m1 + m5: still open) only; NOBODY's Bills money doesn't count.
-    expect(r.proven).toEqual({ yes: { dollars: 159_000, wallets: 1 }, no: { dollars: 0, wallets: 0 }, wallets: 1, yesShare: 1 });
+    // Proven money: PROVEN's open Chiefs money (m1 + m5, a winning followable record); Long Shots (a winning tracker)
+    // on Bills through the fresh wallet's $30K and Kalshi's $45K (its YES is Bills); RECORDW's $40K on Bills (its public
+    // record). NOBODY's $90K counts nowhere: a losing record, in a losing tracker.
+    const p = r.proven;
+    expect(p.yes).toEqual({ dollars: 159_000, wallets: 1, positions: 1 });
+    expect(p.no).toEqual({ dollars: 115_000, wallets: 1, positions: 3 });
+    expect(p.wallets).toBe(2);
+    expect(p.yesShare).toBeCloseTo(159 / 274, 9);
+    expect(p.trackers).toEqual([{ slug: "underdog-hunters", name: "Long Shots", returnPct: 0.375, settled: 32, sides: [{ side: "no", dollars: 75_000, positions: 2 }] }]);
+    expect(p.walletRows).toEqual([
+      { wallet: "0xaa…aa", side: "yes", dollars: 159_000, profit: null, closed: null, follow: { returnPct: 0.375, settled: 32 } },
+      { wallet: "0xdd…dd", side: "no", dollars: 40_000, profit: 52_340, closed: 41, follow: null },
+    ]);
+    // Every open tracked large position, proven or not.
+    expect(r.big).toEqual({ yes: { dollars: 159_000, positions: 2 }, no: { dollars: 205_000, positions: 4 }, yesShare: 159 / 364 });
     expect(r.bets.map(b => [b.venue, b.side, b.amount])).toEqual([["polymarket", "no", 90_000], ["polymarket", "yes", 60_000], ["kalshi", "no", 45_000], ["polymarket", "no", 30_000]]);
     const fresh = r.bets.find(b => b.amount === 30_000)!;
     // $30K of a $140K day is big for this market too.
@@ -84,6 +109,16 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(r.prices.no.best).toBe("polymarket");
   });
 
+  it("a market with no proven money says so and shows the big-money split instead", async () => {
+    const r = await buildRead(db, clients, "polymarket", "0xnone", NOW);
+    expect(r.proven.yesShare).toBeNull();
+    expect(r.proven.trackers).toEqual([]);
+    expect(r.proven.walletRows).toEqual([]);
+    expect(r.big).toEqual({ yes: { dollars: 0, positions: 0 }, no: { dollars: 25_000, positions: 1 }, yesShare: 0 });
+    expect(readHasMoney(r)).toBe(true);
+    expect(templateLine(readFacts(r))).toBe("No proven money holds a position, and 100% of big money is on No; the largest is $25K on No at 30¢.");
+  });
+
   it("resolves typed words: one clear market, or up to 3 choices; a pasted Kalshi link; nothing found", async () => {
     expect(await resolveText(db, clients, "Chiefs Bills", NOW)).toEqual({ kind: "market", venue: "polymarket", id: "0xkcbuf" });
     const s = await resolveText(db, clients, "Senate control", NOW);
@@ -95,6 +130,25 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect((await resolveText(db, clients, "NVDA", NOW)).kind).toBe("none");
   });
 
+  it("backfills public Polymarket records for every wallet from the last 90 days, cached for 24 hours", async () => {
+    const OLD = "0xeeee" + "5".repeat(34) + "ee";
+    await move("old1", { market: "0xancient", side: "yes", amount: 50_000, price: 0.5, at: NOW - 100 * 24 * H, wallet: OLD });
+    // Never read first (PROVEN, FRESH); RECORDW and NOBODY were read an hour ago; OLD moved 100 days ago.
+    expect((await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).map(w => w.wallet).sort()).toEqual([FRESH, PROVEN].sort());
+    expect((await walletsToBackfill(db, NOW + 24 * H, PROVEN_RECORD_TTL_MS, 10)).map(w => w.wallet).sort()).toEqual([FRESH, NOBODY, PROVEN, RECORDW].sort());
+    // One run reads FRESH's closed positions (35 closed markets, +$7,000) and stores its record.
+    const closed = Array.from({ length: 35 }, (_, i) => ({ conditionId: `0xc${i}`, outcomeIndex: 0, title: `M${i}`, avgPrice: 0.5, totalBought: 1000, realizedPnl: i < 25 ? 400 : -300, timestamp: (NOW - i * H) / 1000 }));
+    const poly = { getClosedPositionsPage: async (_w: string, o: { offset?: number }) => (o.offset ? [] : closed), getPositions: async () => [] } as unknown as PolymarketClient;
+    const n = await provenBackfillOnce(db, poly, NOW, 1);
+    expect(n).toBe(1);
+    const done = (await recordsFor(db, [FRESH, PROVEN]));
+    const got = [...done.values()][0]!;
+    expect(got).toMatchObject({ resolved: 35, profit: 7_000 });
+    expect((await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).map(w => w.wallet)).toHaveLength(1);
+    await pool.query("delete from terminal.trader_records where wallet = any($1)", [[FRESH, PROVEN]]);
+    await pool.query("delete from terminal.trader_positions where wallet = any($1)", [[FRESH, PROVEN]]).catch(() => undefined);
+  });
+
   it("caches a market for a minute; the line is written for members within a daily AI cap; one free Read per visitor", async () => {
     const a = await cachedRead(db, clients, "polymarket", "0xkcbuf", NOW);
     const b = await cachedRead(db, clients, "polymarket", "0xkcbuf", NOW + 1000);
@@ -103,7 +157,7 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(await aiSpent(db, "usr_capped", NOW)).toBe(5);
     const line = await lineFor(db, a, "usr_capped", NOW);
     expect(line).toMatchObject({ origin: "template", model: "template-capped" });
-    expect(line.text).toMatch(/^100% of proven money is on Chiefs; the largest is \$90K on Bills at 40¢\.$/);
+    expect(line.text).toMatch(/^58% of proven money is on Chiefs; the largest is \$90K on Bills at 40¢\.$/);
     expect(await readsUsed(db, { userId: null, visitorId: "v1" })).toBe(0);
     const id = await saveRead(db, { userId: null, visitorId: "v1", input: "text", data: { ...a, line: null }, ms: 120 }, NOW);
     expect(await readsUsed(db, { userId: null, visitorId: "v1" })).toBe(1);
@@ -150,7 +204,8 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(await refreshWatched(db, clients, NOW + 20 * 60_000)).toBe(1);
     mine = await yourMarkets(db, "usr_m", NOW + 30 * 60_000);
     expect(mine[0]!.latest.input).toBe("refresh");
-    expect(mine[0]!.moved).toEqual({ from: 1, to: 159_000 / 259_000 });
+    // Proven money was 159K of 274K on Chiefs; PROVEN adds $100K on Bills.
+    expect(mine[0]!.moved).toEqual({ from: 159_000 / 274_000, to: 159_000 / 374_000 });
     // Seen now: no mark on the next visit.
     expect((await yourMarkets(db, "usr_m", NOW + 40 * 60_000))[0]!.moved).toBeNull();
 

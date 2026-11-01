@@ -7,6 +7,8 @@ import { cents, pct } from "@/lib/read/math";
 import { getRead } from "@/lib/read/store";
 
 export const dynamic = "force-dynamic";
+/** "From 2 winning trackers and 3 proven wallets". Counts only: no tracker record, wallet or bet details. */
+const who = (t: number, w: number) => `From ${[t ? `${t} winning ${t === 1 ? "tracker" : "trackers"}` : null, w ? `${w} proven ${w === 1 ? "wallet" : "wallets"}` : null].filter(Boolean).join(" and ")}`;
 const INK = "#0b0b12", MUTED = "#6b6b73", BG = "#f7f7f8", GREEN = "#0f7a45";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -30,9 +32,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, fontSize: 40, fontWeight: 600 }}>
                 <span>{d.yesLabel.slice(0, 24)} {pct(share)}</span><span>{d.noLabel.slice(0, 24)} {pct(1 - share)}</span>
               </div>
-              <div style={{ display: "flex", marginTop: 8, fontSize: 30, color: MUTED }}>{d.proven.wallets} proven {d.proven.wallets === 1 ? "wallet" : "wallets"}</div>
+              <div style={{ display: "flex", marginTop: 8, fontSize: 30, color: MUTED }}>{who(d.proven.trackers?.length ?? 0, d.proven.wallets)}</div>
             </>
-          ) : <div style={{ display: "flex", marginTop: 16, fontSize: 40 }}>No proven wallets in it yet</div>}
+          ) : <div style={{ display: "flex", marginTop: 16, fontSize: 40 }}>No proven money in it yet</div>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", marginTop: 28, background: BG, borderRadius: 40, padding: "44px 52px", fontSize: 34 }}>
           <div style={{ display: "flex", fontSize: 32, color: MUTED }}>Price now</div>

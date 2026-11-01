@@ -29,7 +29,7 @@ export const dynamic = "force-dynamic";
 
 /** What a Read shows, in the order the card shows it. Words only: no numbers on this page are made up. */
 const PARTS = [
-  ["Proven money", "How the dollars of proven wallets split between the two sides, and how many wallets. Proven means 30+ settled positions and a positive followable return."],
+  ["Proven money", "Which side winning trackers and proven wallets are on, each with its record. Winning: 30+ settled and a positive all-time return. Proven wallets: 30+ closed Polymarket markets and positive all-time profit."],
   ["Big bets, last 24 hours", "Every large position: its size, side, price and time. Unusual ones are flagged: a fresh wallet, a size big for that market, or the long-shot side."],
   ["Price now", "Each side on Kalshi and Polymarket, the better price marked. In the US, Kalshi only."],
   ["One analyst line", "What the data shows, in one sentence, checked against the numbers. Never a tip."],

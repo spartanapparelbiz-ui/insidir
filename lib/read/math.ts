@@ -1,7 +1,7 @@
 /* The Read, the pure parts: the proven-money split, which big bets are unusual, the best price per side, how well a
  * market matches what someone typed, and the facts the analyst line may use (with the template line built from them). */
 import type { Facts } from "@/lib/analyst/types";
-import type { BigBet, Choice, ProvenMoney, Resolved, SidePrices, Unusual, Venue } from "./types";
+import type { BigBet, BigSplit, Choice, ProvenMoney, ProvenTracker, ProvenWallet, Resolved, SidePrices, Unusual, Venue } from "./types";
 
 /* ---------- proven money ---------- */
 
@@ -14,6 +14,90 @@ export function provenSplit(rows: ReadonlyArray<{ wallet: string; side: "yes" | 
   const total = yes.dollars + no.dollars;
   return { yes, no, wallets: new Set([...by.yes.keys(), ...by.no.keys()]).size, yesShare: total > 0 ? yes.dollars / total : null };
 }
+
+/** A wallet is proven by its public Polymarket record at this many closed markets and positive all-time profit. */
+export const PROVEN_CLOSED_MIN = 30;
+export const PROVEN_DEFINITION = "Proven money: open positions from trackers with 30+ settled positions and a positive all-time return, and from wallets with 30+ closed Polymarket markets and positive all-time profit.";
+
+/** One open tracked large position in this market, its side already turned to the main listing's. */
+export interface OpenPosition { id: string; venue: Venue; wallet: string | null; side: "yes" | "no"; dollars: number; trackers: readonly string[] }
+export interface ProvenInput {
+  positions: readonly OpenPosition[];
+  /** Polymarket wallets' open positions here as Polymarket reports them (terminal.trader_open). */
+  walletOpen: ReadonlyArray<{ wallet: string; side: "yes" | "no"; dollars: number }>;
+  /** Winning trackers only. */
+  trackers: ReadonlyMap<string, { name: string; returnPct: number; settled: number }>;
+  /** Public Polymarket records (terminal.trader_records): closed markets and all-time profit. */
+  records: ReadonlyMap<string, { closed: number; profit: number }>;
+  /** Followable records with 30+ settled; winner when the return is positive. */
+  follow: ReadonlyMap<string, { returnPct: number; settled: number; winner: boolean }>;
+  short: (wallet: string) => string;
+}
+
+export const pmProven = (r: { closed: number; profit: number } | undefined): boolean => Boolean(r && r.closed >= PROVEN_CLOSED_MIN && r.profit > 0);
+
+/** Proven money from its two sources: winning trackers' open positions here, and proven wallets' (a wallet's side counts
+ *  once, at the larger of what our moves and Polymarket's open positions say). The split counts each position once. */
+export function provenFrom(x: ProvenInput): ProvenMoney {
+  const isProvenWallet = (w: string) => pmProven(x.records.get(w)) || Boolean(x.follow.get(w)?.winner);
+  // Tracker rows.
+  const trackers: ProvenTracker[] = [];
+  for (const [slug, t] of x.trackers) {
+    const by = { yes: { dollars: 0, positions: 0 }, no: { dollars: 0, positions: 0 } };
+    for (const p of x.positions) if (p.trackers.includes(slug)) { by[p.side].dollars += p.dollars; by[p.side].positions++; }
+    const sides = (["yes", "no"] as const).filter(s => by[s].positions > 0).map(s => ({ side: s, ...by[s] })).sort((a, b) => b.dollars - a.dollars);
+    if (sides.length) trackers.push({ slug, name: t.name, returnPct: t.returnPct, settled: t.settled, sides });
+  }
+  trackers.sort((a, b) => b.sides.reduce((s, v) => s + v.dollars, 0) - a.sides.reduce((s, v) => s + v.dollars, 0) || b.returnPct - a.returnPct);
+  // Each counted position: a Polymarket wallet's side (the larger of moves and open), or one Kalshi trade.
+  const held = new Map<string, { wallet: string | null; side: "yes" | "no"; dollars: number; inTracker: boolean }>();
+  for (const p of x.positions) {
+    const inTracker = p.trackers.some(t => x.trackers.has(t));
+    if (p.wallet) {
+      const k = `${p.wallet}:${p.side}`, cur = held.get(k);
+      held.set(k, { wallet: p.wallet, side: p.side, dollars: (cur?.dollars ?? 0) + p.dollars, inTracker: Boolean(cur?.inTracker) || inTracker });
+    } else if (inTracker) held.set(`m:${p.id}`, { wallet: null, side: p.side, dollars: p.dollars, inTracker });
+  }
+  for (const o of x.walletOpen) {
+    const k = `${o.wallet}:${o.side}`, cur = held.get(k);
+    if (!cur || o.dollars > cur.dollars) held.set(k, { wallet: o.wallet, side: o.side, dollars: o.dollars, inTracker: Boolean(cur?.inTracker) });
+  }
+  const yes = { dollars: 0, wallets: 0, positions: 0 }, no = { dollars: 0, wallets: 0, positions: 0 };
+  const wallets = new Set<string>(), walletRows: ProvenWallet[] = [];
+  for (const h of held.values()) {
+    const proven = h.wallet ? isProvenWallet(h.wallet) : false;
+    if (!(proven || h.inTracker) || h.dollars <= 0) continue;
+    const s = h.side === "yes" ? yes : no;
+    s.dollars += h.dollars; s.positions++;
+    if (h.wallet && proven) {
+      s.wallets++; wallets.add(h.wallet);
+      const r = x.records.get(h.wallet), f = x.follow.get(h.wallet);
+      walletRows.push({ wallet: x.short(h.wallet), side: h.side, dollars: Math.round(h.dollars), profit: pmProven(r) ? Math.round(r!.profit) : null, closed: pmProven(r) ? r!.closed : null,
+        follow: f ? { returnPct: f.returnPct, settled: f.settled } : null });
+    }
+  }
+  walletRows.sort((a, b) => b.dollars - a.dollars);
+  const total = yes.dollars + no.dollars;
+  return { yes, no, wallets: wallets.size, yesShare: total > 0 ? yes.dollars / total : null, trackers, walletRows: walletRows.slice(0, 8) };
+}
+
+/** Every open tracked large position here, by side. */
+export function bigSplitOf(positions: readonly OpenPosition[]): BigSplit {
+  const by = { yes: { dollars: 0, positions: 0 }, no: { dollars: 0, positions: 0 } };
+  for (const p of positions) if (p.dollars > 0) { by[p.side].dollars += p.dollars; by[p.side].positions++; }
+  const total = by.yes.dollars + by.no.dollars;
+  return { ...by, yesShare: total > 0 ? by.yes.dollars / total : null };
+}
+
+/** Whether a Read has anything to show beyond prices: proven money or big bets. One without either isn't charged as
+ *  the free Read. */
+export const readHasMoney = (r: { proven: ProvenMoney; bets: readonly unknown[]; big?: BigSplit }): boolean =>
+  r.proven.yesShare !== null || r.bets.length > 0 || (r.big?.yesShare ?? null) !== null;
+
+/** "+18.9%" / "−4.2%". */
+export const signedPct = (v: number): string => `${v >= 0 ? "+" : "−"}${(Math.abs(v) * 100).toFixed(1)}%`;
+/** "+$12.4K" / "−$800". */
+export const signedUsd = (v: number): string => `${v >= 0 ? "+" : "−"}${usd(Math.abs(v))}`;
 
 /* ---------- unusual bets ---------- */
 
@@ -91,7 +175,7 @@ export function usd(n: number): string {
   return `$${Math.round(a)}`;
 }
 
-export interface LineInput { key: string; yesLabel: string; noLabel: string; proven: ProvenMoney; bets: readonly BigBet[]; prices: { yes: SidePrices; no: SidePrices }; at: number }
+export interface LineInput { key: string; yesLabel: string; noLabel: string; proven: ProvenMoney; big?: BigSplit; bets: readonly BigBet[]; prices: { yes: SidePrices; no: SidePrices }; at: number }
 
 /** Everything the analyst line may say, as exact texts (the validator holds it to these). */
 export function readFacts(r: LineInput): Facts {
@@ -101,8 +185,19 @@ export function readFacts(r: LineInput): Facts {
     const lead = p.yesShare >= 0.5 ? "yes" : "no";
     const label = lead === "yes" ? r.yesLabel : r.noLabel;
     facts.push({ key: "proven_split", label: "Proven money split", text: `${pct(lead === "yes" ? p.yesShare : 1 - p.yesShare)} of proven money is on ${label}` });
-    facts.push({ key: "proven_wallets", label: "Proven wallets", text: `${p.wallets} proven ${p.wallets === 1 ? "wallet" : "wallets"}, ${usd(p.yes.dollars + p.no.dollars)} in all` });
-  } else facts.push({ key: "proven_none", label: "Proven money", text: "no proven wallets hold a position" });
+    const nt = p.trackers?.length ?? 0;
+    const who = [nt ? `${nt} winning ${nt === 1 ? "tracker" : "trackers"}` : null, p.wallets ? `${p.wallets} proven ${p.wallets === 1 ? "wallet" : "wallets"}` : null].filter(Boolean).join(" and ");
+    facts.push({ key: "proven_wallets", label: "Proven money", text: `${usd(p.yes.dollars + p.no.dollars)} of proven money${who ? ` from ${who}` : ""}` });
+    const t = p.trackers?.[0];
+    if (t) facts.push({ key: "proven_tracker", label: "Tracker", text: `${t.name} (${signedPct(t.returnPct)} over ${t.settled} settled) is on ${t.sides[0]!.side === "yes" ? r.yesLabel : r.noLabel}` });
+  } else {
+    facts.push({ key: "proven_none", label: "Proven money", text: "no proven money holds a position" });
+    const b = r.big;
+    if (b && b.yesShare !== null) {
+      const lead = b.yesShare >= 0.5 ? "yes" : "no";
+      facts.push({ key: "big_split", label: "Big-money split", text: `${pct(lead === "yes" ? b.yesShare : 1 - b.yesShare)} of big money is on ${lead === "yes" ? r.yesLabel : r.noLabel}` });
+    }
+  }
   if (r.bets.length) {
     const total = r.bets.reduce((a, b) => a + b.amount, 0);
     facts.push({ key: "bets", label: "Big bets, last 24 hours", text: `${r.bets.length} big ${r.bets.length === 1 ? "bet" : "bets"} in the last 24 hours, ${usd(total)} in all` });
@@ -116,13 +211,13 @@ export function readFacts(r: LineInput): Facts {
     const parts = [s.kalshi !== null ? `${cents(s.kalshi)} on Kalshi` : null, s.polymarket !== null ? `${cents(s.polymarket)} on Polymarket` : null].filter(Boolean);
     if (parts.length) facts.push({ key: `price_${side}`, label: `${label} price`, text: `${label} costs ${parts.join(" and ")}` });
   }
-  return { moveId: r.key, kind: "bet", names: [r.yesLabel, r.noLabel, "Kalshi", "Polymarket"], facts, at: r.at };
+  return { moveId: r.key, kind: "bet", names: [r.yesLabel, r.noLabel, "Kalshi", "Polymarket", ...(p.trackers?.[0] ? [p.trackers[0].name] : [])], facts, at: r.at };
 }
 
 /** The line without a model: the facts, in a fixed sentence. Always passes the validator. */
 export function templateLine(f: Facts): string {
   const get = (k: string) => f.facts.find(x => x.key === k)?.text ?? null;
-  const first = get("proven_split") ?? get("proven_none");
+  const first = get("proven_split") ?? (get("big_split") ? `${get("proven_none")}, and ${get("big_split")}` : get("proven_none"));
   const second = get("largest") ?? get("bets_none");
   const s = [first, second].filter(Boolean).join("; ");
   return s ? `${s.charAt(0).toUpperCase()}${s.slice(1)}.` : "";
