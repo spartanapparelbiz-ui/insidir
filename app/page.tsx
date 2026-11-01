@@ -12,6 +12,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Sec } from "@/components/page/Page";
 import { unlockHref } from "@/components/app/links";
 import { ReadBox } from "@/components/read/ReadBox";
+import { TonightReads } from "@/components/read/TonightReads";
+import { tonightReadsCached, type TonightRead } from "@/lib/read/tonight";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { HEADLINE, INCLUDED, PAST, TRIAL_LINE } from "@/lib/copy";
 import { AB_COOKIE, readUtm, recordEvent, UTM_COOKIE } from "@/lib/analytics";
@@ -110,17 +112,19 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const member = isPaid(viewer.plan);
   if (member) {
     const db = hasDatabase() ? getDb() : null, uid = viewer.user?.id ?? null, betOn = viewer.user?.settings.betOn ?? [];
-    const [tonight, mine, week] = db && uid ? await Promise.all([
+    const [taps, tonight, mine, week] = db && uid ? await Promise.all([
+      tonightReadsCached(db, now).catch((): TonightRead[] => []),
       tonightFor(db, betOn, now).catch((): TonightRow[] => []),
       yourMarkets(db, uid, now).catch((): YourMarket[] => []),
       weeklyRecap(db, uid, now).catch((): WeekRecap => ({ right: 0, of: 0, lines: [] })),
-    ]) : [[], [], { right: 0, of: 0, lines: [] } as WeekRecap];
+    ]) : [[], [], [], { right: 0, of: 0, lines: [] } as WeekRecap];
     return (
       <>
         <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={unlockHref()} />
         <main className="pg rhome rhome--member" data-testid="member-home">
           <h1 className="rhome__h rhome__h--small">{HEADLINE}</h1>
           <ReadBox autoFocus />
+          <TonightReads rows={taps} />
           <section className="rpage__next" aria-labelledby="tonight-h">
             <h2 id="tonight-h" className="rpage__h">Tonight in your leagues</h2>
             <Tonight rows={tonight} asked={betOn.length > 0} />
@@ -134,6 +138,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
       </>
     );
   }
+  const taps = hasDatabase() ? await tonightReadsCached(getDb(), now).catch((): TonightRead[] => []) : [];
   const trial = unlockHref();
   const ref = cleanRef(typeof sp.ref === "string" ? sp.ref : null) ?? cleanRef(jar.get(REF_COOKIE)?.value);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
@@ -154,6 +159,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
             <p className="rhome__sub">Paste a Polymarket or Kalshi link, or type the market. In a few seconds: where proven money sits, the big bets, and the best price.</p>
             <ReadBox />
             <p className="rhome__fine">Your first Read is free. No account needed.</p>
+            <TonightReads rows={taps} />
           </div>
         </section>
         <Sec id="parts-h" title="What a Read shows" className="steps">

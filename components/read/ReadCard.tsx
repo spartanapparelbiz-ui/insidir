@@ -6,7 +6,7 @@
  *                  Kalshi only, and no Polymarket link anywhere.
  *   Big bets       the last 24 hours (size, side, price, time), unusual ones flagged. Members only.
  *   Analyst line   one sentence on what the data shows. Members only.
- * Visitors see the split and the prices; the bets and the line are blurred behind "Start for $1", and their content
+ * Visitors see the split, the trackers and the prices (proven wallets as a count); the bets and the line are blurred behind "Start for $1", and their content
  * is never sent (the blur is drawn from nothing). Server component. */
 import { ADVICE, TRIAL_LINE } from "@/lib/copy";
 import { clockET, agoText } from "@/lib/moves/copy";
@@ -64,12 +64,15 @@ export function ReadCard({ id, data, member, us, now, startHref }: { id: string;
                 {trackers.map(t => (
                   <li key={t.slug} className="rprov__row" data-testid="proven-tracker">
                     <span className="rprov__main"><a href={`/trackers/${t.slug}`}>{t.name}</a> · {signedPct(t.returnPct)} over {t.settled} settled · on {t.sides.map(x => sideLabel(x.side)).join(" and ")}</span>
-                    <span className="rprov__sub">{t.sides.map(x => `${usd(x.dollars)} on ${sideLabel(x.side)} (${count(x.positions, "position")})`).join(" · ")}</span>
+                    <span className="rprov__sub">{t.sides.map(x => `${sideLabel(x.side)}: ${usd(x.dollars)} in ${count(x.positions, "position")}`).join(" · ")}</span>
                   </li>
                 ))}
               </ul>
             ) : null}
-            {walletRows.length ? (
+            {walletRows.length && !member ? (
+              <p className="rsec__fine" data-testid="read-wallets-locked">{count(p.wallets, "proven wallet")} in it. Members see each one&apos;s side, dollars and record.</p>
+            ) : null}
+            {walletRows.length && member ? (
               <ul className="rprov" data-testid="read-wallets" aria-label="Proven wallets">
                 {walletRows.map((w, i) => (
                   <li key={`${w.wallet}:${w.side}:${i}`} className="rprov__row" data-testid="proven-wallet">

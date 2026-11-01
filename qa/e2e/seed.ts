@@ -193,7 +193,9 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   ]);
   await db.execute(sql`update terminal.moves set seen_at = at where id like 'e2e:t%'`);
   await db.insert(marketInfo).values([100, 101, 102].map(i => ({ source: "polymarket" as const, marketId: `0xe2etennis${i}`, yesPrice: 0.58, closed: false, historyKey: null,
-    endAt: new Date(now + (i - 99) * 26 * 3_600_000), updatedAt: new Date(now) })));
+    endAt: new Date(now + (i - 99) * 26 * 3_600_000), updatedAt: new Date(now),
+    // Tennis match 100 starts tonight: the home page's one-tap Reads (lib/read/tonight.ts) offer it (it has proven money).
+    startAt: i === 100 ? new Date(now + 2 * 3_600_000) : null })));
   // The open tennis position 100 is on Kalshi too (lib/matching pair, inverted: Polymarket's Player A = Kalshi's NO);
   // 101 and 102 have no Kalshi match. A US member copying E2E-Follow opens 100 on Kalshi and sees 101 view only.
   const kTennis = market("kalshi", "KXE2ETENNIS-100", { title: "E2E fixture: Tennis match 100 (Kalshi)", category: "sports" });

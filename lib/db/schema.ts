@@ -769,8 +769,19 @@ export const reads = terminal.table("reads", {
   data: jsonb("data").$type<Record<string, unknown>>().notNull(),
   /** How long building it took, ms (the 5-second budget). */
   ms: integer("ms"),
+  /** Whether it counts toward the free Read: false when it had no proven money and no big bets (lib/read readHasMoney). */
+  counted: boolean("counted").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("reads_user_idx").on(t.userId, t.createdAt), index("reads_visitor_idx").on(t.visitorId), index("reads_created_idx").on(t.createdAt)]);
+
+/** The markets a "Which one?" offered a visitor or free account: any of them can be opened for READ_OFFER_MS, even once
+ *  the free Read is used. Picking is part of the search, not another Read. */
+export const readOffers = terminal.table("read_offers", {
+  id: serial("id").primaryKey(),
+  who: text("who").notNull(),
+  keys: text("keys").array().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("read_offers_who_idx").on(t.who, t.createdAt)]);
 
 /** What The Read's analyst line cost, per member (or visitor) per day: the daily cap (READ_AI_DAILY_USD). */
 export const readAiUsage = terminal.table("read_ai_usage", {

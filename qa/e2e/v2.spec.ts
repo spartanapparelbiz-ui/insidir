@@ -19,7 +19,7 @@ test("landing: one tool, final on first paint: the headline, the box, what a Rea
   await expect(page.getByTestId("read-go")).toHaveText("Read it");
   await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
   const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  expect(h2s).toEqual(["What a Read shows", "$1 for your first 3 days", "Questions"]);
+  expect(h2s).toEqual(["Tonight, with proven money", "What a Read shows", "$1 for your first 3 days", "Questions"]);
   await expect(page.locator(".steps__h")).toHaveText(["Proven money", "Big bets, last 24 hours", "Price now", "One analyst line"]);
   // The nav: Pricing, Log in, Start for $1. Nothing else.
   const links = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());

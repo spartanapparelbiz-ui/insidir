@@ -7,11 +7,11 @@
  *   Kept        every Read is saved (terminal.reads) so /read/<id> shows it as it was, and its share image. */
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { readAiUsage, reads } from "@/lib/db/schema";
+import { readAiUsage, readOffers, reads } from "@/lib/db/schema";
 import { memo } from "@/lib/memo";
 import { buildRead, type Clients } from "./build";
 import { writeLine, type Line } from "./line";
-import { readFacts } from "./math";
+import { readFacts, readHasMoney } from "./math";
 import type { ReadData, Venue } from "./types";
 
 export const READ_TTL_MS = 60_000;
@@ -52,9 +52,10 @@ export function newReadId(): string {
 export interface StoredRead { id: string; userId: string | null; visitorId: string | null; input: string; data: ReadData; ms: number | null; createdAt: number }
 const rowOf = (r: typeof reads.$inferSelect): StoredRead => ({ id: r.id, userId: r.userId, visitorId: r.visitorId, input: r.input, data: r.data as unknown as ReadData, ms: r.ms, createdAt: r.createdAt.getTime() });
 
+/** Saves a Read. It counts toward the free Read only when it shows proven money or big bets (readHasMoney). */
 export async function saveRead(db: Db, r: { userId: string | null; visitorId: string | null; input: StoredRead["input"]; data: ReadData; ms: number }, now: number): Promise<string> {
   const id = newReadId();
-  await db.insert(reads).values({ id, userId: r.userId, visitorId: r.visitorId, input: r.input as "link", marketKey: r.data.key, data: r.data as unknown as Record<string, unknown>, ms: r.ms, createdAt: new Date(now) });
+  await db.insert(reads).values({ id, userId: r.userId, visitorId: r.visitorId, input: r.input as "link", marketKey: r.data.key, data: r.data as unknown as Record<string, unknown>, ms: r.ms, counted: readHasMoney(r.data), createdAt: new Date(now) });
   return id;
 }
 
@@ -78,10 +79,28 @@ export async function readsOf(db: Db, userId: string, limit = 20): Promise<Store
   return (await db.select().from(reads).where(eq(reads.userId, userId)).orderBy(desc(reads.createdAt)).limit(limit)).map(rowOf);
 }
 
-/** Reads this visitor (or free account) has run. */
+/** Reads this visitor (or free account) has run that count: ones with proven money or big bets. */
 export async function readsUsed(db: Db, who: { userId: string | null; visitorId: string | null }): Promise<number> {
   const conds = [who.userId ? sql`user_id = ${who.userId}` : null, who.visitorId ? sql`visitor_id = ${who.visitorId}` : null].filter(Boolean) as ReturnType<typeof sql>[];
   if (!conds.length) return 0;
-  const r = await db.execute(sql`select count(*)::int as n from terminal.reads where ${sql.join(conds, sql` or `)}`);
+  const r = await db.execute(sql`select count(*)::int as n from terminal.reads where counted and (${sql.join(conds, sql` or `)})`);
   return Number((r.rows[0] as { n: number } | undefined)?.n ?? 0);
+}
+
+/** How long the markets a "Which one?" offered stay open to pick. */
+export const READ_OFFER_MS = 30 * 60_000;
+const whoKey = (who: { userId: string | null; visitorId: string | null }) => (who.userId ? `u:${who.userId}` : who.visitorId ? `v:${who.visitorId}` : null);
+
+/** Remembers the markets just offered to a visitor or free account ("p:<id>" / "k:<ticker>" and "<venue>:<id>"). */
+export async function saveOffer(db: Db, who: { userId: string | null; visitorId: string | null }, keys: readonly string[], now: number): Promise<void> {
+  const k = whoKey(who);
+  if (k && keys.length) await db.insert(readOffers).values({ who: k, keys: [...keys], createdAt: new Date(now) });
+}
+
+/** Whether this market was offered to them in a "Which one?" in the last READ_OFFER_MS. */
+export async function wasOffered(db: Db, who: { userId: string | null; visitorId: string | null }, key: string, now: number): Promise<boolean> {
+  const k = whoKey(who);
+  if (!k) return false;
+  const r = await db.execute(sql`select 1 from terminal.read_offers where who = ${k} and ${key} = any(keys) and created_at > ${new Date(now - READ_OFFER_MS)} limit 1`);
+  return r.rows.length > 0;
 }
