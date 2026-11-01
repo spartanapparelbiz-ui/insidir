@@ -1,25 +1,28 @@
 /* Delivery: web push (VAPID, free). Insidir sends no email. Server/worker only.
  *
- *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…)   web push
+ *   INSIDIR_VAPID_PUBLIC_KEY, INSIDIR_VAPID_PRIVATE_KEY (else the older names), VAPID_SUBJECT   web push (lib/alerts/vapid.ts)
  *   EMAIL_UNSUBSCRIBE_SECRET                                                     signs one-click unsubscribe links
  *
  * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
 import { appUrl } from "@/lib/app-url";
+import { vapidKeys } from "./vapid";
 
 export interface PushTarget { endpoint: string; p256dh: string; auth: string }
 export type SendResult = "sent" | "gone" | "failed";
 
 let vapidReady = false;
-function vapid(): boolean {
-  if (vapidReady) return true;
-  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
-  if (!pub || !priv) return false;
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:hello@aethric.llc", pub, priv);
-  vapidReady = true;
+/** Sets web-push up with the VAPID keys (lib/alerts/vapid.ts); false when they aren't set. */
+export function configurePush(env: Record<string, string | undefined> = process.env): boolean {
+  if (vapidReady && env === process.env) return true;
+  const k = vapidKeys(env);
+  if (!k.publicKey || !k.privateKey) return false;
+  webpush.setVapidDetails(k.subject, k.publicKey, k.privateKey);
+  if (env === process.env) vapidReady = true;
   return true;
 }
+const vapid = (): boolean => configurePush();
 
 /** "gone" means the browser dropped the subscription: delete it. */
 export async function sendPush(t: PushTarget, payload: { title: string; body: string; url: string }): Promise<SendResult> {

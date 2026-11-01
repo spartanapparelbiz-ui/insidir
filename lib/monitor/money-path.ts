@@ -4,21 +4,44 @@
  *   checkout  GET /start: the checkout page; POST /api/checkout/start: the plan is open
  *   sign-in   GET /login/start: a redirect to Whop's authorize URL; GET that URL: Whop accepts it (no
  *             "redirect_uri is invalid", no error redirect)
- * Each run is kept (terminal.monitor_runs) and shown on /status. A failure is emailed to hello@aethric.llc: when the path
- * breaks, then at most hourly while it stays broken, and once when it recovers. The monitor browses as a visitor whose
- * id starts with "monitor-", left out of every funnel number. */
+ * Each run is kept (terminal.monitor_runs) and shown on /status. A failure is sent as a web push (lib/alerts/send.ts) to
+ * every device subscribed by an account on FREE_ACCESS_EMAILS (the owners): when the path breaks, then at most hourly
+ * while it stays broken, and once when it recovers. With no subscription, it's logged (and /status shows it either
+ * way). The monitor browses as a visitor whose id starts with "monitor-", left out of every funnel number. */
 import { randomUUID } from "node:crypto";
 import { desc, sql } from "drizzle-orm";
-import { HEADLINE, COMPANY } from "@/lib/copy";
+import { sendPush } from "@/lib/alerts/send";
+import { freeAccessEmails } from "@/lib/billing/free";
+import { HEADLINE } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { monitorRuns } from "@/lib/db/schema";
-import { sendEmail, type Email, type SendOutcome } from "@/lib/emails/transport";
 
 export const MONEY_PATH_MS = 10 * 60_000;
 const STEP_MS = 15_000;
 export const MONITOR_VISITOR = /^monitor-/;
 export interface Step { step: "landing" | "read" | "checkout" | "sign-in"; ok: boolean; ms: number; detail?: string }
-export interface MonitorDeps { base: string; f?: typeof fetch; send?: (e: Email) => Promise<SendOutcome>; now?: number; log?: (s: string) => void }
+export interface Alert { title: string; body: string; url: string }
+/** "sent" to at least one device; "no_subscription" when no owner has a device subscribed; "failed" otherwise. */
+export type NotifyOutcome = "sent" | "no_subscription" | "failed";
+export interface MonitorDeps { base: string; f?: typeof fetch; notify?: (a: Alert) => Promise<NotifyOutcome>; now?: number; log?: (s: string) => void }
+
+/** The alert as a web push to every device subscribed by an account on FREE_ACCESS_EMAILS. Subscriptions the browser
+ *  has dropped are deleted. */
+export async function pushOwners(db: Db, a: Alert, send: typeof sendPush = sendPush): Promise<NotifyOutcome> {
+  const owners = [...freeAccessEmails()];
+  if (!owners.length) return "no_subscription";
+  const r = await db.execute(sql`select s.endpoint, s.p256dh, s.auth from terminal.push_subscriptions s join terminal.users u on u.id = s.user_id
+    where lower(u.email) in (${sql.join(owners.map(e => sql`${e}`), sql`, `)})`);
+  const subs = r.rows as Array<{ endpoint: string; p256dh: string; auth: string }>;
+  if (!subs.length) return "no_subscription";
+  let sent = 0;
+  for (const s of subs) {
+    const out = await send(s, a).catch(() => "failed" as const);
+    if (out === "sent") sent++;
+    if (out === "gone") await db.execute(sql`delete from terminal.push_subscriptions where endpoint = ${s.endpoint}`).catch(() => undefined);
+  }
+  return sent ? "sent" : "failed";
+}
 
 class StepFailed extends Error {}
 const must = (cond: unknown, why: string): void => { if (!cond) throw new StepFailed(why); };
@@ -78,26 +101,27 @@ export async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
   return steps;
 }
 
-/** One monitor run: the path, kept, and emailed when it breaks (then at most hourly) or recovers. */
-export async function moneyPathOnce(db: Db, d: MonitorDeps): Promise<{ ok: boolean; steps: Step[]; emailed: SendOutcome | null }> {
+/** One monitor run: the path, kept, and pushed to the owners when it breaks (then at most hourly) or recovers. */
+export async function moneyPathOnce(db: Db, d: MonitorDeps): Promise<{ ok: boolean; steps: Step[]; notified: NotifyOutcome | null }> {
   const t0 = Date.now(), now = d.now ?? t0;
   const steps = await runMoneyPath(db, d);
   const failed = steps.find(s => !s.ok) ?? null, ok = !failed;
   const prev = (await db.select().from(monitorRuns).orderBy(desc(monitorRuns.at)).limit(1))[0];
-  const lastMail = (await db.select({ at: monitorRuns.at }).from(monitorRuns).where(sql`emailed and not ok`).orderBy(desc(monitorRuns.at)).limit(1))[0];
-  const breaks = !ok && (!prev || prev.ok || !lastMail || now - lastMail.at.getTime() >= 3_600_000);
+  const lastAlert = (await db.select({ at: monitorRuns.at }).from(monitorRuns).where(sql`notified and not ok`).orderBy(desc(monitorRuns.at)).limit(1))[0];
+  const breaks = !ok && (!prev || prev.ok || !lastAlert || now - lastAlert.at.getTime() >= 3_600_000);
   const recovers = ok && prev && !prev.ok;
-  let emailed: SendOutcome | null = null;
+  let notified: NotifyOutcome | null = null;
   if (breaks || recovers) {
-    const send = d.send ?? ((e: Email) => sendEmail(e));
-    emailed = await send(breaks ? {
-      to: COMPANY.email, subject: `Insidir money path failing: ${failed!.step}`,
-      text: [`The money-path check failed at "${failed!.step}": ${failed!.detail ?? "no detail"}.`, "", ...steps.map(s => `${s.ok ? "ok  " : "FAIL"} ${s.step} (${s.ms} ms)${s.detail ? `: ${s.detail}` : ""}`), "", `${d.base.replace(/\/+$/, "")}/status`].join("\n"),
-    } : { to: COMPANY.email, subject: "Insidir money path working again", text: `Every step passed again: ${steps.map(s => `${s.step} ${s.ms} ms`).join(", ")}.` }).catch(() => "failed" as const);
-    if (emailed !== "sent") d.log?.(`money path: email ${emailed} (set RESEND_API_KEY to send it)`);
+    const status = `${d.base.replace(/\/+$/, "")}/status`;
+    const notify = d.notify ?? ((a: Alert) => pushOwners(db, a));
+    notified = await notify(breaks
+      ? { title: `Money path failing: ${failed!.step}`, body: (failed!.detail ?? "no detail").slice(0, 180), url: status }
+      : { title: "Money path working again", body: `Every step passed: ${steps.map(s => `${s.step} ${s.ms} ms`).join(", ")}.`, url: status }).catch(() => "failed" as const);
+    if (notified === "no_subscription") d.log?.(`money path: ${breaks ? "failing" : "recovered"}; no owner device subscribed to push (FREE_ACCESS_EMAILS), shown on /status only`);
+    else if (notified === "failed") d.log?.("money path: the push alert didn't go through; shown on /status");
   }
-  await db.insert(monitorRuns).values({ at: new Date(now), ok, failedStep: failed?.step ?? null, detail: failed?.detail ?? null, ms: Date.now() - t0, steps, emailed: emailed === "sent" });
-  return { ok, steps, emailed };
+  await db.insert(monitorRuns).values({ at: new Date(now), ok, failedStep: failed?.step ?? null, detail: failed?.detail ?? null, ms: Date.now() - t0, steps, notified: notified === "sent" });
+  return { ok, steps, notified };
 }
 
 export interface MonitorView { last: { at: number; ok: boolean; failedStep: string | null; detail: string | null; ms: number; steps: Step[] } | null; failures24h: Array<{ at: number; step: string | null; detail: string | null }>; runs24h: number }

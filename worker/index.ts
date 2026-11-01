@@ -18,7 +18,7 @@
  *   follow:report every hour: the followable QA sheet (lib/follow/report.ts) into the log, one "FOLLOWABLE-CSV" line
  *             per row, so it can be read from the deploy logs
  *   monitor   every 10 minutes: landing → Read → checkout page → sign-in redirect accepted by Whop (lib/monitor);
- *             emailed to hello@aethric.llc when it breaks, shown on /status
+ *             pushed to the owners' devices (FREE_ACCESS_EMAILS) when it breaks, shown on /status
  *   accuracy  every hour: 20 random moves and 20 profile facts re-read from their sources (lib/accuracy/check.ts);
  *             moves that don't match are hidden until they do; OWNER_EMAIL gets an email when anything is off
  *

@@ -17,11 +17,17 @@ const NOTE: Record<PushState | "error", string> = {
   error: "Couldn't turn alerts on. Check your connection and tap again.",
 };
 
-export function PushButton({ vapidKey, onChange }: { vapidKey: string; onChange?: (on: boolean) => void }) {
+export function PushButton({ vapidKey: given, onChange }: { vapidKey: string; onChange?: (on: boolean) => void }) {
   const toast = useToast();
   const [state, setState] = useState<PushState | "error" | null>(null);
   const [busy, setBusy] = useState(false);
+  // The public key comes from the server (never fixed at build time): the page passes it, else GET /api/push/key.
+  const [vapidKey, setKey] = useState(given);
   useEffect(() => { pushState().then(setState).catch(() => setState("unsupported")); }, []);
+  useEffect(() => {
+    if (given) return;
+    fetch("/api/push/key", { cache: "no-store" }).then(r => r.json() as Promise<{ publicKey?: string }>).then(j => { if (j.publicKey) setKey(j.publicKey); }).catch(() => undefined);
+  }, [given]);
 
   const toggle = async () => {
     setBusy(true);

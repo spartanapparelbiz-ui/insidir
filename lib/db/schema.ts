@@ -800,8 +800,8 @@ export const monitorRuns = terminal.table("monitor_runs", {
   detail: text("detail"),
   ms: integer("ms").notNull(),
   steps: jsonb("steps").$type<Array<{ step: string; ok: boolean; ms: number; detail?: string }>>().notNull(),
-  /** Whether this run's failure (or recovery) was emailed. */
-  emailed: boolean("emailed").notNull().default(false),
+  /** Whether this run's failure (or recovery) reached an owner's device as a push alert. */
+  notified: boolean("notified").notNull().default(false),
 }, t => [index("monitor_runs_at_idx").on(t.at)]);
 
 /** What proven money looked like when a member last saw each of their markets on their home (lib/read/member.ts), so

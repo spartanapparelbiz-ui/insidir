@@ -1839,8 +1839,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "emailed": {
-          "name": "emailed",
+        "notified": {
+          "name": "notified",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

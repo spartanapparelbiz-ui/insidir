@@ -44,7 +44,7 @@ export default async function StatusPage() {
               {mp.last.steps.map(st => <li key={st.step} className="stat__row"><Dot l={st.ok ? "green" : "red"} /><span className="stat__name">{st.step}</span><span className="stat__note">{st.ok ? `${st.ms} ms` : st.detail}</span><span className="stat__word" /></li>)}
             </ul>
           ) : <p>The money-path check hasn&apos;t run yet.</p>}
-          {mp ? <p className="stat__fine">Checked every 10 minutes: {mp.runs24h} runs in the last 24 hours, {mp.failures24h.length} failed. A failure is emailed to the owner.</p> : null}
+          {mp ? <p className="stat__fine">Checked every 10 minutes: {mp.runs24h} runs in the last 24 hours, {mp.failures24h.length} failed. A failure is sent as a push alert to the owners&apos; devices.</p> : null}
         </div>
 
         <h2>Worker jobs</h2>

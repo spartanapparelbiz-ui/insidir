@@ -29,8 +29,9 @@ export const SERVER_ENV: Record<string, string> = {
   WHOP_PLAN_INSIDIR: "plan_e2e_insidir",
   WHOP_PRODUCT_INSIDIR: "prod_e2e_insidir",
   WHOP_WEBHOOK_SECRET: WHOP.secret,
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID.publicKey,
-  VAPID_PRIVATE_KEY: VAPID.privateKey,
+  // Production's names (lib/alerts/vapid.ts); the public key reaches the browser from the server at run time.
+  INSIDIR_VAPID_PUBLIC_KEY: VAPID.publicKey,
+  INSIDIR_VAPID_PRIVATE_KEY: VAPID.privateKey,
   VAPID_SUBJECT: "mailto:qa@insidir.com",
   EMAIL_UNSUBSCRIBE_SECRET: "e2e-unsubscribe-secret-0123456789abcdef",
   ADMIN_TOKEN: "e2e-admin-token-0123456789abcdefghijklmnop",
