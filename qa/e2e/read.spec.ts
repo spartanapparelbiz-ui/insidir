@@ -10,6 +10,7 @@
  *   picking from "Which one?" doesn't use up the free Read (the other match is a tap away under it); a new search does.
  *   Home: tonight's markets with proven money, one tap each. /admin shows landing → first Read and → paid. */
 import { expect, test, type Page } from "@playwright/test";
+import { TRIAL } from "@/lib/plans";
 import { base32Decode, stepAt, totpCode } from "@/lib/admin";
 import { SERVER_ENV, WHOP_PORT } from "./env";
 import { q, shotName, signIn } from "./helpers";
@@ -211,7 +212,7 @@ test("/admin: landing → first Read and → paid, median and 75th percentile, a
   await expect(speed.getByTestId("speed-reads")).toContainText(/\d+ Reads · median build \d+ ms/);
   await expect(page.getByTestId("admin-cancels")).toBeVisible();
   await expect(page.getByTestId("admin-posts")).toContainText("Per post");
-  await expect(page.getByTestId("admin-retention").getByTestId("day8")).toContainText("Paid on day 8:");
+  await expect(page.getByTestId("admin-retention").getByTestId("after-trial")).toContainText(`Paid on day ${TRIAL.days + 1}:`);
   await expect(page.getByTestId("admin-retention").getByTestId("churn30")).toContainText("30-day churn:");
   await q("delete from terminal.events where visitor_id = 'e2e-speed-v'");
 });

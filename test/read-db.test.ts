@@ -289,7 +289,7 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect((await weeklyRecap(db, "usr_m", NOW + 3 * H)).right).toBe(0);
   });
 
-  it("/admin per post (visits → Reads → paid by first-touch UTM), paid on day 8, 30-day churn", async () => {
+  it("/admin per post (visits → Reads → paid by first-touch UTM), paid on the day after the trial, 30-day churn", async () => {
     const D = 86_400_000, at = (ms: number) => new Date(NOW - ms);
     await pool.query(`insert into terminal.events (name, visitor_id, user_id, props, at) values
       ('landing_view', 'p1', null, '{"utm_source":"ig","utm_content":"reel-42"}', $1), ('read', 'p1', null, null, $2),
@@ -312,7 +312,7 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     await pool.query(`insert into terminal.events (name, visitor_id, user_id, at) values ('paid', 'server', 'd1', $1), ('paid', 'server', 'd1', $2), ('paid', 'server', 'd2', $3),
       ('paid', 'server', 'd3', $4), ('paid', 'server', 'c1', $5), ('paid', 'server', 'c2', $5)`, [at(20 * D), at(13 * D), at(15 * D), at(3 * D), at(45 * D)]);
     const k = await retention(db, NOW);
-    expect(k.day8).toEqual({ started: 2, paid: 1 });
+    expect(k.afterTrial).toEqual({ started: 2, paid: 1 });
     expect(k.churn30).toMatchObject({ churned: 1 });
     expect(k.churn30.active).toBeGreaterThanOrEqual(2);
   });
