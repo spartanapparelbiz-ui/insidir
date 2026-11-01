@@ -211,6 +211,27 @@
       "when": 1793562121501,
       "tag": "0029_read_seen",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793568611909,
+      "tag": "0030_read_offers",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793569529948,
+      "tag": "0031_wallet_pnl",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793571142585,
+      "tag": "0032_wallet_pnl_queue",
+      "breakpoints": true
     }
   ]
 }

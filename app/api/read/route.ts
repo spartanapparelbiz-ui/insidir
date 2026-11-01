@@ -3,7 +3,8 @@
  *   pick  one of the choices offered before: "polymarket:<id>" or "kalshi:<ticker>"
  *   slip  a sportsbook screenshot (PNG, JPEG, WebP or GIF, up to 8 MB; read and dropped, never stored)
  * Answers { id } (the Read is /read/<id>), { choices: [up to 3] } when it isn't clear which market, or { error, code }.
- * Visitors (and accounts without Insidir) get FREE_READS; members unlimited. A member's Read carries the analyst line
+ * Visitors (and accounts without Insidir) get FREE_READS; members unlimited. Only a Read with proven money or big
+ * bets counts toward it, and the markets a "Which one?" offered stay open to pick for 30 minutes. A member's Read carries the analyst line
  * (capped per member per day); a visitor's is written without one (it's blurred for them). Data, never advice. */
 import { NextResponse, type NextRequest } from "next/server";
 import { unlockHref } from "@/components/app/links";
@@ -16,7 +17,7 @@ import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { isPaid } from "@/lib/plans";
 import { ReadNotFound } from "@/lib/read/build";
 import { resolveSlip, resolveText } from "@/lib/read/resolve";
-import { cachedRead, FREE_READS, lineFor, readsUsed, saveRead } from "@/lib/read/store";
+import { cachedRead, FREE_READS, lineFor, readsUsed, saveOffer, saveRead, wasOffered } from "@/lib/read/store";
 import type { Resolved } from "@/lib/read/types";
 
 export const dynamic = "force-dynamic";
@@ -32,15 +33,18 @@ export async function POST(req: NextRequest) {
   const paid = isPaid(viewer.plan);
   const visitorId = req.cookies.get(VISITOR_COOKIE)?.value ?? null;
   const userId = viewer.user?.id ?? null;
-  if (!paid && (await readsUsed(db, { userId, visitorId })) >= FREE_READS) {
-    return fail(402, "limit", "You've used your free Read. Members read every market.", { unlockHref: unlockHref() });
-  }
+  const who = { userId, visitorId };
   const form = await req.formData().catch(() => null);
   if (!form) return fail(400, "bad_input", "Paste a Polymarket or Kalshi link, or type a market.");
-  const clients = { polymarket: new PolymarketClient(), kalshi: new KalshiClient() };
   const text = String(form.get("text") ?? "").trim().slice(0, 500);
   const pick = String(form.get("pick") ?? "");
   const file = form.get("slip");
+  // The free Read: one that shows proven money or big bets. A market offered in a "Which one?" can still be opened:
+  // picking is part of that search.
+  if (!paid && (await readsUsed(db, who)) >= FREE_READS && !(/^(polymarket|kalshi):/.test(pick) && (await wasOffered(db, who, pick, now)))) {
+    return fail(402, "limit", "You've used your free Read. Members read every market.", { unlockHref: unlockHref() });
+  }
+  const clients = { polymarket: new PolymarketClient(), kalshi: new KalshiClient() };
   let r: Resolved, input: "link" | "text" | "slip" | "pick";
   try {
     const m = /^(polymarket|kalshi):([A-Za-z0-9._-]{3,120})$/.exec(pick);
@@ -57,7 +61,10 @@ export async function POST(req: NextRequest) {
     return fail(502, "failed", "Something went wrong reading that. Try again in a minute.");
   }
   if (r.kind === "none") return fail(404, "not_found", r.why);
-  if (r.kind === "choices") return NextResponse.json({ choices: r.list }, { headers: { "Cache-Control": "no-store" } });
+  if (r.kind === "choices") {
+    if (!paid) await saveOffer(db, who, r.list.map(c => `${c.venue}:${c.id}`), now);
+    return NextResponse.json({ choices: r.list }, { headers: { "Cache-Control": "no-store" } });
+  }
   try {
     const base = await cachedRead(db, clients, r.venue, r.id, now);
     const line = paid && userId ? await lineFor(db, base, userId, now) : null;

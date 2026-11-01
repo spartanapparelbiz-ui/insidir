@@ -57,10 +57,10 @@ describe("V2 landing page", () => {
     for (const t of [copy.WHAT_IS, copy.WHAT_IS_TITLE, copy.HEADLINE, ...copy.INCLUDED]) expect(t).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     for (const f of ["app/page.tsx", "components/motion/Motion.tsx", "components/read/ReadCard.tsx", "app/pricing/page.tsx"]) expect(read(f), f).not.toMatch(/data-count|countUp/);
     for (const f of ["components/home/Story.tsx", "components/PageBand.tsx", "components/home/MarketTabs.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
-    expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
+    expect(GET_CTA).toBe("Try 3 days for $1");
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
     for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
-      expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|3 days|Pro\b/);
+      expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|7 days|first week|Pro\b/);
     }
   });
 

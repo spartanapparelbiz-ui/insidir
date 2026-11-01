@@ -2,7 +2,7 @@
  * change saves itself with a "Saved" confirmation; no Save button. Signed-in only. No bankroll.
  * Billing is read from Whop on each visit: the plan, the next charge date and amount, Manage subscription (Whop's own
  * orders page, where they change their card or cancel). */
-import { GET_CTA } from "@/lib/copy";
+import { GET_CTA, TRIAL_ADJ } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -110,7 +110,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <dl className="akv">
               <div><dt>Plan</dt><dd>{PLANS[viewer.plan].name}{paid ? <span className="akv__sub"> · ${PLANS[viewer.plan].price}/mo</span> : null}</dd></div>
               {paid ? (
-                <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? "Your $1 week ends" : "Next charge"}</dt>
+                <div><dt>{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? `Your ${TRIAL_ADJ} trial ends` : "Next charge"}</dt>
                   <dd>{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="akv__sub"> · {m.status === "trialing" ? `then ${m.renewalPrice} unless you cancel` : m.renewalPrice}</span> : null}</>
                     : mem === "error" ? <span className="akv__sub">Couldn&apos;t load it now. Manage subscription shows it.</span> : <span className="akv__sub">Shown in Manage subscription</span>}</dd></div>
               ) : null}

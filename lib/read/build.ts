@@ -1,23 +1,35 @@
 /* Building one Read (server only), in under 5 seconds: each venue gets VENUE_MS to answer, else what we hold is used.
  *   Listings   the market and its match on the other venue (terminal.pairs, lib/matching), fresh from the venue, else
  *              the matcher's stored copy (terminal.markets).
- *   Proven     wallets with 30+ settled positions and a positive followable return (lib/follow isWinner): their open
- *              dollars on each side, from their large positions (terminal.moves) and, when we read them, their open
- *              positions (terminal.trader_open). Kalshi trades are anonymous, so proven money is Polymarket's.
+ *   Proven     two real sources. Winning trackers (30+ settled, positive all-time followable return): which side
+ *              their open positions here are on, on either venue (trackers tag Kalshi moves too). Proven wallets
+ *              (30+ closed Polymarket markets and positive all-time profit, terminal.wallet_pnl: the count from the
+ *              Data API /closed-positions, the profit from the wallet's /v1/leaderboard row; or a winning followable
+ *              record): their side and dollars, from their large positions
+ *              (terminal.moves) and their open positions (terminal.trader_open).
+ *   Big split  every open tracked large position by side: shown, labelled as such, when there is no proven money.
  *   Big bets   every large position on either listing in the last 24 hours, Kalshi's turned to the main listing's sides,
  *              each flagged unusual when it is a fresh wallet, big against the market's own day, or the long-shot side.
  *   Prices     YES and NO on each venue now, the cheaper one marked. */
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
-import { isWinner, traderFollowAll } from "@/lib/follow/records";
+import { isWinner, trackerFollowAll, traderFollowAll } from "@/lib/follow/records";
 import { infoFor } from "@/lib/markets/info";
 import { shortWallet } from "@/lib/moves/records";
 import type { VMarket } from "@/lib/types";
-import { provenSplit, sidePrices, unusualOf } from "./math";
-import type { BigBet, Listing, ReadData, Venue } from "./types";
+import { MIN_SETTLED } from "@/lib/follow/math";
+import { onDemand } from "@/lib/moves/proven-backfill";
+import { walletPnlFor } from "@/lib/moves/store";
+import { isLive, TRACKERS, trackerWhere } from "@/lib/trackers";
+import { bigSplitOf, provenFrom, sidePrices, unusualOf, type OpenPosition } from "./math";
+import type { BigBet, BigSplit, Listing, ProvenMoney, ReadData, Venue } from "./types";
 
 export const VENUE_MS = 1_500;
+/** A Read aims to be built within this; wallets with no public record are read inline only in what's left, up to
+ *  INLINE_MS (lib/moves/proven-backfill.ts onDemand). */
+export const READ_BUDGET_MS = 3_000;
+export const INLINE_MS = 1_500;
 const DAY = 86_400_000;
 export interface Clients { polymarket: PolymarketClient; kalshi: KalshiClient }
 
@@ -57,24 +69,63 @@ async function listing(db: Db, clients: Clients, venue: Venue, id: string): Prom
   return { title: x.title, eventTitle: x.event, yesLabel: x.yes ?? "Yes", noLabel: x.no ?? "No", url: x.url, yesPrice: i?.yesPrice ?? null, volume24h: null, closeTime: i?.endAt ?? null };
 }
 
-/** Proven wallets' open dollars on each side of a Polymarket market. */
-async function provenRows(db: Db, marketId: string, now: number): Promise<Array<{ wallet: string; side: "yes" | "no"; dollars: number }>> {
-  const [winners, moves, open] = await Promise.all([
-    traderFollowAll(db, now).then(m => new Set([...m.values()].filter(t => isWinner(t.all)).map(t => t.wallet))),
-    db.execute(sql`select wallet, outcome_side as side, sum(amount)::float as dollars from terminal.moves
-      where source = 'polymarket' and market_id = ${marketId} and wallet is not null and result is null and hidden_at is null group by wallet, outcome_side`),
-    db.execute(sql`select wallet, outcome_index, money_in::float as dollars from terminal.trader_open
-      where market_id = ${marketId} and read_at > ${new Date(now - 3 * 3_600_000)} and outcome_index in (0, 1)`),
+/** Winning trackers (prediction-market bets, 30+ settled, positive all-time followable return), with that record. */
+export async function winningTrackers(db: Db, now: number): Promise<Map<string, { name: string; returnPct: number; settled: number }>> {
+  const all = await trackerFollowAll(db, now).catch(() => new Map<string, Record<string, import("@/lib/follow/math").FollowRecord>>());
+  const out = new Map<string, { name: string; returnPct: number; settled: number }>();
+  for (const t of TRACKERS) {
+    const r = all.get(t.slug)?.all;
+    if (t.kind === "bets" && r && isWinner(r) && r.staked > 0) out.set(t.slug, { name: t.name, returnPct: r.net / r.staked, settled: r.n });
+  }
+  return out;
+}
+
+type Ids = { polymarket: string | null; kalshi: string | null; inverted: boolean };
+
+/** Every open tracked large position on either listing (Kalshi's turned to the main listing's sides when inverted), with
+ *  the trackers it belongs to: stored tags, and the live rules (Top Traders, Top 1%) worked out here. */
+async function openPositions(db: Db, ids: Ids): Promise<OpenPosition[]> {
+  const conds = [ids.polymarket ? sql`(source = 'polymarket' and market_id = ${ids.polymarket})` : null, ids.kalshi ? sql`(source = 'kalshi' and market_id = ${ids.kalshi})` : null].filter(Boolean) as ReturnType<typeof sql>[];
+  if (!conds.length) return [];
+  const live = TRACKERS.filter(t => t.kind === "bets" && isLive(t));
+  const flags = live.map((t, i) => sql`(${trackerWhere(t)}) as ${sql.raw(`"live_${i}"`)}`);
+  const r = await db.execute(sql`select id, source, wallet, outcome_side as side, amount::float as dollars, coalesce(trackers, '{}') as trackers${flags.length ? sql`, ${sql.join(flags, sql`, `)}` : sql``}
+    from terminal.moves where hidden_at is null and result is null and (${sql.join(conds, sql` or `)})`);
+  return (r.rows as Array<Record<string, unknown>>).map(x => {
+    const source = x.source as Venue, side = x.side as "yes" | "no";
+    const flip = source === "kalshi" && Boolean(ids.polymarket) && ids.inverted;
+    const tags = [...(x.trackers as string[]), ...live.filter((_, i) => x[`live_${i}`] === true).map(t => t.slug)];
+    return { id: String(x.id), venue: source, wallet: (x.wallet as string | null) ?? null, side: flip ? (side === "yes" ? "no" : "yes") : side, dollars: Number(x.dollars), trackers: tags };
+  });
+}
+
+/** Proven money (winning trackers and proven wallets), and the big-money split over every open tracked position. */
+async function provenAndBig(db: Db, ids: Ids, now: number, clients: Clients | null, started: number): Promise<{ proven: ProvenMoney; big: BigSplit }> {
+  const [positions, trackers, follows, open] = await Promise.all([
+    openPositions(db, ids),
+    winningTrackers(db, now),
+    traderFollowAll(db, now),
+    ids.polymarket ? db.execute(sql`select wallet, outcome_index, money_in::float as dollars from terminal.trader_open
+      where market_id = ${ids.polymarket} and read_at > ${new Date(now - 3 * 3_600_000)} and outcome_index in (0, 1)`) : Promise.resolve({ rows: [] }),
   ]);
-  const best = new Map<string, { wallet: string; side: "yes" | "no"; dollars: number }>();
-  const add = (wallet: string, side: "yes" | "no", dollars: number) => {
-    if (!winners.has(wallet)) return;
-    const k = `${wallet}:${side}`, cur = best.get(k);
-    if (!cur || dollars > cur.dollars) best.set(k, { wallet, side, dollars });
-  };
-  for (const r of moves.rows as Array<{ wallet: string; side: "yes" | "no"; dollars: number }>) add(r.wallet, r.side, Number(r.dollars));
-  for (const r of open.rows as Array<{ wallet: string; outcome_index: number; dollars: number }>) add(r.wallet, r.outcome_index === 0 ? "yes" : "no", Number(r.dollars));
-  return [...best.values()];
+  const walletOpen = (open.rows as Array<{ wallet: string; outcome_index: number; dollars: number }>).map(o => ({ wallet: o.wallet, side: (o.outcome_index === 0 ? "yes" : "no") as "yes" | "no", dollars: Number(o.dollars) }));
+  const wallets = [...new Set([...positions.map(p => p.wallet).filter((w): w is string => Boolean(w)), ...walletOpen.map(o => o.wallet)])];
+  let recs = await walletPnlFor(db, wallets);
+  // Wallets with no public record yet go to the front of the backfill; up to INLINE_MAX are read now if the Read's
+  // time budget allows (what's left of READ_BUDGET_MS, at most INLINE_MS).
+  const missing = wallets.filter(w => !recs.has(w));
+  if (missing.length && clients) {
+    const left = Math.min(INLINE_MS, READ_BUDGET_MS - (Date.now() - started));
+    const done = await onDemand(db, clients.polymarket, missing, left, now).catch(() => [] as string[]);
+    if (done.length) recs = await walletPnlFor(db, wallets);
+  }
+  const records = new Map([...recs].filter(([, r]) => r.pnl !== null).map(([w, r]) => [w, { closed: r.closed, closedAtLeast: r.closedAtLeast, profit: r.pnl! }]));
+  const follow = new Map<string, { returnPct: number; settled: number; winner: boolean }>();
+  for (const w of wallets) {
+    const f = follows.get(w)?.all;
+    if (f && f.n >= MIN_SETTLED && f.staked > 0) follow.set(w, { returnPct: f.net / f.staked, settled: f.n, winner: isWinner(f) });
+  }
+  return { proven: provenFrom({ positions, walletOpen, trackers, records, follow, short: shortWallet }), big: bigSplitOf(positions) };
 }
 
 /** Large positions on either listing in the last 24 hours, largest first (up to 8). */
@@ -94,6 +145,7 @@ async function bigBets(db: Db, ids: { polymarket: string | null; kalshi: string 
 
 /** Everything but the analyst line. */
 export async function buildRead(db: Db, clients: Clients, venue: Venue, id: string, now: number): Promise<Omit<ReadData, "line">> {
+  const started = Date.now();
   const ids = await pairOf(db, venue, id);
   const [poly, kal] = await Promise.all([
     ids.polymarket ? listing(db, clients, "polymarket", ids.polymarket) : Promise.resolve(null),
@@ -101,8 +153,8 @@ export async function buildRead(db: Db, clients: Clients, venue: Venue, id: stri
   ]);
   const main = poly ?? kal;
   if (!main) throw new ReadNotFound("not found");
-  const [proven, bets] = await Promise.all([
-    ids.polymarket && poly ? provenRows(db, ids.polymarket, now).then(provenSplit) : Promise.resolve(provenSplit([])),
+  const [{ proven, big }, bets] = await Promise.all([
+    provenAndBig(db, { polymarket: poly ? ids.polymarket : null, kalshi: kal ? ids.kalshi : null, inverted: ids.inverted }, now, clients, started),
     bigBets(db, ids, { polymarket: poly?.volume24h ?? null, kalshi: kal?.volume24h ?? null }, now),
   ]);
   const kYes = kal?.yesPrice ?? null;
@@ -113,6 +165,6 @@ export async function buildRead(db: Db, clients: Clients, venue: Venue, id: stri
     question: main.title, event: main.eventTitle, yesLabel: main.yesLabel, noLabel: main.noLabel, closeTime: main.closeTime,
     polymarket: poly && ids.polymarket ? L("polymarket", ids.polymarket, poly) : null,
     kalshi: kal && ids.kalshi ? { ...L("kalshi", ids.kalshi, kal), inverted: Boolean(poly) && ids.inverted } : null,
-    proven, bets, prices: sidePrices(poly?.yesPrice ?? null, kalYesOriented), at: now,
+    proven, big, bets, prices: sidePrices(poly?.yesPrice ?? null, kalYesOriented), at: now,
   };
 }

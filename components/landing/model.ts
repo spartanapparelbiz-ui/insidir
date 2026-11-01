@@ -2,7 +2,7 @@
  * Every number these produce comes from rows the caller read from the database. */
 import { followGreen, type BacktestResult, type Receipt } from "@/lib/engines/receipts";
 import type { FeedRow, FeedViewer, StoredOpp } from "@/lib/feed";
-import { PLANS, type Entitlements } from "@/lib/plans";
+import { PLANS, TRIAL, type Entitlements } from "@/lib/plans";
 import type { ReceiptRow } from "@/lib/queries";
 import type { NearMiss } from "@/lib/engines/near-miss";
 import { allowedVenues, venuesOk } from "@/lib/region";
@@ -22,7 +22,7 @@ export const LANDING_CTA = "See today's live deals";
 export const RISK_QUESTION = "Is this risk-free?";
 
 /** Risk reversal, shown under the pricing cards only when the log averages at least this many green deals a day. */
-export const REFUND_LINE = "Find no green deal in your first 7 days and get a full refund.";
+export const REFUND_LINE = `Find no green deal in your first ${TRIAL.days} days and get a full refund.`;
 export const REFUND_MIN_GREEN_PER_DAY = 1;
 export const REFUND_WINDOW_DAYS = 30;
 

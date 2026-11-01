@@ -866,6 +866,14 @@ a.rtable__a:hover span { text-decoration: underline; }
 .rsplit__legend dt { font-weight: 600; }
 .rsplit__legend dd { margin: 2px 0 0; color: var(--muted); font-variant-numeric: tabular-nums; }
 .rsplit__legend b { color: var(--text); font-weight: 600; font-size: var(--t20); }
+.rprov { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid var(--border); }
+.rprov__row { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.rprov__main { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.rprov__main a { color: var(--text); font-weight: 600; text-decoration: none; }
+.rprov__main a:hover { text-decoration: underline; }
+.rprov__main b { font-weight: 600; }
+.rprov__sub { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.rbig { display: grid; gap: 10px; margin-top: 14px; }
 .rprice { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .rprice th, .rprice td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; font-weight: 400; }
 .rprice thead th { color: var(--muted); font-size: 14px; }
@@ -914,3 +922,15 @@ a.rtable__a:hover span { text-decoration: underline; }
 .rpick__err { color: var(--loss-text); font-size: 14px; }
 .recap__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; text-align: left; }
 .recap__list b { font-weight: 600; margin-right: 6px; }
+
+/* Under the box: tonight's one-tap Reads (components/read/TonightReads.tsx). */
+.rtap { width: 100%; max-width: 680px; margin: 20px auto 0; text-align: left; }
+.rtap__h { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.rtap__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rtap__b { display: grid; gap: 2px; width: 100%; min-height: 44px; padding: 10px 14px; text-align: left; font: inherit; color: var(--text);
+  background: var(--page); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+.rtap__b:hover { border-color: var(--text); }
+.rtap__b:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.rtap__b[aria-busy="true"] { opacity: .6; }
+.rtap__t { font-weight: 600; overflow-wrap: anywhere; }
+.rtap__s { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }

@@ -752,6 +752,12 @@ export class PolymarketClient implements VenueClient {
     }
   }
 
+  /** One wallet's all-time row on the public leaderboard (GET /v1/leaderboard?timePeriod=ALL&orderBy=PNL&limit=1&user=):
+   *  [{ rank, proxyWallet, userName, vol, pnl, ... }]. Raw; read it with lib/moves/sources.ts readUserPnl (pnl only). */
+  async getLeaderboardUser(user: string, priority: Priority = "normal"): Promise<unknown> {
+    return this.data.json(`${this.dataUrl}/v1/leaderboard${qs({ timePeriod: "ALL", orderBy: "PNL", limit: 1, user: user.toLowerCase() })}`, { priority });
+  }
+
   /** One page of the public leaderboard (GET /v1/leaderboard): rank, proxyWallet, userName, vol, pnl. Raw. */
   async getLeaderboardPage(opts: { timePeriod: "DAY" | "WEEK" | "MONTH" | "ALL"; category?: string; limit?: number; offset?: number; priority?: Priority }): Promise<unknown> {
     const params = { timePeriod: opts.timePeriod, category: opts.category ?? "OVERALL", orderBy: "PNL", limit: opts.limit ?? 50, offset: opts.offset ?? 0 };

@@ -1,5 +1,5 @@
 /* `npm run whop:setup` (lib/billing/setup.ts) against a stand-in Whop API and a throwaway Postgres next to
- * E2E_DATABASE_URL: picks the right plan and keeps checkout closed when it isn't exactly 7 days for $1 then
+ * E2E_DATABASE_URL: picks the right plan and keeps checkout closed when it isn't exactly 3 days for $1 then
  * $39/month; creates the webhook once and stores its secret encrypted; never duplicates; checks the login app has
  * <APP_URL>/login/callback or /reset/callback (stored as redirect_uri, /login/callback preferred) without ever changing it; env vars override; no secret in the logs. The crypto and plan checks run without a database. */
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -12,7 +12,7 @@ import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 const KEY = "apik_owner_test_key";
-const GOOD = { id: "plan_good", visibility: "visible", billing_type: "renewal", renewal_price: 39, initial_price: 1, trial_period_days: 7, billing_period: 30, currency: "usd", product: { id: "prod_ins" } };
+const GOOD = { id: "plan_good", visibility: "visible", billing_type: "renewal", renewal_price: 39, initial_price: 1, trial_period_days: 3, billing_period: 30, currency: "usd", product: { id: "prod_ins" } };
 
 describe("crypto and plan checks", () => {
   it("encrypts with a key from WHOP_API_KEY; another key can't read it", () => {
@@ -23,8 +23,8 @@ describe("crypto and plan checks", () => {
   });
   it("says exactly what's wrong with a plan", () => {
     expect(planProblems(GOOD)).toEqual([]);
-    expect(planProblems({ ...GOOD, trial_period_days: 3, initial_price: 0 })).toEqual(["trial is 3 days, not 7", "initial fee is $0, not $1"]);
-    expect(planProblems({ ...GOOD, trial_period_days: null, billing_period: 365 })).toEqual(["bills every 365 days, not monthly", "trial is 0 days, not 7"]);
+    expect(planProblems({ ...GOOD, trial_period_days: 7, initial_price: 0 })).toEqual(["trial is 7 days, not 3", "initial fee is $0, not $1"]);
+    expect(planProblems({ ...GOOD, trial_period_days: null, billing_period: 365 })).toEqual(["bills every 365 days, not monthly", "trial is 0 days, not 3"]);
   });
   it("env overrides what setup stored", () => {
     const stored = { plan_id: "plan_db", app_id: "app_db", webhook_secret: encryptSecret("whsec_db", KEY) };
@@ -92,7 +92,7 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     const logs: string[] = [];
     const r1 = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
     expect(r1.line).toBe("Whop setup: plan ok, webhook ok, login app ok");
-    expect(logs).toContain("Whop plan plan_good: $39 every 30 days, trial 7 days, initial fee $1.");
+    expect(logs).toContain("Whop plan plan_good: $39 every 30 days, trial 3 days, initial fee $1.");
     expect(w.s.webhooks).toHaveLength(1);
     expect(w.s.webhooks[0]).toMatchObject({ url: "https://insidir.com/api/billing/webhook", events: [...EVENTS], resource_id: "biz_1" });
     // The login app is found by name, its id stored, and never changed.
@@ -112,13 +112,13 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     for (const l of logs) expect(l).not.toMatch(/whsec_|apik_/);
   });
 
-  it("a plan that isn't exactly 7 days for $1 then $39/month: checkout stays closed and the log says why", async () => {
+  it("a plan that isn't exactly 3 days for $1 then $39/month: checkout stays closed and the log says why", async () => {
     await pool.query("insert into terminal.whop_config (key, value) values ('plan_id', 'plan_old')");
-    const w = fakeWhop([{ ...GOOD, trial_period_days: 3, initial_price: 0 }]);
+    const w = fakeWhop([{ ...GOOD, trial_period_days: 7, initial_price: 0 }]);
     const logs: string[] = [];
     const r = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
     expect(r.line).toBe("Whop setup: plan wrong, webhook ok, login app ok");
-    expect(logs.join("\n")).toContain("Whop plan plan_good is not what the site says (7 days for $1, then $39/month): trial is 3 days, not 7; initial fee is $0, not $1. Checkout stays closed.");
+    expect(logs.join("\n")).toContain("Whop plan plan_good is not what the site says (3 days for $1, then $39/month): trial is 7 days, not 3; initial fee is $0, not $1. Checkout stays closed.");
     expect((await readConfig(db)).plan_id).toBeUndefined();
   });
 

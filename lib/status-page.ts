@@ -12,11 +12,14 @@ const MIN = 60_000, HOUR = 60 * MIN;
 export type Light = "green" | "amber" | "red";
 export interface SourceFresh { key: "polymarket" | "kalshi" | "form4" | "13f"; label: string; lastAt: number | null; light: Light; note: string }
 export interface JobBeat { job: string; label: string; lastRunAt: number; lastOkAt: number | null; ok: boolean; error: string | null; light: Light }
+/** The proven-wallet backfill's last run (lib/moves/proven-backfill.ts): its request rate against the Data API limit. */
+export interface BackfillRate { at: number; wallets: number; requests: number; reqPerSec: number; limitPerSec: number; share: number; rateLimited: number; queued: number; due: number }
 export interface CheckRun { runAt: number; ok: number; checked: number; mismatch: number }
 export interface Status {
   at: number;
   sources: SourceFresh[];
   jobs: JobBeat[];
+  backfill: BackfillRate | null;
   checks: CheckRun[];
   web: { startedAt: number; commit: string | null; deployment: string | null };
   overall: Light;
@@ -36,6 +39,7 @@ const JOBS: Array<[RegExp, string, number]> = [
   [/^moves:kalshi|^poll:kalshi|^kalshi/, "Kalshi trades", 2 * MIN],
   [/^moves:settle$/, "Settlements", 10 * MIN],
   [/^moves:records$/, "Trader records", 5 * MIN],
+  [/^moves:proven-backfill$/, "Proven-wallet backfill", MIN],
   [/^markets:info$/, "Market prices", 5 * MIN],
   [/^accuracy$/, "Accuracy check", HOUR],
   [/^monitor:money-path$/, "Money path", 10 * MIN],
@@ -64,7 +68,7 @@ export async function readStatus(db: Db, now: number): Promise<Status> {
         max(at) filter (where source = 'sec' and detail->>'kind' = 'insider') as form4,
         max(at) filter (where source = 'sec' and detail->>'kind' = 'fund') as f13
       from terminal.moves where at > ${new Date(now - 200 * 24 * HOUR)}`),
-    db.execute(sql`select job, last_run_at, last_ok_at, ok, error from terminal.worker_heartbeats order by job`),
+    db.execute(sql`select job, last_run_at, last_ok_at, ok, error, stats from terminal.worker_heartbeats order by job`),
     db.execute(sql`select run_at, count(*) filter (where status = 'ok')::int as ok, count(*) filter (where status <> 'skipped')::int as checked,
         count(*) filter (where status = 'mismatch')::int as mismatch
       from terminal.accuracy_checks where run_at > ${new Date(now - 7 * 24 * HOUR)} group by run_at order by run_at desc limit 48`),
@@ -83,9 +87,13 @@ export async function readStatus(db: Db, now: number): Promise<Status> {
     const light: Light = !row.ok ? "red" : now - lastRunAt > 3 * def[2] ? "amber" : "green";
     jobs.push({ job: row.job, label: def[1], lastRunAt, lastOkAt, ok: row.ok, error: row.error, light });
   }
+  const bf = (h.rows as Array<{ job: string; last_run_at: string; stats: Record<string, number | string> | null }>).find(r => r.job === "moves:proven-backfill");
+  const n = (k: string) => Number(bf?.stats?.[k] ?? 0);
+  const backfill: BackfillRate | null = bf?.stats ? { at: new Date(bf.last_run_at).getTime(), wallets: n("wallets"), requests: n("requests"), reqPerSec: n("reqPerSec"),
+    limitPerSec: n("limitPerSec"), share: n("share"), rateLimited: n("rateLimited"), queued: n("queued"), due: n("due") } : null;
   const checks = (c.rows as Array<{ run_at: string; ok: number; checked: number; mismatch: number }>).map(r => ({ runAt: new Date(r.run_at).getTime(), ok: Number(r.ok), checked: Number(r.checked), mismatch: Number(r.mismatch) }));
   const lights = [...sources.filter(s => s.key !== "13f").map(s => s.light), ...jobs.map(j => j.light)];
   const overall: Light = lights.includes("red") ? "red" : lights.includes("amber") ? "amber" : "green";
-  return { at: now, sources, jobs, checks, overall,
+  return { at: now, sources, jobs, backfill, checks, overall,
     web: { startedAt: STARTED_AT, commit: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? null, deployment: process.env.RAILWAY_DEPLOYMENT_ID ?? null } };
 }

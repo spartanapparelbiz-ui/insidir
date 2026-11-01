@@ -19,7 +19,7 @@ test("landing: one tool, final on first paint: the headline, the box, what a Rea
   await expect(page.getByTestId("read-go")).toHaveText("Read it");
   await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
   const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  expect(h2s).toEqual(["What a Read shows", "$1 for your first week", "Questions"]);
+  expect(h2s).toEqual(["Tonight, with proven money", "What a Read shows", "$1 for your first 3 days", "Questions"]);
   await expect(page.locator(".steps__h")).toHaveText(["Proven money", "Big bets, last 24 hours", "Price now", "One analyst line"]);
   // The nav: Pricing, Log in, Start for $1. Nothing else.
   const links = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
@@ -260,10 +260,10 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
   await page.goto("/pricing");
-  // One plan card: $39/month, the $1 week, Start for $1, five checkmarks; no "More coming" line.
+  // One plan card: $39/month, the $1 trial, Start for $1, five checkmarks; no "More coming" line.
   const card = page.getByTestId("plan-card");
   await expect(card).toContainText("$39/month");
-  await expect(card).toContainText("Your first week is $1. Cancel anytime.");
+  await expect(card).toContainText("$1 for your first 3 days. Cancel anytime.");
   await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
   await expect(card.locator("li")).toHaveCount(5);
   await expect(page.locator("main")).not.toContainText("More coming");

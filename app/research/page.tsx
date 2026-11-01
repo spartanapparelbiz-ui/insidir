@@ -11,6 +11,7 @@ import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { movePlan } from "@/lib/moves/gate";
 import { isPaid } from "@/lib/plans";
+import { GET_CTA } from "@/lib/copy";
 import { ask, VISITOR_DAILY } from "@/lib/research/ask";
 import { suggestionsFor } from "@/lib/research/suggest";
 
@@ -44,7 +45,7 @@ export default async function ResearchPage({ searchParams }: { searchParams: Pro
           <button type="submit" className="btn btn--primary">Ask</button>
         </form>
         {r?.ok ? <ResearchAnswer a={r.answer} csvHref={member ? `/api/research/csv?id=${r.id}` : null} />
-          : r && !r.ok ? <p className="research__limit" role="alert" data-testid="research-limit">Visitors get {VISITOR_DAILY} questions a day. Members ask as many as they like, on live data. <a href={unlockHref()}>Try 7 days for $1</a></p>
+          : r && !r.ok ? <p className="research__limit" role="alert" data-testid="research-limit">Visitors get {VISITOR_DAILY} questions a day. Members ask as many as they like, on live data. <a href={unlockHref()}>{GET_CTA}</a></p>
             : q ? <p className="research__limit" role="alert">Research is catching up. Try again in a minute.</p> : null}
         {!member ? <p className="research__fine">{VISITOR_DAILY} questions a day for visitors, on data 30 minutes late. Members: live data, as many as they like, Export CSV.</p> : null}
         <h2 className="research__h2">Try</h2>

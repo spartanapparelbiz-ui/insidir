@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SafetyLight } from "@/components/SafetyLight";
 import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
+import { TRIAL } from "@/lib/plans";
 import { cancelReasonCounts, duration, postFunnel, readTimings, retention, type PostRow, type ReadTimings, type Retention } from "@/lib/read/admin";
 import { abStats, freeAccessAccounts, FUNNEL_LABEL, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
 import { getDb, hasDatabase } from "@/lib/db";
@@ -245,7 +246,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <h2 className="sec2__h">Retention</h2>
         {keep.v ? (
           <ul className="small">
-            <li data-testid="day8">Paid on day 8: <b className="num">{keep.v.day8.paid}</b> of <b className="num">{keep.v.day8.started}</b> whose $1 week started 8 to 38 days ago{keep.v.day8.started ? ` (${((keep.v.day8.paid / keep.v.day8.started) * 100).toFixed(0)}%)` : ""}</li>
+            <li data-testid="after-trial">Paid on day {TRIAL.days + 1}: <b className="num">{keep.v.afterTrial.paid}</b> of <b className="num">{keep.v.afterTrial.started}</b> whose ${TRIAL.fee} trial started {TRIAL.days + 1} to {TRIAL.days + 31} days ago{keep.v.afterTrial.started ? ` (${((keep.v.afterTrial.paid / keep.v.afterTrial.started) * 100).toFixed(0)}%)` : ""}</li>
             <li data-testid="churn30">30-day churn: <b className="num">{keep.v.churn30.churned}</b> of <b className="num">{keep.v.churn30.active}</b> paying 30 to 60 days ago have left or are set to cancel{keep.v.churn30.active ? ` (${((keep.v.churn30.churned / keep.v.churn30.active) * 100).toFixed(0)}%)` : ""}</li>
           </ul>
         ) : <p className="muted small">No numbers yet.</p>}

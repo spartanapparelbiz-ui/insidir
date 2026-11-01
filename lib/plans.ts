@@ -31,9 +31,11 @@ export const PLANS: Record<Plan, { name: string; price: number; tagline: string;
 /** The one plan, as every button and price line says it. */
 export const PRICE = `$${PLANS.insidir.price}/mo`;
 
-/** The trial: the first 7 days for $1 (Whop: a 7-day trial with a $1 initial fee), then the monthly price. Access
- *  starts the moment the $1 is paid (a trialing membership grants it, lib/billing/whop.ts GRANTING). */
-export const TRIAL = { days: 7, fee: 1 } as const;
+/** The trial: the first 3 days for $1 (Whop plan plan_XBvNjaLPThsp2: a 3-day trial with a $1 initial fee), then the
+ *  monthly price. Every mention of the trial on the site is built from this (lib/copy.ts TRIAL_LINE, GET_CTA,
+ *  chargeLine); whop:setup keeps checkout shut unless the Whop plan matches it exactly. Access starts the moment the $1
+ *  is paid (a trialing membership grants it, lib/billing/whop.ts GRANTING). */
+export const TRIAL = { days: 3, fee: 1 } as const;
 
 export const entitlements = (plan: Plan): Entitlements => PLANS[plan].entitlements;
 export const isPaid = (plan: Plan): boolean => plan !== "free";

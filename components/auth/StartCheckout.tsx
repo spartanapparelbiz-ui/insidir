@@ -1,7 +1,7 @@
 "use client";
 /* The checkout on /start, signed in or not (pay first, sign in after). First the 18+ checkbox (stored with the account;
  * skipped once it is), then Whop's embedded checkout
- * (docs.whop.com/developer/guides/embed-checkout) opens in place straight away, 7 days for $1, then $39/month, Apple Pay
+ * (docs.whop.com/developer/guides/embed-checkout) opens in place straight away, the TRIAL (lib/plans.ts) for $1, then $39/month, Apple Pay
  * and Google Pay first where the device has them. The checkout carries our account id as metadata
  * (app/api/checkout/start), so the billing webhook links the membership to this account; when it completes we go to
  * /welcome, which waits for Whop to say they have access. Access only ever comes from Whop, never from this page. */

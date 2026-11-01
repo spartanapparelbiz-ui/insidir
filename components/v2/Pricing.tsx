@@ -1,4 +1,4 @@
-/* Pricing: one plan, Insidir: "$39/month · all N trackers" (N counted, never typed), the $1 first week as small print,
+/* Pricing: one plan, Insidir: "$39/month · all N trackers" (N counted, never typed), the $1 trial as small print,
  * cancel anytime. It leads with what a member gets that a visitor doesn't: every open position from winning trackers,
  * live; followable records for every tracker and trader; the leaderboard with what each one holds now; Following.
  * Then what's coming, marked "(coming soon)", so nobody pays for something that isn't there yet (lib/features.ts).
@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { isReady, type Feature } from "@/lib/features";
 import { PLANS, PRICE, TRIAL } from "@/lib/plans";
-import { GET_CTA, PAST } from "@/lib/copy";
+import { GET_CTA, PAST, TRIAL_LINE } from "@/lib/copy";
 import { visibleTrackers } from "@/lib/trackers";
 
 /** Every tracker a member gets today (crypto counts once it's live). */
@@ -93,7 +93,7 @@ export function PricingCards({ current, signedIn, href, level = 2, actions = tru
             </div>
             <p className="plan2__pitch">Every open position from the trackers that made money for anyone following them, live, with each one&apos;s record. {PAST}</p>
             <p className="plan2__price"><span className="plan2__amt">${PLANS.insidir.price}</span> <span className="plan2__unit">/month · all {trackerCount()} trackers</span></p>
-            <p className="plan2__sub plan2__fine">First week ${TRIAL.fee}. Cancel anytime. Secure sign-in and payments by Whop.</p>
+            <p className="plan2__sub plan2__fine">{TRIAL_LINE}. Cancel anytime. Secure sign-in and payments by Whop.</p>
             {!actions ? null : mine ? <Link className="btn btn--secondary btn--block" href="/settings">Manage your plan</Link>
               : <Link className="btn btn--primary btn--big btn--block" href={href} data-checkout="pricing">{GET_CTA}</Link>}
           </div>

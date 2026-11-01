@@ -1,6 +1,8 @@
 /* The shell of every company and trust page (About, Methodology, Our data, Status, Security, Disclosures, Terms,
  * Privacy, Credits, Changelog, Help): the header, a plain article with its title, an optional dated line ("Last
  * updated October 31, 2026") and an optional lead, and the trial as the page's one black button. Server component. */
+import { TRIAL } from "@/lib/plans";
+import { TRIAL_LINE } from "@/lib/copy";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -24,8 +26,8 @@ export async function TrustPage({ path, title, updated, lead, children, cta = tr
         </RevealGroup>
         {cta && !viewer.user ? (
           <div className="lp-legal__next">
-            <Link className="btn btn--primary" href="/start">Start your 7-day trial</Link>
-            <p className="lp-legal__fine">$1 for the first week, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.</p>
+            <Link className="btn btn--primary" href="/start">Start for ${TRIAL.fee}</Link>
+            <p className="lp-legal__fine">{TRIAL_LINE}, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.</p>
           </div>
         ) : null}
       </main>

@@ -36,6 +36,7 @@ import { createVenueClients, KalshiClient, PolymarketClient, rateLimitStats, typ
 import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
+import { provenBackfillOnce } from "@/lib/moves/proven-backfill";
 import { avatarsOnce, dedupeOnce, leagueBackfillOnce, repairSwappedOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { historyOnce } from "@/lib/stocks/history";
@@ -264,6 +265,11 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("moves:records", 5 * 60_000, async () => {
         const n = await recordsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         if (n) log(`moves: ${n} trader records refreshed`);
+      }),
+      every("moves:proven-backfill", 60_000, async () => {
+        const r = await provenBackfillOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
+        await heartbeat(getDb(), "moves:proven-backfill", r.rateLimited === 0, r.rateLimited ? `${r.rateLimited} rate-limited (429); budget halved` : null, { ...r });
+        if (r.wallets) log(`moves: ${r.wallets} public records backfilled, ${r.requests} requests at ${r.reqPerSec}/s (limit ${r.limitPerSec}/s, share ${r.share}), ${r.queued} queued, ${r.due} due`);
       }),
       every("accuracy", ACCURACY_MS, () => accuracyOnce(clients.polymarket as PolymarketClient, clients.kalshi as KalshiClient, sec)),
       // Your markets (lib/read/member.ts): a fresh Read of every market members read in the last 14 days, every 15 minutes.

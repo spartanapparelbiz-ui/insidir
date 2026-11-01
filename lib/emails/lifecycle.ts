@@ -14,7 +14,7 @@ import { dollars, recordLine } from "@/lib/moves/copy";
 import { walletLabel } from "@/lib/moves/records";
 import { fromRow, recordsFor } from "@/lib/moves/store";
 import type { Move, TraderRecord } from "@/lib/moves/types";
-import { isPaid } from "@/lib/plans";
+import { TRIAL, isPaid } from "@/lib/plans";
 import type { Plan } from "@/lib/types";
 
 export type LifecycleKind = "welcome" | "trial_ending" | "weekly";
@@ -80,7 +80,7 @@ export function trialEndingEmail(caught: readonly Move[], fromFollows: boolean, 
     kind: "trial_ending", period: "once",
     subject: "Your trial ends tomorrow, here's what you caught",
     heading: "Your trial ends tomorrow.",
-    lines: [...lines, { text: `Your $1 week ends tomorrow, then Insidir is $39/mo. Cancel anytime in one tap on your Account page.`, url: `${appUrl}/settings?from=trial` }],
+    lines: [...lines, { text: `Your $${TRIAL.fee} trial ends tomorrow, then Insidir is $39/mo. Cancel anytime in one tap on your Account page.`, url: `${appUrl}/settings?from=trial` }],
     cta: { label: "Open Activity", url: `${appUrl}/feed?from=trial` },
   };
 }

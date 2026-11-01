@@ -54,6 +54,13 @@ export default async function StatusPage() {
               <span className="stat__note">{j.ok ? `Last run ${ago(j.lastRunAt, now)}` : `Failed ${ago(j.lastRunAt, now)}${j.lastOkAt ? `, last worked ${ago(j.lastOkAt, now)}` : ""}`}</span><span className="stat__word">{WORD[j.light]}</span></li>)}
           </ul>
         ) : <p>No worker heartbeats recorded yet.</p>}
+        {s.backfill ? (
+          <p className="stat__fine" data-testid="status-backfill">
+            Proven-wallet backfill, last run {ago(s.backfill.at, now)}: {s.backfill.wallets.toLocaleString("en-US")} wallets, {s.backfill.requests.toLocaleString("en-US")} requests at {s.backfill.reqPerSec}/s
+            (Data API limit {s.backfill.limitPerSec}/s, using up to {Math.round(s.backfill.share * 100)}%), {s.backfill.rateLimited ? `${s.backfill.rateLimited} rate-limited` : "no rate limiting"}.
+            {" "}{s.backfill.queued.toLocaleString("en-US")} queued by Reads, {s.backfill.due.toLocaleString("en-US")} due.
+          </p>
+        ) : null}
 
         <h2>Accuracy checks</h2>
         {s.checks.length ? (

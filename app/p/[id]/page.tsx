@@ -2,7 +2,7 @@
  *   /p/0x…           a Polymarket trader: public username or short address, the record and stats (20+ resolved
  *                    markets), profit over time, wins and losses by category, open positions and recent moves
  *   /p/insider-<cik> and /p/fund-<cik> redirect to the public SEC pages (/insiders/<cik>-<slug>, /funds/<cik>-<slug>)
- * Names are for everyone; the numbers are for members ("Try 7 days for $1"), and are never sent to a free
+ * Names are for everyone; the numbers are for members (GET_CTA, from TRIAL), and are never sent to a free
  * viewer's browser. Every number links to where it came from. Nothing about who is behind a wallet, ever. */
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";

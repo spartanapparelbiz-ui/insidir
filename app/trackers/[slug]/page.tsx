@@ -22,7 +22,7 @@ import { unlockHref } from "@/components/app/links";
 import { BreakdownTable, cents, gatedTile, Leaderboard, pct, perfTiles, Section, signed, Table, Tiles, tone } from "@/components/stats/Stats";
 import { BY, TrackerRow } from "@/components/trackers/Tracker";
 import { hundredLine, roiText } from "@/lib/follow/math";
-import { PAST } from "@/lib/copy";
+import { GET_CTA, PAST } from "@/lib/copy";
 import { MoveArt } from "@/components/MoveArt";
 import { Photo } from "@/components/Photo";
 import { artOfMove } from "@/lib/logos";
@@ -205,7 +205,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
         {t.kind === "bets" ? (
           <Section id="lead-h" title="Top traders in this tracker" note="By net P&L on their settled positions here.">
             {paid ? <Leaderboard label="Top traders in this tracker" leaders={leaders(settled, 10)} />
-              : <div className="dnote">Trader records are for members. <a href={trial} data-unlock="tracker-leaders">Try 7 days for $1</a>.</div>}
+              : <div className="dnote">Trader records are for members. <a href={trial} data-unlock="tracker-leaders">{GET_CTA}</a>.</div>}
           </Section>
         ) : null}
 

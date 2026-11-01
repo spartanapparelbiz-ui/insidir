@@ -2,7 +2,7 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
-import { follows, markets, moves, traderRecords, waitlist, type FollowKind } from "@/lib/db/schema";
+import { follows, markets, moves, traderRecords, waitlist, walletPnl, type FollowKind } from "@/lib/db/schema";
 import type { FillPart, League, Move, Tab, TraderRecord } from "./types";
 import { fromParts, mergeParts } from "./detect";
 import { notComboSql } from "./combos";
@@ -129,6 +129,18 @@ export async function walletsToRecord(db: Db, now: number, staleMs: number, limi
     where t.wallet is null or t.updated_at < ${new Date(now - staleMs)} or (t.avg_price is null and t.resolved >= 20)
     group by w.wallet order by coalesce(bool_or(t.avg_price is null and t.resolved >= 20), false) desc, max(w.at) desc limit ${limit}`);
   return (r.rows as Array<{ wallet: string; name: string | null }>);
+}
+
+export interface WalletPnl { closed: number; closedAtLeast: boolean; pnl: number | null }
+export async function saveWalletPnl(db: Db, wallet: string, v: WalletPnl, now: number): Promise<void> {
+  const set = { closed: v.closed, closedAtLeast: v.closedAtLeast, pnl: v.pnl, readAt: new Date(now) };
+  await db.insert(walletPnl).values({ wallet, ...set }).onConflictDoUpdate({ target: walletPnl.wallet, set });
+}
+export async function walletPnlFor(db: Db, wallets: readonly string[]): Promise<Map<string, WalletPnl>> {
+  const ws = [...new Set(wallets)].filter(Boolean);
+  if (!ws.length) return new Map();
+  const rs = await db.select().from(walletPnl).where(inArray(walletPnl.wallet, ws));
+  return new Map(rs.map(r => [r.wallet, { closed: r.closed, closedAtLeast: r.closedAtLeast, pnl: r.pnl }]));
 }
 
 export async function saveRecord(db: Db, r: TraderRecord): Promise<void> {

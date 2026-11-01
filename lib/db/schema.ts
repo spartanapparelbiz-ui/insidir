@@ -419,6 +419,29 @@ export const traderRecords = terminal.table("trader_records", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 }, t => [index("trader_records_proven_idx").on(t.proven)]);
 
+/** A Polymarket wallet's public record for the Read's proven wallets (lib/moves/jobs.ts provenBackfillOnce), re-read
+ *  every 24 hours for every wallet with a large position in the last 90 days:
+ *    closed           distinct closed markets (Data API /closed-positions, paged up to RECORD_MAX_PAGES)
+ *    closed_at_least  paging hit that cap, so the wallet has at least `closed` (the most active traders)
+ *    pnl              all-time profit, the wallet's own row on GET /v1/leaderboard?timePeriod=ALL (pnl only); null
+ *                     when Polymarket has no row for it
+ *  Kept apart from trader_records: a capped wallet's win/loss can't be known from its first pages (they come sorted by
+ *  profit), so nothing here feeds a win rate. */
+export const walletPnl = terminal.table("wallet_pnl", {
+  wallet: text("wallet").primaryKey(),
+  closed: integer("closed").notNull(),
+  closedAtLeast: boolean("closed_at_least").notNull().default(false),
+  pnl: doublePrecision("pnl"),
+  readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+}, t => [index("wallet_pnl_read_idx").on(t.readAt)]);
+
+/** Wallets a Read needed that had no public record yet (terminal.wallet_pnl): the proven-wallet backfill reads these
+ *  first, oldest first, and drops each once its record is stored. */
+export const walletPnlQueue = terminal.table("wallet_pnl_queue", {
+  wallet: text("wallet").primaryKey(),
+  queuedAt: timestamp("queued_at", { withTimezone: true }).notNull(),
+});
+
 /** A Polymarket wallet's public profile picture (lib/moves/avatar.ts), re-read from Polymarket once a day. url is null
  *  when the wallet has none (or it isn't on Polymarket's own image host); blocked when its public username is blocked
  *  (lib/moves/names.ts), so the picture is never shown; hidden_at when an admin hid it (/admin). */
@@ -769,8 +792,19 @@ export const reads = terminal.table("reads", {
   data: jsonb("data").$type<Record<string, unknown>>().notNull(),
   /** How long building it took, ms (the 5-second budget). */
   ms: integer("ms"),
+  /** Whether it counts toward the free Read: false when it had no proven money and no big bets (lib/read readHasMoney). */
+  counted: boolean("counted").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("reads_user_idx").on(t.userId, t.createdAt), index("reads_visitor_idx").on(t.visitorId), index("reads_created_idx").on(t.createdAt)]);
+
+/** The markets a "Which one?" offered a visitor or free account: any of them can be opened for READ_OFFER_MS, even once
+ *  the free Read is used. Picking is part of the search, not another Read. */
+export const readOffers = terminal.table("read_offers", {
+  id: serial("id").primaryKey(),
+  who: text("who").notNull(),
+  keys: text("keys").array().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("read_offers_who_idx").on(t.who, t.createdAt)]);
 
 /** What The Read's analyst line cost, per member (or visitor) per day: the daily cap (READ_AI_DAILY_USD). */
 export const readAiUsage = terminal.table("read_ai_usage", {

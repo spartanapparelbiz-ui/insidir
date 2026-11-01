@@ -81,6 +81,18 @@ export function readLeaderboard(raw: unknown): Array<{ wallet: string; name: str
   return out;
 }
 
+/** A wallet's all-time profit from its own leaderboard row: pnl, and nothing else (never the username or the rank).
+ *  null when there is no row for that exact wallet (an answer about another wallet is ignored) or no number. */
+export function readUserPnl(raw: unknown, wallet: string): number | null {
+  const w = wallet.toLowerCase();
+  for (const r of rows(raw)) {
+    if ((str(r.proxyWallet) ?? "").toLowerCase() !== w) continue;
+    const pnl = num(r.pnl);
+    return pnl === null || !Number.isFinite(pnl) ? null : Math.round(pnl * 100) / 100;
+  }
+  return null;
+}
+
 /** A wallet's public Polymarket username (never the auto-made pseudonym); null when it has none. */
 export function publicUsername(r: Record<string, unknown>): string | null {
   const name = str(r.name) ?? str(r.userName) ?? str(r.username);

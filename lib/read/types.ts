@@ -6,9 +6,49 @@ export type Venue = "polymarket" | "kalshi";
 
 export interface Listing { venue: Venue; id: string; title: string; url: string | null; yesPrice: number | null; volume24h: number | null }
 
-export interface ProvenSide { dollars: number; wallets: number }
-/** Proven wallets: 30+ settled positions and a positive followable return (lib/follow). Their open dollars on each side. */
-export interface ProvenMoney { yes: ProvenSide; no: ProvenSide; wallets: number; /** Share of proven dollars on YES, 0..1; null with none. */ yesShare: number | null }
+export interface ProvenSide { dollars: number; wallets: number; /** Positions counted (a wallet's side, or one Kalshi trade). */ positions?: number }
+
+/** A winning tracker (lib/trackers): 30+ settled positions and a positive all-time followable return (lib/follow). */
+export interface ProvenTracker {
+  slug: string;
+  name: string;
+  /** All-time followable return: net ÷ staked. */
+  returnPct: number;
+  settled: number;
+  /** Its open positions in this market, by side (main listing's sides). */
+  sides: Array<{ side: "yes" | "no"; dollars: number; positions: number }>;
+}
+
+/** A proven Polymarket wallet with an open position here. Proven: its public Polymarket record shows 30+ closed markets
+ *  and positive all-time profit (terminal.wallet_pnl: /closed-positions and /v1/leaderboard), or a winning followable
+ *  record. */
+export interface ProvenWallet {
+  /** Short address only ("0x4f…c2"). Never who is behind it. */
+  wallet: string;
+  side: "yes" | "no";
+  dollars: number;
+  /** All-time realized profit on Polymarket and closed markets; null when the record doesn't qualify. */
+  profit: number | null;
+  closed: number | null;
+  /** The wallet has more closed markets than we page through: `closed` is a floor ("5,000+"). */
+  closedAtLeast?: boolean;
+  /** Insidir's followable record for the wallet, when it has 30+ settled. */
+  follow: { returnPct: number; settled: number } | null;
+}
+
+/** Proven money: winning trackers' and proven wallets' open dollars on each side. */
+export interface ProvenMoney {
+  yes: ProvenSide; no: ProvenSide;
+  /** Proven wallets holding a position. */
+  wallets: number;
+  /** Share of proven dollars on YES, 0..1; null with none. */
+  yesShare: number | null;
+  trackers?: ProvenTracker[];
+  walletRows?: ProvenWallet[];
+}
+
+/** Every tracked large position still open here, by side: shown, labelled as such, when there is no proven money. */
+export interface BigSplit { yes: { dollars: number; positions: number }; no: { dollars: number; positions: number }; yesShare: number | null }
 
 export type Unusual = "fresh_wallet" | "big_for_market" | "long_shot";
 export interface BigBet {
@@ -37,6 +77,8 @@ export interface ReadData {
   polymarket: Listing | null;
   kalshi: (Listing & { inverted: boolean }) | null;
   proven: ProvenMoney;
+  /** All open tracked large positions by side (older Reads don't have it). */
+  big?: BigSplit;
   bets: BigBet[];
   /** Prices for YES and NO on each venue; Polymarket's left out for the US (region rule applied at render). */
   prices: { yes: SidePrices; no: SidePrices };

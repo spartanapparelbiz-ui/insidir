@@ -3,6 +3,7 @@
  *   2. Signed in without Insidir: the embedded Whop checkout (components/auth/StartCheckout.tsx), email prefilled,
  *      the plan line and "Change account", nothing else. On payment, /welcome.
  * Members (and FREE_ACCESS_EMAILS) go straight into the app. ?error= from a cancelled sign-in says so, with a retry. */
+import { TRIAL_LINE } from "@/lib/copy";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -17,7 +18,7 @@ import { PLANS, TRIAL, isPaid } from "@/lib/plans";
 import { isFreeAccess } from "@/lib/billing/free";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Get Insidir", description: `Insidir: $${TRIAL.fee} for your first week, then $${PLANS.insidir.price}/month. Cancel anytime.`, robots: { index: false } };
+export const metadata: Metadata = { title: "Get Insidir", description: `Insidir: ${TRIAL_LINE}, then $${PLANS.insidir.price}/month. Cancel anytime.`, robots: { index: false } };
 
 const ERRORS: Record<string, string> = {
   cancelled: "Sign-in was cancelled. Continue when you're ready.",
