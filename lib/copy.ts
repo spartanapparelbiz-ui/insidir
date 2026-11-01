@@ -1,3 +1,5 @@
+import { TRIAL } from "./plans";
+
 /* Copy rules in one place. Never "guaranteed" or "risk-free" for anything we show. */
 
 /** Under every Read, at the top of the footer, and wherever data could be mistaken for a tip. */
@@ -19,9 +21,17 @@ export const COMPANY = { name: "Aethric LLC", place: "Pompano Beach, FL", email:
 export const WHAT_IS = "Insidir reads any prediction market you paste: where proven money sits, the big bets of the last 24 hours, and the best price on Kalshi and Polymarket.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
 export const WHAT_IS_TITLE = "Insidir: paste any bet, see where the smart money is";
+/* The trial, said one way everywhere and always from lib/plans.ts TRIAL (it must match the Whop plan exactly, or
+ * whop:setup keeps checkout shut). */
+/** "3 days". */
+export const TRIAL_DAYS = `${TRIAL.days} days`;
+/** "3-day". */
+export const TRIAL_ADJ = `${TRIAL.days}-day`;
+/** "$1 for your first 3 days". */
+export const TRIAL_LINE = `$${TRIAL.fee} for your first ${TRIAL.days} days`;
 /** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards): the first
- *  7 days for $1 (lib/plans.ts TRIAL), then $39/mo. */
-export const GET_CTA = "Try 7 days for $1";
+ *  TRIAL.days for TRIAL.fee, then $39/mo. */
+export const GET_CTA = `Try ${TRIAL.days} days for $${TRIAL.fee}`;
 /** Next to every performance figure. */
 export const PAST = "Past results, not a promise.";
 /** The nav's one button, for visitors on every page. */
@@ -33,10 +43,10 @@ export const CANCEL_LINE = "Then $39/mo, cancel anytime.";
 export const OFFER_BAR = `${GET_CTA}, ${THEN_LINE}.`;
 /** What the members-only APIs say to someone without a plan. */
 export const MEMBERS_ONLY = `Members only. ${GET_CTA}, ${THEN_LINE}.`;
-/** "$1 today. $39 on Nov 4 unless you cancel." (/start, under the button): the date is 7 days from `now`, US Eastern. */
+/** "$1 today. $39 on Nov 4 unless you cancel." (/start, under the button): the date is TRIAL.days from `now`, US Eastern. */
 export function chargeLine(now: number): string {
-  const d = new Date(now + 7 * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
-  return `$1 today. $39 on ${d} unless you cancel.`;
+  const d = new Date(now + TRIAL.days * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+  return `$${TRIAL.fee} today. $39 on ${d} unless you cancel.`;
 }
 
 /** How a lock is described everywhere. */

@@ -6,7 +6,7 @@
  *   Analyst line   one sentence on what the data shows. Members only.
  * Visitors see the split and the prices; the bets and the line are blurred behind "Start for $1", and their content
  * is never sent (the blur is drawn from nothing). Server component. */
-import { ADVICE } from "@/lib/copy";
+import { ADVICE, TRIAL_LINE } from "@/lib/copy";
 import { clockET, agoText } from "@/lib/moves/copy";
 import { cents, pct, pricesFor, UNUSUAL_TEXT, usd } from "@/lib/read/math";
 import type { ReadData, SidePrices } from "@/lib/read/types";
@@ -92,7 +92,7 @@ export function ReadCard({ id, data, member, us, now, startHref }: { id: string;
           <div className="rlock__over">
             <p className="rlock__h">{data.bets.length ? `${data.bets.length} big ${data.bets.length === 1 ? "bet" : "bets"} in the last 24 hours, and the analyst line` : "The big bets and the analyst line"}</p>
             <a className="btn btn--primary" href={startHref} data-checkout="read-members">Start for $1</a>
-            <p className="rlock__fine">$1 for your first week, then $39/month. Cancel anytime.</p>
+            <p className="rlock__fine">{TRIAL_LINE}, then $39/month. Cancel anytime.</p>
           </div>
         </section>
       )}

@@ -1,7 +1,7 @@
 /* `npm run whop:setup` (scripts/whop-setup.ts), run on every deploy after the migrations. Idempotent: it only makes
  * what's missing, and never prints a secret.
  *   1. Plan: the visible $39/month plan of WHOP_PRODUCT_INSIDIR. Stored as plan_id only when it is exactly what the
- *      site says (7-day trial, $1 initial fee, $39 every month); otherwise plan_id is cleared, so checkout stays
+ *      site says (lib/plans.ts TRIAL: a 3-day trial, $1 initial fee, $39 every month); otherwise plan_id is cleared, so checkout stays
  *      closed, and the log says what's different.
  *   2. Webhook: one for <APP_URL>/api/billing/webhook with EVENTS. Created when missing, its secret (only in the
  *      create response) stored encrypted. Never a second one: an existing webhook gets missing events added; one
@@ -36,7 +36,7 @@ const num = (v: unknown): number | null => (v === null || v === undefined || v =
 const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
 const money = (n: number | null) => (n === null ? "none" : `$${n % 1 ? n.toFixed(2) : n}`);
 
-/** What's different from 7-day trial + $1 initial fee + $39/month, in words; empty when it matches. */
+/** What's different from TRIAL (days, $1 initial fee) + $39/month, in words; empty when it matches. */
 export function planProblems(p: Json): string[] {
   const out: string[] = [];
   const renewal = num(p.renewal_price), initial = num(p.initial_price), trial = num(p.trial_period_days), period = num(p.billing_period);
@@ -89,7 +89,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
       const id = str(pick.id)!;
       log(`Whop plan ${id}: ${money(num(pick.renewal_price))} every ${num(pick.billing_period) ?? "?"} days, trial ${num(pick.trial_period_days) ?? 0} days, initial fee ${money(num(pick.initial_price))}.`);
       const problems = planProblems(pick);
-      if (problems.length) log(`Whop plan ${id} is not what the site says (7 days for $1, then $39/month): ${problems.join("; ")}. Checkout stays closed.`);
+      if (problems.length) log(`Whop plan ${id} is not what the site says (${TRIAL.days} days for $${TRIAL.fee}, then $${PLANS.insidir.price}/month): ${problems.join("; ")}. Checkout stays closed.`);
       else plan = "ok";
       await writeConfig(db, "plan_status", problems.length ? `wrong: ${problems.join("; ")}` : "ok");
       if (plan === "ok") await writeConfig(db, "plan_id", id);

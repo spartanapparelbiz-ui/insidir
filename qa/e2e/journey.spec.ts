@@ -1,5 +1,5 @@
 /* The whole member journey, as one person: visitor → paid → follow → alerts → cancel (docs/INSIDIR-V2.md).
- *   A visitor lands, taps "Try 7 days for $1", signs in with Whop ("Continue", the local mock) and pays in the checkout
+ *   A visitor lands, taps "Try 3 days for $1", signs in with Whop ("Continue", the local mock) and pays in the checkout
  *   embedded on /start,
  *   comes back signed in to the live feed with the one-time welcome, follows a top trader, sets up alerts (push on
  *   this device, a real test alert delivered to the stand-in push service, the alert history), then sees the next
@@ -85,7 +85,7 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await page.goto("/settings");
     await expect(page.getByRole("heading", { name: "Account", level: 1 })).toBeVisible();
     // Access started with the $1: the account shows when the $39 starts.
-    await expect(page.getByText("Your $1 week ends")).toBeVisible();
+    await expect(page.getByText("Your 3-day trial ends")).toBeVisible();
     await expect(page.getByText("then $39.00 / month unless you cancel")).toBeVisible();
     await expect(page.getByTestId("manage-subscription")).toHaveAttribute("href", "https://whop.com/@me/settings/orders");
     await expect(page.getByRole("button", { name: /cancel subscription/i })).toHaveCount(0);

@@ -1,5 +1,5 @@
 /* Pricing (/pricing): one plan. "Copy the winners." on the left and the plan card on the right ($39/month, the $1
- * first week, the black "Start for $1", five checkmarks), then visitor vs. member, this week's live numbers, and
+ * trial (lib/plans.ts TRIAL), the black "Start for $1", five checkmarks), then visitor vs. member, this week's live numbers, and
  * billing questions. Every number is read from the database; none is typed in. Billing is Whop's. */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -14,11 +14,11 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { isWinner, traderFollowAll } from "@/lib/follow/records";
 import { proofStrip, type Proof } from "@/lib/home/proof";
 import { memo } from "@/lib/memo";
-import { INCLUDED, PAST } from "@/lib/copy";
+import { INCLUDED, PAST, TRIAL_DAYS, TRIAL_LINE } from "@/lib/copy";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: unlimited Reads on any Polymarket or Kalshi market, with proven money, the big bets and the best price. Your first week is $1. Cancel anytime.` };
+export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: unlimited Reads on any Polymarket or Kalshi market, with proven money, the big bets and the best price. ${TRIAL_LINE}. Cancel anytime.` };
 
 const PLAN_LIST = [...INCLUDED, "Pay first with Apple Pay or Google Pay, sign in after"];
 
@@ -32,8 +32,8 @@ const COMPARE: Array<[string, string, string]> = [
 
 const BILLING = [
   { id: "cancel", q: "How do I cancel?", a: "One tap in Account, or on your Whop orders page. No emails, no calls. You keep access until the end of the period you paid for." },
-  { id: "dollar", q: "What is the $1 week?", a: `Your first ${TRIAL.days} days cost $${TRIAL.fee}, with everything a member gets. Cancel inside those ${TRIAL.days} days and $${TRIAL.fee} is all you pay.` },
-  { id: "after", q: "What happens after the first week?", a: `It becomes $${PLANS.insidir.price}/month, charged by Whop on the same card, until you cancel.` },
+  { id: "dollar", q: `What is the $${TRIAL.fee} trial?`, a: `Your first ${TRIAL.days} days cost $${TRIAL.fee}, with everything a member gets. Cancel inside those ${TRIAL.days} days and $${TRIAL.fee} is all you pay.` },
+  { id: "after", q: `What happens after the first ${TRIAL_DAYS}?`, a: `It becomes $${PLANS.insidir.price}/month, charged by Whop on the same card, until you cancel.` },
   { id: "refunds", q: "Can I get a refund?", a: "Payments and refunds are handled by Whop. Request one from your Whop orders page, or write to hello@aethric.llc and we'll sort it out with them." },
 ];
 
@@ -44,7 +44,7 @@ function PlanCard({ href, paid }: { href: string; paid: boolean }) {
     <div className="plan3" data-testid="plan-card">
       <p className="plan3__name">Insidir</p>
       <p className="plan3__price"><b className="num">${PLANS.insidir.price}</b><span>/month</span></p>
-      <p className="plan3__trial">Your first week is ${TRIAL.fee}. Cancel anytime.</p>
+      <p className="plan3__trial">{TRIAL_LINE}. Cancel anytime.</p>
       {paid ? <Link className="btn btn--primary plan3__cta" href="/">Read a market</Link>
         : <Link className="btn btn--primary plan3__cta" href={href} data-checkout="pricing">Start for ${TRIAL.fee}</Link>}
       <p className="plan3__fine">Secure sign-in and payments by Whop.</p>

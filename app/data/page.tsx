@@ -2,6 +2,7 @@
  * can be, what it can't tell you, and the history of the hourly accuracy checks (lib/status-page.ts). Linked from the
  * footer and from every profile. Every claim matches what the worker actually does (worker/index.ts,
  * lib/accuracy/check.ts). */
+import { TRIAL } from "@/lib/plans";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -70,7 +71,7 @@ export default async function DataPage() {
           <p>The rules behind every number: <Link href="/methodology">Methodology</Link>.</p>
         </RevealGroup>
         <div className="lp-legal__next">
-          <Link className="btn btn--primary" href="/start">Start your 7-day trial</Link>
+          <Link className="btn btn--primary" href="/start">Start for ${TRIAL.fee}</Link>
         </div>
       </main>
     </>

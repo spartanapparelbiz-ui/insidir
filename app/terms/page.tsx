@@ -1,9 +1,10 @@
 /* Terms (/terms), in plain English and dated. Matches the product: a data service, Whop for sign-in and payment, the
- * $1 week then $39 a month, cancel on Whop, fair use, liability. Have counsel review before relying on it. */
+ * $1 trial (lib/plans.ts TRIAL) then $39 a month, cancel on Whop, fair use, liability. Have counsel review before relying on it. */
+import { TRIAL } from "@/lib/plans";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TrustPage } from "@/components/TrustPage";
-import { ADVICE, COMPANY, DATA_COMPANY, PAST } from "@/lib/copy";
+import { ADVICE, COMPANY, DATA_COMPANY, PAST, TRIAL_DAYS } from "@/lib/copy";
 import { isReady } from "@/lib/features";
 
 export const metadata: Metadata = { title: "Terms", description: "The terms for using Insidir, in plain English." };
@@ -29,7 +30,7 @@ export default function TermsPage() {
       <h2>Your account and payment</h2>
       <ul>
         <li>You sign in with Whop and pay on Whop&apos;s checkout. Whop&apos;s own terms apply to payment.</li>
-        <li>Membership starts with 7 days for $1, then $39 a month, renewing monthly until you cancel. If you cancel within the 7 days, you aren&apos;t charged the $39.</li>
+        <li>Membership starts with {TRIAL_DAYS} for ${TRIAL.fee}, then $39 a month, renewing monthly until you cancel. If you cancel within the {TRIAL_DAYS}, you aren&apos;t charged the $39.</li>
         <li>Cancel anytime in <Link href="/settings#billing">Account</Link> (pick one reason) or on your <a href="https://whop.com/@me/settings/orders" target="_blank" rel="noopener noreferrer">Whop orders page</a>. You keep access until the end of the period you paid for.</li>
         <li>Refunds follow Whop&apos;s process and the law where you live. Write to us if something went wrong and we&apos;ll make it right where we can.</li>
         <li>You can delete your account in <Link href="/settings">Settings</Link> at any time.</li>

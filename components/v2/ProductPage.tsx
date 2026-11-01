@@ -16,7 +16,7 @@ import { memo } from "@/lib/memo";
 import { feedItems, type FeedItem } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
 import { listMoves } from "@/lib/moves/store";
-import { CANCEL_LINE, GAMBLER, PAST } from "@/lib/copy";
+import { CANCEL_LINE, GAMBLER, PAST, TRIAL_LINE } from "@/lib/copy";
 import { isPaid } from "@/lib/plans";
 import { AsOf, SOURCES } from "@/components/data/AsOf";
 import { TrackerTile } from "@/components/trackers/Tracker";
@@ -109,7 +109,7 @@ export async function ProductPage({ copy }: { copy: ProductCopy }) {
           <p className="prod__more"><Link href="/data">How we check every number <span aria-hidden="true">→</span></Link></p>
         </Sec>
         <Sec id="end-h" title="Follow the big money.">
-          <p className="mkt__lead">Your first week is $1, then $39/month. Cancel anytime. Secure sign-in and payments by Whop.</p>
+          <p className="mkt__lead">{TRIAL_LINE}, then $39/month. Cancel anytime. Secure sign-in and payments by Whop.</p>
           {copy.tab === "sports" ? <p className="prod__fine" data-testid="gambler">{GAMBLER}</p> : null}
           <div className="mkt__ctas sec3__foot"><Link className="btn btn--primary" href={paid ? feed : trial}>{paid ? "Open Activity" : "Start for $1"}</Link><Link className="btn btn--secondary" href="/pricing">See pricing</Link></div>
         </Sec>

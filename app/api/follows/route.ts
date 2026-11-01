@@ -1,7 +1,7 @@
 /* POST /api/follows {kind, target}: follow; DELETE: unfollow. Kinds (lib/follows.ts): trader (wallet), market,
  * insider (SEC reporting-owner CIK), company (issuer CIK) and fund (13F filer CIK). Members only (docs/INSIDIR-V2.md §8).
  * Following an insider or a company also queues their EDGAR history, so their page fills in. */
-import { MEMBERS_ONLY } from "@/lib/copy";
+import { GET_CTA, MEMBERS_ONLY } from "@/lib/copy";
 import { NextResponse, type NextRequest } from "next/server";
 import { memberOrNull } from "@/lib/auth/viewer";
 import { getDb } from "@/lib/db";
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const db = getDb();
   const mine = await followList(db, viewer.user.id);
   if (!mine.some(x => x.kind === f.kind && x.target === f.target) && !canFollow(viewer.plan, mine.length)) {
-    return NextResponse.json({ error: viewer.plan === "free" ? "Following is for members. Try 7 days for $1." : "You're following 50 already. Pro has no limit." }, { status: 403 });
+    return NextResponse.json({ error: viewer.plan === "free" ? `Following is for members. ${GET_CTA}.` : "You're following 50 already. Pro has no limit." }, { status: 403 });
   }
   await follow(db, viewer.user.id, f.kind, f.target);
   if (f.kind === "insider" || f.kind === "company") await queueHistory(db, [{ kind: f.kind === "insider" ? "owner" : "issuer", cik: f.target, name: null }]).catch(() => undefined);

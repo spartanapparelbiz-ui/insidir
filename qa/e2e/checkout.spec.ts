@@ -34,7 +34,7 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   await expect(page.getByTestId("start-pay-first")).toContainText("Pay first; you sign in with Whop right after");
   await expect(page.getByTestId("continue")).toHaveCount(0);
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
-  const due = new Date(Date.now() + 7 * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+  const due = new Date(Date.now() + 3 * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
   await expect(page.getByTestId("charge-line")).toHaveText(`$1 today. $39 on ${due} unless you cancel.`);
   await expect(page.getByText("Apple Pay and Google Pay where your device has them. Secure payments by Whop.")).toBeVisible();
   await page.screenshot({ path: `qa/screenshots/checkout-${w}.png`, fullPage: true });

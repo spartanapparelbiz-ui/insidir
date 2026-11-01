@@ -156,7 +156,7 @@ export function readPayment(p: Record<string, unknown>) {
 /** Where a member manages or cancels their subscription: Whop's own orders page. */
 export const MANAGE_URL = "https://whop.com/@me/settings/orders";
 
-/** The plan the checkout sells: WHOP_PLAN_INSIDIR, else the one `npm run whop:setup` checked is exactly 7 days for $1,
+/** The plan the checkout sells: WHOP_PLAN_INSIDIR, else the one `npm run whop:setup` checked is exactly TRIAL (lib/plans.ts) for $1,
  *  then $39/month (lib/billing/setup.ts). Null keeps checkout closed. */
 export const checkoutPlanId = async (): Promise<string | null> => (await whopRuntime()).planId;
 

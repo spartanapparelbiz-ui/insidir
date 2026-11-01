@@ -4,7 +4,7 @@
  *   /admin marks them "Free access" and leaves them out of the numbers.
  *   /start: five live lines at most and one "More coming" line, a real move with its record locked, the payment
  *   line; someone who signed in but didn't pay comes back to the checkout, already signed in.
- *   The sticky "Try 7 days for $1" bar on phones; "Setting up your account…" and its 30-second fallback; the
+ *   The sticky "Try 3 days for $1" bar on phones; "Setting up your account…" and its 30-second fallback; the
  *   funnel's steps and drop-off on /admin/funnel. */
 import { expect, test, type Page } from "@playwright/test";
 import { base32Decode, stepAt, totpCode } from "@/lib/admin";
@@ -170,7 +170,7 @@ test("the late bar: after 30% of the page, \"30 minutes late\" + Start for $1; �
   await expect(bar).toHaveAttribute("aria-hidden", "true");
   await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.5));
   await expect(bar).toHaveAttribute("aria-hidden", "false");
-  await expect(bar).toContainText("You're seeing data 30 minutes late. Live for $1 this week.");
+  await expect(bar).toContainText("You're seeing data 30 minutes late. Live: $1 for your first 3 days.");
   await expect(bar.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", /^\/start\?next=%2Fpricing/);
   await bar.getByRole("button", { name: "Hide for this visit" }).click();
   await expect(bar).toHaveCount(0);
