@@ -3,17 +3,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TrustPage } from "@/components/TrustPage";
-import { COMPANY, DATA_COMPANY, PAST } from "@/lib/copy";
+import { ADVICE, COMPANY, DATA_COMPANY, PAST } from "@/lib/copy";
 import { isReady } from "@/lib/features";
 
 export const metadata: Metadata = { title: "Terms", description: "The terms for using Insidir, in plain English." };
 
 export default function TermsPage() {
   return (
-    <TrustPage path="/terms" title="Terms of service" updated="October 31, 2026"
-      lead={`Insidir is run by ${COMPANY.name}. By using insidir.com you agree to these terms. They're written to be read; if anything is unclear, write to us.`}>
+    <TrustPage path="/terms" title="Terms of service" updated="November 1, 2026"
+      lead={`Insidir is operated by ${COMPANY.name}, ${COMPANY.place} (the operator: "we" and "us" on this page). By using insidir.com you agree to these terms. They're written to be read; if anything is unclear, write to us.`}>
       <h2>What Insidir is</h2>
-      <p>{DATA_COMPANY}</p>
+      <p>{ADVICE} {DATA_COMPANY}</p>
       <p>Insidir reads public data, large trades on Polymarket and Kalshi{isReady("stocks") ? " and Form 4 and 13F filings on SEC EDGAR" : ""}, and shows it with the records of the accounts behind it where the data allows. We don&apos;t place trades or bets, hold money, or hold positions for you, and nothing on the site is a recommendation. You decide what to do, and you do it yourself on each venue, under its own terms.</p>
 
       <h2>No promise of results</h2>
@@ -24,13 +24,13 @@ export default function TermsPage() {
       </ul>
 
       <h2>Who can use it</h2>
-      <p>You must be 18 or older, and old enough to use prediction markets or sportsbooks where you live if you use them. It&apos;s up to you to check that each venue is legal and available to you, and to follow its rules.</p>
+      <p>You must be 18 or older, and you confirm it before checkout (we keep that confirmation with your account). You must also be old enough to use prediction markets or sportsbooks where you live if you use them. It&apos;s up to you to check that each venue is legal and available to you, and to follow its rules.</p>
 
       <h2>Your account and payment</h2>
       <ul>
         <li>You sign in with Whop and pay on Whop&apos;s checkout. Whop&apos;s own terms apply to payment.</li>
         <li>Membership starts with 7 days for $1, then $39 a month, renewing monthly until you cancel. If you cancel within the 7 days, you aren&apos;t charged the $39.</li>
-        <li>Cancel anytime on your <a href="https://whop.com/@me/settings/orders" target="_blank" rel="noopener noreferrer">Whop orders page</a> (Settings → Manage subscription). You keep access until the end of the period you paid for.</li>
+        <li>Cancel anytime in <Link href="/settings#billing">Account</Link> (pick one reason) or on your <a href="https://whop.com/@me/settings/orders" target="_blank" rel="noopener noreferrer">Whop orders page</a>. You keep access until the end of the period you paid for.</li>
         <li>Refunds follow Whop&apos;s process and the law where you live. Write to us if something went wrong and we&apos;ll make it right where we can.</li>
         <li>You can delete your account in <Link href="/settings">Settings</Link> at any time.</li>
       </ul>

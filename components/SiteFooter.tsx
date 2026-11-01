@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { COMPANY, DATA_COMPANY, FOOTER, GAMBLER } from "@/lib/copy";
 import { Wordmark } from "./Wordmark";
-import { isReady } from "@/lib/features";
 
 /** Every page's footer: who builds Insidir and how to reach a person; the product and the trust pages (Methodology,
  * Our data, Status, Security, Disclosures, Terms, Privacy, Credits, Changelog); what Insidir is not; the
@@ -21,7 +20,6 @@ export function SiteFooter() {
             <Link href="/trackers">Trackers</Link>
             <Link href="/sports">Sports</Link>
             <Link href="/markets">Prediction markets</Link>
-            {isReady("stocks") ? <Link href="/stocks">Stocks</Link> : null}
             <Link href="/top">Leaderboard</Link>
             <Link href="/results">Track record</Link>
             <Link href="/pricing">Pricing</Link>

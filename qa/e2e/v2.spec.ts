@@ -3,56 +3,61 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: hero with one black button, three laptops and Crypto · Soon, Open now, the leaderboard, how it works, the proof strip, all stamped", async ({ page }) => {
+test("landing: one tool, final on first paint: the headline, the box, what a Read shows, the $1 block, FAQ; the nav is Pricing and Log in; no stocks; no pop-up", async ({ page }) => {
+  const HEAD = "Paste any bet. See where the smart money is.";
+  const html = await (await page.request.get("/")).text();
+  expect(html).toContain(HEAD);
+  expect(html).not.toMatch(/data-count/);
   await page.goto("/");
-  const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
+  const h1 = page.getByRole("heading", { level: 1, name: HEAD });
   await expect(h1).toBeVisible();
-  await expect(page.getByText("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.")).toBeVisible();
-  const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toHaveText("Start your 7-day trial");
-  await expect(page.getByRole("link", { name: /^Explore trackers/ })).toHaveAttribute("href", "/trackers");
-  await expect(page.getByText("$1 for the first week, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.").first()).toBeVisible();
-  // One black button (plus the nav's Get started): no offer bar, no sticky bar.
-  await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
-  await expect(page.locator(".trialbar")).toHaveCount(0);
-  const primaries = await page.locator("main .btn--primary").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).length);
-  expect(primaries).toBe(1);
-  // No pills, no 700 weights.
-  await expect(page.locator(".rpill")).toHaveCount(0);
+  expect(await h1.evaluate(e => getComputedStyle(e).opacity)).toBe("1");
+  // The box is in the first screen.
+  const input = page.getByTestId("read-input");
+  await expect(input).toBeVisible();
+  expect((await input.boundingBox())!.y + 20).toBeLessThan(page.viewportSize()!.height);
+  await expect(page.getByTestId("read-go")).toHaveText("Read it");
+  await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
+  const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
+  expect(h2s).toEqual(["What a Read shows", "$1 for your first week", "Questions"]);
+  await expect(page.locator(".steps__h")).toHaveText(["Proven money", "Big bets, last 24 hours", "Price now", "One analyst line"]);
+  // The nav: Pricing, Log in, Start for $1. Nothing else.
+  const links = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
+  expect(links).toEqual(["Pricing", "Log in"]);
+  await expect(page.locator("header .nav__cta")).toHaveText("Start for $1");
+  // The $1 block; every primary button says Start for $1 (the box's own button aside).
+  const plan = page.getByTestId("home-plan");
+  await expect(plan.locator("li")).toHaveCount(4);
+  await expect(plan.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
+  for (const t of await page.locator("main .btn--primary:not(.rbox__go), header .btn--primary").allInnerTexts()) expect(t.trim()).toBe("Start for $1");
+  const text = await page.locator("main").innerText();
+  expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
+  expect(text).not.toMatch(/guaranteed|risk-free/i);
+  await page.waitForTimeout(1000);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByTestId("late-bar")).toHaveCount(0);
   expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
-  const vh = page.viewportSize()!.height;
-  for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  // Three laptops; crypto is one line.
-  await expect(page.locator(".lt__item .lt__name")).toHaveText(["Sports", "Prediction markets", "Stocks"]);
-  await expect(page.locator(".lt__soon summary")).toContainText("Crypto · Soon");
-  for (const h of ["Open now from winning trackers", "Leaderboard", "How Insidir works", "Insidir, live"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
-  // Open now: the newest from winning trackers (the tennis fixture), how many more, and past results beside it.
-  await expect(page.getByTestId("open-now").locator("tbody tr").first()).toContainText("Tennis");
-  await expect(page.getByTestId("open-more")).toContainText("1 more open.");
-  await expect(page.getByText(/Past results, not a promise\./).first()).toBeVisible();
-  // The leaderboard: Tennis is the one tracker with 30+ settled.
-  await expect(page.getByTestId("home-board").locator(".board__name").first()).toHaveText("Tennis");
-  await expect(page.locator(".board__row")).toHaveCount(1);
-  await expect(page.locator(".steps__item")).toHaveCount(3);
-  for (const id of ["proof-volume", "proof-week", "proof-accounts", "proof-check"]) await expect(page.getByTestId(id)).toBeVisible();
-  // Every figure says when it was read, in Eastern Time, and that visitors see it 30 minutes late.
-  expect(await page.locator("main [data-asof]").count()).toBeGreaterThanOrEqual(3);
-  await expect(page.locator(".asof").first()).toContainText(/As of \d{1,2}:\d{2}\s?(AM|PM) ET/);
-  await expect(page.locator(".asof").first()).toContainText("30-min delay");
-  // No page sideways scroll at any width.
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("home hero: Start your 7-day trial is recorded and opens /start; Explore trackers lists every tracker with its record or the record being built", async ({ page }) => {
+test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; /stocks and /insider-trading pages stay live by URL and in the sitemaps", async ({ page, context }) => {
+  await page.goto("/?ref=insidirfinance");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Paste any bet. See where the smart money is.");
+  const cookies = await context.cookies();
+  expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
+  expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
+  for (const path of ["/stocks", "/insider-trading/EXDV"]) expect((await page.request.get(path)).status(), path).toBe(200);
+  expect(await (await page.request.get("/sitemaps/pages.xml")).text()).toContain("/stocks</loc>");
+  expect(await (await page.request.get("/sitemaps/companies.xml")).text()).toContain("/insider-trading/");
+});
+
+test("home: the nav's Start for $1 is recorded and opens /start; the trackers page (by URL) lists every tracker with its record or the record being built", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
-  const before = await count("hero_cta_click");
+  const before = await count("unlock_click");
   await page.goto("/");
-  await page.locator('[data-cta="hero"]').click();
+  await page.locator("header .nav__cta").click();
   await expect(page).toHaveURL(/\/start(\?|$)/);
-  await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
-  await page.goto("/");
-  await page.getByRole("link", { name: /^Explore trackers/ }).click();
-  await expect(page).toHaveURL(/\/trackers$/);
+  await expect.poll(() => count("unlock_click")).toBe(before + 1);
   await page.goto("/trackers");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
@@ -71,7 +76,7 @@ test("home hero: Start your 7-day trial is recorded and opens /start; Explore tr
   // Fewer than 20 settled moves: every rate says so instead of a number.
   await expect(page.getByText(/Not enough data yet: the chart starts at 20 settled positions/)).toBeVisible();
   await expect(page.locator(".tile").filter({ has: page.locator("dt", { hasText: /^Win rate$/ }) })).toContainText("Not enough data yet");
-  await expect(page.getByRole("button", { name: /Follow/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Copy/ }).first()).toBeVisible();
 });
 
 test("one font: headlines, body text, buttons and cards are all Schibsted Grotesk, and it loads", async ({ page }) => {
@@ -110,8 +115,8 @@ test("member feed: live moves with the record line; following a trader shows on 
   await expect(page.locator(".move__live").first()).toContainText(/^Entry \d+%/);
   await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
   await q("delete from terminal.follows");
-  await page.locator(".move").first().getByRole("button", { name: "Follow" }).click();
-  await expect(page.locator(".move").first().getByRole("button", { name: "Following" })).toBeVisible();
+  await page.locator(".move").first().getByRole("button", { name: "Copy" }).click();
+  await expect(page.locator(".move").first().getByRole("button", { name: "Copying" })).toBeVisible();
   await page.goto("/following");
   await expect(page.locator(".flist").getByRole("link", { name: "E2E-Top" })).toBeVisible();
   // Their recent moves are in the Following feed too.
@@ -262,7 +267,8 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
   await expect(card.locator("li")).toHaveCount(5);
   await expect(page.locator("main")).not.toContainText("More coming");
-  // /start keeps it to three lines (qa/e2e/funnel.spec.ts checks them).
+  // /start is the checkout itself (pay first; qa/e2e/funnel.spec.ts checks it).
   await page.goto("/start");
-  await expect(page.getByTestId("start-list").locator("li")).toHaveCount(3);
+  await page.getByTestId("age-18").getByRole("checkbox").check();
+  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
 });

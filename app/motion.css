@@ -68,6 +68,3 @@
 @media (prefers-reduced-motion: no-preference) { .nav--scrolled .nav__in { transform: scale(.97); } }
 .hero3__acts { display: grid; justify-items: center; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-/* Counting figures use tabular digits and hold their final width while they count (components/motion/Motion.tsx). */
-[data-count] { font-variant-numeric: tabular-nums; }
-span[data-count], b[data-count] { display: inline-block; }

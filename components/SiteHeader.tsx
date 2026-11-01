@@ -1,10 +1,9 @@
-/* The top of every page: the nav, white with the black logo and a hairline. Visitors: logo, Trackers, Activity, Open
- * now, Leaderboard, Pricing, Log in, and "Start for $1" (36px, the one button besides each page's own).
- * Members: logo, Trackers (their home), Activity, Following, Leaderboard, Track record, Account; the menu also holds
- * Position check (/check), reachable only from there. On phones: logo, the button and a menu; on the app pages,
- * members and visitors get a bottom tab bar within thumb reach: Trackers, Activity, Following, Account.
- * Positioning joins both only once its scorecard shows a positive edge on 100+ scored calls (lib/smart/gate.ts).
- * Every target is 44px+. `status` is kept for callers and shown under the nav when given. */
+/* The top of every page: the nav, white with the black logo and a hairline. One tool: paste any bet, see where the
+ * smart money is. Visitors: logo, Pricing, Log in, and "Start for $1" (the one button besides each page's own).
+ * Members: logo, Read (their home), Account; the menu also holds everything else Insidir has (My copies, Activity,
+ * Winners, Research, Trackers, Following, Position check, Track record), all live by URL. On phones: logo, the
+ * button and a menu; members get a bottom tab bar: Read, Account. Every target is 44px+. `status` is kept for
+ * callers and shown under the nav when given. */
 import Link from "next/link";
 import { positioningOn } from "@/lib/smart/gate";
 import type { ReactNode } from "react";
@@ -16,8 +15,6 @@ import { TabIcon } from "./TabIcon";
 import { ViewAs } from "./ViewAs";
 
 const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed", "/p": "/top", "/market": "/feed" };
-/** Sections that get the bottom tab bar on phones, for members and visitors alike (the free feed needs no account). */
-const APP_SECTIONS = new Set(["/discover", "/feed", "/trackers", "/top", "/open", "/following", "/results", "/account", "/check", "/splits"]);
 
 export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
@@ -43,16 +40,17 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
   // Research opens the ⌘K palette (components/research/ResearchPalette.tsx); without JavaScript, the /research page.
   const research = <Link key="research" href="/research" data-research-open aria-current={at === "/research" ? "page" : undefined}>Research</Link>;
   const links = signedIn
-    ? [link(paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"), link("/feed", "Activity"), link("/following", "Following"), link("/top", "Leaderboard"), research, ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/results", "Track record"), link("/settings", "Account", "/account")]
-    : [link("/trackers", "Trackers"), link("/open", "Open now"), link("/top", "Leaderboard"), research, ...(positioningOn() ? [link("/splits", "Positioning")] : []), link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
-  // The app menu also holds the position check, which lives only here.
-  const menu = signedIn ? [...links.slice(0, -1), link("/check", "Position check"), links[links.length - 1]!] : links;
+    ? [link("/", "Read", "/"), link("/settings", "Account", "/account")]
+    : [link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
+  // Everything else lives in the members' menu only.
+  const menu = signedIn ? [links[0]!, link("/copies", "My copies"), link("/feed", "Activity"), link("/top", "Winners"), research, ...(positioningOn() ? [link("/splits", "Positioning")] : []),
+    link("/trackers", "Trackers"), link("/following", "Following"), link("/check", "Position check"), link("/results", "Track record"), links[1]!] : links;
   return (
     <>
       <ViewAs />
       <header className={tone === "light" ? "nav nav--light" : "nav"}>
         <div className="wrap nav__in">
-          <Link className="wordmark" href={signedIn && !paid ? "/trackers" : "/"} aria-label="Insidir home"><Wordmark /></Link>
+          <Link className="wordmark" href="/" aria-label="Insidir home"><Wordmark /></Link>
           <nav className={`nav__links${signedIn ? " nav__links--member" : ""}`} aria-label="Main">{links}</nav>
           {!paid && offer ? <a className="btn btn--primary nav__cta" href={trialHref} data-unlock="nav">{NAV_CTA}</a> : null}
           <details className={`nav__menu${signedIn ? " nav__menu--member" : ""}`}>
@@ -64,9 +62,9 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
         {/* how far down the page you are (app/v2.css, components/motion/Motion.tsx) */}
         <span className="nav__prog" aria-hidden="true" />
       </header>
-      {signedIn || (at && APP_SECTIONS.has(at)) ? (
+      {signedIn ? (
         <nav className="tabbar" aria-label="App">
-          {[[paid ? "/" : "/trackers", "Trackers", paid ? "/discover" : "/trackers"], ["/feed", "Activity", "/feed"], ["/following", "Following", "/following"], [signedIn ? "/settings" : "/signin", "Account", "/account"]].map(([href, label, section]) => (
+          {[["/", "Read", "/"], ["/settings", "Account", "/account"]].map(([href, label, section]) => (
             <Link key={href} href={href!} className="tabbar__item" aria-current={at === section ? "page" : undefined}>
               <TabIcon name={label!} />
               <span>{label}</span>

@@ -22,14 +22,16 @@ export const SERVER_ENV: Record<string, string> = {
   OPENROUTER_API_KEY: "sk-or-e2e",
   // The pay prompt waits an hour in the browser specs (so it never covers a test); qa/e2e/paywall-prompt.spec.ts sets
   // its own delay through the test hook.
-  PAYWALL_POPUP_DELAY_MS: "3600000", PAYWALL_POPUP_DELAY_B_MS: "3600000",
   OPENROUTER_BASE_URL: `http://localhost:${OPENROUTER_PORT}/api/v1`,
   WHOP_COMPANY_ID: "biz_e2e",
+  // The money-path monitor walks the live site; the browser specs run its pieces directly (test/monitor-db.test.ts).
+  MONEY_PATH_MONITOR: "off",
   WHOP_PLAN_INSIDIR: "plan_e2e_insidir",
   WHOP_PRODUCT_INSIDIR: "prod_e2e_insidir",
   WHOP_WEBHOOK_SECRET: WHOP.secret,
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID.publicKey,
-  VAPID_PRIVATE_KEY: VAPID.privateKey,
+  // Production's names (lib/alerts/vapid.ts); the public key reaches the browser from the server at run time.
+  INSIDIR_VAPID_PUBLIC_KEY: VAPID.publicKey,
+  INSIDIR_VAPID_PRIVATE_KEY: VAPID.privateKey,
   VAPID_SUBJECT: "mailto:qa@insidir.com",
   EMAIL_UNSUBSCRIBE_SECRET: "e2e-unsubscribe-secret-0123456789abcdef",
   ADMIN_TOKEN: "e2e-admin-token-0123456789abcdefghijklmnop",

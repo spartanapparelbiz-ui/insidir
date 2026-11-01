@@ -1,6 +1,6 @@
 "use client";
 /* Right after paying: "Setting up your account…" while it asks /api/checkout/status every second until Whop says this
- * account has Insidir (the webhook can lag; the status check asks Whop directly), then straight into onboarding. After 30 seconds: "Payment received,
+ * account has Insidir (the webhook can lag; the status check asks Whop directly), then the one onboarding question (new members), then back to where they were (their Read). After 30 seconds: "Payment received,
  * finishing up" with a refresh button and our email; it keeps asking in the background. Whop sends the buyer back here with ?status=failed|canceled when an off-site step
  * (3-D Secure, a bank page) didn't go through: then nothing was charged and they can try again. */
 import Link from "next/link";
@@ -17,7 +17,7 @@ export function Welcome({ status, next = "/" }: { status: string | null; next?: 
       if (gone) return;
       const r = await fetch("/api/checkout/status", { method: "POST" }).then(x => x.json() as Promise<{ member: boolean; next?: string }>).catch(() => ({ member: false } as { member: boolean; next?: string }));
       if (r.member) {
-        try { const from = sessionStorage.getItem("insidir_pay_from"); if (from) { beacon("paid_seen", "popup", { page: from }); sessionStorage.removeItem("insidir_pay_from"); } } catch { /* attribution only */ } const to = r.next ?? "/onboarding"; location.replace(next !== "/" ? `${to}${to.includes("?") ? "&" : "?"}next=${encodeURIComponent(next)}` : to); return; }
+        try { const from = sessionStorage.getItem("insidir_pay_from"); if (from) { beacon("paid_seen", "popup", { page: from }); sessionStorage.removeItem("insidir_pay_from"); } } catch { /* attribution only */ } location.replace(r.next === "/onboarding" ? `/onboarding${next && next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}` : next || "/"); return; }
       if (++n === 30) setSlow(true);
       setTimeout(tick, n < 30 ? 1000 : 3000);
     };

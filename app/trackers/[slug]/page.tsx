@@ -131,7 +131,7 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
           </div>
           <div className="thead__act">
             <FollowButton kind="tracker" target={t.slug} state={follow} trialHref={trial} />
-            <span className="thead__roi"><b data-count="">{fig.figure}</b>{fig.label ?? (t.kind === "filings" ? "30-day volume" : null)}{t.kind === "bets" ? <span className="past">{PAST}</span> : null}</span>
+            <span className="thead__roi"><b>{fig.figure}</b>{fig.label ?? (t.kind === "filings" ? "30-day volume" : null)}{t.kind === "bets" ? <span className="past">{PAST}</span> : null}</span>
           </div>
         </header>
 
@@ -152,9 +152,9 @@ export default async function TrackerPage({ params, searchParams }: { params: Pr
           <Section id="follow-h" title="Following it" note={`What $100 on every position would have made, bought at the price Insidir showed it${OBSERVED_TRACKERS.has(t.slug) ? " in this tracker (the moment it was added here, not the trader's entry)" : ""}, plus one point of slippage, held until it settled. ${PAST}`}>
             {fr && frOk ? (
               <div className="follow" data-testid="followable">
-                <p className="follow__roi"><b className={tone(fr.net)} data-count="">{roiText(fr.net, fr.staked ?? 0)}</b> <span>Followable ROI</span></p>
-                <p className="follow__line"><span data-count="">{hundredLine({ staked: fr.staked ?? 0, net: fr.net })}</span></p>
-                <p className="follow__tally" data-count="">{fr.won.toLocaleString("en-US")} won · {fr.lost.toLocaleString("en-US")} lost · {(fr.won + fr.lost).toLocaleString("en-US")} settled</p>
+                <p className="follow__roi"><b className={tone(fr.net)}>{roiText(fr.net, fr.staked ?? 0)}</b> <span>Followable ROI</span></p>
+                <p className="follow__line"><span>{hundredLine({ staked: fr.staked ?? 0, net: fr.net })}</span></p>
+                <p className="follow__tally">{fr.won.toLocaleString("en-US")} won · {fr.lost.toLocaleString("en-US")} lost · {(fr.won + fr.lost).toLocaleString("en-US")} settled</p>
               </div>
             ) : (
               <div className="follow follow--building" data-testid="followable">

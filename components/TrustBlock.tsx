@@ -2,6 +2,7 @@
  * and what it made (lib/trust.ts, the same query as the top of /results), the latest accuracy check, and who builds
  * Insidir. Only facts from the database and the company's own details: no reviews, user counts or logos. */
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { SUPPORT_EMAIL } from "@/components/SiteFooter";
 import { isReady } from "@/lib/features";
 import { clockET, dateTimeET, signedShort } from "@/lib/moves/copy";
@@ -32,12 +33,13 @@ export function RecordCount({ r }: { r: SettledRecord }) {
   );
 }
 
-export function TrustBlock({ facts, now = Date.now() }: { facts: TrustFacts | null; now?: number }) {
+/** `children`: what follows the four cards (home: links to the full pages). */
+export function TrustBlock({ facts, now = Date.now(), children }: { facts: TrustFacts | null; now?: number; children?: ReactNode }) {
   const s = facts?.settled, a = facts?.accuracy;
   const fresh = a ? now - a.runAt <= STALE_CHECK_MS : false;
   return (
     <section className="sec2 trust" id="trust" aria-labelledby="trust-h">
-      <div className="wrap">
+      <div className="pg">
         <header className="sec2__head">
           <p className="sec2__label">Proof</p>
           <h2 id="trust-h" className="sec2__h">Where the data comes from</h2>
@@ -74,6 +76,7 @@ export function TrustBlock({ facts, now = Date.now() }: { facts: TrustFacts | nu
             <p className="trust__fine">Public data. Not financial advice.</p>
           </article>
         </div>
+        {children}
       </div>
     </section>
   );

@@ -15,7 +15,7 @@ export const FAQ: Array<{ id: FaqId; q: string; a: ReactNode }> = [
   ) },
   { id: "risk", q: RISK_QUESTION, a: (
     <>
-      <p>No. It is not risk-free. A deal locks in a net P&L only if both sides fill at the prices shown and both markets settle the same way. Things that can go wrong:</p>
+      <p>No. It is not risk-free. A deal leaves a net P&L only if both sides fill at the prices shown and both markets settle the same way. Things that can go wrong:</p>
       <ul>
         <li>Your order may not fill, or only part of it fills, and the other side is left on its own.</li>
         <li>Prices move. By the time you place the second leg, the gap can be gone.</li>

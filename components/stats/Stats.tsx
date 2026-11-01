@@ -19,7 +19,7 @@ export const tone = (v: number | null): "money" | "loss" | undefined => (v === n
 /* ---------- tiles ---------- */
 
 /** A tile: the value, the label under it and, when there's nothing to show yet, a grey "—" with why in a note. */
-export interface Tile { label: string; value: ReactNode; tone?: "money" | "loss"; count?: number; fmt?: "int" | "dollars"; note?: string }
+export interface Tile { label: string; value: ReactNode; tone?: "money" | "loss"; note?: string }
 
 /** The gated form of a tile's value: the value when there's enough data, else "—" and "Not enough data yet". */
 export const gatedTile = (value: ReactNode, ok: boolean): Pick<Tile, "value" | "note"> => (ok ? { value } : { value: "—", note: NOT_ENOUGH });
@@ -29,7 +29,7 @@ export function Tiles({ tiles, cols = 4, label }: { tiles: Tile[]; cols?: 3 | 4 
     <dl className={`tiles tiles--${cols}`} aria-label={label}>
       {tiles.map(t => (
         <div key={t.label} className="tile">
-          <dd className={t.value === "—" ? "tile__nil" : t.tone} data-count={t.count} data-fmt={t.count !== undefined ? t.fmt : undefined}>{t.value}</dd>
+          <dd className={t.value === "—" ? "tile__nil" : t.tone}>{t.value}</dd>
           <dt>{t.label}</dt>
           {t.note ? <dd className="tile__note">{t.note}</dd> : null}
         </div>

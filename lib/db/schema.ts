@@ -46,6 +46,10 @@ export interface UserSettings {
   noLifecycle?: boolean;
   /** Push alerts for new splits of SPLIT_ALERT_GAP+ points (lib/smart/splits.ts); on unless turned off. */
   alertSplits?: boolean;
+  /** Onboarding's one question, "What do you bet on?" (lib/read/member.ts BET_ON): the member home's tonight list. */
+  betOn?: string[];
+  /** Dollars per copied move (lib/copies): 10, 50 or 100; DEFAULT_COPY_SIZE when unset. */
+  copySize?: 10 | 50 | 100;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -78,6 +82,9 @@ export const users = terminal.table("users", {
   /** When the last daily summary went out (one per day). */
   lastDigestAt: timestamp("last_digest_at", { withTimezone: true }),
   visitorId: text("visitor_id"),
+  /** When they confirmed they are 18 or older (the checkbox before checkout; for a pay-first buyer, carried on the
+   *  checkout's metadata and stored when the webhook makes the account). Null until confirmed. */
+  ageConfirmedAt: timestamp("age_confirmed_at", { withTimezone: true }),
   /** First-touch UTM tags carried from the visit that led to signup. */
   utm: jsonb("utm").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -748,3 +755,61 @@ export const researchQueries = terminal.table("research_queries", {
   cached: boolean("cached").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("research_user_idx").on(t.userId, t.createdAt), index("research_visitor_idx").on(t.visitorId, t.createdAt), index("research_key_idx").on(t.key, t.createdAt)]);
+
+/** The Read (lib/read): each one a member or visitor ran, kept so /read/<id> shows it as it was. `data` is the Read as
+ *  computed (lib/read/types.ts ReadData); the analyst line is in it. */
+export const reads = terminal.table("reads", {
+  id: text("id").primaryKey(),
+  userId: text("user_id"),
+  visitorId: text("visitor_id"),
+  /** What they gave: a link, plain words, or a slip screenshot. */
+  input: text("input").$type<"link" | "text" | "slip" | "pick" | "refresh">().notNull(),
+  /** "p:<polymarket condition id>" or "k:<kalshi ticker>": the 60-second cache key. */
+  marketKey: text("market_key").notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  /** How long building it took, ms (the 5-second budget). */
+  ms: integer("ms"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("reads_user_idx").on(t.userId, t.createdAt), index("reads_visitor_idx").on(t.visitorId), index("reads_created_idx").on(t.createdAt)]);
+
+/** What The Read's analyst line cost, per member (or visitor) per day: the daily cap (READ_AI_DAILY_USD). */
+export const readAiUsage = terminal.table("read_ai_usage", {
+  who: text("who").notNull(),
+  day: text("day").notNull(),
+  usd: doublePrecision("usd").notNull().default(0),
+  calls: integer("calls").notNull().default(0),
+}, t => [primaryKey({ columns: [t.who, t.day] })]);
+
+/** Why a member cancelled (one reason, required before the cancel goes to Whop). */
+export const cancelReasons = terminal.table("cancel_reasons", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  membershipId: text("membership_id"),
+  reason: text("reason").notNull(),
+  detail: text("detail"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("cancel_reasons_created_idx").on(t.createdAt)]);
+
+/** The money-path monitor's runs (lib/monitor/money-path.ts): every 10 minutes, landing → Read → checkout page → sign-in
+ *  redirect accepted by Whop. `steps` is each step's result; `failedStep` the first that failed. */
+export const monitorRuns = terminal.table("monitor_runs", {
+  id: serial("id").primaryKey(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  ok: boolean("ok").notNull(),
+  failedStep: text("failed_step"),
+  detail: text("detail"),
+  ms: integer("ms").notNull(),
+  steps: jsonb("steps").$type<Array<{ step: string; ok: boolean; ms: number; detail?: string }>>().notNull(),
+  /** Whether this run's failure (or recovery) reached an owner's device as a push alert. */
+  notified: boolean("notified").notNull().default(false),
+}, t => [index("monitor_runs_at_idx").on(t.at)]);
+
+/** What proven money looked like when a member last saw each of their markets on their home (lib/read/member.ts), so
+ *  "moved since your last visit" can be marked. */
+export const readSeen = terminal.table("read_seen", {
+  userId: text("user_id").notNull(),
+  marketKey: text("market_key").notNull(),
+  yesShare: doublePrecision("yes_share"),
+  wallets: integer("wallets").notNull().default(0),
+  seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.marketKey] })]);

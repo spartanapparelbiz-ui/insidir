@@ -2,6 +2,7 @@
  * the design tokens. No DOM needed. */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { isIdentifier } from "./copy-text";
 import { describe, expect, it } from "vitest";
 import { bannedPhrases, CANCEL_LINE, FOOTER, GET_CTA, OFFER_BAR } from "@/lib/copy";
 import { BANNED_WORDS } from "@/lib/moves/copy";
@@ -16,7 +17,7 @@ const tree = (dir: string): string[] => readdirSync(join(ROOT, dir)).flatMap(f =
 /** The user-facing text in a source file: string literals and JSX text, comments removed. */
 function literals(src: string): string {
   const noComments = src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
-  const strings = [...noComments.matchAll(/"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g)].map(m => m[1] ?? m[2] ?? m[3] ?? "");
+  const strings = [...noComments.matchAll(/"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g)].map(m => m[1] ?? m[2] ?? m[3] ?? "").filter(t => !isIdentifier(t));
   const jsxText = [...noComments.matchAll(/>([^<>{}]+)</g)].map(m => m[1] ?? "");
   return [...strings, ...jsxText].join("\n").replace(/&apos;/g, "'");
 }
@@ -25,36 +26,40 @@ function literals(src: string): string {
 const V2_UI = [
   "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
-  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/home/Laptops.tsx", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
+  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/copies/MyCopies.tsx", "components/copies/CopyPicker.tsx", "lib/copies/store.ts", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx", "app/read/[id]/page.tsx", "lib/home/ref.ts", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
   "lib/moves/copy.ts", "lib/moves/ticker.ts",
 ];
 
 describe("V2 landing page", () => {
-  it("renders its sections in order: hero, three laptops, Open now, Leaderboard, How Insidir works, the proof strip, track record, pricing, FAQ", () => {
+  it("is one tool: the headline, the box, what a Read shows, the $1 block, FAQ; nothing else on the page", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero3"', "<ResearchBar ", "<Laptops ", "<OpenSection ", "<AnalyzedSection ", "<BoardAndPortfolio ", 'id="steps-h"', "<ProofSection ", "<RecordSection ", "<PricingTable ", "<FaqV2 />"];
+    expect(read("lib/copy.ts")).toContain('HEADLINE = "Paste any bet. See where the smart money is."');
+    const markers = ['className="hero3 rhome"', "<ReadBox />", 'id="parts-h"', "<DollarBlock ", "<FaqV2 />"];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
+    for (const gone of ["<TopWallet ", "<NewMoves ", "<OpenNow ", "<MyCopies ", "<ResearchBar ", "<MarketTabs ", "<BoardSection ", "<Laptops ", "PayPrompt", "<HeroCta "]) expect(src, gone).not.toContain(gone);
+    // Members: the box, tonight in their leagues, Your markets, the week.
+    expect(src).toContain('data-testid="member-home"');
+    for (const m of ["<Tonight rows={tonight}", "<YourMarkets list={mine}", "<Week w={week}"]) expect(src).toContain(m);
   });
 
-  it("says the brief's words", () => {
+  it("one CTA, Start for $1; the nav is the tool; no stocks, crypto or Congress in the pitch", async () => {
     const src = read("app/page.tsx");
-    expect(src).toContain("Follow the big money.");
-    expect(src).toContain("<HeroCta trialHref={trial} />");
-    // The hero's one black button starts the trial; the trackers are a text link next to it. No position check on home.
-    expect(read("components/home/HeroCta.tsx")).toMatch(/btn btn--primary[^"]*" href=\{trialHref\} data-cta="hero"/);
-    expect(read("components/home/HeroCta.tsx")).toContain("Start your 7-day trial");
-    expect(read("components/home/HeroCta.tsx")).toContain('href="/trackers">Explore trackers <span');
-    for (const f of ["app/page.tsx", "components/home/HeroCta.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
-    for (const h of ['title="Open now from winning trackers"', 'title="Every position, analyzed."', 'title="Leaderboard"', 'title="How Insidir works"', 'title="Track record"', 'title="Pricing"']) expect(src).toContain(h);
-    expect(src).toContain("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
-    // The old scroll story and photo band are gone for good (scripts/check-design.ts rejects their classes).
-    for (const f of ["components/home/Story.tsx", "components/PageBand.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
-    // One offer everywhere: 7 days for $1, then $39/mo. No old price lines, no 3-day trial, no Pro.
+    expect(src).toContain("Start for ${TRIAL.fee}");
+    const nav = read("components/SiteHeader.tsx");
+    expect(nav).toContain('[link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>]');
+    expect(nav).toContain('[link("/", "Read", "/"), link("/settings", "Account", "/account")]');
+    for (const f of ["app/page.tsx", "components/SiteHeader.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
+      expect(read(f), f).not.toMatch(/\b(stocks?|Stocks?|crypto|Crypto|SEC|insider stock|CEO|Congress)\b/);
+    }
+    const copy = await import("@/lib/copy");
+    for (const t of [copy.WHAT_IS, copy.WHAT_IS_TITLE, copy.HEADLINE, ...copy.INCLUDED]) expect(t).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
+    for (const f of ["app/page.tsx", "components/motion/Motion.tsx", "components/read/ReadCard.tsx", "app/pricing/page.tsx"]) expect(read(f), f).not.toMatch(/data-count|countUp/);
+    for (const f of ["components/home/Story.tsx", "components/PageBand.tsx", "components/home/MarketTabs.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
     expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
-    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/paywall/PayModal.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
+    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
       expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|3 days|Pro\b/);
     }
   });

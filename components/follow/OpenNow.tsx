@@ -3,8 +3,9 @@
  * price Insidir showed it at, the price now, and the time left. Visitors: the 3 newest and "38 more open" with the trial;
  * members: every one, refreshed every 30 seconds. Server component. */
 import Link from "next/link";
+import { Fragment } from "react";
 import { MoveArt } from "@/components/MoveArt";
-import { Table, tone } from "@/components/stats/Stats";
+import { tone } from "@/components/stats/Stats";
 import { Refresh } from "@/components/follow/Refresh";
 import { PAST } from "@/lib/copy";
 import { roiText } from "@/lib/follow/math";
@@ -26,22 +27,36 @@ export function OpenNow({ rows, total, member, now, trialHref, more = true }: { 
   return (
     <div className="opennow" data-testid="open-now">
       {member ? <Refresh /> : null}
-      <Table label="Open now from winning trackers" head={["Position", "From", "Amount", "Seen at", "Now", "Left"]} numeric={[2, 3, 4, 5]}
-        rows={rows.map(r => [
-          <Link key="m" className="dtable__link dtable__link--art" href={`/market/${encodeURIComponent(r.marketId)}`}><MoveArt art={r.art} /><span>{r.headline}<span className="dtable__sub">{r.subline}</span></span></Link>,
-          <span key="f" className="opennow__from">{r.from.kind === "tracker" ? <Link href={`/trackers/${r.from.slug}`}>{r.from.name}</Link> : <Link href={`/p/${r.from.wallet}`}>{r.from.name}</Link>}
-            <span className="dtable__sub"><span className={tone(r.record.net)}>{roiText(r.record.net, r.record.staked)}</span> followable · {r.record.n} settled</span></span>,
-          r.n > 1 ? <span key="a">{r.n} positions · {dollars(r.amount)}</span> : dollars(r.amount), pct(r.seenPrice), r.nowPrice === null ? "—" : <span className={r.seenPrice === null ? undefined : tone(r.nowPrice - r.seenPrice)}>{pct(r.nowPrice)}</span>, left(r.endAt, now),
-        ])} />
-      {rows[0]?.analyst ? (
-        <div className="opennow__first" data-testid="open-first-note">
-          <p className="opennow__firsth">{rows[0].headline}</p>
-          <AnalystNote text={rows[0].analyst.text} facts={rows[0].analyst.facts} at={rows[0].analyst.at} />
-        </div>
-      ) : null}
+      {/* A table on wide screens; under 640px each row is a card (app/polish.css .otable): the position (2 lines at
+          most), who it's from and their record, then amount / seen at / now / left on one line. */}
+      <table className="otable" aria-label="Open now from winning trackers">
+        <thead><tr><th scope="col">Position</th><th scope="col">From</th><th scope="col" className="r">Amount</th><th scope="col" className="r">Seen at</th><th scope="col" className="r">Now</th><th scope="col" className="r">Left</th></tr></thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <Fragment key={`${r.marketId}-${i}`}>
+              <tr className="otable__row">
+                <th scope="row" className="otable__pos">
+                  <Link className="otable__link" href={`/market/${encodeURIComponent(r.marketId)}`}><MoveArt art={r.art} /><span className="otable__what"><span className="otable__h">{r.headline}</span><span className="otable__sub">{r.subline}</span></span></Link>
+                </th>
+                <td className="otable__from">
+                  {r.from.kind === "tracker" ? <Link href={`/trackers/${r.from.slug}`}>{r.from.name}</Link> : <Link href={`/p/${r.from.wallet}`}>{r.from.name}</Link>}
+                  <span className="otable__sub"><span className={tone(r.record.net)}>{roiText(r.record.net, r.record.staked)}</span> followable · {r.record.n} settled</span>
+                </td>
+                <td className="r num" data-label="Amount">{r.n > 1 ? `${r.n} positions · ${dollars(r.amount)}` : dollars(r.amount)}</td>
+                <td className="r num" data-label="Seen at">{pct(r.seenPrice)}</td>
+                <td className="r num" data-label="Now">{r.nowPrice === null ? "—" : <span className={r.seenPrice === null ? undefined : tone(r.nowPrice - r.seenPrice)}>{pct(r.nowPrice)}</span>}</td>
+                <td className="r num" data-label="Left">{left(r.endAt, now)}</td>
+              </tr>
+              {i === 0 && r.analyst ? (
+                <tr className="otable__noterow" data-testid="open-first-note"><td colSpan={6}><AnalystNote text={r.analyst.text} facts={r.analyst.facts} at={r.analyst.at} /></td></tr>
+              ) : null}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
       <p className="opennow__note">{PAST} Seen at is the price on their side when Insidir showed the position; following it costs about a point more.</p>
       {!member && more && total > rows.length ? (
-        <p className="opennow__more" data-testid="open-more"><b>{(total - rows.length).toLocaleString("en-US")} more open.</b> Members see every one, live. <a className="tlink tlink--go" href={trialHref}>Try 7 days for $1 <span className="arrow" aria-hidden="true">→</span></a></p>
+        <p className="opennow__more" data-testid="open-more"><b>{(total - rows.length).toLocaleString("en-US")} more open.</b> Members see every one, live. <a className="tlink tlink--go" href={trialHref}>Start for $1 <span className="arrow" aria-hidden="true">→</span></a></p>
       ) : null}
     </div>
   );

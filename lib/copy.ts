@@ -1,8 +1,11 @@
 /* Copy rules in one place. Never "guaranteed" or "risk-free" for anything we show. */
 
+/** Under every Read, at the top of the footer, and wherever data could be mistaken for a tip. */
+export const ADVICE = "Information, not financial or betting advice.";
+
 /** On every page. */
 export const FOOTER =
-  "Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.";
+  `${ADVICE} Insidir shows public trading data and never recommends a trade or a bet. Big traders lose too. Past results don't predict future ones.`;
 
 /** What Insidir is and isn't, under every page and on /disclosures. */
 export const DATA_COMPANY = "Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.";
@@ -13,9 +16,9 @@ export const COMPANY = { name: "Aethric LLC", place: "Pompano Beach, FL", email:
 
 /** The thin bar above the nav, and the one paid call to action (docs/INSIDIR-V2.md §6). */
 /** What Insidir is, in one plain sentence: the first FAQ answer, the meta description and link previews. */
-export const WHAT_IS = "Insidir tracks large positions on sports, prediction markets and insider stock trades as they are opened: the account, the size, and its record.";
+export const WHAT_IS = "Insidir reads any prediction market you paste: where proven money sits, the big bets of the last 24 hours, and the best price on Kalshi and Polymarket.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
-export const WHAT_IS_TITLE = "Insidir: live trackers of large positions on prediction markets and insider stock trades";
+export const WHAT_IS_TITLE = "Insidir: paste any bet, see where the smart money is";
 /** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards): the first
  *  7 days for $1 (lib/plans.ts TRIAL), then $39/mo. */
 export const GET_CTA = "Try 7 days for $1";
@@ -41,7 +44,7 @@ export const LOCK_LINE = "Locks in a net P&L if both sides fill and both markets
 
 /** Words that must never describe a deal (checked over every page by test/compliance.test.ts). The negated form
  *  "Not risk-free" and "aren't guaranteed" are allowed, and so is the FAQ question "Is this risk-free?". */
-export const BANNED = [/\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\bsure thing\b/i, /\bcan'?t lose\b/i, /\byou should (buy|bet|sell)\b/i];
+export const BANNED = [/\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\beasy money\b/i, /\bsure thing\b/i, /\blocks?\b/i, /\bcan'?t lose\b/i, /\byou should (buy|bet|sell)\b/i];
 const NEGATED = /\b(not|aren'?t|isn'?t|never|no)\s+(\w+\s+)?(guaranteed|risk[- ]free)\b/gi;
 /** A reader's question we answer with "No" (the FAQ's "Is this risk-free?"). */
 const QUESTION = /\b(is|are) (this|it|these|deals?) (guaranteed|risk[- ]free)\?/gi;
@@ -59,3 +62,14 @@ export const UNLOCK = GET_CTA;
 export const OPEN_TERMINAL = "See today's live deals";
 /** Change any member setting: confirmed with this toast. */
 export const SAVED = "Saved";
+
+/** What a member gets, in the copy product's words: the home page's $1 block, /pricing and /start. */
+export const INCLUDED = [
+  "Unlimited Reads on any Polymarket or Kalshi market",
+  "Proven money on each side, and how many wallets",
+  "Every big bet of the last 24 hours, unusual ones flagged",
+  "The best price now, and one analyst line on what the data shows",
+] as const;
+
+/** The home page's headline: the one tool. */
+export const HEADLINE = "Paste any bet. See where the smart money is.";

@@ -26,9 +26,10 @@ const STEP_NAMES = FUNNEL_STEPS.flatMap(s => [...s.names]);
 /** SQL: this event isn't from a free-access account (by its account, or the visitor id that account signed up from). */
 function notFreeAccess(): ReturnType<typeof sql> {
   const list = [...freeAccessEmails()];
-  if (!list.length) return sql`true`;
+  // The money-path monitor (lib/monitor) browses as "monitor-…" visitors: never a person, never counted.
+  if (!list.length) return sql`terminal.events.visitor_id not like 'monitor-%'`;
   const emails = sql.join(list.map(e => sql`${e}`), sql`, `);
-  return sql`not exists (select 1 from terminal.users fu where lower(fu.email) in (${emails})
+  return sql`terminal.events.visitor_id not like 'monitor-%' and not exists (select 1 from terminal.users fu where lower(fu.email) in (${emails})
     and (fu.id = terminal.events.user_id or (fu.visitor_id is not null and fu.visitor_id = terminal.events.visitor_id)))`;
 }
 

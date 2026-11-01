@@ -33,6 +33,8 @@ export interface SessionUser {
   manageUrl: string | null;
   cancelAtPeriodEnd: boolean;
   onboarded: boolean;
+  /** They confirmed they are 18 or older (before checkout). */
+  ageConfirmed: boolean;
   /** On the owner's free-access list (lib/billing/free.ts). */
   freeAccess: boolean;
 }
@@ -67,7 +69,7 @@ export async function userForToken(token: string | undefined): Promise<SessionUs
   }
   return {
     id: u.id, name: u.name ?? u.username, email: u.email, plan: effectivePlan(u), region: u.region, settings: { ...DEFAULT_SETTINGS, ...u.settings },
-    membershipId: u.membershipId, whopUserId: u.whopUserId, manageUrl: u.manageUrl, cancelAtPeriodEnd: u.cancelAtPeriodEnd, onboarded: Boolean(u.onboardedAt),
+    membershipId: u.membershipId, whopUserId: u.whopUserId, manageUrl: u.manageUrl, cancelAtPeriodEnd: u.cancelAtPeriodEnd, onboarded: Boolean(u.onboardedAt), ageConfirmed: Boolean(u.ageConfirmedAt),
     freeAccess: isFreeAccess(u.email),
   };
 }

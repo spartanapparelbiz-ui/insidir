@@ -194,6 +194,13 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   await db.execute(sql`update terminal.moves set seen_at = at where id like 'e2e:t%'`);
   await db.insert(marketInfo).values([100, 101, 102].map(i => ({ source: "polymarket" as const, marketId: `0xe2etennis${i}`, yesPrice: 0.58, closed: false, historyKey: null,
     endAt: new Date(now + (i - 99) * 26 * 3_600_000), updatedAt: new Date(now) })));
+  // The open tennis position 100 is on Kalshi too (lib/matching pair, inverted: Polymarket's Player A = Kalshi's NO);
+  // 101 and 102 have no Kalshi match. A US member copying E2E-Follow opens 100 on Kalshi and sees 101 view only.
+  const kTennis = market("kalshi", "KXE2ETENNIS-100", { title: "E2E fixture: Tennis match 100 (Kalshi)", category: "sports" });
+  await saveMarkets(db, [kTennis]);
+  await db.execute(sql`insert into terminal.pairs (id, data, safety) values (${"e2e-tennis-100"}, ${JSON.stringify({ id: "e2e-tennis-100", a: { venue: "polymarket", id: "0xe2etennis100" }, b: { venue: "kalshi", id: kTennis.id }, inverted: true, method: "deterministic", confidence: 1, safety: "green", safetyNotes: [], blocked: false })}::jsonb, 'green')
+    on conflict (id) do update set data = excluded.data, blocked = false`);
+  await db.insert(marketInfo).values({ source: "kalshi", marketId: kTennis.id, yesPrice: 0.4, closed: false, historyKey: null, endAt: null, updatedAt: new Date(now) });
   // Tracker tags, as the worker stores them (lib/trackers-tag.ts).
   while (await tagOnce(db) > 0) { /* every untagged move */ }
   await db.insert(traderRecords).values([

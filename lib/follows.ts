@@ -31,8 +31,8 @@ export function parseFollow(kind: unknown, target: unknown): { kind: FollowKind;
 /** Onboarding's "Who to follow" from SEC filings (app/api/onboarding/traders). */
 export interface StockPick { kind: "insider" | "company" | "fund"; target: string; name: string; line: string }
 
-/** "Follow insider", "Follow company", "Follow fund", "Follow market", "Follow". */
-export const followLabel = (kind: FollowKind): string => (kind === "trader" || kind === "tracker" ? "Follow" : `Follow ${kind}`);
+/** "Copy" for a wallet or tracker (a copy, lib/copies); "Follow insider", "Follow company", "Follow fund", "Follow market". */
+export const followLabel = (kind: FollowKind): string => (kind === "trader" || kind === "tracker" ? "Copy" : `Follow ${kind}`);
 
 /* ---------- the Following feed's SEC entries ---------- */
 

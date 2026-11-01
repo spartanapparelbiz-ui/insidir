@@ -1,4 +1,4 @@
-/* Pricing (/pricing): one plan. "Follow the big money." on the left and the plan card on the right ($39/month, the $1
+/* Pricing (/pricing): one plan. "Copy the winners." on the left and the plan card on the right ($39/month, the $1
  * first week, the black "Start for $1", five checkmarks), then visitor vs. member, this week's live numbers, and
  * billing questions. Every number is read from the database; none is typed in. Billing is Whop's. */
 import type { Metadata } from "next";
@@ -11,31 +11,23 @@ import { RevealGroup } from "@/components/motion/Reveal";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
-import { topTrackers } from "@/lib/follow/board";
-import { hundredLine, roiText } from "@/lib/follow/math";
+import { isWinner, traderFollowAll } from "@/lib/follow/records";
 import { proofStrip, type Proof } from "@/lib/home/proof";
 import { memo } from "@/lib/memo";
-import { PAST } from "@/lib/copy";
+import { INCLUDED, PAST } from "@/lib/copy";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
-import { trackerStats } from "@/lib/trackers-store";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: every open position from winning trackers live, followable records for every tracker and trader, analyst notes, Research and Following. Your first week is $1. Cancel anytime.` };
+export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: unlimited Reads on any Polymarket or Kalshi market, with proven money, the big bets and the best price. Your first week is $1. Cancel anytime.` };
 
-const PLAN_LIST = [
-  "Every open position from winning trackers, live",
-  "Followable records for every tracker and trader",
-  "Analyst notes on every position",
-  "Research over all of Insidir's data",
-  "The leaderboard and Following",
-];
+const PLAN_LIST = [...INCLUDED, "Pay first with Apple Pay or Google Pay, sign in after"];
 
 const COMPARE: Array<[string, string, string]> = [
-  ["Large positions", "30 minutes late", "Live"],
-  ["Open positions from winning trackers", "3", "All of them"],
-  ["Research", "3 questions a day", "Unlimited, with CSV export"],
-  ["Analyst notes", "On delayed positions", "On live positions"],
-  ["Following", "—", "Yes"],
+  ["Reads", "1", "Unlimited"],
+  ["Proven money and price now", "Yes", "Yes"],
+  ["Big bets of the last 24 hours", "—", "Yes"],
+  ["The analyst line", "—", "Yes"],
+  ["Share image", "Yes", "Yes"],
 ];
 
 const BILLING = [
@@ -53,7 +45,7 @@ function PlanCard({ href, paid }: { href: string; paid: boolean }) {
       <p className="plan3__name">Insidir</p>
       <p className="plan3__price"><b className="num">${PLANS.insidir.price}</b><span>/month</span></p>
       <p className="plan3__trial">Your first week is ${TRIAL.fee}. Cancel anytime.</p>
-      {paid ? <Link className="btn btn--primary plan3__cta" href="/open">Open Insidir</Link>
+      {paid ? <Link className="btn btn--primary plan3__cta" href="/">Read a market</Link>
         : <Link className="btn btn--primary plan3__cta" href={href} data-checkout="pricing">Start for ${TRIAL.fee}</Link>}
       <p className="plan3__fine">Secure sign-in and payments by Whop.</p>
       <ul className="plan3__list">{PLAN_LIST.map(t => <li key={t}><Check />{t}</li>)}</ul>
@@ -61,17 +53,16 @@ function PlanCard({ href, paid }: { href: string; paid: boolean }) {
   );
 }
 
-interface Week { proof: Proof | null; best: { name: string; slug: string; roi: string; line: string } | null; at: number }
+interface Week { proof: Proof | null; proven: number; at: number }
 
 async function thisWeek(now: number): Promise<Week> {
-  if (!hasDatabase()) return { proof: null, best: null, at: now };
+  if (!hasDatabase()) return { proof: null, proven: 0, at: now };
   const db = getDb();
-  const [proof, stats] = await Promise.all([
+  const [proof, traders] = await Promise.all([
     memo("home:proof", 20_000, () => proofStrip(db, now)).catch(() => null),
-    memo("home:stats", 20_000, () => trackerStats(db, now)).catch(() => null),
+    traderFollowAll(db, now).catch(() => new Map()),
   ]);
-  const top = stats ? topTrackers(stats, 1)[0] : undefined;
-  return { proof, at: now, best: top ? { name: top.t.name, slug: top.t.slug, roi: roiText(top.r.net, top.r.staked), line: hundredLine(top.r) } : null };
+  return { proof, at: now, proven: [...traders.values()].filter(t => isWinner(t.all)).length };
 }
 
 export default async function PricingPage() {
@@ -82,15 +73,14 @@ export default async function PricingPage() {
   const w = await thisWeek(now);
   const a = w.proof?.accuracy;
   const items = [
-    w.proof ? { label: "Large positions tracked, last 7 days", value: w.proof.positionsWeek.toLocaleString("en-US"), testid: "week-positions" } : null,
-    w.best ? { label: `Best tracker: ${w.best.name}`, value: w.best.roi, note: <>followable ROI · {w.best.line} <Link href={`/trackers/${w.best.slug}`}>See it</Link></>, testid: "week-best" } : null,
+    w.proven ? { label: "Proven wallets right now", value: w.proven.toLocaleString("en-US"), note: "30+ settled positions and a positive followable return", testid: "week-positions" } : null,
     a ? { label: "Last accuracy check", value: `${a.ok} of ${a.checked}`, note: "positions re-read from the source matched", testid: "week-check" } : null,
   ].filter(<T,>(x: T | null): x is T => x !== null);
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/pricing" trialHref={href} />
       <main className="lp3 pgpage">
-        <PageHead kicker="Pricing" title="Follow the big money." sub="One plan with everything in it. Every large position on Polymarket, Kalshi and SEC filings, the record of whoever placed it, and what following it would have made."
+        <PageHead kicker="Pricing" title="See where the smart money is." sub="One plan. Paste any Polymarket or Kalshi market and read it: proven money on each side, the big bets of the last 24 hours, and the best price now."
           aside={<PlanCard href={href} paid={paid} />} />
 
         <Sec id="cmp-h" title="Visitor vs. member">
@@ -105,10 +95,10 @@ export default async function PricingPage() {
         {items.length ? (
           <Sec id="week-h" title="This week on Insidir">
             <RevealGroup as="dl" className="proof__grid wk__grid">
-              {items.map(i => <div key={i.testid} className="proof__item wk__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num" data-count="">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
+              {items.map(i => <div key={i.testid} className="proof__item wk__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
             </RevealGroup>
             <p className="tcol__note">{PAST}</p>
-            <AsOf at={w.at} live sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.sec, SOURCES.methodology]} />
+            <AsOf at={w.at} live sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.methodology]} />
           </Sec>
         ) : null}
 

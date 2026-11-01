@@ -12,7 +12,8 @@ export async function POST(req: NextRequest) {
   if (!hasDatabase()) return NextResponse.json({ member: false }, { status: 503 });
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (!user) return NextResponse.json({ member: false, signedIn: false }, { status: 401 });
-  if (isFreeAccess(user.email) || user.plan !== "free") return NextResponse.json({ member: true, next: "/onboarding" });
+  const after = user.onboarded ? "/" : "/onboarding";
+  if (isFreeAccess(user.email) || user.plan !== "free") return NextResponse.json({ member: true, next: after });
   const plan = await refreshPlan(getDb(), user.id).catch(() => null);
-  return NextResponse.json(plan && plan !== "free" ? { member: true, next: "/onboarding" } : { member: false });
+  return NextResponse.json(plan && plan !== "free" ? { member: true, next: after } : { member: false });
 }

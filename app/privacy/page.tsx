@@ -10,14 +10,14 @@ export const metadata: Metadata = { title: "Privacy", description: "What Insidir
 
 export default function PrivacyPage() {
   return (
-    <TrustPage path="/privacy" title="Privacy" updated="October 31, 2026"
-      lead={`Insidir is run by ${COMPANY.name}. This page says what we keep about you, why, who else sees it, and how to delete it. We don't sell your data and we don't use ad trackers.`}>
+    <TrustPage path="/privacy" title="Privacy" updated="November 1, 2026"
+      lead={`Insidir is operated by ${COMPANY.name}, ${COMPANY.place}, which decides what is kept and is responsible for it. This page says what we keep about you, why, who else sees it, and how to delete it. We don't sell your data and we don't use ad trackers.`}>
       <h2>The data we show</h2>
       <p>Positions, prices and records come from public sources: Polymarket&apos;s and Kalshi&apos;s public trade data and SEC EDGAR. A Polymarket wallet is shown by its public username or a short address; we never try to work out who is behind it. Kalshi trades carry no name.</p>
 
       <h2>What we keep about you</h2>
       <ul>
-        <li><strong>Your account</strong>: email and Whop user id (from signing in with Whop), your plan and membership status, and your US or outside-the-US answer. We never have a password or card number for you.</li>
+        <li><strong>Your account</strong>: email and Whop user id (from signing in with Whop), your plan and membership status, your US or outside-the-US answer, when you confirmed you are 18 or older, the Reads you run, and the reason you gave if you cancel. We never have a password or card number for you.</li>
         <li><strong>What you follow</strong>: trackers, traders and markets, your alert settings, and push subscriptions for the devices where you turned alerts on.</li>
         <li><strong>Bets you check</strong>: the legs we matched and how they settled. A slip image is sent to an AI model through OpenRouter to read it, and isn&apos;t stored by us. A Kalshi CSV you upload on the P&amp;L page is read and not stored.</li>
         <li><strong>Heads-ups</strong>: if you sign up to hear when a feature launches, your email and that feature.</li>

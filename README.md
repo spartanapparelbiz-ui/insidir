@@ -65,7 +65,7 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `WHOP_API_KEY`, `WHOP_COMPANY_ID` | web | reading memberships and payments, cancelling memberships |
 | `WHOP_PLAN_INSIDIR`, `WHOP_PRODUCT_INSIDIR` | web | the one plan (Insidir, $39/month) the embedded checkout on `/start` sells |
 | `WHOP_WEBHOOK_SECRET` | web | `/api/billing/webhook` signature check |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`) |
+| `INSIDIR_VAPID_PUBLIC_KEY`, `INSIDIR_VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | both | web push (`npx web-push generate-vapid-keys`); read at run time, the public key served to the browser by the server. The older `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` still work as a fallback. Also carries the money-path monitor's alert to the `FREE_ACCESS_EMAILS` accounts' devices |
 | `WHOP_CLIENT_SECRET`, `WHOP_CLIENT_ID` (optional; else the app id `whop:setup` stored) | web | Sign-in: Whop OAuth 2.1 + PKCE (Google, Apple or email on Whop's page), redirect URI `https://YOUR_DOMAIN/reset/callback` |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (optional, default `anthropic/claude-sonnet-5.5`), `CHECK_MONTHLY_USD` (optional, default $50) | web | Position check: reading slip screenshots through OpenRouter; the cap counts the cost OpenRouter returns |
 | `OPENFIGI_KEY` (optional) | worker | more CUSIP → ticker lookups a minute for fund splits |
