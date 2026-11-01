@@ -1,7 +1,7 @@
 /* POST /copies/pick (the "Pick a winner to copy" form): starts copying one copyable wallet or tracker
  * (pick=trader:<0x…> or tracker:<slug>; it must be copyable now, lib/copies/store.ts) for a member. With onboarding=1
  * it also marks onboarding done (skip=1 copies nothing). Records copy_started / onboarding_done / onboarding_skip, then
- * goes to ?next (My copies by default). Nothing is ever traded. */
+ * goes to ?next (/copies by default). Nothing is ever traded. */
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { recordEvent } from "@/lib/analytics";
@@ -33,5 +33,5 @@ export async function POST(req: NextRequest) {
   const visitorId = req.cookies.get(VISITOR_COOKIE)?.value ?? null;
   if (picked) void recordEvent({ name: "copy_started", visitorId, userId: user.id, props: { kind: picked, onboarding } }).catch(() => undefined);
   if (onboarding) void recordEvent({ name: picked ? "onboarding_done" : "onboarding_skip", visitorId, userId: user.id, props: { copies: picked ? 1 : 0 } }).catch(() => undefined);
-  return NextResponse.redirect(new URL(safeNext(String(form?.get("next") ?? "/")), appUrl()), 303);
+  return NextResponse.redirect(new URL(safeNext(String(form?.get("next") ?? "/copies")), appUrl()), 303);
 }

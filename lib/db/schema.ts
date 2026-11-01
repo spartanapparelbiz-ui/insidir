@@ -750,3 +750,37 @@ export const researchQueries = terminal.table("research_queries", {
   cached: boolean("cached").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("research_user_idx").on(t.userId, t.createdAt), index("research_visitor_idx").on(t.visitorId, t.createdAt), index("research_key_idx").on(t.key, t.createdAt)]);
+
+/** The Read (lib/read): each one a member or visitor ran, kept so /read/<id> shows it as it was. `data` is the Read as
+ *  computed (lib/read/types.ts ReadData); the analyst line is in it. */
+export const reads = terminal.table("reads", {
+  id: text("id").primaryKey(),
+  userId: text("user_id"),
+  visitorId: text("visitor_id"),
+  /** What they gave: a link, plain words, or a slip screenshot. */
+  input: text("input").$type<"link" | "text" | "slip" | "pick">().notNull(),
+  /** "p:<polymarket condition id>" or "k:<kalshi ticker>": the 60-second cache key. */
+  marketKey: text("market_key").notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  /** How long building it took, ms (the 5-second budget). */
+  ms: integer("ms"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("reads_user_idx").on(t.userId, t.createdAt), index("reads_visitor_idx").on(t.visitorId), index("reads_created_idx").on(t.createdAt)]);
+
+/** What The Read's analyst line cost, per member (or visitor) per day: the daily cap (READ_AI_DAILY_USD). */
+export const readAiUsage = terminal.table("read_ai_usage", {
+  who: text("who").notNull(),
+  day: text("day").notNull(),
+  usd: doublePrecision("usd").notNull().default(0),
+  calls: integer("calls").notNull().default(0),
+}, t => [primaryKey({ columns: [t.who, t.day] })]);
+
+/** Why a member cancelled (one reason, required before the cancel goes to Whop). */
+export const cancelReasons = terminal.table("cancel_reasons", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  membershipId: text("membership_id"),
+  reason: text("reason").notNull(),
+  detail: text("detail"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("cancel_reasons_created_idx").on(t.createdAt)]);

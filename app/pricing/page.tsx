@@ -11,24 +11,23 @@ import { RevealGroup } from "@/components/motion/Reveal";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
-import { copyable } from "@/lib/copies/store";
-import { hundredLine, roiText } from "@/lib/follow/math";
+import { isWinner, traderFollowAll } from "@/lib/follow/records";
 import { proofStrip, type Proof } from "@/lib/home/proof";
 import { memo } from "@/lib/memo";
 import { INCLUDED, PAST } from "@/lib/copy";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: copy the wallets that win on Polymarket and Kalshi, see every bet they make live, and your P&L at your size. Your first week is $1. Cancel anytime.` };
+export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: unlimited Reads on any Polymarket or Kalshi market, with proven money, the big bets and the best price. Your first week is $1. Cancel anytime.` };
 
-const PLAN_LIST = [...INCLUDED, "A one-line analyst note on every move"];
+const PLAN_LIST = [...INCLUDED, "Pay first with Apple Pay or Google Pay, sign in after"];
 
 const COMPARE: Array<[string, string, string]> = [
-  ["The winners and their records", "Yes", "Yes"],
-  ["New moves from the winners", "3, 30 minutes late", "All of them, live"],
-  ["Copy a winner", "—", "Yes"],
-  ["Your P&L at your size, weekly recap", "—", "Yes"],
-  ["Open on Kalshi in the US", "—", "Yes"],
+  ["Reads", "1", "Unlimited"],
+  ["Proven money and price now", "Yes", "Yes"],
+  ["Big bets of the last 24 hours", "—", "Yes"],
+  ["The analyst line", "—", "Yes"],
+  ["Share image", "Yes", "Yes"],
 ];
 
 const BILLING = [
@@ -46,7 +45,7 @@ function PlanCard({ href, paid }: { href: string; paid: boolean }) {
       <p className="plan3__name">Insidir</p>
       <p className="plan3__price"><b className="num">${PLANS.insidir.price}</b><span>/month</span></p>
       <p className="plan3__trial">Your first week is ${TRIAL.fee}. Cancel anytime.</p>
-      {paid ? <Link className="btn btn--primary plan3__cta" href="/">My copies</Link>
+      {paid ? <Link className="btn btn--primary plan3__cta" href="/">Read a market</Link>
         : <Link className="btn btn--primary plan3__cta" href={href} data-checkout="pricing">Start for ${TRIAL.fee}</Link>}
       <p className="plan3__fine">Secure sign-in and payments by Whop.</p>
       <ul className="plan3__list">{PLAN_LIST.map(t => <li key={t}><Check />{t}</li>)}</ul>
@@ -54,17 +53,16 @@ function PlanCard({ href, paid }: { href: string; paid: boolean }) {
   );
 }
 
-interface Week { proof: Proof | null; copyable: number; best: { name: string; href: string; roi: string; line: string } | null; at: number }
+interface Week { proof: Proof | null; proven: number; at: number }
 
 async function thisWeek(now: number): Promise<Week> {
-  if (!hasDatabase()) return { proof: null, copyable: 0, best: null, at: now };
+  if (!hasDatabase()) return { proof: null, proven: 0, at: now };
   const db = getDb();
-  const [proof, list] = await Promise.all([
+  const [proof, traders] = await Promise.all([
     memo("home:proof", 20_000, () => proofStrip(db, now)).catch(() => null),
-    memo("home:copyable", 20_000, () => copyable(db, now)).catch(() => []),
+    traderFollowAll(db, now).catch(() => new Map()),
   ]);
-  const top = list[0];
-  return { proof, copyable: list.length, at: now, best: top ? { name: top.label, href: top.kind === "trader" ? `/p/${top.target}` : `/trackers/${top.target}`, roi: roiText(top.record.net, top.record.staked), line: hundredLine(top.record) } : null };
+  return { proof, at: now, proven: [...traders.values()].filter(t => isWinner(t.all)).length };
 }
 
 export default async function PricingPage() {
@@ -75,15 +73,14 @@ export default async function PricingPage() {
   const w = await thisWeek(now);
   const a = w.proof?.accuracy;
   const items = [
-    w.copyable ? { label: "Copyable winners right now", value: w.copyable.toLocaleString("en-US"), note: "wallets and trackers with 30+ settled positions", testid: "week-positions" } : null,
-    w.best ? { label: `Best to copy: ${w.best.name}`, value: w.best.roi, note: <>followable return · {w.best.line} <Link href={w.best.href}>See it</Link></>, testid: "week-best" } : null,
+    w.proven ? { label: "Proven wallets right now", value: w.proven.toLocaleString("en-US"), note: "30+ settled positions and a positive followable return", testid: "week-positions" } : null,
     a ? { label: "Last accuracy check", value: `${a.ok} of ${a.checked}`, note: "positions re-read from the source matched", testid: "week-check" } : null,
   ].filter(<T,>(x: T | null): x is T => x !== null);
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/pricing" trialHref={href} />
       <main className="lp3 pgpage">
-        <PageHead kicker="Pricing" title="Copy the winners." sub="One plan. Pick a wallet or tracker with a real record on Polymarket and Kalshi, and every bet it makes shows up for you, with what copying it has made at your size."
+        <PageHead kicker="Pricing" title="See where the smart money is." sub="One plan. Paste any Polymarket or Kalshi market and read it: proven money on each side, the big bets of the last 24 hours, and the best price now."
           aside={<PlanCard href={href} paid={paid} />} />
 
         <Sec id="cmp-h" title="Visitor vs. member">

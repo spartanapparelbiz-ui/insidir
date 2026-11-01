@@ -18,6 +18,7 @@ import { pushSubscriptions } from "@/lib/db/schema";
 import { isPaid, PLANS } from "@/lib/plans";
 import { eq } from "drizzle-orm";
 import { COPY_SIZES, copySizeOf } from "@/lib/copies/size";
+import { CANCEL_REASONS } from "@/lib/billing/cancel-reasons";
 import "../app.css";
 import "../account.css";
 
@@ -48,7 +49,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const s = user.settings;
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   // Notices from the no-JS form fallbacks (saved).
-  const notice = q.saved ? "Saved." : null;
+  const cancelNote = q.cancel === "done" ? null : q.cancel === "reason" ? "Pick one reason to cancel." : q.cancel === "failed" ? "Whop didn't take the cancellation. Try again, or cancel on your Whop orders page." : q.cancel === "none" ? "We couldn't find your subscription. Cancel on your Whop orders page." : null;
+  const notice = q.saved ? "Saved." : q.cancel === "done" ? "Cancelled. You keep access until the end of the period you paid for." : null;
   const confirmDelete = q.delete === "confirm";
 
   return (
@@ -57,6 +59,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <main className="wrap app acct dark">
         <header className="phead"><h1 className="phead__h">Account</h1></header>
         {notice ? <p className="banner" role="status">{notice}</p> : null}
+        {cancelNote ? <p className="banner banner--err" role="alert">{cancelNote}</p> : null}
 
         {paid ? (
           <section className="agroup" aria-labelledby="g-copy" id="copy-size">
@@ -119,7 +122,20 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   <a className="btn btn--secondary" href={MANAGE_URL} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Manage subscription</a>
                   {viewer.plan === "insidir" ? <a className="btn btn--ghost" href={unlockHref()} data-unlock="settings-pro">Go Pro</a> : null}
                 </div>
-                <p className="afield__hint">Your subscription is with Whop: change your card or cancel on your Whop orders page. If you cancel, you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
+                <p className="afield__hint">Your subscription is with Whop: change your card on your Whop orders page. If you cancel, you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
+                {!user.cancelAtPeriodEnd ? (
+                  <details className="acancel" open={Boolean(cancelNote)}>
+                    <summary>Cancel subscription</summary>
+                    <form method="post" action="/api/billing/cancel" className="acancel__form" data-testid="cancel-form">
+                      <fieldset>
+                        <legend>Why are you cancelling? Pick one.</legend>
+                        {CANCEL_REASONS.map(([k, label]) => <label key={k} className="acancel__opt"><input type="radio" name="reason" value={k} required /> {label}</label>)}
+                      </fieldset>
+                      <label className="acancel__detail">Anything to add? (optional)<textarea name="detail" maxLength={500} rows={2} className="input" /></label>
+                      <button type="submit" className="btn btn--secondary">Cancel at the end of this period</button>
+                    </form>
+                  </details>
+                ) : null}
               </>
             ) : (
               <>

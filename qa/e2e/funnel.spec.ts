@@ -41,15 +41,13 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await page.goto("/login");
   await post("/__whop_user", { email: email.toUpperCase(), name: null });
   await page.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/onboarding/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
   const u = (await q<{ id: string; plan: string; membership_id: string | null }>("select id, plan, membership_id from terminal.users where email = $1", [email]))[0]!;
   expect(u.membership_id).toBeNull();
 
   // A full member: the feed, never /start, no sign-up pop-up, no sticky bar.
-  // A new account goes through onboarding first, like any new member.
-  await expect(page.getByRole("heading", { name: "Pick a winner to copy" })).toBeVisible();
-  await page.getByRole("button", { name: "Skip for now" }).click();
-  await expect(page).toHaveURL(/localhost:\d+\/$/);
+  // Straight to the tool: the box and their Reads.
+  await expect(page.getByTestId("member-home")).toBeVisible();
   await page.goto("/start");
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/");
@@ -96,16 +94,14 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await expect(page.getByTestId("free-access")).toContainText("Free access");
 });
 
-test("/start: one screen, the price, three checkmarks, one Continue, the Whop line, and the live strip", async ({ page }) => {
-  await page.goto("/start");
-  await expect(page.getByRole("heading", { level: 1, name: "Copy the winners." })).toBeVisible();
-  await expect(page.getByText("$1 for your first week, then $39/month. Cancel anytime.")).toBeVisible();
-  await expect(page.getByTestId("start-list").locator("li")).toHaveText(["Every copyable winner on Polymarket and Kalshi, ranked by the record you could have followed", "Every new bet from the winners you copy, live, with the price they got and the price you can still get", "Your P&L at your size since you started copying, and a weekly recap"]);
-  const btn = page.getByTestId("continue");
-  await expect(btn).toHaveText("Continue");
-  expect((await btn.boundingBox())!.height).toBeGreaterThanOrEqual(52);
-  await expect(page.getByText("Secure sign-in and payments by Whop.")).toBeVisible();
-  await expect(page.locator(".asplit__steps span")).toHaveCount(2);
+test("/start: pay first: the checkout straight away, the charge line, Apple Pay / Google Pay, Log in for members, and the live strip", async ({ page }) => {
+  await page.goto("/start?next=%2Fpricing");
+  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Start for $1." })).toBeVisible();
+  await expect(page.getByTestId("start-pay-first")).toContainText("Already a member? Log in");
+  await expect(page.getByTestId("start-pay-first").getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login?next=%2Fpricing");
+  await expect(page.getByText("Apple Pay and Google Pay where your device has them. Secure payments by Whop.")).toBeVisible();
+  await expect(page.getByTestId("continue")).toHaveCount(0);
   if (page.viewportSize()!.width >= 900) await expect(page.locator(".astrip__row").first()).toBeVisible();
   else expect((await page.locator(".asplit__photo").boundingBox())!.height).toBe(220);
   await page.screenshot({ path: `qa/screenshots/start-${page.viewportSize()!.width}.png`, fullPage: true });
@@ -124,8 +120,12 @@ test("signed in without paying: back later, /start opens the checkout already si
   await q("delete from terminal.users where email = $1", [email]);
   await q("delete from terminal.events where name in ('start_view', 'account_created', 'checkout_start')");
   await page.goto("/start");
+  await expect(page.locator("[data-mock-checkout]")).toBeVisible({ timeout: 15_000 });
+  // They log in first (from "Already a member? Log in"): signed in without Insidir, back on /start's checkout.
   await post("/__whop_user", { email, name: null });
+  await page.goto("/login?next=%2Fstart");
   await page.getByTestId("continue").click();
+  await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
   await expect(page.locator("[data-mock-checkout]")).toBeVisible({ timeout: 15_000 });
   // They leave without paying, and come back later: still signed in, the checkout opens again.
   await page.goto("/");
@@ -155,12 +155,11 @@ test("the nav's 36px Start for $1 on public pages, home included, but not /start
   await expect(page.locator(".nav__cta")).toHaveCount(0);
 });
 
-test("the late bar: after 30% of the page, \"30 minutes late\" + Start for $1; × hides it for the session; never on /start or /login", async ({ page }) => {
-  // Home: not at load; once the hero has scrolled out of view.
+test("the late bar: after 30% of the page, \"30 minutes late\" + Start for $1; × hides it for the session; never on home, a Read, /start or /login", async ({ page }) => {
+  // Home is the tool (a visitor's Read isn't late): never there.
   await page.goto("/");
-  await expect(page.getByTestId("late-bar")).toHaveAttribute("aria-hidden", "true");
-  await page.evaluate(() => { const h = document.querySelector("[data-hero]")!; scrollTo(0, h.getBoundingClientRect().bottom + scrollY + 10); });
-  await expect(page.getByTestId("late-bar")).toHaveAttribute("aria-hidden", "false");
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await expect(page.getByTestId("late-bar")).toHaveCount(0);
   await page.goto("/pricing");
   const bar = page.getByTestId("late-bar");
   await expect(bar).toHaveAttribute("aria-hidden", "true");

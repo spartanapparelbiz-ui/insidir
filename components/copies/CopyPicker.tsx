@@ -5,7 +5,7 @@ import { hundredLine, roiText } from "@/lib/follow/math";
 import type { Copyable } from "@/lib/copies/store";
 import { PAST } from "@/lib/copy";
 
-export function CopyPicker({ list, next = "/", onboarding = false, cta = "Copy" }: { list: readonly Copyable[]; next?: string; onboarding?: boolean; cta?: string }) {
+export function CopyPicker({ list, next = "/copies", onboarding = false, cta = "Copy" }: { list: readonly Copyable[]; next?: string; onboarding?: boolean; cta?: string }) {
   if (!list.length) return <p className="copy__empty" data-testid="copy-picker-empty">No wallet or tracker has 30 settled positions yet. When one does, it shows up here.</p>;
   return (
     <form method="post" action="/copies/pick" className="cpick" data-testid="copy-picker">

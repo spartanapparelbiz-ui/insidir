@@ -13,7 +13,7 @@ import { whopUserFor } from "./mock-whop";
 const whop = (path: string, init?: RequestInit) => fetch(`http://localhost:${WHOP_PORT}${path}`, init);
 const post = (path: string, body: unknown) => whop(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
-test("start → Continue (Whop sign-in) → pay → in → sign out → log in → Manage subscription → refund ends access", async ({ page }) => {
+test("pay first: /start opens the checkout signed out → pay → Whop sign-in → in; cancel needs one reason; log in; refund ends access", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = `buyer-${w}@example.test`;
   await whop("/__reset", { method: "POST" });
@@ -23,46 +23,49 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   await page.goto("/pricing");
   await page.locator('[data-checkout="pricing"]').first().click();
   await expect(page).toHaveURL(/\/start$/);
-  await expect(page.getByRole("heading", { name: "Copy the winners." })).toBeVisible();
-  // Signed out: one button, and who handles sign-in and payment.
-  const box = page.getByTestId("start-continue");
-  await expect(box.getByRole("link")).toHaveCount(1);
-  await expect(box.getByTestId("continue")).toHaveText("Continue");
-  await expect(box).toContainText("Secure sign-in and payments by Whop.");
+  // Signed out: the embedded checkout straight away (pay first), no sign-in step, no password.
+  const form = page.locator("[data-mock-checkout]");
+  await expect(form).toBeVisible();
+  await expect(page.getByTestId("start-pay-first")).toContainText("Pay first; you sign in with Whop right after");
+  await expect(page.getByTestId("continue")).toHaveCount(0);
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
-  await expect(page.getByText(/continue with google/i)).toHaveCount(0);
-  await page.screenshot({ path: `qa/screenshots/start-signed-out-${w}.png`, fullPage: true });
-
-  // Whop's sign-in (mocked) signs them in and comes back to /start.
-  await post("/__whop_user", { email, name: "Buyer Example" });
-  await box.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
-  await expect(page.getByTestId("start-signed-in")).toContainText(email);
   const due = new Date(Date.now() + 7 * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
   await expect(page.getByTestId("charge-line")).toHaveText(`$1 today. $39 on ${due} unless you cancel.`);
-  const made = (await q<{ id: string; plan: string; whop_user_id: string; name: string }>("select id, plan, whop_user_id, name from terminal.users where email = $1", [email]))[0]!;
-  expect(made).toMatchObject({ plan: "free", whop_user_id: whopUserFor(email), name: "Buyer Example" });
-
-  // The embedded checkout, their email filled in and locked; it carries our account id.
-  const form = page.locator("[data-mock-checkout]");
-  await expect(form.getByLabel("Email")).toHaveValue(email);
-  await expect(form.getByLabel("Email")).not.toBeEditable();
+  await expect(page.getByText("Apple Pay and Google Pay where your device has them. Secure payments by Whop.")).toBeVisible();
   await page.screenshot({ path: `qa/screenshots/checkout-${w}.png`, fullPage: true });
-  await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
 
-  // In the moment Whop says so: onboarding, then the feed.
-  await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
-  await page.getByRole("button", { name: "Skip for now" }).click();
-  await expect(page).toHaveURL(/localhost:\d+\/$/);
-  expect((await q<{ plan: string }>("select plan from terminal.users where id = $1", [made.id]))[0]!.plan).toBe("insidir");
+  // Pay with an email; then Whop's sign-in (mocked) as the same Whop user, and they're in.
+  await post("/__whop_user", { email, name: "Buyer Example" });
+  await form.getByLabel("Email").fill(email);
+  await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
+  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 25_000 });
+  await expect(page.getByTestId("member-home")).toBeVisible();
+  const made = (await q<{ id: string; plan: string; whop_user_id: string; visitor_id: string | null }>("select id, plan, whop_user_id, visitor_id from terminal.users where email = $1", [email]))[0]!;
+  expect(made).toMatchObject({ plan: "insidir", whop_user_id: whopUserFor(email) });
+  // The checkout carried the visitor id (no account yet), and the account keeps it for time-to-paid.
   const state = await (await whop("/__state")).json() as { payments: Array<{ metadata: Record<string, string> }> };
-  expect(state.payments.at(-1)!.metadata).toEqual({ insidir_user_id: made.id });
+  const visitor = (await page.context().cookies()).find(c => c.name === "insidir_vid")?.value;
+  expect(state.payments.at(-1)!.metadata).toEqual(visitor ? { insidir_visitor_id: visitor } : {});
+  if (visitor) expect(made.visitor_id).toBe(visitor);
   await page.screenshot({ path: `qa/screenshots/checkout-landed-${w}.png` });
 
-  // Manage subscription: Whop's orders page; no cancel button of our own.
+  // Cancel: one reason is required; then Whop cancels at the end of the period and they keep access.
   await page.goto("/settings");
   await expect(page.getByTestId("manage-subscription")).toHaveAttribute("href", "https://whop.com/@me/settings/orders");
-  await expect(page.getByRole("button", { name: /cancel subscription/i })).toHaveCount(0);
+  await page.getByText("Cancel subscription").click();
+  const cancel = page.getByTestId("cancel-form");
+  await cancel.getByRole("button", { name: "Cancel at the end of this period" }).click();
+  await expect(page).toHaveURL(/\/settings$/); // the browser won't send it without a reason
+  const direct = await page.request.post("/api/billing/cancel", { form: {}, maxRedirects: 0 });
+  expect(direct.headers().location).toContain("/settings?cancel=reason");
+  expect(await q("select 1 from terminal.cancel_reasons where user_id = $1", [made.id])).toHaveLength(0);
+  await cancel.getByLabel("Too expensive").check();
+  await cancel.getByRole("button", { name: "Cancel at the end of this period" }).click();
+  await expect(page.getByText("Cancelled. You keep access until the end of the period you paid for.")).toBeVisible();
+  expect(await q("select reason from terminal.cancel_reasons where user_id = $1", [made.id])).toEqual([{ reason: "price" }]);
+  const after = await (await whop("/__state")).json() as { memberships: Array<{ user: { email: string }; cancel_at_period_end: boolean }> };
+  expect(after.memberships.find(m => m.user.email === email)!.cancel_at_period_end).toBe(true);
+  await expect(page.getByTestId("cancel-form")).toHaveCount(0);
 
   // Sign out: members only. /login has one Continue, and it comes back to where they were going.
   await page.getByRole("button", { name: "Sign out" }).click();
@@ -127,7 +130,7 @@ test("paid signed out: straight through Whop's sign-in, landing signed in", asyn
   await post("/__pay", { plan: "plan_e2e_insidir", email, metadata: {} });
   await expect.poll(async () => (await q<{ plan: string }>("select plan from terminal.users where email = $1", [email]))[0]?.plan).toBe("insidir");
   await post("/__whop_user", { email, name: null });
-  await page.goto("/welcome?status=succeeded");
-  // /welcome sends them through Whop's sign-in and back; signed in and a member, on to onboarding.
-  await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
+  await page.goto("/welcome?status=succeeded&next=%2Fpricing");
+  // /welcome sends them through Whop's sign-in and back (keeping where they were going); signed in and a member.
+  await expect(page).toHaveURL(/\/pricing$/, { timeout: 20_000 });
 });

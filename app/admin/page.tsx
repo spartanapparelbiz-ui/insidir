@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SafetyLight } from "@/components/SafetyLight";
 import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
+import { cancelReasonCounts, duration, readTimings, type ReadTimings } from "@/lib/read/admin";
 import { abStats, freeAccessAccounts, FUNNEL_LABEL, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
 import { getDb, hasDatabase } from "@/lib/db";
 import { accuracyOverview } from "@/lib/accuracy/store";
@@ -200,7 +201,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const days = q.days === "30" ? 30 : 7;
   const since = sinceDays(days);
-  const [accuracy, held, heldTotal, pairs, funnel, ab, utm, free, pictures] = await Promise.all([
+  const [speed, reasons, accuracy, held, heldTotal, pairs, funnel, ab, utm, free, pictures] = await Promise.all([
+    load<ReadTimings | null>(null, () => readTimings(getDb(), since)),
+    load<Array<{ reason: string; n: number }>>([], () => cancelReasonCounts(getDb(), sinceDays(90))),
     load<Awaited<ReturnType<typeof accuracyOverview>>>({ runs: [], mismatches: [], hidden: [] }, () => accuracyOverview(getDb())),
     load<QuarantineView[]>([], () => quarantineViews(100)),
     load<number>(0, () => quarantineCount()),
@@ -218,12 +221,35 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <h1 className="page__h">Admin</h1>
         <form method="post" action="/api/admin/logout"><button className="btn btn--ghost">Sign out</button></form>
       </div>
-      <nav className="adm__nav small" aria-label="Sections"><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#pictures">Pictures</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
+      <nav className="adm__nav small" aria-label="Sections"><a href="#speed">Speed</a><a href="#cancels">Cancel reasons</a><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#pictures">Pictures</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
       {!hasDatabase() ? <p className="banner banner--err">No database. Set DATABASE_URL, then restart.</p> : null}
       {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database. Reload to try again.</p> : null}
       {q.saved ? <p className="banner" role="status">Saved. The matcher applies it on its next run.</p> : null}
       {q.picture ? <p className="banner" role="status">{q.picture === "hidden" ? "Picture hidden. It's gone from every page now; the wallet shows its monogram." : "Picture shown again."}</p> : null}
       {error ? <p className="banner banner--err" role="alert">{error}</p> : null}
+
+      <section id="speed" className="sec2" data-testid="admin-speed">
+        <div className="adm__top">
+          <h2 className="sec2__h">Speed, last {days} days</h2>
+          <nav className="small adm__nav" aria-label="Window"><a href="/admin?days=7#speed" aria-current={days === 7 ? "true" : undefined}>7d</a><a href="/admin?days=30#speed" aria-current={days === 30 ? "true" : undefined}>30d</a></nav>
+        </div>
+        <p className="muted small">From a visitor&apos;s first landing view to their first Read, and to paid (by the visitor the paying account came from). Median and 75th percentile.</p>
+        {speed.v ? (
+          <table className="adm-t">
+            <thead><tr><th scope="col">Step</th><th scope="col" className="r">People</th><th scope="col" className="r">Median</th><th scope="col" className="r">75th pct</th></tr></thead>
+            <tbody>
+              <tr data-testid="speed-read"><th scope="row">Landing → first Read</th><td className="r num">{speed.v.toRead.n}</td><td className="r num">{duration(speed.v.toRead.medianS)}</td><td className="r num">{duration(speed.v.toRead.p75S)}</td></tr>
+              <tr data-testid="speed-paid"><th scope="row">Landing → paid</th><td className="r num">{speed.v.toPaid.n}</td><td className="r num">{duration(speed.v.toPaid.medianS)}</td><td className="r num">{duration(speed.v.toPaid.p75S)}</td></tr>
+            </tbody>
+          </table>
+        ) : <p className="muted small">No numbers yet.</p>}
+        {speed.v ? <p className="muted small" data-testid="speed-reads">{speed.v.reads.n} Reads · median build {speed.v.reads.medianMs ?? "—"} ms · 95th pct {speed.v.reads.p95Ms ?? "—"} ms · {speed.v.reads.over5s} over 5 s</p> : null}
+      </section>
+
+      <section id="cancels" className="sec2" data-testid="admin-cancels">
+        <h2 className="sec2__h">Cancel reasons, last 90 days</h2>
+        {reasons.v.length ? <ul className="small">{reasons.v.map(r => <li key={r.reason}>{r.reason}: <b className="num">{r.n}</b></li>)}</ul> : <p className="muted small">No cancellations.</p>}
+      </section>
 
       <section id="accuracy" className="sec2">
         <h2 className="sec2__h">Accuracy</h2>

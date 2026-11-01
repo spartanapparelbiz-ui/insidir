@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { beacon } from "@/components/app/beacon";
 
 /** Pages where it never shows. */
-export const NEVER = /^\/(start|login|welcome|checkout|onboarding|signin|reset|auth|settings|following|alerts|admin|dev)(\/|$)/;
+export const NEVER = /^\/((start|login|welcome|checkout|onboarding|signin|reset|auth|settings|following|alerts|admin|dev|read|copies)(\/|$)|$)/;
 
 export const LATE_KEY = "insidir_latebar_closed";
 const closed = () => { try { return sessionStorage.getItem(LATE_KEY) === "1"; } catch { return false; } };

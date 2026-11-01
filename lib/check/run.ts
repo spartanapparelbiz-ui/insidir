@@ -76,6 +76,13 @@ async function legFor(db: Db, clients: Clients, leg: Leg, c: Candidate, side: "y
 
 const noMatch = (leg: Leg): LegResult => ({ leg, market: null, side: null, sideLabel: null, crowd: null, slip: chanceFrom(leg.odds), big: null, proven: null, verdict: "none", basis: null });
 
+/** One slip leg's best market (tracked markets with big money, then Polymarket's search), or null. */
+export async function matchLegMarket(db: Db, clients: Clients, leg: Leg, now: number): Promise<Candidate | null> {
+  const fromSearch = await within(clients.polymarket.searchEvents(`${leg.event}`.slice(0, 120)), []);
+  const list = [...await trackedCandidates(db, leg, now), ...fromSearch.flatMap(e => e.markets.filter(m => m.active && !m.result).map(fromVMarket))];
+  return bestMatch(leg, list, now)?.c ?? null;
+}
+
 /** One slip leg: the best market, then its numbers. Unmatched legs say "No big money yet". */
 export async function checkLeg(db: Db, clients: Clients, leg: Leg, now: number): Promise<LegResult> {
   if (leg.marketType === "stock") {

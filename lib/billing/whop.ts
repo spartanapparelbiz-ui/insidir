@@ -122,6 +122,15 @@ export async function fetchMembership(id: string): Promise<MembershipLite | null
   return body ? readMembership(body) : null;
 }
 
+/** Cancels a membership at the end of the period they paid for (they keep access until then), with their reason. */
+export async function cancelMembership(id: string, reason: string): Promise<boolean> {
+  const res = await fetch(`${WHOP_API}/memberships/${encodeURIComponent(id)}/cancel`, {
+    method: "POST", headers: { ...apiHeaders(), "Content-Type": "application/json" }, signal: AbortSignal.timeout(10_000),
+    body: JSON.stringify({ cancel_at_period_end: true, reason: reason.slice(0, 500) }),
+  });
+  return res.ok;
+}
+
 /** Whop's access check (users.checkAccess): whether a Whop user has access to a product now, whatever membership
  *  gives it. Throws on a Whop error, so a stored answer is kept rather than taking access away. */
 export async function checkAccess(whopUserId: string, resourceId: string): Promise<boolean> {

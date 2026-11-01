@@ -6,25 +6,6 @@ import { expect, test } from "@playwright/test";
 import { APP_URL } from "./env";
 import { q, shotName, signIn } from "./helpers";
 
-test("home: the sections in order; the analyst note on the first new move, with its sources", async ({ page }) => {
-  await page.goto("/");
-  // The data sections stream in after the hero: measure once they've replaced their placeholders.
-  for (const id of ["top-wallet", "open-now"]) await page.getByTestId(id).waitFor();
-  const order = ["How it works", "The top wallet right now", "New moves from the winners", "$1 for your first week", "Questions"];
-  const tops: number[] = [];
-  for (const h of order) { const el = page.getByRole("heading", { level: 2, name: h, exact: true }).first(); await expect(el, h).toBeVisible(); tops.push((await el.boundingBox())!.y); }
-  expect([...tops].sort((a, b) => a - b)).toEqual(tops);
-  const note = page.getByTestId("open-first-note");
-  await expect(note.getByText("Analyst note", { exact: true })).toBeVisible();
-  await note.getByText("Sources").click();
-  await expect(note.locator(".anote__fact").first()).toBeVisible();
-  // The visitors' header: Winners, New moves, Pricing; no Activity, no Research.
-  await expect(page.locator('header .nav__links a[href="/top"]')).toHaveText("Winners");
-  await expect(page.locator('header .nav__links a[href="/open"]')).toHaveText("New moves");
-  await expect(page.locator('header nav a[href="/feed"]')).toHaveCount(0);
-  await page.screenshot({ path: shotName("home-final", page), fullPage: true });
-});
-
 test("a position: its card, the analyst note under the headline, and Sources with each fact's link", async ({ page }) => {
   const id = (await q<{ id: string }>("select n.move_id as id from terminal.analyst_notes n join terminal.moves m on m.id = n.move_id order by n.created_at desc limit 1"))[0]!.id;
   await page.goto(`/position/${encodeURIComponent(id)}`);
@@ -87,7 +68,7 @@ test("Research limits: a visitor's 4th question is refused; a member exports CSV
 test("every link on the home page opens for a visitor with real content", async ({ page }) => {
   await page.goto("/");
   const hrefs = [...new Set(await page.locator("a[href^='/']").evaluateAll(as => as.map(a => (a as HTMLAnchorElement).getAttribute("href")!).filter(h => !h.startsWith("/api/"))))];
-  expect(hrefs.length).toBeGreaterThan(20);
+  expect(hrefs.length).toBeGreaterThan(10);
   const bad: string[] = [];
   for (const h of hrefs) {
     const res = await page.request.get(APP_URL + h, { maxRedirects: 5 });

@@ -25,39 +25,36 @@ function literals(src: string): string {
 const V2_UI = [
   "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
-  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/copies/MyCopies.tsx", "components/copies/CopyPicker.tsx", "lib/copies/store.ts", "lib/home/ref.ts", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
+  "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/copies/MyCopies.tsx", "components/copies/CopyPicker.tsx", "lib/copies/store.ts", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx", "app/read/[id]/page.tsx", "lib/home/ref.ts", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
   "lib/moves/copy.ts", "lib/moves/ticker.ts",
 ];
 
 describe("V2 landing page", () => {
-  it("renders the copy pitch in order: hero, three steps, the live top wallet, new moves, the $1 block, FAQ", () => {
+  it("is one tool: the headline, the box, what a Read shows, the $1 block, FAQ; nothing else on the page", () => {
     const src = read("app/page.tsx");
-    const markers = ['className="hero3"', 'id="steps-h"', "<TopWallet ", "<NewMoves ", "<PricingCard ", "<FaqV2 />"];
+    expect(read("lib/copy.ts")).toContain('HEADLINE = "Paste any bet. See where the smart money is."');
+    const markers = ['className="hero3 rhome"', "<ReadBox />", 'id="parts-h"', "<DollarBlock ", "<FaqV2 />"];
     const at = markers.map(m => src.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
+    for (const gone of ["<TopWallet ", "<NewMoves ", "<OpenNow ", "<MyCopies ", "<ResearchBar ", "<MarketTabs ", "<BoardSection ", "<Laptops ", "PayPrompt", "<HeroCta "]) expect(src, gone).not.toContain(gone);
+    // Members: the box and their recent Reads.
+    expect(src).toContain('data-testid="member-home"');
+    expect(src).toContain("<Recent list={recent}");
   });
 
-  it("says the brief's words, one CTA, no stocks or crypto in the pitch", async () => {
+  it("one CTA, Start for $1; the nav is the tool; no stocks, crypto or Congress in the pitch", async () => {
     const src = read("app/page.tsx");
-    expect(src).toContain("Insidir finds the wallets that actually win on Polymarket and Kalshi. Pick one, and every bet they make shows up for you.");
-    for (const s of ["Pick a winner.", "Copy their bets.", "Watch your number."]) expect(src).toContain(s);
-    expect(src).toContain("<HeroCta trialHref={trial} />");
-    const cta = read("components/home/HeroCta.tsx");
-    expect(cta).toMatch(/btn btn--primary[^"]*" href=\{trialHref\} data-cta="hero"/);
-    expect(cta).toContain("Start for $1");
-    expect(cta).not.toMatch(/Start your 7-day trial|Explore trackers/);
-    for (const f of ["app/page.tsx", "components/home/HeroCta.tsx"]) expect(read(f), f).not.toMatch(/\/check|Check your bet|Position check/);
-    // Stocks and crypto are out of the pitch: home, nav, pricing, the pay page and the FAQ.
-    for (const f of ["app/page.tsx", "components/SiteHeader.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx"]) {
+    expect(src).toContain("Start for ${TRIAL.fee}");
+    const nav = read("components/SiteHeader.tsx");
+    expect(nav).toContain('[link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>]');
+    expect(nav).toContain('[link("/", "Read", "/"), link("/settings", "Account", "/account")]');
+    for (const f of ["app/page.tsx", "components/SiteHeader.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
       expect(read(f), f).not.toMatch(/\b(stocks?|Stocks?|crypto|Crypto|SEC|insider stock|CEO|Congress)\b/);
     }
     const copy = await import("@/lib/copy");
-    for (const t of [copy.WHAT_IS, copy.WHAT_IS_TITLE, ...copy.INCLUDED]) expect(t).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
-    for (const h of ["<ResearchBar ", "<MarketTabs ", "<BoardSection ", "<ProofSection ", "<Laptops ", "PayPrompt"]) expect(src).not.toContain(h);
-    // Nothing counts up anywhere: every figure is final in the server's HTML.
-    for (const f of ["app/page.tsx", "components/motion/Motion.tsx", "components/follow/OpenNow.tsx", "app/pricing/page.tsx", "components/stats/Stats.tsx"]) expect(read(f), f).not.toMatch(/data-count|countUp/);
-    expect(src).not.toMatch(/hero3__(h|sub|acts|mark)[^"]* rise/);
+    for (const t of [copy.WHAT_IS, copy.WHAT_IS_TITLE, copy.HEADLINE, ...copy.INCLUDED]) expect(t).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
+    for (const f of ["app/page.tsx", "components/motion/Motion.tsx", "components/read/ReadCard.tsx", "app/pricing/page.tsx"]) expect(read(f), f).not.toMatch(/data-count|countUp/);
     for (const f of ["components/home/Story.tsx", "components/PageBand.tsx", "components/home/MarketTabs.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
     expect(read("lib/copy.ts")).toContain('GET_CTA = "Try 7 days for $1"');
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');

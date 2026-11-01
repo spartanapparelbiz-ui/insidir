@@ -7,17 +7,17 @@ import { q, signIn } from "./helpers";
 /** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
 const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
 
-test("members open the app on My copies: nothing copied yet → pick a winner; the menu holds Trackers, Following and the position check", async ({ page, context }) => {
-  await q("delete from terminal.follows where user_id = 'user_e2e_insidir'");
+test("members open the app on the box and their recent Reads; the menu holds everything else", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Pick a winner to copy" })).toBeVisible();
-  await expect(page.getByTestId("copy-picker").locator(".cpick__name").first()).toHaveText("0xe2…dd");
-  await expect(page.getByRole("link", { name: "My copies" }).first()).toHaveAttribute("aria-current", "page");
-  // The position check, trackers and follows live only in the app menu, never on the bar.
-  await expect(page.locator(".nav__links").getByRole("link", { name: "Position check" })).toHaveCount(0);
-  await expect(page.locator('.nav__sheet a[href="/check"]')).toHaveText("Position check");
-  await expect(page.locator('.nav__sheet a[href="/trackers"]')).toHaveText("Trackers");
+  await expect(page.getByTestId("member-home")).toBeVisible();
+  await expect(page.getByTestId("read-input")).toBeFocused();
+  await expect(page.getByRole("heading", { level: 2, name: "Your recent Reads" })).toBeVisible();
+  const bar = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
+  expect(bar).toEqual(["Read", "Account"]);
+  for (const [href, label] of [["/copies", "My copies"], ["/feed", "Activity"], ["/top", "Winners"], ["/trackers", "Trackers"], ["/following", "Following"], ["/check", "Position check"], ["/results", "Track record"]]) {
+    await expect(page.locator(`.nav__sheet a[href="${href}"]`)).toHaveText(label!);
+  }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 test("a tracker page: holding now first, then following it, the traders' own return, stats, breakdowns, top traders, latest positions; nothing invented under 30 settled", async ({ page, context }) => {

@@ -1,5 +1,5 @@
 "use client";
-/* The checkout on /start, for someone signed in with Whop who doesn't have Insidir yet: Whop's embedded checkout
+/* The checkout on /start, signed in or not (pay first, sign in after): Whop's embedded checkout
  * (docs.whop.com/developer/guides/embed-checkout) opens in place straight away, 7 days for $1, then $39/month, Apple Pay
  * and Google Pay first where the device has them. The checkout carries our account id as metadata
  * (app/api/checkout/start), so the billing webhook links the membership to this account; when it completes we go to
@@ -26,7 +26,7 @@ function loadScript(src: string): Promise<void> {
 
 type State = "opening" | "ready" | "error" | "unconfigured";
 
-export function StartCheckout({ elementsUrl, signedInAs, next = "/" }: { elementsUrl: string; signedInAs: string; next?: string }) {
+export function StartCheckout({ elementsUrl, signedInAs, next = "/" }: { elementsUrl: string; signedInAs: string | null; next?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<State>("opening");
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export function StartCheckout({ elementsUrl, signedInAs, next = "/" }: { element
     let from: string | null = null;
     try { from = sessionStorage.getItem("insidir_pay_from"); } catch { from = null; }
     beacon("checkout_start", from ? "popup" : "start", from ? { page: from } : undefined);
-  }, [elementsUrl]);
+  }, [elementsUrl, next]);
 
   useEffect(() => { void open().catch(() => setState("error")); }, [open]);
 
@@ -63,8 +63,9 @@ export function StartCheckout({ elementsUrl, signedInAs, next = "/" }: { element
       {state === "error" ? <p className="aerr" role="alert">{error ?? "The checkout didn't open. Try again."} <button type="button" className="aerr__retry" onClick={() => void open()}>Try again</button></p> : null}
       {state === "unconfigured" ? <p className="aerr" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
       <div ref={box} className="astart__frame" hidden={state !== "ready"} />
-      <p className="astart__who" data-testid="start-signed-in">Signed in as <b>{signedInAs}</b> · <a href="/login/start?next=%2Fstart&amp;fresh=1">Change account</a></p>
-      <p className="continue__by">Secure sign-in and payments by Whop.</p>
+      {signedInAs ? <p className="astart__who" data-testid="start-signed-in">Signed in as <b>{signedInAs}</b> · <a href="/login/start?next=%2Fstart&amp;fresh=1">Change account</a></p>
+        : <p className="astart__who" data-testid="start-pay-first">Pay first; you sign in with Whop right after, then you&apos;re back on {next.startsWith("/read/") ? "your Read" : "Insidir"}. Already a member? <a href={`/login?next=${encodeURIComponent(next)}`}>Log in</a></p>}
+      <p className="continue__by">Apple Pay and Google Pay where your device has them. Secure payments by Whop.</p>
     </div>
   );
 }

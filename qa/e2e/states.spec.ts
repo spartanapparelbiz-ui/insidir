@@ -91,7 +91,7 @@ test("empty: P&L before anything is loaded says what to do first", async ({ page
 test("one primary action: pricing and legal pages show exactly one; the landing's are all the one CTA, Start for $1 (the hero and the $1 block)", async ({ page }) => {
   await page.goto("/");
   const home = await page.locator("main .btn--primary").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).map(e => (e as HTMLElement).innerText.trim()));
-  expect(home).toEqual(["Start for $1", "Start for $1"]);
+  expect(home).toEqual(["Read it", "Start for $1"]);
   for (const path of ["/pricing", "/terms", "/privacy"]) {
     await page.goto(path);
     // Pictures of the app are inert, and a closed laptop panel isn't shown: neither is an action on this page.

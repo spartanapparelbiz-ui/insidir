@@ -6,6 +6,7 @@ export function TabIcon({ name, className = "tabbar__icon" }: { name: string; cl
     Feed: "M4 6h16M4 12h16M4 18h10",
     Activity: "M3 12h4l3-8 4 16 3-8h4",
     "My copies": "M8 8h11v11H8zM5 16V5h11",
+    Read: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4",
     Winners: "M5 20V10M12 20V4M19 20v-7",
     Following: "M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z",
     Top: "M5 20V10M12 20V4M19 20v-7",

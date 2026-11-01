@@ -25,7 +25,7 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
   await copyFrom("user_e2e_insidir");
   await q("update terminal.users set settings = settings - 'copySize' where id = 'user_e2e_insidir'");
   await signIn(context, "insidir");
-  await page.goto("/");
+  await page.goto("/copies");
   await expect(page.getByRole("heading", { level: 1, name: "My copies" })).toBeVisible();
   const pnl = page.getByTestId("copy-pnl");
   await expect(pnl.locator(".mycp__line")).toHaveText("Copying 0xe2…dd · $0 this week");
@@ -59,7 +59,7 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
   await page.getByTestId("copy-size").getByLabel("$50 a move").check();
   await page.getByTestId("copy-size").getByRole("button", { name: "Save size" }).click();
   await expect(page).toHaveURL(/\/settings\?saved=1/);
-  await page.goto("/");
+  await page.goto("/copies");
   await expect(page.getByTestId("copy-total")).toHaveText("−$50");
   await expect(page.getByTestId("copy-pnl")).toContainText("at $50 a move");
   // The wallet's page says Copying; nothing names who is behind it on My copies.
@@ -72,7 +72,7 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
 test("outside the US: the same move opens on Polymarket at Polymarket's price", async ({ page, context }) => {
   await copyFrom("user_e2e_pro_intl");
   await signIn(context, "proIntl");
-  await page.goto("/");
+  await page.goto("/copies");
   const matched = page.getByTestId("copy-move").filter({ hasText: "Player A" });
   await expect(matched).toHaveAttribute("data-open", "polymarket");
   await expect(matched.getByTestId("your-price")).toHaveText("58¢");
@@ -80,12 +80,11 @@ test("outside the US: the same move opens on Polymarket at Polymarket's price", 
   await expect(matched.getByTestId("copy-open")).toHaveAttribute("href", /^https:\/\/polymarket\.com\//);
 });
 
-test("after paying, onboarding is one step: pick a winner to copy from the top 5, then My copies", async ({ page, context }) => {
+test("onboarding (by URL) is one step: pick a winner to copy from the top 5, then My copies", async ({ page, context }) => {
   await q("delete from terminal.follows where user_id = 'user_e2e_pro'");
   await q("update terminal.users set onboarded_at = null where id = 'user_e2e_pro'");
   await signIn(context, "pro");
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.goto("/onboarding");
   await expect(page.getByRole("heading", { level: 1, name: "Pick a winner to copy" })).toBeVisible();
   const rows = page.getByTestId("copy-picker").locator(".cpick__row");
   expect(await rows.count()).toBeGreaterThan(0);
@@ -95,7 +94,7 @@ test("after paying, onboarding is one step: pick a winner to copy from the top 5
   await expect(rows.first().locator("input")).toBeChecked();
   await page.screenshot({ path: shotName("onboarding-copy", page), fullPage: true });
   await page.getByRole("button", { name: "Copy this winner" }).click();
-  await expect(page).toHaveURL(/localhost:\d+\/$/);
+  await expect(page).toHaveURL(/\/copies$/);
   await expect(page.getByTestId("copy-pnl").locator(".mycp__line")).toContainText("Copying 0xe2…dd");
   expect(await q("select kind, target from terminal.follows where user_id = 'user_e2e_pro'")).toEqual([{ kind: "trader", target: W }]);
   await q("update terminal.users set onboarded_at = now() where id = 'user_e2e_pro'");

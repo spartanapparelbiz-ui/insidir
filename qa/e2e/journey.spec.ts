@@ -47,28 +47,18 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
   }, { endpoint, p256dh: ecdh.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") });
 
   try {
-    // A visitor: the landing page, then "Try 7 days for $1" → Continue (Whop sign-in) → the embedded checkout → pay → welcome.
+    // A visitor: the landing page, then "Start for $1" → the embedded checkout (pay first) → Whop sign-in → in.
     await page.goto("/");
     await page.goto("/pricing");
     await page.locator('[data-checkout="pricing"]').first().click();
     await expect(page).toHaveURL(/\/start$/);
     await whop("/__whop_user", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: EMAIL(w), name: null }) });
-    await page.getByTestId("continue").click();
+    await page.locator("[data-mock-checkout]").getByLabel("Email").fill(EMAIL(w));
     await page.getByRole("button", { name: "Pay $1 (test mode)" }).click();
-    await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 25_000 });
+    await expect(page.getByTestId("member-home")).toBeVisible();
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
-
-    // Onboarding is one step: pick a winner to copy (the best one chosen); Copy lands on My copies.
-    await expect(page.getByRole("heading", { name: "Pick a winner to copy" })).toBeVisible();
-    await shot("onboarding-1");
-    const picked = await page.locator("[data-testid=copy-picker] input:checked").evaluateAll(els => els.map(e => (e as HTMLInputElement).value));
-    expect(picked).toHaveLength(1);
-    await page.getByRole("button", { name: "Copy this winner" }).click();
-    await expect(page).toHaveURL(/localhost:\d+\/$/);
-    const [kind, target] = picked[0]!.split(":");
-    await expect.poll(async () => (await q<{ kind: string; target: string }>("select kind, target from terminal.follows where user_id = $1", [MOCK_USER.sub])).map(r => `${r.kind}:${r.target}`)).toEqual([`${kind}:${target}`]);
-    await expect(page.getByTestId("copy-pnl").first()).toContainText("Copying");
-    await shot("my-copies-first");
+    await shot("member-home-first");
 
     // Alerts: push on this device, a real test alert, then the history.
     await page.goto("/alerts");

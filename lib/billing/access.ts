@@ -84,7 +84,7 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   // A buyer who paid signed out: an account for their Whop user, so signing in with Whop finds it.
   if (!user && email && membership && grants(membership, now)) {
     const id = newUserId();
-    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, settings: DEFAULT_SETTINGS })
+    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, settings: DEFAULT_SETTINGS, visitorId: metadata.insidir_visitor_id ?? null })
       .onConflictDoNothing().returning();
     user = rows[0] ?? await findUser(db, { email });
     created = Boolean(rows[0]);

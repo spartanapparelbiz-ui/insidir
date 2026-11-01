@@ -25,7 +25,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
       <main className="pg onb" data-testid="onboarding">
         <h1 className="onb__h">Pick a winner to copy</h1>
         <p className="onb__sub">The five wallets and trackers with the best record you could have followed. Every bet your pick makes from now on shows up on your home page.</p>
-        <CopyPicker list={list} next={safeNext(sp.next ?? "/")} onboarding cta="Copy this winner" />
+        <CopyPicker list={list} next={safeNext(sp.next ?? "/copies")} onboarding cta="Copy this winner" />
       </main>
     </>
   );

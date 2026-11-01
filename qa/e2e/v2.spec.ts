@@ -3,68 +3,46 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: the copy pitch, final on first paint: hero, three steps, the live top wallet, new moves, the $1 block, FAQ; one CTA; no stocks; no pop-up, nothing counts up", async ({ page }) => {
-  const HEAD = "Insidir finds the wallets that actually win on Polymarket and Kalshi. Pick one, and every bet they make shows up for you.";
-  // The hero as the server sends it, before any script runs.
+test("landing: one tool, final on first paint: the headline, the box, what a Read shows, the $1 block, FAQ; the nav is Pricing and Log in; no stocks; no pop-up", async ({ page }) => {
+  const HEAD = "Paste any bet. See where the smart money is.";
   const html = await (await page.request.get("/")).text();
   expect(html).toContain(HEAD);
-  expect(html).not.toMatch(/data-count|hero3__h[^"]* rise|hero3__acts rise/);
+  expect(html).not.toMatch(/data-count/);
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: HEAD });
   await expect(h1).toBeVisible();
   expect(await h1.evaluate(e => getComputedStyle(e).opacity)).toBe("1");
-  const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toHaveText("Start for $1");
-  const vh = page.viewportSize()!.height;
-  for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  // Three steps, then the live sections, in order.
-  await expect(page.locator(".steps__h")).toHaveText(["Pick a winner.", "Copy their bets.", "Watch your number."]);
-  expect(await page.locator(".steps__h a").first().evaluate(e => getComputedStyle(e).textDecorationLine)).toBe("none");
-  for (const id of ["top-wallet", "open-now"]) await page.getByTestId(id).waitFor();
+  // The box is in the first screen.
+  const input = page.getByTestId("read-input");
+  await expect(input).toBeVisible();
+  expect((await input.boundingBox())!.y + 20).toBeLessThan(page.viewportSize()!.height);
+  await expect(page.getByTestId("read-go")).toHaveText("Read it");
+  await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
   const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  expect(h2s).toEqual(["How it works", "The top wallet right now", "New moves from the winners", "$1 for your first week", "Questions"]);
-  // The top wallet: E2E-Follow, by its short address only, with its real record (32 settled: 20 won, 12 lost at 46¢).
-  const top = page.getByTestId("top-wallet");
-  await expect(top.locator(".mcard__h")).toHaveText("0xe2…dd");
-  await expect(top).not.toContainText("E2E-Follow");
-  await expect(top).toContainText("Polymarket wallet");
-  await expect(top.locator(".mcard__facts dd")).toHaveText(["32", "20", "12"]);
-  await expect(top).toContainText("$100 on every position since we started tracking: $3,200 in,");
-  // New moves: the newest from the winners a visitor may see (30 minutes late), and how many more.
-  const row = page.getByTestId("open-now").locator("tbody tr.otable__row").first();
-  await expect(row).toContainText("Tennis");
-  await expect(page.getByTestId("open-more")).toContainText("1 more open.");
-  if (page.viewportSize()!.width < 640) expect(await row.evaluate(e => getComputedStyle(e).display)).toBe("grid");
-  // The $1 block: one card, the copy product's four lines, the button.
+  expect(h2s).toEqual(["What a Read shows", "$1 for your first week", "Questions"]);
+  await expect(page.locator(".steps__h")).toHaveText(["Proven money", "Big bets, last 24 hours", "Price now", "One analyst line"]);
+  // The nav: Pricing, Log in, Start for $1. Nothing else.
+  const links = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
+  expect(links).toEqual(["Pricing", "Log in"]);
+  await expect(page.locator("header .nav__cta")).toHaveText("Start for $1");
+  // The $1 block; every primary button says Start for $1 (the box's own button aside).
   const plan = page.getByTestId("home-plan");
-  await expect(plan).toContainText("$39/mo");
-  await expect(plan).toContainText("$1 for your first week");
   await expect(plan.locator("li")).toHaveCount(4);
-  await expect(plan.getByRole("link", { name: "Start for $1" })).toBeVisible();
-  // One CTA everywhere: every primary button on the page says Start for $1.
-  for (const t of await page.locator("main .btn--primary, header .btn--primary").allInnerTexts()) expect(t.trim()).toBe("Start for $1");
-  // Stocks and crypto are out of the pitch: the page and the nav.
+  await expect(plan.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
+  for (const t of await page.locator("main .btn--primary:not(.rbox__go), header .btn--primary").allInnerTexts()) expect(t.trim()).toBe("Start for $1");
   const text = await page.locator("main").innerText();
   expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
   expect(text).not.toMatch(/guaranteed|risk-free/i);
-  const nav = await page.locator("header.nav").innerText();
-  expect(nav).not.toMatch(/stocks?|crypto/i);
-  for (const gone of ["Leaderboard", "Where the data comes from", "Every position, analyzed."]) expect(h2s, gone).not.toContain(gone);
-  await expect(page.getByRole("tab")).toHaveCount(0);
-  await expect(page.locator(".rbar")).toHaveCount(0);
-  // No pop-up, no old offer bars; every figure stamped; no sideways scroll.
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1000);
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
+  await expect(page.getByTestId("late-bar")).toHaveCount(0);
   expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
-  expect(await page.locator("main [data-asof]").count()).toBeGreaterThanOrEqual(2);
-  await expect(page.locator(".asof").first()).toContainText("30-min delay");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; /stocks and /insider-trading pages stay live by URL and in the sitemaps", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Insidir finds the wallets that actually win/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Paste any bet. See where the smart money is.");
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
@@ -73,13 +51,13 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
   expect(await (await page.request.get("/sitemaps/companies.xml")).text()).toContain("/insider-trading/");
 });
 
-test("home hero: Start for $1 is recorded and opens /start; the trackers page lists every tracker with its record or the record being built", async ({ page }) => {
+test("home: the nav's Start for $1 is recorded and opens /start; the trackers page (by URL) lists every tracker with its record or the record being built", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
-  const before = await count("hero_cta_click");
+  const before = await count("unlock_click");
   await page.goto("/");
-  await page.locator('[data-cta="hero"]').click();
+  await page.locator("header .nav__cta").click();
   await expect(page).toHaveURL(/\/start(\?|$)/);
-  await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
+  await expect.poll(() => count("unlock_click")).toBe(before + 1);
   await page.goto("/trackers");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
@@ -289,7 +267,7 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
   await expect(card.locator("li")).toHaveCount(5);
   await expect(page.locator("main")).not.toContainText("More coming");
-  // /start keeps it to three lines (qa/e2e/funnel.spec.ts checks them).
+  // /start is the checkout itself (pay first; qa/e2e/funnel.spec.ts checks it).
   await page.goto("/start");
-  await expect(page.getByTestId("start-list").locator("li")).toHaveCount(3);
+  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
 });
