@@ -31,7 +31,7 @@ export async function tonightReads(db: Db, now: number, n = 3): Promise<TonightR
   const proven = sql`(coalesce(terminal.moves.trackers, '{}') && ${arr(tagged)}
     ${live.length ? sql`or ${sql.join(live.map(t => sql`(${trackerWhere(t)})`), sql` or `)}` : sql``}
     or (terminal.moves.wallet is not null and (terminal.moves.wallet = any(${arr(winners)})
-      or exists (select 1 from terminal.trader_records r where r.wallet = terminal.moves.wallet and r.resolved >= ${PROVEN_CLOSED_MIN} and r.profit > 0))))`;
+      or exists (select 1 from terminal.wallet_pnl r where r.wallet = terminal.moves.wallet and r.closed >= ${PROVEN_CLOSED_MIN} and r.pnl > 0))))`;
   const from = new Date(now - 3 * HOUR), to = new Date(startOfEtDay(now) + 30 * HOUR);
   const r = await db.execute(sql`select p.*, coalesce((mk.data->>'volume24h')::float, 0) as volume, coalesce(i.start_at, i.end_at) as start_at from (
       select terminal.moves.source, terminal.moves.market_id, max(market_title) as title, max(event_title) as event, sum(amount)::float as money,

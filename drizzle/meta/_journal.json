@@ -218,6 +218,13 @@
       "when": 1793568611909,
       "tag": "0030_read_offers",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793569529948,
+      "tag": "0031_wallet_pnl",
+      "breakpoints": true
     }
   ]
 }

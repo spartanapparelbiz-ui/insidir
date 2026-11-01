@@ -3,8 +3,9 @@
  *              the matcher's stored copy (terminal.markets).
  *   Proven     two real sources. Winning trackers (30+ settled, positive all-time followable return): which side
  *              their open positions here are on, on either venue (trackers tag Kalshi moves too). Proven wallets
- *              (30+ closed Polymarket markets and positive all-time profit, terminal.trader_records from the Data API
- *              /closed-positions; or a winning followable record): their side and dollars, from their large positions
+ *              (30+ closed Polymarket markets and positive all-time profit, terminal.wallet_pnl: the count from the
+ *              Data API /closed-positions, the profit from the wallet's /v1/leaderboard row; or a winning followable
+ *              record): their side and dollars, from their large positions
  *              (terminal.moves) and their open positions (terminal.trader_open).
  *   Big split  every open tracked large position by side: shown, labelled as such, when there is no proven money.
  *   Big bets   every large position on either listing in the last 24 hours, Kalshi's turned to the main listing's sides,
@@ -18,7 +19,7 @@ import { infoFor } from "@/lib/markets/info";
 import { shortWallet } from "@/lib/moves/records";
 import type { VMarket } from "@/lib/types";
 import { MIN_SETTLED } from "@/lib/follow/math";
-import { recordsFor } from "@/lib/moves/store";
+import { walletPnlFor } from "@/lib/moves/store";
 import { isLive, TRACKERS, trackerWhere } from "@/lib/trackers";
 import { bigSplitOf, provenFrom, sidePrices, unusualOf, type OpenPosition } from "./math";
 import type { BigBet, BigSplit, Listing, ProvenMoney, ReadData, Venue } from "./types";
@@ -104,8 +105,8 @@ async function provenAndBig(db: Db, ids: Ids, now: number): Promise<{ proven: Pr
   ]);
   const walletOpen = (open.rows as Array<{ wallet: string; outcome_index: number; dollars: number }>).map(o => ({ wallet: o.wallet, side: (o.outcome_index === 0 ? "yes" : "no") as "yes" | "no", dollars: Number(o.dollars) }));
   const wallets = [...new Set([...positions.map(p => p.wallet).filter((w): w is string => Boolean(w)), ...walletOpen.map(o => o.wallet)])];
-  const recs = await recordsFor(db, wallets);
-  const records = new Map([...recs].map(([w, r]) => [w, { closed: r.resolved, profit: r.profit }]));
+  const recs = await walletPnlFor(db, wallets);
+  const records = new Map([...recs].filter(([, r]) => r.pnl !== null).map(([w, r]) => [w, { closed: r.closed, closedAtLeast: r.closedAtLeast, profit: r.pnl! }]));
   const follow = new Map<string, { returnPct: number; settled: number; winner: boolean }>();
   for (const w of wallets) {
     const f = follows.get(w)?.all;

@@ -20,7 +20,8 @@ export interface ProvenTracker {
 }
 
 /** A proven Polymarket wallet with an open position here. Proven: its public Polymarket record shows 30+ closed markets
- *  and positive all-time profit (Data API /closed-positions, terminal.trader_records), or a winning followable record. */
+ *  and positive all-time profit (terminal.wallet_pnl: /closed-positions and /v1/leaderboard), or a winning followable
+ *  record. */
 export interface ProvenWallet {
   /** Short address only ("0x4f…c2"). Never who is behind it. */
   wallet: string;
@@ -29,6 +30,8 @@ export interface ProvenWallet {
   /** All-time realized profit on Polymarket and closed markets; null when the record doesn't qualify. */
   profit: number | null;
   closed: number | null;
+  /** The wallet has more closed markets than we page through: `closed` is a floor ("5,000+"). */
+  closedAtLeast?: boolean;
   /** Insidir's followable record for the wallet, when it has 30+ settled. */
   follow: { returnPct: number; settled: number } | null;
 }

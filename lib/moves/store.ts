@@ -2,7 +2,7 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
-import { follows, markets, moves, traderRecords, waitlist, type FollowKind } from "@/lib/db/schema";
+import { follows, markets, moves, traderRecords, waitlist, walletPnl, type FollowKind } from "@/lib/db/schema";
 import type { FillPart, League, Move, Tab, TraderRecord } from "./types";
 import { fromParts, mergeParts } from "./detect";
 import { notComboSql } from "./combos";
@@ -131,17 +131,27 @@ export async function walletsToRecord(db: Db, now: number, staleMs: number, limi
   return (r.rows as Array<{ wallet: string; name: string | null }>);
 }
 
-/** Every Polymarket wallet with a large position in the last BACKFILL_DAYS whose public record is missing or older than
- *  staleMs (the 24-hour cache behind proven wallets on the Read): never-read wallets first, then the most recent. */
+/** Every Polymarket wallet with a large position in the last BACKFILL_DAYS whose public record (terminal.wallet_pnl)
+ *  is missing or older than staleMs (the Read's 24-hour cache): never-read wallets first, then the most recent. */
 export const BACKFILL_DAYS = 90;
-export async function walletsToBackfill(db: Db, now: number, staleMs: number, limit: number, skip: ReadonlySet<string> = new Set()): Promise<Array<{ wallet: string; name: string | null }>> {
-  const r = await db.execute(sql`select m.wallet, max(m.wallet_name) as name from terminal.moves m
-      left join terminal.trader_records t on t.wallet = m.wallet
+export async function walletsToBackfill(db: Db, now: number, staleMs: number, limit: number): Promise<string[]> {
+  const r = await db.execute(sql`select m.wallet from terminal.moves m left join terminal.wallet_pnl p on p.wallet = m.wallet
     where m.source = 'polymarket' and m.wallet is not null and m.at > ${new Date(now - BACKFILL_DAYS * 86_400_000)}
-      and (t.wallet is null or t.updated_at < ${new Date(now - staleMs)})
-      ${skip.size ? sql`and m.wallet not in (${sql.join([...skip].map(w => sql`${w}`), sql`, `)})` : sql``}
-    group by m.wallet order by bool_or(t.wallet is null) desc, max(m.at) desc limit ${limit}`);
-  return r.rows as Array<{ wallet: string; name: string | null }>;
+      and (p.wallet is null or p.read_at < ${new Date(now - staleMs)})
+    group by m.wallet order by bool_or(p.wallet is null) desc, max(m.at) desc limit ${limit}`);
+  return (r.rows as Array<{ wallet: string }>).map(x => x.wallet);
+}
+
+export interface WalletPnl { closed: number; closedAtLeast: boolean; pnl: number | null }
+export async function saveWalletPnl(db: Db, wallet: string, v: WalletPnl, now: number): Promise<void> {
+  const set = { closed: v.closed, closedAtLeast: v.closedAtLeast, pnl: v.pnl, readAt: new Date(now) };
+  await db.insert(walletPnl).values({ wallet, ...set }).onConflictDoUpdate({ target: walletPnl.wallet, set });
+}
+export async function walletPnlFor(db: Db, wallets: readonly string[]): Promise<Map<string, WalletPnl>> {
+  const ws = [...new Set(wallets)].filter(Boolean);
+  if (!ws.length) return new Map();
+  const rs = await db.select().from(walletPnl).where(inArray(walletPnl.wallet, ws));
+  return new Map(rs.map(r => [r.wallet, { closed: r.closed, closedAtLeast: r.closedAtLeast, pnl: r.pnl }]));
 }
 
 export async function saveRecord(db: Db, r: TraderRecord): Promise<void> {

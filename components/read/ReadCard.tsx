@@ -78,7 +78,7 @@ export function ReadCard({ id, data, member, us, now, startHref }: { id: string;
                   <li key={`${w.wallet}:${w.side}:${i}`} className="rprov__row" data-testid="proven-wallet">
                     <span className="rprov__main"><b>{w.wallet}</b> · {usd(w.dollars)} on {sideLabel(w.side)}</span>
                     <span className="rprov__sub">{[
-                      w.profit !== null ? `${signedUsd(w.profit)} all-time on Polymarket over ${w.closed} closed markets` : null,
+                      w.profit !== null ? `${signedUsd(w.profit)} all-time on Polymarket over ${(w.closed ?? 0).toLocaleString("en-US")}${w.closedAtLeast ? "+" : ""} closed markets` : null,
                       w.follow ? `${signedPct(w.follow.returnPct)} followed over ${w.follow.settled} settled` : null,
                     ].filter(Boolean).join(" · ")}</span>
                   </li>

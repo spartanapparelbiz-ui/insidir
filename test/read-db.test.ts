@@ -12,12 +12,13 @@ import * as schema from "@/lib/db/schema";
 import { buildRead, type Clients } from "@/lib/read/build";
 import { readFacts, readHasMoney, templateLine } from "@/lib/read/math";
 import type { PolymarketClient } from "@/lib/exchanges";
-import { PROVEN_RECORD_TTL_MS, provenBackfillOnce } from "@/lib/moves/jobs";
-import { recordsFor, walletsToBackfill } from "@/lib/moves/store";
+import { PROVEN_RECORD_TTL_MS, provenBackfillOnce, RECORD_MAX_PAGES } from "@/lib/moves/jobs";
+import { recordsFor, walletPnlFor, walletsToBackfill } from "@/lib/moves/store";
 import { resolveText } from "@/lib/read/resolve";
 import { cancelReasonCounts, duration, postFunnel, readTimings, retention } from "@/lib/read/admin";
 import { refreshWatched, tonightFor, weeklyRecap, yourMarkets } from "@/lib/read/member";
-import { addAiSpend, aiSpent, cachedRead, getRead, lineFor, readsUsed, saveRead, setLine } from "@/lib/read/store";
+import { addAiSpend, aiSpent, cachedRead, getRead, lineFor, READ_OFFER_MS, readsUsed, saveOffer, saveRead, setLine, wasOffered } from "@/lib/read/store";
+import { tonightReads } from "@/lib/read/tonight";
 
 const URL0 = process.env.E2E_DATABASE_URL;
 const NAME = `terminal_read_${process.pid}`;
@@ -50,10 +51,10 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
       await move(`p${i}`, { market: `0xold${i}`, side: "yes", amount: 20_000, price: 0.48, at: NOW - (200 - i) * H, wallet: PROVEN, result: i < 22 ? "won" : "lost", settled: NOW - (190 - i) * H, seen: 0.49, trackers: ["underdog-hunters"] });
       await move(`n${i}`, { market: `0xold${i}`, side: "yes", amount: 20_000, price: 0.48, at: NOW - (200 - i) * H, wallet: NOBODY, result: i < 5 ? "won" : "lost", settled: NOW - (190 - i) * H, seen: 0.49, trackers: ["favorites-only"] });
     }
-    // Public Polymarket records (Data API /closed-positions → trader_records): RECORDW is proven (41 closed, +$52,340);
+    // Public Polymarket records (terminal.wallet_pnl: /closed-positions count, /v1/leaderboard pnl): RECORDW is proven (41 closed, +$52,340);
     // NOBODY has 50 closed and lost money.
-    await pool.query(`insert into terminal.trader_records (wallet, resolved, won, lost, profit, biggest_win, updated_at) values
-      ($1, 41, 25, 16, 52340, 9000, $3), ($2, 50, 20, 30, -1000, 500, $3)`, [RECORDW, NOBODY, new Date(NOW - H)]);
+    await pool.query(`insert into terminal.wallet_pnl (wallet, closed, closed_at_least, pnl, read_at) values
+      ($1, 41, false, 52340, $3), ($2, 50, false, -1000, $3)`, [RECORDW, NOBODY, new Date(NOW - H)]);
     // The market now: PROVEN $60K on Chiefs (open); NOBODY $90K on Bills; a fresh wallet's $30K long shot; a Kalshi YES
     // (which pays like Polymarket's NO: the pair is inverted) $45K.
     await move("m1", { market: "0xkcbuf", side: "yes", amount: 60_000, price: 0.6, at: NOW - 2 * H, wallet: PROVEN });
@@ -107,8 +108,8 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(p.yesShare).toBeCloseTo(159 / 274, 9);
     expect(p.trackers).toEqual([{ slug: "underdog-hunters", name: "Long Shots", returnPct: 0.375, settled: 32, sides: [{ side: "no", dollars: 75_000, positions: 2 }] }]);
     expect(p.walletRows).toEqual([
-      { wallet: "0xaa…aa", side: "yes", dollars: 159_000, profit: null, closed: null, follow: { returnPct: 0.375, settled: 32 } },
-      { wallet: "0xdd…dd", side: "no", dollars: 40_000, profit: 52_340, closed: 41, follow: null },
+      { wallet: "0xaa…aa", side: "yes", dollars: 159_000, profit: null, closed: null, closedAtLeast: false, follow: { returnPct: 0.375, settled: 32 } },
+      { wallet: "0xdd…dd", side: "no", dollars: 40_000, profit: 52_340, closed: 41, closedAtLeast: false, follow: null },
     ]);
     // Every open tracked large position, proven or not.
     expect(r.big).toEqual({ yes: { dollars: 159_000, positions: 2 }, no: { dollars: 205_000, positions: 4 }, yesShare: 159 / 364 });
@@ -162,23 +163,60 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(s.kind === "choices" && s.list.map(c => c.id)).toEqual(["0xlal1", "0xbosnyk"]);
   });
 
-  it("backfills public Polymarket records for every wallet from the last 90 days, cached for 24 hours", async () => {
+  it("backfills public Polymarket records for every wallet from the last 90 days, cached for 24 hours; a wallet past the page cap is kept as \"at least\"", async () => {
     const OLD = "0xeeee" + "5".repeat(34) + "ee";
     await move("old1", { market: "0xancient", side: "yes", amount: 50_000, price: 0.5, at: NOW - 100 * 24 * H, wallet: OLD });
     // Never read first (PROVEN, FRESH); RECORDW and NOBODY were read an hour ago; OLD moved 100 days ago.
-    expect((await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).map(w => w.wallet).sort()).toEqual([FRESH, PROVEN].sort());
-    expect((await walletsToBackfill(db, NOW + 24 * H, PROVEN_RECORD_TTL_MS, 10)).map(w => w.wallet).sort()).toEqual([FRESH, NOBODY, PROVEN, RECORDW].sort());
-    // One run reads FRESH's closed positions (35 closed markets, +$7,000) and stores its record.
-    const closed = Array.from({ length: 35 }, (_, i) => ({ conditionId: `0xc${i}`, outcomeIndex: 0, title: `M${i}`, avgPrice: 0.5, totalBought: 1000, realizedPnl: i < 25 ? 400 : -300, timestamp: (NOW - i * H) / 1000 }));
-    const poly = { getClosedPositionsPage: async (_w: string, o: { offset?: number }) => (o.offset ? [] : closed), getPositions: async () => [] } as unknown as PolymarketClient;
-    const n = await provenBackfillOnce(db, poly, NOW, 1);
-    expect(n).toBe(1);
-    const done = (await recordsFor(db, [FRESH, PROVEN]));
-    const got = [...done.values()][0]!;
-    expect(got).toMatchObject({ resolved: 35, profit: 7_000 });
-    expect((await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).map(w => w.wallet)).toHaveLength(1);
-    await pool.query("delete from terminal.trader_records where wallet = any($1)", [[FRESH, PROVEN]]);
-    await pool.query("delete from terminal.trader_positions where wallet = any($1)", [[FRESH, PROVEN]]).catch(() => undefined);
+    expect((await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).sort()).toEqual([FRESH, PROVEN].sort());
+    expect((await walletsToBackfill(db, NOW + 24 * H, PROVEN_RECORD_TTL_MS, 10)).sort()).toEqual([FRESH, NOBODY, PROVEN, RECORDW].sort());
+    // PROVEN (most recent first) has more closed positions than the cap: every page is full. FRESH has 35 closed markets.
+    const full = (offset: number) => Array.from({ length: 50 }, (_, i) => ({ conditionId: `0xp${offset + i}`, outcomeIndex: 0, title: "M", avgPrice: 0.5, totalBought: 100, realizedPnl: 10, timestamp: NOW / 1000 }));
+    const fresh = Array.from({ length: 35 }, (_, i) => ({ conditionId: `0xc${i}`, outcomeIndex: 0, title: `M${i}`, avgPrice: 0.5, totalBought: 1000, realizedPnl: i < 25 ? 400 : -300, timestamp: (NOW - i * H) / 1000 }));
+    const pages: string[] = [], boards: string[] = [];
+    const poly = {
+      getClosedPositionsPage: async (w: string, o: { offset?: number }) => { pages.push(w); return w === PROVEN ? full(o.offset ?? 0) : o.offset ? [] : fresh; },
+      // The wallet's own leaderboard row: pnl is read, nothing else.
+      getLeaderboardUser: async (w: string) => { boards.push(w); return [{ rank: "7", proxyWallet: w, userName: "someone", vol: 9e6, pnl: w === PROVEN ? 1_234_567.891 : 6_950 }]; },
+    } as unknown as PolymarketClient;
+    expect(await provenBackfillOnce(db, poly, NOW, 2)).toBe(2);
+    expect(pages.filter(w => w === PROVEN)).toHaveLength(RECORD_MAX_PAGES);
+    expect(boards.sort()).toEqual([FRESH, PROVEN].sort());
+    const got = await walletPnlFor(db, [FRESH, PROVEN]);
+    expect(got.get(PROVEN)).toEqual({ closed: RECORD_MAX_PAGES * 50, closedAtLeast: true, pnl: 1_234_567.89 });
+    expect(got.get(FRESH)).toEqual({ closed: 35, closedAtLeast: false, pnl: 6_950 });
+    // Not dropped: the capped wallet is proven, and the Read says "at least".
+    const r = await buildRead(db, clients, "polymarket", "0xkcbuf", NOW);
+    expect(r.proven.walletRows!.find(w => w.wallet === "0xaa…aa")).toMatchObject({ profit: 1_234_568, closed: 5_000, closedAtLeast: true });
+    expect(await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).toEqual([]);
+    // Nothing here touches trader_records (no win rate from a capped wallet's first pages).
+    expect((await recordsFor(db, [FRESH, PROVEN])).size).toBe(0);
+    await pool.query("delete from terminal.wallet_pnl where wallet = any($1)", [[FRESH, PROVEN]]);
+  });
+
+  it("free Read: a Read with no proven money and no big bets doesn't count; markets a \"Which one?\" offered stay open to pick", async () => {
+    const who = { userId: null, visitorId: "v_rules" };
+    const empty = await buildRead(db, clients, "polymarket", "0xsen2", NOW);
+    expect(readHasMoney(empty)).toBe(false);
+    const T = NOW - 60 * 24 * H; // outside /admin's windows below
+    await saveRead(db, { ...who, input: "text", data: { ...empty, line: null }, ms: 50 }, T);
+    expect(await readsUsed(db, who)).toBe(0);
+    await saveRead(db, { ...who, input: "pick", data: { ...(await buildRead(db, clients, "polymarket", "0xkcbuf", NOW)), line: null }, ms: 50 }, T);
+    expect(await readsUsed(db, who)).toBe(1);
+    await saveOffer(db, who, ["polymarket:0xlal1", "polymarket:0xbosnyk"], NOW);
+    expect(await wasOffered(db, who, "polymarket:0xbosnyk", NOW + 60_000)).toBe(true);
+    expect(await wasOffered(db, who, "polymarket:0xkcbuf", NOW + 60_000)).toBe(false);
+    expect(await wasOffered(db, who, "polymarket:0xbosnyk", NOW + READ_OFFER_MS + 1)).toBe(false);
+    expect(await wasOffered(db, { userId: null, visitorId: "v_other" }, "polymarket:0xbosnyk", NOW)).toBe(false);
+  });
+
+  it("home: tonight's busiest markets that have proven money, one tap each", async () => {
+    await pool.query(`insert into terminal.market_info (source, market_id, start_at) values ('polymarket', '0xkcbuf', $1), ('polymarket', '0xlal1', $1), ('polymarket', '0xnone', $1), ('polymarket', '0xsen1', $2)
+      on conflict (source, market_id) do update set start_at = excluded.start_at`, [new Date(NOW + 2 * H), new Date(NOW + 300 * 24 * H)]);
+    const rows = await tonightReads(db, NOW);
+    // Only Chiefs vs. Bills: the Lakers game and the curling final have no proven money; Senate control isn't tonight.
+    expect(rows.map(r => r.id)).toEqual(["0xkcbuf"]);
+    expect(rows[0]).toMatchObject({ venue: "polymarket", title: "Chiefs vs. Bills", startAt: NOW + 2 * H });
+    expect(rows[0]!.provenPositions).toBeGreaterThan(0);
   });
 
   it("caches a market for a minute; the line is written for members within a daily AI cap; one free Read per visitor", async () => {

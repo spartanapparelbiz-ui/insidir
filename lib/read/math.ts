@@ -27,8 +27,9 @@ export interface ProvenInput {
   walletOpen: ReadonlyArray<{ wallet: string; side: "yes" | "no"; dollars: number }>;
   /** Winning trackers only. */
   trackers: ReadonlyMap<string, { name: string; returnPct: number; settled: number }>;
-  /** Public Polymarket records (terminal.trader_records): closed markets and all-time profit. */
-  records: ReadonlyMap<string, { closed: number; profit: number }>;
+  /** Public Polymarket records (terminal.wallet_pnl): closed markets (at least, when paging hit its cap) and all-time
+   *  profit. */
+  records: ReadonlyMap<string, { closed: number; closedAtLeast?: boolean; profit: number }>;
   /** Followable records with 30+ settled; winner when the return is positive. */
   follow: ReadonlyMap<string, { returnPct: number; settled: number; winner: boolean }>;
   short: (wallet: string) => string;
@@ -72,7 +73,7 @@ export function provenFrom(x: ProvenInput): ProvenMoney {
     if (h.wallet && proven) {
       s.wallets++; wallets.add(h.wallet);
       const r = x.records.get(h.wallet), f = x.follow.get(h.wallet);
-      walletRows.push({ wallet: x.short(h.wallet), side: h.side, dollars: Math.round(h.dollars), profit: pmProven(r) ? Math.round(r!.profit) : null, closed: pmProven(r) ? r!.closed : null,
+      walletRows.push({ wallet: x.short(h.wallet), side: h.side, dollars: Math.round(h.dollars), profit: pmProven(r) ? Math.round(r!.profit) : null, closed: pmProven(r) ? r!.closed : null, closedAtLeast: pmProven(r) ? Boolean(r!.closedAtLeast) : false,
         follow: f ? { returnPct: f.returnPct, settled: f.settled } : null });
     }
   }

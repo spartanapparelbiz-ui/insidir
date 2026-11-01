@@ -419,6 +419,22 @@ export const traderRecords = terminal.table("trader_records", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 }, t => [index("trader_records_proven_idx").on(t.proven)]);
 
+/** A Polymarket wallet's public record for the Read's proven wallets (lib/moves/jobs.ts provenBackfillOnce), re-read
+ *  every 24 hours for every wallet with a large position in the last 90 days:
+ *    closed           distinct closed markets (Data API /closed-positions, paged up to RECORD_MAX_PAGES)
+ *    closed_at_least  paging hit that cap, so the wallet has at least `closed` (the most active traders)
+ *    pnl              all-time profit, the wallet's own row on GET /v1/leaderboard?timePeriod=ALL (pnl only); null
+ *                     when Polymarket has no row for it
+ *  Kept apart from trader_records: a capped wallet's win/loss can't be known from its first pages (they come sorted by
+ *  profit), so nothing here feeds a win rate. */
+export const walletPnl = terminal.table("wallet_pnl", {
+  wallet: text("wallet").primaryKey(),
+  closed: integer("closed").notNull(),
+  closedAtLeast: boolean("closed_at_least").notNull().default(false),
+  pnl: doublePrecision("pnl"),
+  readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+}, t => [index("wallet_pnl_read_idx").on(t.readAt)]);
+
 /** A Polymarket wallet's public profile picture (lib/moves/avatar.ts), re-read from Polymarket once a day. url is null
  *  when the wallet has none (or it isn't on Polymarket's own image host); blocked when its public username is blocked
  *  (lib/moves/names.ts), so the picture is never shown; hidden_at when an admin hid it (/admin). */

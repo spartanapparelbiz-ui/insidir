@@ -2,6 +2,7 @@
  * rule (Kalshi only), matching typed words to markets (one clear winner, else 3 choices), and the analyst line: facts,
  * the template, and the validator (one sentence, only the facts' numbers and names, no advice, no promises). */
 import { describe, expect, it } from "vitest";
+import { readUserPnl } from "@/lib/moves/sources";
 import { validateLine, writeLine } from "@/lib/read/line";
 import { bigSplitOf, chooseRanked, pmProven, pricesFor, provenFrom, provenSplit, readFacts, readHasMoney, sidePrices, signedPct, signedUsd, templateLine, textScore, UNUSUAL_TEXT, unusualOf, weightOf } from "@/lib/read/math";
 
@@ -95,10 +96,24 @@ describe("proven money from winning trackers and proven wallets", () => {
       records: new Map([["0xrec", { closed: 41, profit: 52_340.4 }], ["0xlose", { closed: 90, profit: -10 }]]),
       follow: new Map([["0xfol", { returnPct: 0.12, settled: 31, winner: true }], ["0xrec", { returnPct: -0.05, settled: 30, winner: false }]]) });
     expect(p.walletRows).toEqual([
-      { wallet: "0xre…", side: "yes", dollars: 55_000, profit: 52_340, closed: 41, follow: { returnPct: -0.05, settled: 30 } },
-      { wallet: "0xfo…", side: "no", dollars: 5_000, profit: null, closed: null, follow: { returnPct: 0.12, settled: 31 } },
+      { wallet: "0xre…", side: "yes", dollars: 55_000, profit: 52_340, closed: 41, closedAtLeast: false, follow: { returnPct: -0.05, settled: 30 } },
+      { wallet: "0xfo…", side: "no", dollars: 5_000, profit: null, closed: null, closedAtLeast: false, follow: { returnPct: 0.12, settled: 31 } },
     ]);
     expect([p.yes.dollars, p.no.dollars, p.wallets]).toEqual([55_000, 5_000, 2]);
+  });
+  it("a wallet past the closed-positions page cap is kept, as at least that many closed markets", () => {
+    const p = provenFrom({ short, trackers: new Map(), follow: new Map(), walletOpen: [],
+      positions: [{ id: "a", venue: "polymarket", wallet: "0xbig", side: "no", dollars: 250_000, trackers: [] }],
+      records: new Map([["0xbig", { closed: 5_000, closedAtLeast: true, profit: 3_100_000 }]]) });
+    expect(p.walletRows).toEqual([{ wallet: "0xbi…", side: "no", dollars: 250_000, profit: 3_100_000, closed: 5_000, closedAtLeast: true, follow: null }]);
+    expect(p.wallets).toBe(1);
+  });
+  it("all-time profit is the wallet's own leaderboard pnl, and nothing else from that row", () => {
+    const w = "0x" + "ab".repeat(20);
+    expect(readUserPnl([{ rank: "3", proxyWallet: w.toUpperCase().replace("0X", "0x"), userName: "x", vol: 1, pnl: 1234.567 }], w)).toBe(1234.57);
+    expect(readUserPnl([{ rank: "1", proxyWallet: "0x" + "cd".repeat(20), pnl: 9e9 }], w)).toBeNull(); // another wallet's row
+    expect(readUserPnl([], w)).toBeNull();
+    expect(readUserPnl([{ proxyWallet: w, pnl: null }], w)).toBeNull();
   });
   it("the big-money split counts every open tracked position; a Read with neither proven money nor big bets has nothing", () => {
     const b = bigSplitOf([{ id: "a", venue: "kalshi", wallet: null, side: "no", dollars: 25_000, trackers: [] }, { id: "b", venue: "polymarket", wallet: "0x1", side: "yes", dollars: 75_000, trackers: [] }]);
