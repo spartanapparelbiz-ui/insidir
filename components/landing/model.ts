@@ -13,7 +13,7 @@ import { VENUE_NAME, type Opportunity, type Plan, type Region } from "@/lib/type
 export const COMPETITOR_PRICE_LINE = "Other tools that do this charge around $200/mo.";
 
 /** The hero's sub line. */
-export const HERO_SUB = "Insidir scans Polymarket and Kalshi every few seconds for prices that lock in a net P&L after fees.";
+export const HERO_SUB = "Insidir scans Polymarket and Kalshi every few seconds for prices that leave a net P&L after fees.";
 
 /** The one call to action on the landing page: into the feed. */
 export const LANDING_CTA = "See today's live deals";

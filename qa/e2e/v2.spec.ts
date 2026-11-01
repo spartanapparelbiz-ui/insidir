@@ -269,5 +269,6 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   await expect(page.locator("main")).not.toContainText("More coming");
   // /start is the checkout itself (pay first; qa/e2e/funnel.spec.ts checks it).
   await page.goto("/start");
+  await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(page.locator("[data-mock-checkout]")).toBeVisible();
 });

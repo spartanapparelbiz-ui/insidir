@@ -12,7 +12,8 @@ test("members open the app on the box and their recent Reads; the menu holds eve
   await page.goto("/");
   await expect(page.getByTestId("member-home")).toBeVisible();
   await expect(page.getByTestId("read-input")).toBeFocused();
-  await expect(page.getByRole("heading", { level: 2, name: "Your recent Reads" })).toBeVisible();
+  for (const h of ["Tonight in your leagues", "Your markets"]) await expect(page.getByRole("heading", { level: 2, name: h, exact: true })).toBeVisible();
+  await expect(page.getByTestId("week-recap")).toBeVisible();
   const bar = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
   expect(bar).toEqual(["Read", "Account"]);
   for (const [href, label] of [["/copies", "My copies"], ["/feed", "Activity"], ["/top", "Winners"], ["/trackers", "Trackers"], ["/following", "Following"], ["/check", "Position check"], ["/results", "Track record"]]) {

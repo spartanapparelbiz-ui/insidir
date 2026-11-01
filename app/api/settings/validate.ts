@@ -90,6 +90,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     ...(current.moveRules ? { moveRules: [...current.moveRules] } : {}),
     ...(current.alertSplits === false ? { alertSplits: false } : {}),
     ...(current.copySize ? { copySize: current.copySize } : {}),
+    ...(current.betOn ? { betOn: [...current.betOn] } : {}),
   };
   const has = (k: string): boolean => input[k] !== undefined;
 

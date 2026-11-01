@@ -900,3 +900,17 @@ a.rtable__a:hover span { text-decoration: underline; }
 .acancel__form legend { font-weight: 600; margin-bottom: 4px; }
 .acancel__opt { display: flex; gap: 8px; align-items: center; min-height: var(--tap); }
 .acancel__detail { display: grid; gap: 6px; color: var(--muted); font-size: 14px; }
+/* /start: the 18+ checkbox before the checkout opens. */
+.astart__age { display: flex; gap: 10px; align-items: center; min-height: var(--tap); font-weight: 600; }
+.astart__age input { width: 20px; height: 20px; }
+/* Onboarding's one question (app/onboarding/page.tsx). */
+.onbq { display: grid; gap: 20px; }
+.onbq__opts { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.onbq__opt { display: flex; gap: 10px; align-items: center; min-height: var(--tap); padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-input); cursor: pointer; font-weight: 600; }
+.onbq__opt:has(input:checked) { border-color: var(--ink); }
+.rrecent__btn { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--border); background: none; font: inherit; cursor: pointer; }
+.rrecent li.is-moved .rrecent__a { background: var(--bg); }
+.rrecent__moved { font-size: 14px; font-weight: 600; color: var(--text); }
+.rpick__err { color: var(--loss-text); font-size: 14px; }
+.recap__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; text-align: left; }
+.recap__list b { font-weight: 600; margin-right: 6px; }

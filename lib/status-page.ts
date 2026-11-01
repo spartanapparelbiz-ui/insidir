@@ -38,6 +38,7 @@ const JOBS: Array<[RegExp, string, number]> = [
   [/^moves:records$/, "Trader records", 5 * MIN],
   [/^markets:info$/, "Market prices", 5 * MIN],
   [/^accuracy$/, "Accuracy check", HOUR],
+  [/^monitor:money-path$/, "Money path", 10 * MIN],
   [/^smart:splits$/, "Positioning", 5 * MIN],
   [/^stocks:form4$/, "SEC Form 4", 10 * MIN],
   [/^stocks:13f$/, "SEC 13F", 6 * HOUR],

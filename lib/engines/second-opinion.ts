@@ -9,7 +9,7 @@ import { asksFor, bestAsk, daysUntil, lastClose, stableId, venueSideLabel, worse
 
 /** Smallest mid-price gap, in cents, worth showing. */
 export const SECOND_OPINION_MIN_GAP_CENTS = 5;
-export const SECOND_OPINION_NOTE = "Not risk-free: this is a price gap, not a lock.";
+export const SECOND_OPINION_NOTE = "Not risk-free: this is a price gap on one side only.";
 
 export function findSecondOpinions(inputs: readonly ArbInput[], now: number, minGapCents: number = SECOND_OPINION_MIN_GAP_CENTS): Opportunity[] {
   const out: Opportunity[] = [];

@@ -19,6 +19,7 @@ const copyFrom = async (user: string) => {
 // Copies are follows: leave none behind, or the worker would alert these members about the wallet in later specs.
 test.afterAll(async () => {
   await q("delete from terminal.follows where user_id = any($1)", [["user_e2e_insidir", "user_e2e_pro_intl", "user_e2e_pro"]]);
+  await q("update terminal.users set onboarded_at = coalesce(onboarded_at, now()) where id = any($1)", [["user_e2e_insidir", "user_e2e_pro_intl", "user_e2e_pro"]]);
 });
 
 test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi market at Kalshi's price; no match is view only; P&L at your size", async ({ page, context }) => {
@@ -80,11 +81,10 @@ test("outside the US: the same move opens on Polymarket at Polymarket's price", 
   await expect(matched.getByTestId("copy-open")).toHaveAttribute("href", /^https:\/\/polymarket\.com\//);
 });
 
-test("onboarding (by URL) is one step: pick a winner to copy from the top 5, then My copies", async ({ page, context }) => {
+test("before copying anyone, /copies offers the top 5 winners to copy with their record; one tap copies", async ({ page, context }) => {
   await q("delete from terminal.follows where user_id = 'user_e2e_pro'");
-  await q("update terminal.users set onboarded_at = null where id = 'user_e2e_pro'");
   await signIn(context, "pro");
-  await page.goto("/onboarding");
+  await page.goto("/copies");
   await expect(page.getByRole("heading", { level: 1, name: "Pick a winner to copy" })).toBeVisible();
   const rows = page.getByTestId("copy-picker").locator(".cpick__row");
   expect(await rows.count()).toBeGreaterThan(0);
@@ -92,10 +92,8 @@ test("onboarding (by URL) is one step: pick a winner to copy from the top 5, the
   await expect(rows.first().locator(".cpick__name")).toHaveText("0xe2…dd");
   await expect(rows.first()).toContainText("20–12 on 32 settled");
   await expect(rows.first().locator("input")).toBeChecked();
-  await page.screenshot({ path: shotName("onboarding-copy", page), fullPage: true });
-  await page.getByRole("button", { name: "Copy this winner" }).click();
+  await page.getByRole("button", { name: "Copy" }).click();
   await expect(page).toHaveURL(/\/copies$/);
   await expect(page.getByTestId("copy-pnl").locator(".mycp__line")).toContainText("Copying 0xe2…dd");
   expect(await q("select kind, target from terminal.follows where user_id = 'user_e2e_pro'")).toEqual([{ kind: "trader", target: W }]);
-  await q("update terminal.users set onboarded_at = now() where id = 'user_e2e_pro'");
 });

@@ -4,6 +4,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { bannedPhrases, FOOTER } from "@/lib/copy";
+import { isIdentifier } from "./copy-text";
 
 const ROOT = join(__dirname, "..");
 const DIRS = ["app", "components", "lib"];
@@ -18,10 +19,18 @@ const SOURCES = DIRS.flatMap(d => files(join(ROOT, d))).filter(p => !p.endsWith(
 /** Code comments, which never render (block comments, JSX comments and whole-line // comments). */
 const stripComments = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 /** String literals and JSX text, roughly: anything between quotes/backticks or between > and <. */
-const texts = (src: string): string => [...stripComments(src).matchAll(/"([^"\n]{3,})"|'([^'\n]{3,})'|`([^`]{3,})`|>([^<>{}\n]{3,})</g)].map(m => m.slice(1).find(Boolean) ?? "").join("\n");
+/** A string that is a code name, not words anyone reads: an import path, a class list, a test id, a key. */
+const texts = (src: string): string => [...stripComments(src).matchAll(/"([^"\n]{3,})"|'([^'\n]{3,})'|`([^`]{3,})`|>([^<>{}\n]{3,})</g)].map(m => m.slice(1).find(Boolean) ?? "").filter(t => !isIdentifier(t)).join("\n");
 
 describe("copy compliance", () => {
-  it("no page or alert promises a guaranteed or risk-free result", () => {
+  it("never says guaranteed, risk-free, easy money, lock or sure thing, in any copy (and catches each one)", () => {
+    for (const t of ["A guaranteed win.", "Risk-free bets.", "Easy money tonight.", "It's a lock.", "Two locks today.", "A sure thing."]) expect(bannedPhrases(t), t).not.toEqual([]);
+    for (const t of ["Unlock every Read.", "Locked for visitors.", "Blocked wallets.", "Not risk-free: a price gap."]) expect(bannedPhrases(t), t).toEqual([]);
+    expect(isIdentifier("@/components/lock/Lock")).toBe(true);
+    expect(isIdentifier("sheet__panel lock")).toBe(true);
+    expect(isIdentifier("read-lock")).toBe(true);
+    expect(isIdentifier("Not a lock")).toBe(false);
+    expect(isIdentifier("prices that lock in a net P&L")).toBe(false);
     const bad = SOURCES.flatMap(p => bannedPhrases(texts(readFileSync(p, "utf8"))).map(b => `${p.replace(ROOT, "")}: ${b}`));
     expect(bad).toEqual([]);
   });
@@ -34,7 +43,7 @@ describe("copy compliance", () => {
     }
   });
   it("the footer disclaimer is on every page", () => {
-    expect(FOOTER).toBe("Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.");
+    expect(FOOTER).toBe("Information, not financial or betting advice. Insidir shows public trading data and never recommends a trade or a bet. Big traders lose too. Past results don't predict future ones.");
     expect(readFileSync(join(ROOT, "app", "layout.tsx"), "utf8")).toContain("<SiteFooter />");
     expect(readFileSync(join(ROOT, "components", "SiteFooter.tsx"), "utf8")).toContain("{FOOTER}");
   });

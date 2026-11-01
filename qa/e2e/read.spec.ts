@@ -15,6 +15,19 @@ import { q, shotName, signIn } from "./helpers";
 const whop = (path: string, init?: RequestInit) => fetch(`http://localhost:${WHOP_PORT}${path}`, init);
 const post = (path: string, body: unknown) => whop(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
+// A game tonight with big money on it, tagged NFL as the worker tags it: the member home's "Tonight in your leagues".
+test.beforeAll(async () => {
+  await q("delete from terminal.moves where id = 'e2e:tonight'");
+  await q("delete from terminal.market_info where market_id = '0xe2etonight'");
+  await q(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, wallet, at, last_at, tab, league, category, trackers)
+    values ('e2e:tonight', 'polymarket', '0xe2etonight', 'E2E fixture: Jets vs. Dolphins', 'E2E fixture: Jets vs. Dolphins', 'Jets', 'yes', 75000, 0.47, '0xe2e00000000000000000000000000000000000ee', now() - interval '1 hour', now() - interval '1 hour', 'sports', 'NFL', 'sports', array['nfl-big-money'])`);
+  await q("insert into terminal.market_info (source, market_id, yes_price, closed, start_at, updated_at) values ('polymarket', '0xe2etonight', 0.48, false, now() + interval '3 hours', now())");
+});
+test.afterAll(async () => {
+  await q("delete from terminal.moves where id = 'e2e:tonight'");
+  await q("delete from terminal.market_info where market_id = '0xe2etonight'");
+});
+
 async function readFrom(page: Page, text: string) {
   await page.getByTestId("read-input").fill(text);
   const t0 = Date.now();
@@ -71,16 +84,36 @@ test("a visitor's one Read (US rule), blurred bets and line never sent, Share, t
   await expect(page).toHaveURL(new RegExp(`/start\\?next=%2Fread%2F${id}$`));
   await expect(page.getByTestId("start-pay-first")).toContainText("then you're back on your Read");
   await post("/__whop_user", { email, name: null });
+  await page.getByTestId("age-18").getByRole("checkbox").check();
   const form = page.locator("[data-mock-checkout]");
   await form.getByLabel("Email").fill(email);
   await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
-  await expect(page).toHaveURL(url, { timeout: 25_000 });
+  // One question first: what do you bet on? Then back on their Read.
+  await expect(page.getByRole("heading", { level: 1, name: "What do you bet on?" })).toBeVisible({ timeout: 25_000 });
+  for (const l of ["NFL", "NBA", "CFB", "NHL", "MLB", "Soccer", "Elections", "Other"]) await expect(page.getByTestId("onboarding").getByText(l, { exact: true })).toBeVisible();
+  await page.getByTestId("onboarding").getByText("NFL", { exact: true }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page).toHaveURL(url, { timeout: 15_000 });
+  expect((await q<{ bet: string[] }>("select settings->'betOn' as bet from terminal.users where email = $1", [email]))[0]!.bet).toEqual(["nfl"]);
   await expect(page.getByTestId("read-bets")).toContainText("$90K on Player A at 52¢");
   await expect(page.getByTestId("read-bets")).toContainText("Polymarket · 0xe2…dd");
   await expect(page.getByTestId("read-line")).toHaveText(/\S/);
   expect(await page.getByTestId("read-line").innerText()).not.toMatch(/guarantee|should|insider/i);
   await expect(page.getByTestId("read-locked")).toHaveCount(0);
+  await expect(page.getByTestId("read-advice")).toHaveText("Information, not financial or betting advice. Public data from Polymarket and Kalshi.");
   await page.screenshot({ path: shotName("read-after-pay", page), fullPage: true });
+  // Their home: tonight's NFL game (ready to read), this market in Your markets, and the week.
+  await page.goto("/");
+  await expect(page.getByTestId("tonight")).toContainText("E2E fixture: Jets vs. Dolphins");
+  await expect(page.getByTestId("tonight")).toContainText("NFL ·");
+  await expect(page.getByTestId("your-markets").locator("a").first()).toContainText("E2E fixture: Tennis match 100");
+  await expect(page.getByTestId("your-markets")).toContainText("Proven money 100% Player A");
+  await expect(page.getByTestId("week-recap")).toContainText("Your markets this week");
+  await page.screenshot({ path: shotName("member-home-tonight", page), fullPage: true });
+  // A tonight market opens its Read in one tap.
+  await page.getByTestId("tonight").getByRole("button").first().click();
+  await expect(page).toHaveURL(/\/read\/[A-Za-z0-9]+$/, { timeout: 10_000 });
+  await expect(page.getByTestId("read-card").getByRole("heading", { level: 1 })).toHaveText("E2E fixture: Jets vs. Dolphins");
 });
 
 test("a member outside the US: three choices, both venues with the better price marked, Open on it; on their home page after", async ({ page, context }) => {
@@ -101,7 +134,7 @@ test("a member outside the US: three choices, both venues with the better price 
   await expect(page.getByTestId("read-line")).toHaveText(/\S/);
   await page.screenshot({ path: shotName("read-member-intl", page), fullPage: true });
   await page.goto("/");
-  await expect(page.getByTestId("recent-reads").locator("a").first()).toContainText("E2E fixture: Tennis match 100");
+  await expect(page.getByTestId("your-markets").locator("a").first()).toContainText("E2E fixture: Tennis match 100");
 });
 
 test("/admin: landing → first Read and → paid, median and 75th percentile, and the Reads' build time", async ({ page }) => {
@@ -123,5 +156,26 @@ test("/admin: landing → first Read and → paid, median and 75th percentile, a
   await expect(speed.getByTestId("speed-paid").locator("th")).toHaveText("Landing → paid");
   await expect(speed.getByTestId("speed-reads")).toContainText(/\d+ Reads · median build \d+ ms/);
   await expect(page.getByTestId("admin-cancels")).toBeVisible();
+  await expect(page.getByTestId("admin-posts")).toContainText("Per post");
+  await expect(page.getByTestId("admin-retention").getByTestId("day8")).toContainText("Paid on day 8:");
+  await expect(page.getByTestId("admin-retention").getByTestId("churn30")).toContainText("30-day churn:");
   await q("delete from terminal.events where visitor_id = 'e2e-speed-v'");
+});
+
+test("/status shows the money-path check: its steps when it passes, and the step and reason when it fails", async ({ page }) => {
+  await q("delete from terminal.monitor_runs");
+  await q(`insert into terminal.monitor_runs (at, ok, failed_step, detail, ms, steps) values (now() - interval '20 minutes', true, null, null, 1800,
+    '[{"step":"landing","ok":true,"ms":120},{"step":"read","ok":true,"ms":900},{"step":"checkout","ok":true,"ms":300},{"step":"sign-in","ok":true,"ms":480}]')`);
+  await page.goto("/status");
+  const mp = page.getByTestId("status-money-path");
+  await expect(mp).toContainText("Landing → Read → checkout → Whop sign-in");
+  await expect(mp).toContainText("Every step passed");
+  await q(`insert into terminal.monitor_runs (at, ok, failed_step, detail, ms, steps) values (now() - interval '5 minutes', false, 'sign-in', 'Whop said "redirect_uri is invalid" (https://insidir.com/reset/callback)', 2100,
+    '[{"step":"landing","ok":true,"ms":120},{"step":"read","ok":true,"ms":900},{"step":"checkout","ok":true,"ms":300},{"step":"sign-in","ok":false,"ms":780,"detail":"Whop said \\"redirect_uri is invalid\\" (https://insidir.com/reset/callback)"}]')`);
+  await page.reload();
+  await expect(mp).toContainText('Failed');
+  await expect(mp).toContainText('at sign-in: Whop said "redirect_uri is invalid"');
+  await expect(page.getByTestId("status-incidents")).toContainText("Money path failed at sign-in");
+  await page.screenshot({ path: shotName("status-money-path", page), fullPage: true });
+  await q("delete from terminal.monitor_runs");
 });

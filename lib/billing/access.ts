@@ -63,6 +63,9 @@ async function findUser(db: Db, ref: { userId?: string | null; whopUserId?: stri
 
 export interface Applied { userId: string | null; plan: Plan | null; created: boolean }
 
+/** The 18+ confirmation a pay-first checkout carried (an ISO time), if any. */
+const ageFrom = (m: Record<string, string>): Date | null => { const d = m.insidir_age_18 ? new Date(m.insidir_age_18) : null; return d && !Number.isNaN(d.getTime()) ? d : null; };
+
 export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, now = Date.now()): Promise<Applied> {
   let { membershipId, whopUserId, email } = ref;
   const metadata = { ...ref.metadata };
@@ -84,7 +87,7 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   // A buyer who paid signed out: an account for their Whop user, so signing in with Whop finds it.
   if (!user && email && membership && grants(membership, now)) {
     const id = newUserId();
-    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, settings: DEFAULT_SETTINGS, visitorId: metadata.insidir_visitor_id ?? null })
+    const rows = await db.insert(users).values({ id, email: normEmail(email), name: membership.user.name, whopUserId, settings: DEFAULT_SETTINGS, visitorId: metadata.insidir_visitor_id ?? null, ageConfirmedAt: ageFrom(metadata) })
       .onConflictDoNothing().returning();
     user = rows[0] ?? await findUser(db, { email });
     created = Boolean(rows[0]);
@@ -95,6 +98,7 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   const patch: Partial<UserRow> = {};
   if (whopUserId && !user.whopUserId) patch.whopUserId = whopUserId;
   if (email && !user.email) patch.email = normEmail(email);
+  if (!user.ageConfirmedAt && ageFrom(metadata)) patch.ageConfirmedAt = ageFrom(metadata);
   if (Object.keys(patch).length) await db.update(users).set(patch).where(eq(users.id, user.id)).catch(() => undefined);
 
   const whop = whopUserId ?? user.whopUserId;

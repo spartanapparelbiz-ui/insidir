@@ -96,6 +96,7 @@ test("free access: Whop sign-in makes the account; a full member with no payment
 
 test("/start: pay first: the checkout straight away, the charge line, Apple Pay / Google Pay, Log in for members, and the live strip", async ({ page }) => {
   await page.goto("/start?next=%2Fpricing");
+  await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(page.locator("[data-mock-checkout]")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: "Start for $1." })).toBeVisible();
   await expect(page.getByTestId("start-pay-first")).toContainText("Already a member? Log in");
@@ -120,13 +121,17 @@ test("signed in without paying: back later, /start opens the checkout already si
   await q("delete from terminal.users where email = $1", [email]);
   await q("delete from terminal.events where name in ('start_view', 'account_created', 'checkout_start')");
   await page.goto("/start");
+  await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(page.locator("[data-mock-checkout]")).toBeVisible({ timeout: 15_000 });
   // They log in first (from "Already a member? Log in"): signed in without Insidir, back on /start's checkout.
   await post("/__whop_user", { email, name: null });
   await page.goto("/login?next=%2Fstart");
   await page.getByTestId("continue").click();
   await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
+  await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(page.locator("[data-mock-checkout]")).toBeVisible({ timeout: 15_000 });
+  // Signed in, the 18+ confirmation is now kept with the account: next time the checkout opens straight away.
+  await expect.poll(async () => (await q<{ ok: boolean }>("select age_confirmed_at is not null as ok from terminal.users where email = $1", [email]))[0]?.ok).toBe(true);
   // They leave without paying, and come back later: still signed in, the checkout opens again.
   await page.goto("/");
   await page.goto("/start");

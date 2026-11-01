@@ -9,7 +9,9 @@ import { ReadCard } from "@/components/read/ReadCard";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isPaid } from "@/lib/plans";
-import { getRead, lineFor, setLine } from "@/lib/read/store";
+import { claimRead, getRead, lineFor, setLine } from "@/lib/read/store";
+import { cookies } from "next/headers";
+import { VISITOR_COOKIE } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,9 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
   const member = isPaid(viewer.plan);
   const now = Date.now();
   let data = r.data;
+  // Theirs from before they signed in (same browser): it joins their markets.
+  const visitor = (await cookies()).get(VISITOR_COOKIE)?.value;
+  if (viewer.user && !r.userId && visitor && r.visitorId === visitor) await claimRead(db, id, viewer.user.id, visitor).catch(() => undefined);
   if (member && viewer.user && !data.line) {
     const { line: _l, ...base } = data;
     const line = await lineFor(db, base, viewer.user.id, now).catch(() => null);

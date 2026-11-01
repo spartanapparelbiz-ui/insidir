@@ -2,6 +2,7 @@
  * many big bets came in, and insidir.com. No bet details, no analyst line, no wallet, nothing about who read it. */
 import { ImageResponse } from "next/og";
 import { getDb, hasDatabase } from "@/lib/db";
+import { ADVICE } from "@/lib/copy";
 import { cents, pct } from "@/lib/read/math";
 import { getRead } from "@/lib/read/store";
 
@@ -41,7 +42,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         </div>
         <div style={{ display: "flex", marginTop: "auto", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div style={{ display: "flex", fontSize: 44, fontWeight: 600, letterSpacing: -1 }}>insidir.com</div>
-          <div style={{ display: "flex", fontSize: 24, color: MUTED }}>Public data. Not advice.</div>
+          <div style={{ display: "flex", fontSize: 24, color: MUTED, maxWidth: 520, textAlign: "right" }}>{ADVICE}</div>
         </div>
       </div>
     ),

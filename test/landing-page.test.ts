@@ -2,6 +2,7 @@
  * the design tokens. No DOM needed. */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { isIdentifier } from "./copy-text";
 import { describe, expect, it } from "vitest";
 import { bannedPhrases, CANCEL_LINE, FOOTER, GET_CTA, OFFER_BAR } from "@/lib/copy";
 import { BANNED_WORDS } from "@/lib/moves/copy";
@@ -16,7 +17,7 @@ const tree = (dir: string): string[] => readdirSync(join(ROOT, dir)).flatMap(f =
 /** The user-facing text in a source file: string literals and JSX text, comments removed. */
 function literals(src: string): string {
   const noComments = src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
-  const strings = [...noComments.matchAll(/"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g)].map(m => m[1] ?? m[2] ?? m[3] ?? "");
+  const strings = [...noComments.matchAll(/"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g)].map(m => m[1] ?? m[2] ?? m[3] ?? "").filter(t => !isIdentifier(t));
   const jsxText = [...noComments.matchAll(/>([^<>{}]+)</g)].map(m => m[1] ?? "");
   return [...strings, ...jsxText].join("\n").replace(/&apos;/g, "'");
 }
@@ -38,9 +39,9 @@ describe("V2 landing page", () => {
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
     for (const gone of ["<TopWallet ", "<NewMoves ", "<OpenNow ", "<MyCopies ", "<ResearchBar ", "<MarketTabs ", "<BoardSection ", "<Laptops ", "PayPrompt", "<HeroCta "]) expect(src, gone).not.toContain(gone);
-    // Members: the box and their recent Reads.
+    // Members: the box, tonight in their leagues, Your markets, the week.
     expect(src).toContain('data-testid="member-home"');
-    expect(src).toContain("<Recent list={recent}");
+    for (const m of ["<Tonight rows={tonight}", "<YourMarkets list={mine}", "<Week w={week}"]) expect(src).toContain(m);
   });
 
   it("one CTA, Start for $1; the nav is the tool; no stocks, crypto or Congress in the pitch", async () => {

@@ -69,6 +69,11 @@ export async function setLine(db: Db, id: string, line: ReadData["line"]): Promi
   await db.execute(sql`update terminal.reads set data = jsonb_set(data, '{line}', ${JSON.stringify(line)}::jsonb) where id = ${id}`);
 }
 
+/** A Read someone ran as a visitor becomes theirs once they're signed in on the same browser (their Your markets). */
+export async function claimRead(db: Db, id: string, userId: string, visitorId: string): Promise<void> {
+  await db.execute(sql`update terminal.reads set user_id = ${userId} where id = ${id} and user_id is null and visitor_id = ${visitorId}`);
+}
+
 export async function readsOf(db: Db, userId: string, limit = 20): Promise<StoredRead[]> {
   return (await db.select().from(reads).where(eq(reads.userId, userId)).orderBy(desc(reads.createdAt)).limit(limit)).map(rowOf);
 }

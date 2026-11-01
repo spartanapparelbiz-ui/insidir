@@ -1,8 +1,11 @@
 /* Copy rules in one place. Never "guaranteed" or "risk-free" for anything we show. */
 
+/** Under every Read, at the top of the footer, and wherever data could be mistaken for a tip. */
+export const ADVICE = "Information, not financial or betting advice.";
+
 /** On every page. */
 export const FOOTER =
-  "Insidir shows public trading data. It is not financial advice or a recommendation to buy anything. Big traders lose too. Past results don't predict future ones.";
+  `${ADVICE} Insidir shows public trading data and never recommends a trade or a bet. Big traders lose too. Past results don't predict future ones.`;
 
 /** What Insidir is and isn't, under every page and on /disclosures. */
 export const DATA_COMPANY = "Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.";
@@ -41,7 +44,7 @@ export const LOCK_LINE = "Locks in a net P&L if both sides fill and both markets
 
 /** Words that must never describe a deal (checked over every page by test/compliance.test.ts). The negated form
  *  "Not risk-free" and "aren't guaranteed" are allowed, and so is the FAQ question "Is this risk-free?". */
-export const BANNED = [/\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\bsure thing\b/i, /\bcan'?t lose\b/i, /\byou should (buy|bet|sell)\b/i];
+export const BANNED = [/\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\beasy money\b/i, /\bsure thing\b/i, /\blocks?\b/i, /\bcan'?t lose\b/i, /\byou should (buy|bet|sell)\b/i];
 const NEGATED = /\b(not|aren'?t|isn'?t|never|no)\s+(\w+\s+)?(guaranteed|risk[- ]free)\b/gi;
 /** A reader's question we answer with "No" (the FAQ's "Is this risk-free?"). */
 const QUESTION = /\b(is|are) (this|it|these|deals?) (guaranteed|risk[- ]free)\?/gi;

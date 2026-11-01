@@ -11,7 +11,8 @@ import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { buildRead, type Clients } from "@/lib/read/build";
 import { resolveText } from "@/lib/read/resolve";
-import { cancelReasonCounts, duration, readTimings } from "@/lib/read/admin";
+import { cancelReasonCounts, duration, postFunnel, readTimings, retention } from "@/lib/read/admin";
+import { refreshWatched, tonightFor, weeklyRecap, yourMarkets } from "@/lib/read/member";
 import { addAiSpend, aiSpent, cachedRead, getRead, lineFor, readsUsed, saveRead, setLine } from "@/lib/read/store";
 
 const URL0 = process.env.E2E_DATABASE_URL;
@@ -126,5 +127,68 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(duration(150)).toBe("2m 30s");
     expect(duration(1800)).toBe("30m 0s");
     expect(await cancelReasonCounts(db, new Date(NOW - 90 * 86_400_000))).toEqual([{ reason: "price", n: 2 }, { reason: "unused", n: 1 }]);
+  });
+
+  it("member home: tonight in their leagues, Your markets marked when proven money moved, and the week's record", async () => {
+    // An NFL game tonight with big money (tagged as the worker tags it), and one tomorrow evening (not tonight).
+    await pool.query(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, at, last_at, tab, league, category, trackers)
+      values ('nfl1', 'polymarket', '0xnfltonight', 'Jets vs. Dolphins', 'Jets vs. Dolphins', 'Jets', 'yes', 80000, 0.45, $1, $1, 'sports', 'NFL', 'sports', array['nfl-big-money']),
+             ('nfl2', 'polymarket', '0xnfllater', 'Rams vs. 49ers', 'Rams vs. 49ers', 'Rams', 'yes', 90000, 0.5, $1, $1, 'sports', 'NFL', 'sports', array['nfl-big-money'])`, [new Date(NOW - H)]);
+    await pool.query(`insert into terminal.market_info (source, market_id, yes_price, start_at) values ('polymarket', '0xnfltonight', 0.46, $1), ('polymarket', '0xnfllater', 0.5, $2)`,
+      [new Date(NOW + 3 * H), new Date(NOW + 50 * H)]);
+    const t = await tonightFor(db, ["nfl", "nba"], NOW);
+    expect(t.map(x => [x.label, x.marketId, x.total])).toEqual([["NFL", "0xnfltonight", 80_000]]);
+    expect(await tonightFor(db, [], NOW)).toEqual([]);
+
+    // usr_m read Chiefs vs. Bills; a refresh later shows proven money moved.
+    const base = await buildRead(db, clients, "polymarket", "0xkcbuf", NOW);
+    await saveRead(db, { userId: "usr_m", visitorId: null, input: "text", data: { ...base, line: null }, ms: 100 }, NOW);
+    let mine = await yourMarkets(db, "usr_m", NOW + 60_000);
+    expect(mine.map(m => [m.key, m.moved])).toEqual([["p:0xkcbuf", null]]);
+    // Bills money from a proven wallet arrives; the worker's refresh reads it.
+    await move("m6", { market: "0xkcbuf", side: "no", amount: 100_000, price: 0.4, at: NOW + 10 * 60_000, wallet: PROVEN });
+    expect(await refreshWatched(db, clients, NOW + 20 * 60_000)).toBe(1);
+    mine = await yourMarkets(db, "usr_m", NOW + 30 * 60_000);
+    expect(mine[0]!.latest.input).toBe("refresh");
+    expect(mine[0]!.moved).toEqual({ from: 1, to: 159_000 / 259_000 });
+    // Seen now: no mark on the next visit.
+    expect((await yourMarkets(db, "usr_m", NOW + 40 * 60_000))[0]!.moved).toBeNull();
+
+    // The week: Chiefs vs. Bills settles, Chiefs win: proven money was on Chiefs in usr_m's own last Read → right.
+    expect(await weeklyRecap(db, "usr_m", NOW + 60 * 60_000)).toEqual({ right: 0, of: 0, lines: [] });
+    await pool.query(`update terminal.moves set result = case when outcome_side = 'yes' then 'won' else 'lost' end, settled_at = $1 where market_id = '0xkcbuf'`, [new Date(NOW + 2 * H)]);
+    const w = await weeklyRecap(db, "usr_m", NOW + 3 * H);
+    expect(w).toEqual({ right: 1, of: 1, lines: [{ key: "p:0xkcbuf", question: "Chiefs vs. Bills", provenSide: "Chiefs", won: "Chiefs", right: true }] });
+    // Had Bills won, it would count as wrong: losses included.
+    await pool.query(`update terminal.moves set result = case when outcome_side = 'yes' then 'lost' else 'won' end where market_id = '0xkcbuf'`);
+    expect((await weeklyRecap(db, "usr_m", NOW + 3 * H)).right).toBe(0);
+  });
+
+  it("/admin per post (visits → Reads → paid by first-touch UTM), paid on day 8, 30-day churn", async () => {
+    const D = 86_400_000, at = (ms: number) => new Date(NOW - ms);
+    await pool.query(`insert into terminal.events (name, visitor_id, user_id, props, at) values
+      ('landing_view', 'p1', null, '{"utm_source":"ig","utm_content":"reel-42"}', $1), ('read', 'p1', null, null, $2),
+      ('landing_view', 'p2', null, '{"utm_source":"ig","utm_content":"reel-42"}', $1), ('read', 'p2', null, null, $2),
+      ('landing_view', 'p3', null, '{"utm_source":"ig","utm_content":"reel-42"}', $1),
+      ('landing_view', 'p4', null, '{"utm_source":"tt","utm_campaign":"launch"}', $1),
+      ('landing_view', 'p1', null, '{"utm_source":"x","utm_content":"later"}', $2),
+      ('landing_view', 'monitor-abc', null, '{"utm_source":"ig","utm_content":"reel-42"}', $1),
+      ('paid', 'server', 'u_p1', null, $2)`, [at(3 * 60_000), at(2 * 60_000)]);
+    await pool.query(`insert into terminal.users (id, email, plan, visitor_id) values ('u_p1', 'p1@example.test', 'insidir', 'p1')`);
+    const posts = await postFunnel(db, new Date(NOW - 7 * D));
+    expect(posts.find(p => p.post === "reel-42")).toEqual({ post: "reel-42", source: "ig", visits: 3, reads: 2, paid: 1 });
+    expect(posts.find(p => p.post === "launch")).toEqual({ post: "launch", source: "tt", visits: 1, reads: 0, paid: 0 });
+    expect(posts.find(p => p.post === "later")).toBeUndefined();
+
+    // Day 8: d1 started 20 days ago and was charged again 7 days later; d2 started 15 days ago, never again; d3 started
+    // 3 days ago (too soon to count). Churn: c1 and c2 paid 45 days ago; c2 is set to cancel.
+    await pool.query(`insert into terminal.users (id, email, plan, cancel_at_period_end) values ('d1', 'd1@x.test', 'insidir', false), ('d2', 'd2@x.test', 'free', false),
+      ('d3', 'd3@x.test', 'insidir', false), ('c1', 'c1@x.test', 'insidir', false), ('c2', 'c2@x.test', 'insidir', true)`);
+    await pool.query(`insert into terminal.events (name, visitor_id, user_id, at) values ('paid', 'server', 'd1', $1), ('paid', 'server', 'd1', $2), ('paid', 'server', 'd2', $3),
+      ('paid', 'server', 'd3', $4), ('paid', 'server', 'c1', $5), ('paid', 'server', 'c2', $5)`, [at(20 * D), at(13 * D), at(15 * D), at(3 * D), at(45 * D)]);
+    const k = await retention(db, NOW);
+    expect(k.day8).toEqual({ started: 2, paid: 1 });
+    expect(k.churn30).toMatchObject({ churned: 1 });
+    expect(k.churn30.active).toBeGreaterThanOrEqual(2);
   });
 });

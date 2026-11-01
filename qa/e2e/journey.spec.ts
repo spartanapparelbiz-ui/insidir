@@ -53,9 +53,13 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await page.locator('[data-checkout="pricing"]').first().click();
     await expect(page).toHaveURL(/\/start$/);
     await whop("/__whop_user", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: EMAIL(w), name: null }) });
+    await page.getByTestId("age-18").getByRole("checkbox").check();
     await page.locator("[data-mock-checkout]").getByLabel("Email").fill(EMAIL(w));
     await page.getByRole("button", { name: "Pay $1 (test mode)" }).click();
-    await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 25_000 });
+    await expect(page.getByRole("heading", { level: 1, name: "What do you bet on?" })).toBeVisible({ timeout: 25_000 });
+    await shot("onboarding-1");
+    await page.getByRole("button", { name: "Skip" }).click();
+    await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
     await expect(page.getByTestId("member-home")).toBeVisible();
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
     await shot("member-home-first");

@@ -24,6 +24,8 @@ export const SERVER_ENV: Record<string, string> = {
   // its own delay through the test hook.
   OPENROUTER_BASE_URL: `http://localhost:${OPENROUTER_PORT}/api/v1`,
   WHOP_COMPANY_ID: "biz_e2e",
+  // The money-path monitor walks the live site; the browser specs run its pieces directly (test/monitor-db.test.ts).
+  MONEY_PATH_MONITOR: "off",
   WHOP_PLAN_INSIDIR: "plan_e2e_insidir",
   WHOP_PRODUCT_INSIDIR: "prod_e2e_insidir",
   WHOP_WEBHOOK_SECRET: WHOP.secret,

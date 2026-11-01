@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SafetyLight } from "@/components/SafetyLight";
 import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
-import { cancelReasonCounts, duration, readTimings, type ReadTimings } from "@/lib/read/admin";
+import { cancelReasonCounts, duration, postFunnel, readTimings, retention, type PostRow, type ReadTimings, type Retention } from "@/lib/read/admin";
 import { abStats, freeAccessAccounts, FUNNEL_LABEL, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
 import { getDb, hasDatabase } from "@/lib/db";
 import { accuracyOverview } from "@/lib/accuracy/store";
@@ -201,7 +201,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const days = q.days === "30" ? 30 : 7;
   const since = sinceDays(days);
-  const [speed, reasons, accuracy, held, heldTotal, pairs, funnel, ab, utm, free, pictures] = await Promise.all([
+  const [posts, keep, speed, reasons, accuracy, held, heldTotal, pairs, funnel, ab, utm, free, pictures] = await Promise.all([
+    load<PostRow[]>([], () => postFunnel(getDb(), since)),
+    load<Retention | null>(null, () => retention(getDb(), Date.now())),
     load<ReadTimings | null>(null, () => readTimings(getDb(), since)),
     load<Array<{ reason: string; n: number }>>([], () => cancelReasonCounts(getDb(), sinceDays(90))),
     load<Awaited<ReturnType<typeof accuracyOverview>>>({ runs: [], mismatches: [], hidden: [] }, () => accuracyOverview(getDb())),
@@ -221,12 +223,33 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <h1 className="page__h">Admin</h1>
         <form method="post" action="/api/admin/logout"><button className="btn btn--ghost">Sign out</button></form>
       </div>
-      <nav className="adm__nav small" aria-label="Sections"><a href="#speed">Speed</a><a href="#cancels">Cancel reasons</a><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#pictures">Pictures</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
+      <nav className="adm__nav small" aria-label="Sections"><a href="#posts">Posts</a><a href="#retention">Retention</a><a href="#speed">Speed</a><a href="#cancels">Cancel reasons</a><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#pictures">Pictures</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
       {!hasDatabase() ? <p className="banner banner--err">No database. Set DATABASE_URL, then restart.</p> : null}
       {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database. Reload to try again.</p> : null}
       {q.saved ? <p className="banner" role="status">Saved. The matcher applies it on its next run.</p> : null}
       {q.picture ? <p className="banner" role="status">{q.picture === "hidden" ? "Picture hidden. It's gone from every page now; the wallet shows its monogram." : "Picture shown again."}</p> : null}
       {error ? <p className="banner banner--err" role="alert">{error}</p> : null}
+
+      <section id="posts" className="sec2" data-testid="admin-posts">
+        <h2 className="sec2__h">Per post, last {days} days</h2>
+        <p className="muted small">Each visitor counted once, under the post of their first landing: utm_content, else utm_campaign, else utm_source. Reads: they ran one. Paid: an account that came from that visitor paid.</p>
+        {posts.v.length ? (
+          <div className="scroll-x"><table className="adm-t">
+            <thead><tr><th scope="col">Post</th><th scope="col">Source</th><th scope="col" className="r">Visits</th><th scope="col" className="r">Reads</th><th scope="col" className="r">Paid</th><th scope="col" className="r">Visit → paid</th></tr></thead>
+            <tbody>{posts.v.map(p => <tr key={p.post} data-testid="post-row"><th scope="row">{p.post}</th><td>{p.source ?? "—"}</td><td className="r num">{p.visits}</td><td className="r num">{p.reads}</td><td className="r num">{p.paid}</td><td className="r num">{p.visits ? `${((p.paid / p.visits) * 100).toFixed(1)}%` : "—"}</td></tr>)}</tbody>
+          </table></div>
+        ) : <p className="muted small">No landing views yet.</p>}
+      </section>
+
+      <section id="retention" className="sec2" data-testid="admin-retention">
+        <h2 className="sec2__h">Retention</h2>
+        {keep.v ? (
+          <ul className="small">
+            <li data-testid="day8">Paid on day 8: <b className="num">{keep.v.day8.paid}</b> of <b className="num">{keep.v.day8.started}</b> whose $1 week started 8 to 38 days ago{keep.v.day8.started ? ` (${((keep.v.day8.paid / keep.v.day8.started) * 100).toFixed(0)}%)` : ""}</li>
+            <li data-testid="churn30">30-day churn: <b className="num">{keep.v.churn30.churned}</b> of <b className="num">{keep.v.churn30.active}</b> paying 30 to 60 days ago have left or are set to cancel{keep.v.churn30.active ? ` (${((keep.v.churn30.churned / keep.v.churn30.active) * 100).toFixed(0)}%)` : ""}</li>
+          </ul>
+        ) : <p className="muted small">No numbers yet.</p>}
+      </section>
 
       <section id="speed" className="sec2" data-testid="admin-speed">
         <div className="adm__top">

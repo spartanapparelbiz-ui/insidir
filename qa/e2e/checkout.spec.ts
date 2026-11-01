@@ -23,8 +23,13 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   await page.goto("/pricing");
   await page.locator('[data-checkout="pricing"]').first().click();
   await expect(page).toHaveURL(/\/start$/);
-  // Signed out: the embedded checkout straight away (pay first), no sign-in step, no password.
+  // Signed out: 18+ first (the checkout doesn't open until it's ticked), then the embedded checkout straight away
+  // (pay first): no sign-in step, no password.
   const form = page.locator("[data-mock-checkout]");
+  await expect(page.getByTestId("age-18")).toContainText("I'm 18 or older.");
+  await expect(form).toHaveCount(0);
+  expect((await page.request.post("/api/checkout/start", { data: {} })).status()).toBe(400);
+  await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(form).toBeVisible();
   await expect(page.getByTestId("start-pay-first")).toContainText("Pay first; you sign in with Whop right after");
   await expect(page.getByTestId("continue")).toHaveCount(0);
@@ -38,14 +43,19 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   await post("/__whop_user", { email, name: "Buyer Example" });
   await form.getByLabel("Email").fill(email);
   await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
-  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 25_000 });
+  await expect(page.getByRole("heading", { level: 1, name: "What do you bet on?" })).toBeVisible({ timeout: 25_000 });
+  await page.getByRole("button", { name: "Skip" }).click();
+  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
   await expect(page.getByTestId("member-home")).toBeVisible();
   const made = (await q<{ id: string; plan: string; whop_user_id: string; visitor_id: string | null }>("select id, plan, whop_user_id, visitor_id from terminal.users where email = $1", [email]))[0]!;
   expect(made).toMatchObject({ plan: "insidir", whop_user_id: whopUserFor(email) });
+  // The 18+ confirmation is stored with the account (carried on the checkout's metadata).
+  expect((await q<{ ok: boolean }>("select age_confirmed_at is not null as ok from terminal.users where id = $1", [made.id]))[0]!.ok).toBe(true);
   // The checkout carried the visitor id (no account yet), and the account keeps it for time-to-paid.
   const state = await (await whop("/__state")).json() as { payments: Array<{ metadata: Record<string, string> }> };
   const visitor = (await page.context().cookies()).find(c => c.name === "insidir_vid")?.value;
-  expect(state.payments.at(-1)!.metadata).toEqual(visitor ? { insidir_visitor_id: visitor } : {});
+  expect(state.payments.at(-1)!.metadata).toMatchObject(visitor ? { insidir_visitor_id: visitor } : {});
+  expect(state.payments.at(-1)!.metadata.insidir_age_18).toMatch(/^\d{4}-\d\d-\d\dT/);
   if (visitor) expect(made.visitor_id).toBe(visitor);
   await page.screenshot({ path: `qa/screenshots/checkout-landed-${w}.png` });
 
@@ -108,6 +118,7 @@ test("a Whop account without Insidir: signed in, sent to /start with the checkou
   await expect(page.getByTestId("start-signed-in")).toContainText(email);
   // Whop only has /login/callback registered (as in production): the sign-in comes back there.
   expect(callbacks).toEqual(["/login/callback"]);
+  await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(page.locator("[data-mock-checkout]")).toBeVisible();
   // Whop says the sign-in was cancelled: back to /login, nothing set.
   await page.context().clearCookies();
@@ -132,5 +143,7 @@ test("paid signed out: straight through Whop's sign-in, landing signed in", asyn
   await post("/__whop_user", { email, name: null });
   await page.goto("/welcome?status=succeeded&next=%2Fpricing");
   // /welcome sends them through Whop's sign-in and back (keeping where they were going); signed in and a member.
-  await expect(page).toHaveURL(/\/pricing$/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/onboarding\?next=%2Fpricing$/, { timeout: 20_000 });
+  await page.getByRole("button", { name: "Skip" }).click();
+  await expect(page).toHaveURL(/\/pricing$/);
 });

@@ -190,6 +190,27 @@
       "when": 1793559463681,
       "tag": "0026_the_read",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793561776737,
+      "tag": "0027_age_confirmed",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793561940374,
+      "tag": "0028_money_path_monitor",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793562121501,
+      "tag": "0029_read_seen",
+      "breakpoints": true
     }
   ]
 }

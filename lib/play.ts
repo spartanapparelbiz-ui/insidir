@@ -29,7 +29,7 @@ export function playText(o: { kind: OppKind; legs: readonly PlayLeg[]; gapCents:
       return legs.map((l, i) => `${i ? "" : "Buy "}${l.side.toUpperCase()} “${l.label}” at ${cents(l.avgPrice)}`).join(" + ") + ` on ${venue}`;
     case "second_opinion": {
       const l = legs[0];
-      return l ? `${VENUE_NAME[l.venue]} prices YES at ${cents(l.avgPrice)}, ${o.gapCents ?? 0}¢ below the other venue (not a lock)` : "Price gap";
+      return l ? `${VENUE_NAME[l.venue]} prices YES at ${cents(l.avgPrice)}, ${o.gapCents ?? 0}¢ below the other venue (one side only)` : "Price gap";
     }
   }
 }

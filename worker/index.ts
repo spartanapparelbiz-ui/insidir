@@ -17,6 +17,8 @@
  *             (lib/follow/seen.ts), new positions first, then the backlog
  *   follow:report every hour: the followable QA sheet (lib/follow/report.ts) into the log, one "FOLLOWABLE-CSV" line
  *             per row, so it can be read from the deploy logs
+ *   monitor   every 10 minutes: landing → Read → checkout page → sign-in redirect accepted by Whop (lib/monitor);
+ *             emailed to hello@aethric.llc when it breaks, shown on /status
  *   accuracy  every hour: 20 random moves and 20 profile facts re-read from their sources (lib/accuracy/check.ts);
  *             moves that don't match are hidden until they do; OWNER_EMAIL gets an email when anything is off
  *
@@ -51,6 +53,8 @@ import { sendPush } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
 import { ACCURACY_MS, runAccuracyCheck } from "@/lib/accuracy/check";
+import { moneyPathOnce, MONEY_PATH_MS } from "@/lib/monitor/money-path";
+import { refreshWatched } from "@/lib/read/member";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import { notesOnce } from "@/lib/analyst/store";
@@ -262,6 +266,18 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         if (n) log(`moves: ${n} trader records refreshed`);
       }),
       every("accuracy", ACCURACY_MS, () => accuracyOnce(clients.polymarket as PolymarketClient, clients.kalshi as KalshiClient, sec)),
+      // Your markets (lib/read/member.ts): a fresh Read of every market members read in the last 14 days, every 15 minutes.
+      every("read:refresh", 15 * 60_000, async () => {
+        const n = await refreshWatched(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
+        await heartbeat(getDb(), "read:refresh", true, null, { refreshed: n });
+      }),
+      // The money path, as a visitor would walk it, against the live site (off with MONEY_PATH_MONITOR=off).
+      ...(process.env.MONEY_PATH_MONITOR === "off" ? [] : [every("monitor:money-path", MONEY_PATH_MS, async () => {
+        const r = await moneyPathOnce(getDb(), { base: appUrl(), log });
+        const bad = r.steps.find(s => !s.ok);
+        await heartbeat(getDb(), "monitor:money-path", r.ok, bad ? `${bad.step}: ${bad.detail ?? "failed"}` : null, Object.fromEntries(r.steps.map(s => [s.step, s.ms])));
+        if (bad) log(`money path FAILED at ${bad.step}: ${bad.detail}`);
+      })]),
       every("moves:avatars", 5 * 60_000, async () => {
         const n = await avatarsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         if (n) log(`moves: ${n} trader pictures read`);

@@ -77,6 +77,7 @@ export async function footerOk(page: Page): Promise<void> {
   await expect(footer).toContainText("Aethric LLC · Pompano Beach, FL · hello@aethric.llc");
   await expect(footer).toContainText("Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.");
   await expect(footer).toContainText("Gambling problem? Call 1-800-GAMBLER.");
+  await expect(footer).toContainText("Information, not financial or betting advice.");
   await expect(footer.locator('a[href="mailto:hello@aethric.llc"]')).toHaveCount(1);
   for (const href of ["/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog"]) await expect(footer.locator(`a[href="${href}"]`), href).toHaveCount(1);
 }

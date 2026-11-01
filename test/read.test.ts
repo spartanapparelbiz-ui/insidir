@@ -77,6 +77,11 @@ describe("the analyst line", () => {
     for (const bad of ["You should take the Chiefs at 60¢.", "64% of proven money is on Chiefs, a guaranteed winner.", "71% of proven money is on Chiefs.",
       "Patrick Mahomes's backers hold 64% of proven money.", "64% of proven money is on Chiefs. The largest is $412K."]) expect(validateLine(bad, f).ok, bad).toBe(false);
   });
+  it("the analyst output never says guaranteed, risk-free, easy money, lock or sure thing", () => {
+    const f = readFacts(read);
+    for (const bad of ["64% of proven money is on Chiefs, guaranteed.", "64% of proven money is on Chiefs, risk-free.", "64% of proven money is on Chiefs, easy money.",
+      "64% of proven money is on Chiefs, a lock.", "64% of proven money is on Chiefs, a sure thing."]) expect(validateLine(bad, f).ok, bad).toBe(false);
+  });
   it("a model line that passes is used; one that fails twice, a capped member, or no key gets the template", async () => {
     const f = readFacts(read);
     const reply = (text: string) => (async () => new Response(JSON.stringify({ choices: [{ message: { content: text } }], usage: { cost: 0.001 }, model: "m" }))) as unknown as typeof fetch;

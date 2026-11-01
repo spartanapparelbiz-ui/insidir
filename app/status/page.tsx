@@ -1,11 +1,13 @@
 /* Status (/status): is Insidir working right now? Each source's freshness, each worker job's last heartbeat, the
- * hourly accuracy checks, and this web server's uptime and deploy, all from real checks (lib/status-page.ts). Green
+ * hourly accuracy checks, the money-path check (every 10 minutes: landing → Read → checkout → Whop sign-in), and this
+ * web server's uptime and deploy, all from real checks (lib/status-page.ts). Green
  * means working, amber behind, red failing. Incidents are the failures those checks recorded in the last 7 days. */
 import type { Metadata } from "next";
 import { TrustPage } from "@/components/TrustPage";
 import { getDb, hasDatabase } from "@/lib/db";
 import { clockET, dateTimeET } from "@/lib/moves/copy";
 import { ago, readStatus, STARTED_AT, type Light, type Status } from "@/lib/status-page";
+import { monitorView, type MonitorView } from "@/lib/monitor/money-path";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Status", description: "Live status of every Insidir data source, the worker jobs, the hourly accuracy checks and the web app." };
@@ -16,8 +18,10 @@ const Dot = ({ l }: { l: Light }) => <span className={`stat__dot stat__dot--${l}
 export default async function StatusPage() {
   const now = Date.now();
   const s: Status | null = hasDatabase() ? await readStatus(getDb(), now).catch(() => null) : null;
+  const mp: MonitorView | null = hasDatabase() ? await monitorView(getDb(), now).catch(() => null) : null;
   const incidents = s ? [
     ...s.jobs.filter(j => j.light === "red").map(j => ({ at: j.lastRunAt, text: `${j.label}: ${j.error ?? "last run failed"}` })),
+    ...(mp?.failures24h ?? []).map(f => ({ at: f.at, text: `Money path failed at ${f.step ?? "a step"}: ${f.detail ?? "no detail"}` })),
     ...s.checks.filter(c => c.mismatch > 0).map(c => ({ at: c.runAt, text: `Accuracy check: ${c.mismatch} of ${c.checked} didn't match the source and were hidden until they do` })),
   ].sort((a, b) => b.at - a.at) : [];
   const overall = s?.overall ?? "red";
@@ -30,6 +34,18 @@ export default async function StatusPage() {
           {s.sources.map(x => <li key={x.key} className="stat__row"><Dot l={x.light} /><span className="stat__name">{x.label}</span><span className="stat__note">{x.note}</span><span className="stat__word">{WORD[x.light]}</span></li>)}
         </ul>
         <p className="stat__fine">Sources: each job's own last successful read of Polymarket, Kalshi and SEC EDGAR. 13F filings arrive quarterly, so a quiet week there is normal and doesn&apos;t change the overall status.</p>
+
+        <h2>Money path</h2>
+        <div data-testid="status-money-path">
+          {mp?.last ? (
+            <ul className="stat__list">
+              <li className="stat__row"><Dot l={mp.last.ok ? "green" : "red"} /><span className="stat__name">Landing → Read → checkout → Whop sign-in</span>
+                <span className="stat__note">{mp.last.ok ? `Every step passed ${ago(mp.last.at, now)} (${mp.last.ms} ms)` : `Failed ${ago(mp.last.at, now)} at ${mp.last.failedStep}: ${mp.last.detail ?? ""}`}</span><span className="stat__word">{mp.last.ok ? "Working" : "Failing"}</span></li>
+              {mp.last.steps.map(st => <li key={st.step} className="stat__row"><Dot l={st.ok ? "green" : "red"} /><span className="stat__name">{st.step}</span><span className="stat__note">{st.ok ? `${st.ms} ms` : st.detail}</span><span className="stat__word" /></li>)}
+            </ul>
+          ) : <p>The money-path check hasn&apos;t run yet.</p>}
+          {mp ? <p className="stat__fine">Checked every 10 minutes: {mp.runs24h} runs in the last 24 hours, {mp.failures24h.length} failed. A failure is emailed to the owner.</p> : null}
+        </div>
 
         <h2>Worker jobs</h2>
         {s.jobs.length ? (

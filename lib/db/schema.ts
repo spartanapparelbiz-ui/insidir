@@ -46,6 +46,8 @@ export interface UserSettings {
   noLifecycle?: boolean;
   /** Push alerts for new splits of SPLIT_ALERT_GAP+ points (lib/smart/splits.ts); on unless turned off. */
   alertSplits?: boolean;
+  /** Onboarding's one question, "What do you bet on?" (lib/read/member.ts BET_ON): the member home's tonight list. */
+  betOn?: string[];
   /** Dollars per copied move (lib/copies): 10, 50 or 100; DEFAULT_COPY_SIZE when unset. */
   copySize?: 10 | 50 | 100;
 }
@@ -80,6 +82,9 @@ export const users = terminal.table("users", {
   /** When the last daily summary went out (one per day). */
   lastDigestAt: timestamp("last_digest_at", { withTimezone: true }),
   visitorId: text("visitor_id"),
+  /** When they confirmed they are 18 or older (the checkbox before checkout; for a pay-first buyer, carried on the
+   *  checkout's metadata and stored when the webhook makes the account). Null until confirmed. */
+  ageConfirmedAt: timestamp("age_confirmed_at", { withTimezone: true }),
   /** First-touch UTM tags carried from the visit that led to signup. */
   utm: jsonb("utm").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -758,7 +763,7 @@ export const reads = terminal.table("reads", {
   userId: text("user_id"),
   visitorId: text("visitor_id"),
   /** What they gave: a link, plain words, or a slip screenshot. */
-  input: text("input").$type<"link" | "text" | "slip" | "pick">().notNull(),
+  input: text("input").$type<"link" | "text" | "slip" | "pick" | "refresh">().notNull(),
   /** "p:<polymarket condition id>" or "k:<kalshi ticker>": the 60-second cache key. */
   marketKey: text("market_key").notNull(),
   data: jsonb("data").$type<Record<string, unknown>>().notNull(),
@@ -784,3 +789,27 @@ export const cancelReasons = terminal.table("cancel_reasons", {
   detail: text("detail"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("cancel_reasons_created_idx").on(t.createdAt)]);
+
+/** The money-path monitor's runs (lib/monitor/money-path.ts): every 10 minutes, landing → Read → checkout page → sign-in
+ *  redirect accepted by Whop. `steps` is each step's result; `failedStep` the first that failed. */
+export const monitorRuns = terminal.table("monitor_runs", {
+  id: serial("id").primaryKey(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  ok: boolean("ok").notNull(),
+  failedStep: text("failed_step"),
+  detail: text("detail"),
+  ms: integer("ms").notNull(),
+  steps: jsonb("steps").$type<Array<{ step: string; ok: boolean; ms: number; detail?: string }>>().notNull(),
+  /** Whether this run's failure (or recovery) was emailed. */
+  emailed: boolean("emailed").notNull().default(false),
+}, t => [index("monitor_runs_at_idx").on(t.at)]);
+
+/** What proven money looked like when a member last saw each of their markets on their home (lib/read/member.ts), so
+ *  "moved since your last visit" can be marked. */
+export const readSeen = terminal.table("read_seen", {
+  userId: text("user_id").notNull(),
+  marketKey: text("market_key").notNull(),
+  yesShare: doublePrecision("yes_share"),
+  wallets: integer("wallets").notNull().default(0),
+  seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.marketKey] })]);

@@ -35,7 +35,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   return (
     <AuthSplit step={1}>
       {error ? <p className="aerr" role="alert">{error}</p> : null}
-      <StartCheckout elementsUrl={ELEMENTS_URL} signedInAs={viewer.user ? viewer.user.email ?? viewer.user.name ?? "your Whop account" : null} next={next} />
+      <StartCheckout elementsUrl={ELEMENTS_URL} signedInAs={viewer.user ? viewer.user.email ?? viewer.user.name ?? "your Whop account" : null} next={next} ageConfirmed={Boolean(viewer.user?.ageConfirmed)} />
     </AuthSplit>
   );
 }
