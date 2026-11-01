@@ -1,7 +1,7 @@
 /* Whop settings the site reads at runtime: the plan the checkout sells, the webhook's signing secret and the login
  * app's id. `npm run whop:setup` (lib/billing/setup.ts) finds or makes them in Whop and stores them in
  * terminal.whop_config, the secret encrypted (AES-256-GCM, key derived from WHOP_API_KEY). Env vars override:
- * WHOP_PLAN_INSIDIR, WHOP_WEBHOOK_SECRET, WHOP_CLIENT_ID. Read once a minute. Server only. */
+ * WHOP_PLAN_INSIDIR, WHOP_WEBHOOK_SECRET, WHOP_CLIENT_ID, WHOP_REDIRECT_URI. Read once a minute. Server only. */
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
@@ -9,7 +9,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { whopConfig } from "@/lib/db/schema";
 import { memo } from "@/lib/memo";
 
-export type WhopConfigKey = "plan_id" | "plan_status" | "webhook_id" | "webhook_secret" | "app_id";
+export type WhopConfigKey = "plan_id" | "plan_status" | "webhook_id" | "webhook_secret" | "app_id" | "redirect_uri";
 
 const keyFrom = (apiKey: string): Buffer => createHash("sha256").update(`insidir:whop_config:v1:${apiKey}`).digest();
 
@@ -45,7 +45,7 @@ export async function clearConfig(db: Db, key: WhopConfigKey): Promise<void> {
   await db.delete(whopConfig).where(eq(whopConfig.key, key));
 }
 
-export interface WhopRuntime { planId: string | null; webhookSecret: string | null; clientId: string | null }
+export interface WhopRuntime { planId: string | null; webhookSecret: string | null; clientId: string | null; redirectUri: string | null }
 
 /** What the site uses now: env first, then what setup stored. */
 export function resolveRuntime(stored: Partial<Record<WhopConfigKey, string>>, env: Record<string, string | undefined> = process.env): WhopRuntime {
@@ -54,6 +54,7 @@ export function resolveRuntime(stored: Partial<Record<WhopConfigKey, string>>, e
     planId: env.WHOP_PLAN_INSIDIR || stored.plan_id || null,
     webhookSecret: env.WHOP_WEBHOOK_SECRET || (stored.webhook_secret ? decryptSecret(stored.webhook_secret, apiKey) : null) || null,
     clientId: env.WHOP_CLIENT_ID || stored.app_id || null,
+    redirectUri: env.WHOP_REDIRECT_URI || stored.redirect_uri || null,
   };
 }
 

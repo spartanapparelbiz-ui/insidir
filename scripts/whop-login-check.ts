@@ -1,15 +1,16 @@
-/* Read-only: is <APP_URL>/reset/callback a redirect URI of our Whop login app? Prints the app's id, name and redirect
+/* Read-only: is <APP_URL>/login/callback or /reset/callback a redirect URI of our Whop login app? Prints the app's id, name and redirect
  * URIs and one verdict line. Changes nothing in Whop or the database (it only reads the stored app_id). Run on Railway,
  * where WHOP_API_KEY is: npx tsx scripts/whop-login-check.ts */
 import { readConfig } from "@/lib/billing/config";
 import { APP_NAME } from "@/lib/billing/setup";
+import { CALLBACK_PATHS } from "@/lib/auth/callback-paths";
 import { closeDb, getDb, hasDatabase } from "@/lib/db";
 
 type Json = Record<string, unknown>;
 async function main(): Promise<void> {
   const env = process.env;
   const api = `${(env.WHOP_API_ORIGIN ?? "https://api.whop.com").replace(/\/+$/, "")}/api/v1`;
-  const redirect = `${(env.APP_URL ?? "https://insidir.com").replace(/\/+$/, "")}/reset/callback`;
+  const candidates = CALLBACK_PATHS.map(p => `${(env.APP_URL ?? "https://insidir.com").replace(/\/+$/, "")}${p}`);
   const get = async (path: string) => {
     const r = await fetch(`${api}${path}`, { headers: { Authorization: `Bearer ${env.WHOP_API_KEY ?? ""}`, Accept: "application/json" }, signal: AbortSignal.timeout(15_000) });
     return { status: r.status, json: (await r.json().catch(() => ({}))) as Json };
@@ -27,7 +28,8 @@ async function main(): Promise<void> {
   for (const a of apps) console.log(`whop-login-check: app ${String(a.id)} "${String(a.name)}" redirect_uris=${JSON.stringify(a.redirect_uris ?? null)}`);
   const ours = apps.find(a => a.id === id) ?? apps.find(a => a.name === APP_NAME) ?? null;
   const uris = Array.isArray(ours?.redirect_uris) ? (ours!.redirect_uris as string[]) : [];
-  console.log(ours ? (uris.includes(redirect) ? `whop-login-check: OK ${String(ours.id)} has ${redirect}` : `whop-login-check: MISSING ${String(ours.id)} lacks ${redirect}; add exactly that URI`) : "whop-login-check: NO APP found");
+  const hit = candidates.find(c => uris.includes(c));
+  console.log(ours ? (hit ? `whop-login-check: OK ${String(ours.id)} has ${hit}` : `whop-login-check: MISSING ${String(ours.id)} has neither ${candidates.join(" nor ")}; add exactly ${candidates[0]}`) : "whop-login-check: NO APP found");
   await closeDb();
 }
 main().catch(e => { console.error("whop-login-check failed:", e instanceof Error ? e.message : e); process.exit(1); });

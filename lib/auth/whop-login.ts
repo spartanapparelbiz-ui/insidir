@@ -2,8 +2,10 @@
  * Google keys of our own.
  *
  *   The login app: WHOP_CLIENT_ID, else the one stored by `npm run whop:setup` (app_id); WHOP_CLIENT_SECRET goes on the
- *   token exchange. The redirect URI is the one the app already has registered, <APP_URL>/reset/callback (whop:setup
- *   checks it's still there, read-only). /login/start sends them off; /reset/callback brings them back.
+ *   token exchange. The redirect URI: WHOP_REDIRECT_URI, else the one whop:setup found registered on the app and stored
+ *   (redirect_uri: <APP_URL>/login/callback preferred, else /reset/callback), else <APP_URL>/login/callback. It's
+ *   picked once on /login/start, kept in the login cookie, and the token exchange sends that same value back. Both
+ *   /login/callback and /reset/callback run the same handler (lib/auth/callback.ts).
  *   Who they are: userinfo's sub (user_…), email, name and picture. Their account is the one linked to that Whop user,
  *   else the one with that email (linked now), else a new one: anyone may sign in; being a member is separate
  *   (lib/billing/access.ts: Whop's access check for WHOP_PRODUCT_INSIDIR, or FREE_ACCESS_EMAILS).
@@ -19,14 +21,16 @@ import { appUrl } from "@/lib/app-url";
 import { whopRuntime } from "@/lib/billing/config";
 import { newUserId, normEmail, refreshPlan } from "@/lib/billing/access";
 import { isFreeAccess } from "@/lib/billing/free";
+import { CALLBACK_PATHS } from "@/lib/auth/callback-paths";
 
 const OAUTH = () => `${(process.env.WHOP_API_ORIGIN ?? "https://api.whop.com").replace(/\/+$/, "")}/oauth`;
 /** The sign-in in flight: state, PKCE verifier and where to go after (httpOnly, 10 minutes, the whole site: it starts
- *  on /login/start and ends on /reset/callback). */
+ *  on /login/start and ends on /login/callback or /reset/callback). */
 export const LOGIN_COOKIE = "insidir_login";
 export const LIMIT = { perIp: 30, windowMs: 15 * 60_000 } as const;
-export const CALLBACK_PATH = "/reset/callback";
-export const redirectUri = (): string => appUrl() + CALLBACK_PATH;
+export { CALLBACK_PATHS };
+/** WHOP_REDIRECT_URI, else the stored one (whop:setup), else <APP_URL>/login/callback. */
+export const redirectUri = async (): Promise<string> => (await whopRuntime()).redirectUri ?? appUrl() + CALLBACK_PATHS[0];
 const clientId = async (): Promise<string> => (await whopRuntime()).clientId ?? "";
 export const loginConfigured = async (): Promise<boolean> => Boolean(await clientId());
 
@@ -40,25 +44,26 @@ export const logLine = (line: string): void => console.log(`login: ${line}`);
 
 /** The authorize URL plus what the callback needs back (state and PKCE verifier, kept in an httpOnly cookie).
  *  `fresh` asks Whop to sign in again rather than reuse its session ("Use a different account"). */
-export async function startLogin(fresh = false): Promise<{ url: string; state: string; verifier: string }> {
-  const verifier = b64url(randomBytes(32)), state = b64url(randomBytes(16));
+export async function startLogin(fresh = false): Promise<{ url: string; state: string; verifier: string; redirect: string }> {
+  const verifier = b64url(randomBytes(32)), state = b64url(randomBytes(16)), redirect = await redirectUri();
   const q = new URLSearchParams({
-    response_type: "code", client_id: await clientId(), redirect_uri: redirectUri(), scope: "openid profile email", state,
+    response_type: "code", client_id: await clientId(), redirect_uri: redirect, scope: "openid profile email", state,
     nonce: b64url(randomBytes(16)), code_challenge: b64url(createHash("sha256").update(verifier).digest()), code_challenge_method: "S256",
     ...(fresh ? { prompt: "login" } : {}),
   });
-  return { url: `${OAUTH()}/authorize?${q}`, state, verifier };
+  return { url: `${OAUTH()}/authorize?${q}`, state, verifier, redirect };
 }
 
 export class LoginFailed extends Error {}
 export interface WhopIdentity { id: string; email: string | null; name: string | null; picture: string | null }
 
-/** Code → who they are at Whop. On failure, logs the endpoint's status and error, nothing else. */
-export async function finishLogin(code: string, verifier: string, f: typeof fetch = fetch): Promise<WhopIdentity> {
+/** Code → who they are at Whop. `redirect` is the exact redirect_uri the authorize request sent. On failure, logs the
+ *  endpoint's status and error, nothing else. */
+export async function finishLogin(code: string, verifier: string, redirect: string, f: typeof fetch = fetch): Promise<WhopIdentity> {
   const secret = process.env.WHOP_CLIENT_SECRET ?? "";
   const res = await f(`${OAUTH()}/token`, {
     method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, signal: AbortSignal.timeout(10_000),
-    body: JSON.stringify({ grant_type: "authorization_code", code, redirect_uri: redirectUri(), client_id: await clientId(), code_verifier: verifier,
+    body: JSON.stringify({ grant_type: "authorization_code", code, redirect_uri: redirect, client_id: await clientId(), code_verifier: verifier,
       ...(secret ? { client_secret: secret } : {}) }),
   });
   const tokens = await json(res);

@@ -97,14 +97,20 @@ test("a Whop account without Insidir: signed in, sent to /start with the checkou
   await q("delete from terminal.users where email = $1", [email]);
   await q("delete from terminal.login_attempts");
   await post("/__whop_user", { email, name: null });
+  const callbacks: string[] = [];
+  page.on("request", r => { if (/\/(login|reset)\/callback/.test(r.url())) callbacks.push(new URL(r.url()).pathname); });
   await page.goto("/login?next=%2Ffeed");
   await page.getByTestId("continue").click();
   await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
   await expect(page.getByTestId("start-signed-in")).toContainText(email);
+  // Whop only has /login/callback registered (as in production): the sign-in comes back there.
+  expect(callbacks).toEqual(["/login/callback"]);
   await expect(page.locator("[data-mock-checkout]")).toBeVisible();
   // Whop says the sign-in was cancelled: back to /login, nothing set.
   await page.context().clearCookies();
   await page.goto("/reset/callback?error=access_denied");
+  await expect(page).toHaveURL(/\/login\?error=cancelled$/);
+  await page.goto("/login/callback?error=access_denied");
   await expect(page).toHaveURL(/\/login\?error=cancelled$/);
   await expect(page.locator(".aerr")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
   // A forged callback (no state cookie): refused.

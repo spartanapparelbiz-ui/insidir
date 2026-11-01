@@ -1,7 +1,7 @@
 /* Sign-in with Whop and the billing webhook, against a throwaway Postgres next to E2E_DATABASE_URL, with Whop's API
  * stood in by a fetch stub:
- *   OAuth: the authorize URL (our login app, /reset/callback, PKCE S256, openid profile email); the token exchange sends
- *     the client secret; userinfo gives who they are; a failure logs only Whop's status and error
+ *   OAuth: the authorize URL (our login app, the redirect URI: WHOP_REDIRECT_URI, else stored, else /login/callback;
+ *     PKCE S256, openid profile email); the token exchange sends the same redirect URI and the client secret; userinfo gives who they are; a failure logs only Whop's status and error
  *   sign-in: the account by Whop user, else by email (linked), else a new one; member = Whop's access check, or the
  *     free-access list
  *   checkout: our account id in the metadata links the membership; a buyer who paid signed out gets an account their
@@ -14,21 +14,28 @@ import pg from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { finishLogin, LoginFailed, signInAs, startLogin } from "@/lib/auth/whop-login";
+import { finishLogin, LoginFailed, redirectUri, signInAs, startLogin } from "@/lib/auth/whop-login";
 import { applyBillingEvent, effectivePlan } from "@/lib/billing/access";
 import { webhookRef } from "@/lib/billing/whop";
 
 describe("Whop OAuth", () => {
   const ENV = { ...process.env };
   afterEach(() => { process.env = { ...ENV }; vi.restoreAllMocks(); });
-  it("the authorize URL: our login app, /reset/callback, PKCE, openid profile email", async () => {
-    process.env.WHOP_CLIENT_ID = "app_login"; process.env.APP_URL = "https://insidir.com"; delete process.env.WHOP_API_ORIGIN;
-    const { url, state, verifier } = await startLogin();
+  it("the authorize URL: our login app, /login/callback by default, PKCE, openid profile email", async () => {
+    process.env.WHOP_CLIENT_ID = "app_login"; process.env.APP_URL = "https://insidir.com"; delete process.env.WHOP_API_ORIGIN; delete process.env.WHOP_REDIRECT_URI;
+    const { url, state, verifier, redirect } = await startLogin();
     const u = new URL(url);
     expect(u.origin + u.pathname).toBe("https://api.whop.com/oauth/authorize");
-    expect(Object.fromEntries(u.searchParams)).toMatchObject({ client_id: "app_login", redirect_uri: "https://insidir.com/reset/callback", scope: "openid profile email", code_challenge_method: "S256", response_type: "code", state });
+    expect(redirect).toBe("https://insidir.com/login/callback");
+    expect(Object.fromEntries(u.searchParams)).toMatchObject({ client_id: "app_login", redirect_uri: "https://insidir.com/login/callback", scope: "openid profile email", code_challenge_method: "S256", response_type: "code", state });
     expect(verifier.length).toBeGreaterThanOrEqual(43);
     expect(new URL((await startLogin(true)).url).searchParams.get("prompt")).toBe("login");
+    // WHOP_REDIRECT_URI wins.
+    process.env.WHOP_REDIRECT_URI = "https://insidir.com/reset/callback";
+    expect(await redirectUri()).toBe("https://insidir.com/reset/callback");
+    const s2 = await startLogin();
+    expect(s2.redirect).toBe("https://insidir.com/reset/callback");
+    expect(new URL(s2.url).searchParams.get("redirect_uri")).toBe("https://insidir.com/reset/callback");
   });
   it("the token exchange sends the client secret; userinfo gives sub, email, name, picture; a failure logs only Whop's status and error", async () => {
     process.env.WHOP_CLIENT_ID = "app_login"; process.env.WHOP_CLIENT_SECRET = "wsecret_xyz"; process.env.APP_URL = "https://insidir.com";
@@ -40,10 +47,10 @@ describe("Whop OAuth", () => {
       if (String(url).endsWith("/userinfo")) return new Response(JSON.stringify({ sub: "user_w1", email: "who@example.test", name: "Who", picture: "https://img/x.png" }));
       return new Response("{}");
     }) as unknown as typeof fetch;
-    expect(await finishLogin("code_1", "verifier_1", ok)).toEqual({ id: "user_w1", email: "who@example.test", name: "Who", picture: "https://img/x.png" });
-    expect(body).toMatchObject({ grant_type: "authorization_code", code: "code_1", code_verifier: "verifier_1", client_id: "app_login", client_secret: "wsecret_xyz", redirect_uri: "https://insidir.com/reset/callback" });
+    expect(await finishLogin("code_1", "verifier_1", "https://insidir.com/login/callback", ok)).toEqual({ id: "user_w1", email: "who@example.test", name: "Who", picture: "https://img/x.png" });
+    expect(body).toMatchObject({ grant_type: "authorization_code", code: "code_1", code_verifier: "verifier_1", client_id: "app_login", client_secret: "wsecret_xyz", redirect_uri: "https://insidir.com/login/callback" });
     const bad = (async () => new Response(JSON.stringify({ error: "invalid_client", error_description: "Client authentication failed." }), { status: 401 })) as unknown as typeof fetch;
-    await expect(finishLogin("code_2", "verifier_2", bad)).rejects.toBeInstanceOf(LoginFailed);
+    await expect(finishLogin("code_2", "verifier_2", "https://insidir.com/login/callback", bad)).rejects.toBeInstanceOf(LoginFailed);
     expect(logs).toEqual(["login: token exchange failed (401 invalid_client: Client authentication failed.)"]);
     for (const l of logs) expect(l).not.toMatch(/wsecret|at_123|code_|@/);
   });

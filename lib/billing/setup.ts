@@ -7,13 +7,15 @@
  *      create response) stored encrypted. Never a second one: an existing webhook gets missing events added; one
  *      whose secret we don't hold (and isn't in WHOP_WEBHOOK_SECRET) is replaced, delete first, then create.
  *   3. Login app (sign-in is Whop's, lib/auth/whop-login.ts): read-only. The app is WHOP_CLIENT_ID, else the stored
- *      app_id, else the account's app named "Insidir" (then stored). Its redirect URIs must include
- *      <APP_URL>/reset/callback, already registered; nothing is changed in Whop: when it's missing the log says exactly
- *      which URI to add, and sign-in stays off until it's there.
+ *      app_id, else the account's app named "Insidir" (then stored). Of the callbacks we serve, <APP_URL>/login/callback
+ *      and <APP_URL>/reset/callback, the one registered on it is stored as redirect_uri (/login/callback when both
+ *      are). Nothing is changed in Whop. When neither is registered the result is "missing redirect" and
+ *      scripts/whop-setup.ts fails the deploy, saying exactly which URI to add.
  * Ends with one line: "Whop setup: plan ok|wrong, webhook ok|failed, login app ok|missing redirect|failed". */
 import type { Db } from "@/lib/db";
 import { TRIAL, PLANS } from "@/lib/plans";
 import { encryptSecret, decryptSecret, readConfig, writeConfig, clearConfig } from "./config";
+import { CALLBACK_PATHS } from "@/lib/auth/callback-paths";
 
 export const EVENTS = ["membership.activated", "membership.updated", "membership.deactivated", "membership.trial_ending_soon", "payment.succeeded",
   "payment.failed", "refund.created", "refund.updated", "dispute.created"] as const;
@@ -142,7 +144,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
 
   // 3. The login app: checked, never changed.
   let app: SetupResult["app"] = "failed";
-  const redirect = `${appUrl}/reset/callback`;
+  const candidates = CALLBACK_PATHS.map(p => `${appUrl}${p}`);
   try {
     let found: Json | null = null;
     const id = env.WHOP_CLIENT_ID || stored.app_id || null;
@@ -160,8 +162,15 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
     }
     const uris = Array.isArray(found.redirect_uris) ? (found.redirect_uris as unknown[]).filter((u): u is string => typeof u === "string") : [];
     if (!env.WHOP_CLIENT_ID && str(found.id) && str(found.id) !== stored.app_id) await writeConfig(db, "app_id", str(found.id)!);
-    if (uris.includes(redirect)) { app = "ok"; log(`Whop login app ${str(found.id)}: redirect URI ${redirect} is registered.`); }
-    else { app = "missing redirect"; log(`Whop login app ${str(found.id)}: ${redirect} is not one of its redirect URIs (${uris.join(", ") || "none"}). Add exactly ${redirect} in the app's OAuth settings on Whop.`); }
+    const redirect = candidates.find(c => uris.includes(c));
+    if (redirect) {
+      app = "ok";
+      if (stored.redirect_uri !== redirect) await writeConfig(db, "redirect_uri", redirect);
+      log(`Whop login app ${str(found.id)}: redirect URI ${redirect} is registered (stored as redirect_uri).`);
+    } else {
+      app = "missing redirect";
+      log(`Whop login app ${str(found.id)}: neither ${candidates.join(" nor ")} is one of its redirect URIs (${uris.join(", ") || "none"}). Add exactly ${candidates[0]} in the app's OAuth settings on Whop.`);
+    }
   } catch (e) {
     log(`Whop login app: ${e instanceof Error ? e.message : String(e)}.`);
   }

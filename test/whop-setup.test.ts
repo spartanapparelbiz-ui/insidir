@@ -1,7 +1,7 @@
 /* `npm run whop:setup` (lib/billing/setup.ts) against a stand-in Whop API and a throwaway Postgres next to
  * E2E_DATABASE_URL: picks the right plan and keeps checkout closed when it isn't exactly 7 days for $1 then
  * $39/month; creates the webhook once and stores its secret encrypted; never duplicates; checks the login app has
- * <APP_URL>/reset/callback without ever changing it; env vars override; no secret in the logs. The crypto and plan checks run without a database. */
+ * <APP_URL>/login/callback or /reset/callback (stored as redirect_uri, /login/callback preferred) without ever changing it; env vars override; no secret in the logs. The crypto and plan checks run without a database. */
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
@@ -28,9 +28,15 @@ describe("crypto and plan checks", () => {
   });
   it("env overrides what setup stored", () => {
     const stored = { plan_id: "plan_db", app_id: "app_db", webhook_secret: encryptSecret("whsec_db", KEY) };
-    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_db", webhookSecret: "whsec_db", clientId: "app_db" });
+    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_db", webhookSecret: "whsec_db", clientId: "app_db", redirectUri: null });
     expect(resolveRuntime(stored, { WHOP_API_KEY: KEY, WHOP_PLAN_INSIDIR: "plan_env", WHOP_WEBHOOK_SECRET: "whsec_env", WHOP_CLIENT_ID: "app_env" }))
-      .toEqual({ planId: "plan_env", webhookSecret: "whsec_env", clientId: "app_env" });
+      .toEqual({ planId: "plan_env", webhookSecret: "whsec_env", clientId: "app_env", redirectUri: null });
+  });
+  it("redirect URI: WHOP_REDIRECT_URI, else the stored one", () => {
+    const stored = { redirect_uri: "https://insidir.com/login/callback" };
+    expect(resolveRuntime(stored, {}).redirectUri).toBe("https://insidir.com/login/callback");
+    expect(resolveRuntime(stored, { WHOP_REDIRECT_URI: "https://insidir.com/reset/callback" }).redirectUri).toBe("https://insidir.com/reset/callback");
+    expect(resolveRuntime({}, {}).redirectUri).toBeNull();
   });
 });
 
@@ -91,12 +97,12 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     expect(w.s.webhooks[0]).toMatchObject({ url: "https://insidir.com/api/billing/webhook", events: [...EVENTS], resource_id: "biz_1" });
     // The login app is found by name, its id stored, and never changed.
     expect(w.s.apps).toEqual([{ id: "app_login", name: "Insidir", redirect_uris: ["https://insidir.com/reset/callback"] }]);
-    expect(logs).toContain("Whop login app app_login: redirect URI https://insidir.com/reset/callback is registered.");
+    expect(logs).toContain("Whop login app app_login: redirect URI https://insidir.com/reset/callback is registered (stored as redirect_uri).");
     const stored = await readConfig(db);
     expect(stored.plan_id).toBe("plan_good");
     expect(stored.webhook_secret).not.toContain("whsec_");
     expect(decryptSecret(stored.webhook_secret!, KEY)).toBe("whsec_secret1");
-    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_good", webhookSecret: "whsec_secret1", clientId: "app_login" });
+    expect(resolveRuntime(stored, { WHOP_API_KEY: KEY })).toEqual({ planId: "plan_good", webhookSecret: "whsec_secret1", clientId: "app_login", redirectUri: "https://insidir.com/reset/callback" });
 
     const before = w.s.calls.length;
     const r2 = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
@@ -133,12 +139,30 @@ describe.skipIf(!URL0)("whop:setup against a stand-in Whop", () => {
     for (const l of logs) expect(l).not.toMatch(/whsec_|apik_/);
   });
 
-  it("a login app without /reset/callback: nothing is changed in Whop, and the log says exactly which URI to add", async () => {
+  it("a login app with only /login/callback (production): stored as redirect_uri, nothing changed in Whop", async () => {
     const w = fakeWhop([GOOD], ["https://insidir.com/login/callback"]);
     const logs: string[] = [];
     const r = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
-    expect(r.app).toBe("missing redirect");
+    expect(r.app).toBe("ok");
+    expect((await readConfig(db)).redirect_uri).toBe("https://insidir.com/login/callback");
     expect(w.s.calls.filter(c => c.includes("/apps") && !c.startsWith("GET"))).toEqual([]);
-    expect(logs).toContain("Whop login app app_login: https://insidir.com/reset/callback is not one of its redirect URIs (https://insidir.com/login/callback). Add exactly https://insidir.com/reset/callback in the app's OAuth settings on Whop.");
+    expect(logs).toContain("Whop login app app_login: redirect URI https://insidir.com/login/callback is registered (stored as redirect_uri).");
+  });
+
+  it("both registered: /login/callback is preferred", async () => {
+    const w = fakeWhop([GOOD], ["https://insidir.com/reset/callback", "https://insidir.com/login/callback"]);
+    await runWhopSetup({ db, env: ENV, fetch: w.f, log: () => undefined });
+    expect((await readConfig(db)).redirect_uri).toBe("https://insidir.com/login/callback");
+  });
+
+  it("neither registered: \"missing redirect\" (the deploy script fails on it), nothing changed in Whop, the log says which URI to add", async () => {
+    const w = fakeWhop([GOOD], ["https://insidir.com/auth/whop"]);
+    const logs: string[] = [];
+    const r = await runWhopSetup({ db, env: ENV, fetch: w.f, log: l => logs.push(l) });
+    expect(r.app).toBe("missing redirect");
+    expect(r.line).toBe("Whop setup: plan ok, webhook ok, login app missing redirect");
+    expect((await readConfig(db)).redirect_uri).toBeUndefined();
+    expect(w.s.calls.filter(c => c.includes("/apps") && !c.startsWith("GET"))).toEqual([]);
+    expect(logs).toContain("Whop login app app_login: neither https://insidir.com/login/callback nor https://insidir.com/reset/callback is one of its redirect URIs (https://insidir.com/auth/whop). Add exactly https://insidir.com/login/callback in the app's OAuth settings on Whop.");
   });
 });

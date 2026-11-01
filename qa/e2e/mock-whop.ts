@@ -10,7 +10,9 @@
  *   GET  /api/v1/memberships, GET /api/v1/memberships/:id, POST /api/v1/memberships/:id/cancel, GET /api/v1/payments/:id
  *   GET  /oauth/authorize          Whop's sign-in: signs in as whoever POST /__whop_user set ({ email, name }; their
  *                                  Whop user id is whopUserFor(email), the same one /__pay uses) and redirects back
- *                                  with a code; it checks our login app, /reset/callback, PKCE S256 and the scope.
+ *                                  with a code; it checks our login app, the redirect URI (only /login/callback is
+ *                                  registered, like production), PKCE S256 and the scope. The token exchange must send
+ *                                  the same redirect_uri as the authorize request.
  *                                  POST /oauth/token (JSON; needs the client secret and the PKCE verifier),
  *                                  GET /oauth/userinfo (sub, email, name, picture), POST /oauth/revoke
  *   GET  /api/v1/users/:id/access/:product   Whop's access check: has_access while a membership on it is active or trialing
@@ -48,7 +50,7 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
   let payments: Payment[] = [];
   const webhooks: Array<{ type: string; status: number }> = [];
   let whopUser: { email: string; name: string | null } | null = null;
-  const codes = new Map<string, { challenge: string; user: { email: string; name: string | null } }>();
+  const codes = new Map<string, { challenge: string; user: { email: string; name: string | null }; redirect: string }>();
   const tokens = new Map<string, { email: string; name: string | null }>();
 
   const body = (req: IncomingMessage): Promise<string> => new Promise(ok => { let b = ""; req.on("data", c => (b += c)); req.on("end", () => ok(b)); });
@@ -127,10 +129,10 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
       if (req.method === "POST" && p === "/__whop_user") { whopUser = JSON.parse(await body(req)) as typeof whopUser; return send(res, 200, {}); }
       if (req.method === "GET" && p === "/oauth/authorize") {
         const sp = url.searchParams;
-        if (!whopUser || sp.get("client_id") !== MOCK_CLIENT.id || !sp.get("redirect_uri")?.endsWith("/reset/callback") || sp.get("code_challenge_method") !== "S256"
-          || !sp.get("code_challenge") || sp.get("scope") !== "openid profile email" || sp.get("response_type") !== "code") return send(res, 400, { error: "invalid_request" });
+        if (!whopUser || sp.get("client_id") !== MOCK_CLIENT.id || !sp.get("redirect_uri")?.endsWith("/login/callback") || sp.get("code_challenge_method") !== "S256"
+          || !sp.get("code_challenge") || sp.get("scope") !== "openid profile email" || sp.get("response_type") !== "code") return send(res, 400, { error: "invalid_request", error_description: sp.get("redirect_uri")?.endsWith("/login/callback") ? "bad request" : "redirect_uri is invalid" });
         const code = "wcode_" + randomUUID().slice(0, 8);
-        codes.set(code, { challenge: sp.get("code_challenge")!, user: whopUser });
+        codes.set(code, { challenge: sp.get("code_challenge")!, user: whopUser, redirect: sp.get("redirect_uri")! });
         const back = new URL(sp.get("redirect_uri")!);
         back.searchParams.set("code", code);
         back.searchParams.set("state", sp.get("state") ?? "");
@@ -142,7 +144,7 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
         if (b.client_id !== MOCK_CLIENT.id || b.client_secret !== MOCK_CLIENT.secret) return send(res, 401, { error: "invalid_client", error_description: "Client authentication failed." });
         const c = codes.get(b.code ?? "");
         const challenge = createHash("sha256").update(b.code_verifier ?? "").digest("base64url");
-        if (!c || c.challenge !== challenge || !b.redirect_uri?.endsWith("/reset/callback")) return send(res, 400, { error: "invalid_grant", error_description: "Invalid authorization code." });
+        if (!c || c.challenge !== challenge || b.redirect_uri !== c.redirect) return send(res, 400, { error: "invalid_grant", error_description: "Invalid authorization code." });
         codes.delete(b.code!);
         const at = "at_" + randomUUID();
         tokens.set(at, c.user);
