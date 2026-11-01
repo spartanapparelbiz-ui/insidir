@@ -1,6 +1,7 @@
 /* GET /api/moves?tab=sports|markets&min=10000&league=NFL&before=<ms>&limit=30&all=1&tracker=fed-rates
  * GET /api/moves?best=24h  the largest position of the last 24 hours (as this viewer sees them: visitors 30 minutes
  * late) whose headline reads cleanly (no quoted question, no "Yes on"), for the pay prompt.
+ * bets=1 keeps Polymarket and Kalshi positions only (the sign-up pages' strip: no SEC filings).
  * all=1 keeps the low-interest markets the default feed leaves out; tracker narrows to one tracker's moves.
  * The feed, gated by plan and region on the server (lib/moves/feed.ts). A tab that isn't live (Crypto; Stocks until
  * it is in FEATURES_READY) returns an empty list. */
@@ -11,6 +12,7 @@ import { feedFor, feedStatus } from "@/lib/moves/feed";
 import { cleanHeadline } from "@/lib/moves/headline";
 import { LEAGUES, type League, type Tab } from "@/lib/moves/types";
 import { liveTabs } from "@/lib/features";
+import { sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items: best ? [best] : [] }, { headers: { "Cache-Control": "no-store" } });
   }
   const [items, status] = await Promise.all([
-    feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, min, league: league && LEAGUES.includes(league) ? league : undefined, leagues, categories, before, limit, all, tracker }, now),
+    feedFor(db, viewer.plan, viewer.region, { tab: tab ?? undefined, ...(p.get("bets") === "1" ? { where: sql`terminal.moves.source in ('polymarket', 'kalshi')` } : {}), min, league: league && LEAGUES.includes(league) ? league : undefined, leagues, categories, before, limit, all, tracker }, now),
     feedStatus(db, now, tab ?? undefined),
   ]);
   return NextResponse.json({ items, status }, { headers: { "Cache-Control": "no-store" } });

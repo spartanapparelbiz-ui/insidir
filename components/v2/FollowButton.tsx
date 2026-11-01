@@ -1,5 +1,6 @@
 "use client";
-/* Follow / Following on a trader, market, insider, company or fund (lib/follows.ts). Free viewers see it locked (lock icon); tapping opens the lock sheet; when following
+/* Copy / Copying on a wallet or tracker (a copy: lib/copies), Follow / Following on a market, insider, company or fund
+ * (lib/follows.ts). Free viewers see it locked (lock icon); tapping opens the lock sheet; when following
  * isn't ready on production it is the Coming soon item instead. */
 import { useState } from "react";
 import { LockButton } from "@/components/lock/Lock";
@@ -8,7 +9,9 @@ import { ComingSoon } from "./ComingSoon";
 
 export type FollowState = "locked" | "soon" | "off" | "on";
 
-export function FollowButton({ kind, target, state: initial, trialHref, label = "Follow" }: { kind: FollowKind; target: string; state: FollowState; trialHref: string; label?: string }) {
+export function FollowButton({ kind, target, state: initial, trialHref, label: given }: { kind: FollowKind; target: string; state: FollowState; trialHref: string; label?: string }) {
+  const copy = kind === "trader" || kind === "tracker";
+  const label = given ?? (copy ? "Copy" : "Follow");
   const [state, setState] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export function FollowButton({ kind, target, state: initial, trialHref, label = 
   return (
     <>
       <button type="button" className={`btn ${state === "on" ? "btn--secondary follow--on" : "btn--secondary"}`} aria-pressed={state === "on"} disabled={busy} onClick={() => void toggle()}>
-        {state === "on" ? "Following" : label}
+        {state === "on" ? (copy ? "Copying" : "Following") : label}
       </button>
       {err ? <span className="follow__err" role="alert">{err}</span> : null}
     </>

@@ -1,5 +1,5 @@
 "use client";
-/* The sign-up pages' live strip, over the photo: 3 real large positions (artwork, amount, outcome, result), 30 minutes
+/* The sign-up pages' live strip, over the photo: 3 real large positions on Polymarket and Kalshi (artwork, amount, outcome, result), 30 minutes
  * late as visitors see them (GET /api/moves), refreshed every 30 seconds. */
 import { useEffect, useState } from "react";
 import { MoveArt } from "@/components/MoveArt";
@@ -12,7 +12,7 @@ export function LiveStrip({ initial }: { initial: StripItem[] }) {
   const [items, setItems] = useState(initial);
   useEffect(() => {
     const t = setInterval(async () => {
-      const r = await fetch("/api/moves?limit=3&min=25000", { cache: "no-store" }).then(x => x.json() as Promise<{ items?: StripItem[] }>).catch(() => null);
+      const r = await fetch("/api/moves?limit=3&min=25000&bets=1", { cache: "no-store" }).then(x => x.json() as Promise<{ items?: StripItem[] }>).catch(() => null);
       if (r?.items?.length) setItems(r.items.slice(0, 3));
     }, 30_000);
     return () => clearInterval(t);

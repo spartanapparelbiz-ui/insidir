@@ -46,6 +46,8 @@ export interface UserSettings {
   noLifecycle?: boolean;
   /** Push alerts for new splits of SPLIT_ALERT_GAP+ points (lib/smart/splits.ts); on unless turned off. */
   alertSplits?: boolean;
+  /** Dollars per copied move (lib/copies): 10, 50 or 100; DEFAULT_COPY_SIZE when unset. */
+  copySize?: 10 | 50 | 100;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {

@@ -3,94 +3,83 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: six sections, the hero final on first paint, market tabs, Open now as cards on phones, #1 expanded, proof links, one pricing card; no pop-up, nothing counts up", async ({ page }) => {
+test("landing: the copy pitch, final on first paint: hero, three steps, the live top wallet, new moves, the $1 block, FAQ; one CTA; no stocks; no pop-up, nothing counts up", async ({ page }) => {
+  const HEAD = "Insidir finds the wallets that actually win on Polymarket and Kalshi. Pick one, and every bet they make shows up for you.";
   // The hero as the server sends it, before any script runs.
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain("Follow the big money.");
-  expect(html).not.toMatch(/data-count|hero3__h rise|hero3__sub rise|hero3__acts rise/);
+  expect(html).toContain(HEAD);
+  expect(html).not.toMatch(/data-count|hero3__h[^"]* rise|hero3__acts rise/);
   await page.goto("/");
-  const h1 = page.getByRole("heading", { level: 1, name: "Follow the big money." });
+  const h1 = page.getByRole("heading", { level: 1, name: HEAD });
   await expect(h1).toBeVisible();
   expect(await h1.evaluate(e => getComputedStyle(e).opacity)).toBe("1");
-  await expect(page.getByTestId("hero-sub")).toHaveText("Insidir analyzes every large position on Polymarket, Kalshi and SEC filings: who placed it, their verified record, and what it means. Within minutes.");
   const cta = page.locator('[data-cta="hero"]');
-  await expect(cta).toHaveText("Start your 7-day trial");
-  await expect(page.getByRole("link", { name: /^Explore trackers/ })).toHaveAttribute("href", "/trackers");
-  await expect(page.getByText("$1 for the first week, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.").first()).toBeVisible();
+  await expect(cta).toHaveText("Start for $1");
   const vh = page.viewportSize()!.height;
   for (const el of [h1, cta]) expect((await el.boundingBox())!.y + 10).toBeLessThan(vh);
-  // Market tabs: Sports first by default, one card each.
-  await expect(page.getByRole("tab")).toHaveText(["Sports", "Prediction markets", "Stocks"]);
-  await expect(page.getByRole("tab", { name: "Sports" })).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("tab", { name: "Stocks" }).click();
-  await expect(page.getByRole("tabpanel", { name: "Stocks" })).toBeVisible();
-  // Six sections, in order; the old ones are gone.
+  // Three steps, then the live sections, in order.
+  await expect(page.locator(".steps__h")).toHaveText(["Pick a winner.", "Copy their bets.", "Watch your number."]);
+  expect(await page.locator(".steps__h a").first().evaluate(e => getComputedStyle(e).textDecorationLine)).toBe("none");
+  for (const id of ["top-wallet", "open-now"]) await page.getByTestId(id).waitFor();
   const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  expect(h2s.slice(0, 4)).toEqual(["Open now from winning trackers", "Leaderboard", "How Insidir works", "Where the data comes from"]);
-  expect(h2s).toContain("Pricing");
-  for (const gone of ["Every position, analyzed.", "Insidir, live", "Track record", "A live portfolio of big money"]) expect(h2s, gone).not.toContain(gone);
-  for (const [name, href] of [["Every position, analyzed", "/feed"], ["The whole track record", "/results"], ["Insidir, live: freshness and checks", "/data"]] as const) {
-    await expect(page.getByTestId("proof-links").getByRole("link", { name: new RegExp(`^${name}`) })).toHaveAttribute("href", href);
-  }
-  // Open now: the newest from winning trackers, how many more; on phones each row is a card.
+  expect(h2s).toEqual(["How it works", "The top wallet right now", "New moves from the winners", "$1 for your first week", "Questions"]);
+  // The top wallet: E2E-Follow, by its short address only, with its real record (32 settled: 20 won, 12 lost at 46¢).
+  const top = page.getByTestId("top-wallet");
+  await expect(top.locator(".mcard__h")).toHaveText("0xe2…dd");
+  await expect(top).not.toContainText("E2E-Follow");
+  await expect(top).toContainText("Polymarket wallet");
+  await expect(top.locator(".mcard__facts dd")).toHaveText(["32", "20", "12"]);
+  await expect(top).toContainText("$100 on every position since we started tracking: $3,200 in,");
+  // New moves: the newest from the winners a visitor may see (30 minutes late), and how many more.
   const row = page.getByTestId("open-now").locator("tbody tr.otable__row").first();
   await expect(row).toContainText("Tennis");
   await expect(page.getByTestId("open-more")).toContainText("1 more open.");
-  if (page.viewportSize()!.width < 640) {
-    expect(await row.evaluate(e => getComputedStyle(e).display)).toBe("grid");
-    expect(await page.locator(".otable thead").evaluate(e => (e as HTMLElement).getBoundingClientRect().height)).toBeLessThanOrEqual(1);
-  }
-  // The leaderboard: Tennis is the one tracker with 30+ settled, its row expanded into its portfolio.
-  await expect(page.getByTestId("home-board").locator(".board__name").first()).toHaveText("Tennis");
-  await expect(page.getByTestId("board-portfolio")).toBeVisible();
-  await expect(page.locator(".steps__item")).toHaveCount(3);
-  expect(await page.locator(".steps__h a").first().evaluate(e => getComputedStyle(e).textDecorationLine)).toBe("none");
-  // Pricing: one card with the button.
+  if (page.viewportSize()!.width < 640) expect(await row.evaluate(e => getComputedStyle(e).display)).toBe("grid");
+  // The $1 block: one card, the copy product's four lines, the button.
   const plan = page.getByTestId("home-plan");
   await expect(plan).toContainText("$39/mo");
   await expect(plan).toContainText("$1 for your first week");
   await expect(plan.locator("li")).toHaveCount(4);
   await expect(plan.getByRole("link", { name: "Start for $1" })).toBeVisible();
+  // One CTA everywhere: every primary button on the page says Start for $1.
+  for (const t of await page.locator("main .btn--primary, header .btn--primary").allInnerTexts()) expect(t.trim()).toBe("Start for $1");
+  // Stocks and crypto are out of the pitch: the page and the nav.
+  const text = await page.locator("main").innerText();
+  expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
+  expect(text).not.toMatch(/guaranteed|risk-free/i);
+  const nav = await page.locator("header.nav").innerText();
+  expect(nav).not.toMatch(/stocks?|crypto/i);
+  for (const gone of ["Leaderboard", "Where the data comes from", "Every position, analyzed."]) expect(h2s, gone).not.toContain(gone);
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await expect(page.locator(".rbar")).toHaveCount(0);
   // No pop-up, no old offer bars; every figure stamped; no sideways scroll.
   await page.waitForTimeout(1500);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
-  await expect(page.locator(".rpill")).toHaveCount(0);
   expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
   expect(await page.locator("main [data-asof]").count()).toBeGreaterThanOrEqual(2);
-  await expect(page.locator(".asof").first()).toContainText(/As of \d{1,2}:\d{2}\s?(AM|PM) ET/);
   await expect(page.locator(".asof").first()).toContainText("30-min delay");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("landing from a stock account (?ref=insidirfinance): the insider-trading line, Stocks first, a stock Research example; the ref is kept for attribution", async ({ page, context }) => {
+test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; /stocks and /insider-trading pages stay live by URL and in the sitemaps", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByTestId("hero-sub")).toHaveText(/^See when CEOs buy and sell their own stock\./);
-  await expect(page.getByRole("tab").first()).toHaveText("Stocks");
-  await expect(page.getByRole("tab", { name: "Stocks" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("#rbar-q")).toHaveAttribute("placeholder", /CEO purchases|insider|Director/i);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Insidir finds the wallets that actually win/);
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
-  // Later visits without the ref keep it (first touch); an unknown ref gets the standard page.
-  await page.goto("/");
-  await expect(page.getByRole("tab").first()).toHaveText("Stocks");
-  await context.clearCookies();
-  await page.goto("/?ref=someoneelse");
-  await expect(page.getByTestId("hero-sub")).toHaveText(/^Insidir analyzes every large position/);
-  await expect(page.getByRole("tab").first()).toHaveText("Sports");
+  for (const path of ["/stocks", "/insider-trading/EXDV"]) expect((await page.request.get(path)).status(), path).toBe(200);
+  expect(await (await page.request.get("/sitemaps/pages.xml")).text()).toContain("/stocks</loc>");
+  expect(await (await page.request.get("/sitemaps/companies.xml")).text()).toContain("/insider-trading/");
 });
 
-test("home hero: Start your 7-day trial is recorded and opens /start; Explore trackers lists every tracker with its record or the record being built", async ({ page }) => {
+test("home hero: Start for $1 is recorded and opens /start; the trackers page lists every tracker with its record or the record being built", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("hero_cta_click");
   await page.goto("/");
   await page.locator('[data-cta="hero"]').click();
   await expect(page).toHaveURL(/\/start(\?|$)/);
   await expect.poll(() => count("hero_cta_click")).toBe(before + 1);
-  await page.goto("/");
-  await page.getByRole("link", { name: /^Explore trackers/ }).click();
-  await expect(page).toHaveURL(/\/trackers$/);
   await page.goto("/trackers");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
   // Every tracker but Crypto Prices (its tab isn't live), in four groups.
@@ -109,7 +98,7 @@ test("home hero: Start your 7-day trial is recorded and opens /start; Explore tr
   // Fewer than 20 settled moves: every rate says so instead of a number.
   await expect(page.getByText(/Not enough data yet: the chart starts at 20 settled positions/)).toBeVisible();
   await expect(page.locator(".tile").filter({ has: page.locator("dt", { hasText: /^Win rate$/ }) })).toContainText("Not enough data yet");
-  await expect(page.getByRole("button", { name: /Follow/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Copy/ }).first()).toBeVisible();
 });
 
 test("one font: headlines, body text, buttons and cards are all Schibsted Grotesk, and it loads", async ({ page }) => {
@@ -148,8 +137,8 @@ test("member feed: live moves with the record line; following a trader shows on 
   await expect(page.locator(".move__live").first()).toContainText(/^Entry \d+%/);
   await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
   await q("delete from terminal.follows");
-  await page.locator(".move").first().getByRole("button", { name: "Follow" }).click();
-  await expect(page.locator(".move").first().getByRole("button", { name: "Following" })).toBeVisible();
+  await page.locator(".move").first().getByRole("button", { name: "Copy" }).click();
+  await expect(page.locator(".move").first().getByRole("button", { name: "Copying" })).toBeVisible();
   await page.goto("/following");
   await expect(page.locator(".flist").getByRole("link", { name: "E2E-Top" })).toBeVisible();
   // Their recent moves are in the Following feed too.

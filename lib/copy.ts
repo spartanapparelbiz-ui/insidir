@@ -13,9 +13,9 @@ export const COMPANY = { name: "Aethric LLC", place: "Pompano Beach, FL", email:
 
 /** The thin bar above the nav, and the one paid call to action (docs/INSIDIR-V2.md §6). */
 /** What Insidir is, in one plain sentence: the first FAQ answer, the meta description and link previews. */
-export const WHAT_IS = "Insidir tracks large positions on sports, prediction markets and insider stock trades as they are opened: the account, the size, and its record.";
+export const WHAT_IS = "Insidir finds the wallets that actually win on Polymarket and Kalshi and shows you every bet they make, with the price they got and the price you can still get.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
-export const WHAT_IS_TITLE = "Insidir: live trackers of large positions on prediction markets and insider stock trades";
+export const WHAT_IS_TITLE = "Insidir: copy the winners on Polymarket and Kalshi";
 /** The one paid call to action, everywhere (buttons, the bar above the nav, sheets, emails, share cards): the first
  *  7 days for $1 (lib/plans.ts TRIAL), then $39/mo. */
 export const GET_CTA = "Try 7 days for $1";
@@ -59,3 +59,11 @@ export const UNLOCK = GET_CTA;
 export const OPEN_TERMINAL = "See today's live deals";
 /** Change any member setting: confirmed with this toast. */
 export const SAVED = "Saved";
+
+/** What a member gets, in the copy product's words: the home page's $1 block, /pricing and /start. */
+export const INCLUDED = [
+  "Every copyable winner on Polymarket and Kalshi, ranked by the record you could have followed",
+  "Every new bet from the winners you copy, live, with the price they got and the price you can still get",
+  "Your P&L at your size since you started copying, and a weekly recap",
+  "In the US, Open goes to the same market on Kalshi",
+] as const;

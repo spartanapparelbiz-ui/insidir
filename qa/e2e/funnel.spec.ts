@@ -47,9 +47,9 @@ test("free access: Whop sign-in makes the account; a full member with no payment
 
   // A full member: the feed, never /start, no sign-up pop-up, no sticky bar.
   // A new account goes through onboarding first, like any new member.
-  await expect(page.getByRole("heading", { name: "You're in." })).toBeVisible();
-  await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/\/open$/);
+  await expect(page.getByRole("heading", { name: "Pick a winner to copy" })).toBeVisible();
+  await page.getByRole("button", { name: "Skip for now" }).click();
+  await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/start");
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/");
@@ -98,9 +98,9 @@ test("free access: Whop sign-in makes the account; a full member with no payment
 
 test("/start: one screen, the price, three checkmarks, one Continue, the Whop line, and the live strip", async ({ page }) => {
   await page.goto("/start");
-  await expect(page.getByRole("heading", { level: 1, name: "Follow the big money." })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Copy the winners." })).toBeVisible();
   await expect(page.getByText("$1 for your first week, then $39/month. Cancel anytime.")).toBeVisible();
-  await expect(page.getByTestId("start-list").locator("li")).toHaveText(["Every large position across sports, prediction markets and stocks", "Verified records and followable returns for every tracker and trader", "What the winning trackers hold right now"]);
+  await expect(page.getByTestId("start-list").locator("li")).toHaveText(["Every copyable winner on Polymarket and Kalshi, ranked by the record you could have followed", "Every new bet from the winners you copy, live, with the price they got and the price you can still get", "Your P&L at your size since you started copying, and a weekly recap"]);
   const btn = page.getByTestId("continue");
   await expect(btn).toHaveText("Continue");
   expect((await btn.boundingBox())!.height).toBeGreaterThanOrEqual(52);

@@ -1,4 +1,4 @@
-/* Pricing (/pricing): one plan. "Follow the big money." on the left and the plan card on the right ($39/month, the $1
+/* Pricing (/pricing): one plan. "Copy the winners." on the left and the plan card on the right ($39/month, the $1
  * first week, the black "Start for $1", five checkmarks), then visitor vs. member, this week's live numbers, and
  * billing questions. Every number is read from the database; none is typed in. Billing is Whop's. */
 import type { Metadata } from "next";
@@ -11,31 +11,24 @@ import { RevealGroup } from "@/components/motion/Reveal";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
-import { topTrackers } from "@/lib/follow/board";
+import { copyable } from "@/lib/copies/store";
 import { hundredLine, roiText } from "@/lib/follow/math";
 import { proofStrip, type Proof } from "@/lib/home/proof";
 import { memo } from "@/lib/memo";
-import { PAST } from "@/lib/copy";
+import { INCLUDED, PAST } from "@/lib/copy";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
-import { trackerStats } from "@/lib/trackers-store";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: every open position from winning trackers live, followable records for every tracker and trader, analyst notes, Research and Following. Your first week is $1. Cancel anytime.` };
+export const metadata: Metadata = { title: "Pricing", description: `Insidir is $${PLANS.insidir.price}/month: copy the wallets that win on Polymarket and Kalshi, see every bet they make live, and your P&L at your size. Your first week is $1. Cancel anytime.` };
 
-const PLAN_LIST = [
-  "Every open position from winning trackers, live",
-  "Followable records for every tracker and trader",
-  "Analyst notes on every position",
-  "Research over all of Insidir's data",
-  "The leaderboard and Following",
-];
+const PLAN_LIST = [...INCLUDED, "A one-line analyst note on every move"];
 
 const COMPARE: Array<[string, string, string]> = [
-  ["Large positions", "30 minutes late", "Live"],
-  ["Open positions from winning trackers", "3", "All of them"],
-  ["Research", "3 questions a day", "Unlimited, with CSV export"],
-  ["Analyst notes", "On delayed positions", "On live positions"],
-  ["Following", "—", "Yes"],
+  ["The winners and their records", "Yes", "Yes"],
+  ["New moves from the winners", "3, 30 minutes late", "All of them, live"],
+  ["Copy a winner", "—", "Yes"],
+  ["Your P&L at your size, weekly recap", "—", "Yes"],
+  ["Open on Kalshi in the US", "—", "Yes"],
 ];
 
 const BILLING = [
@@ -53,7 +46,7 @@ function PlanCard({ href, paid }: { href: string; paid: boolean }) {
       <p className="plan3__name">Insidir</p>
       <p className="plan3__price"><b className="num">${PLANS.insidir.price}</b><span>/month</span></p>
       <p className="plan3__trial">Your first week is ${TRIAL.fee}. Cancel anytime.</p>
-      {paid ? <Link className="btn btn--primary plan3__cta" href="/open">Open Insidir</Link>
+      {paid ? <Link className="btn btn--primary plan3__cta" href="/">My copies</Link>
         : <Link className="btn btn--primary plan3__cta" href={href} data-checkout="pricing">Start for ${TRIAL.fee}</Link>}
       <p className="plan3__fine">Secure sign-in and payments by Whop.</p>
       <ul className="plan3__list">{PLAN_LIST.map(t => <li key={t}><Check />{t}</li>)}</ul>
@@ -61,17 +54,17 @@ function PlanCard({ href, paid }: { href: string; paid: boolean }) {
   );
 }
 
-interface Week { proof: Proof | null; best: { name: string; slug: string; roi: string; line: string } | null; at: number }
+interface Week { proof: Proof | null; copyable: number; best: { name: string; href: string; roi: string; line: string } | null; at: number }
 
 async function thisWeek(now: number): Promise<Week> {
-  if (!hasDatabase()) return { proof: null, best: null, at: now };
+  if (!hasDatabase()) return { proof: null, copyable: 0, best: null, at: now };
   const db = getDb();
-  const [proof, stats] = await Promise.all([
+  const [proof, list] = await Promise.all([
     memo("home:proof", 20_000, () => proofStrip(db, now)).catch(() => null),
-    memo("home:stats", 20_000, () => trackerStats(db, now)).catch(() => null),
+    memo("home:copyable", 20_000, () => copyable(db, now)).catch(() => []),
   ]);
-  const top = stats ? topTrackers(stats, 1)[0] : undefined;
-  return { proof, at: now, best: top ? { name: top.t.name, slug: top.t.slug, roi: roiText(top.r.net, top.r.staked), line: hundredLine(top.r) } : null };
+  const top = list[0];
+  return { proof, copyable: list.length, at: now, best: top ? { name: top.label, href: top.kind === "trader" ? `/p/${top.target}` : `/trackers/${top.target}`, roi: roiText(top.record.net, top.record.staked), line: hundredLine(top.record) } : null };
 }
 
 export default async function PricingPage() {
@@ -82,15 +75,15 @@ export default async function PricingPage() {
   const w = await thisWeek(now);
   const a = w.proof?.accuracy;
   const items = [
-    w.proof ? { label: "Large positions tracked, last 7 days", value: w.proof.positionsWeek.toLocaleString("en-US"), testid: "week-positions" } : null,
-    w.best ? { label: `Best tracker: ${w.best.name}`, value: w.best.roi, note: <>followable ROI · {w.best.line} <Link href={`/trackers/${w.best.slug}`}>See it</Link></>, testid: "week-best" } : null,
+    w.copyable ? { label: "Copyable winners right now", value: w.copyable.toLocaleString("en-US"), note: "wallets and trackers with 30+ settled positions", testid: "week-positions" } : null,
+    w.best ? { label: `Best to copy: ${w.best.name}`, value: w.best.roi, note: <>followable return · {w.best.line} <Link href={w.best.href}>See it</Link></>, testid: "week-best" } : null,
     a ? { label: "Last accuracy check", value: `${a.ok} of ${a.checked}`, note: "positions re-read from the source matched", testid: "week-check" } : null,
   ].filter(<T,>(x: T | null): x is T => x !== null);
   return (
     <>
       <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/pricing" trialHref={href} />
       <main className="lp3 pgpage">
-        <PageHead kicker="Pricing" title="Follow the big money." sub="One plan with everything in it. Every large position on Polymarket, Kalshi and SEC filings, the record of whoever placed it, and what following it would have made."
+        <PageHead kicker="Pricing" title="Copy the winners." sub="One plan. Pick a wallet or tracker with a real record on Polymarket and Kalshi, and every bet it makes shows up for you, with what copying it has made at your size."
           aside={<PlanCard href={href} paid={paid} />} />
 
         <Sec id="cmp-h" title="Visitor vs. member">
@@ -108,7 +101,7 @@ export default async function PricingPage() {
               {items.map(i => <div key={i.testid} className="proof__item wk__item" data-testid={i.testid}><dt>{i.label}</dt><dd className="num">{i.value}</dd>{i.note ? <dd className="proof__note">{i.note}</dd> : null}</div>)}
             </RevealGroup>
             <p className="tcol__note">{PAST}</p>
-            <AsOf at={w.at} live sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.sec, SOURCES.methodology]} />
+            <AsOf at={w.at} live sources={[SOURCES.polymarket, SOURCES.kalshi, SOURCES.methodology]} />
           </Sec>
         ) : null}
 

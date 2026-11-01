@@ -58,15 +58,17 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
     MOCK_USER.sub = (await q<{ id: string }>("select id from terminal.users where email = $1", [EMAIL(w)]))[0]!.id;
 
-    // Onboarding: trackers by followable ROI, the top three with a record ticked; Follow lands on Following.
-    await expect(page.getByRole("heading", { name: "You're in." })).toBeVisible();
+    // Onboarding is one step: pick a winner to copy (the best one chosen); Copy lands on My copies.
+    await expect(page.getByRole("heading", { name: "Pick a winner to copy" })).toBeVisible();
     await shot("onboarding-1");
-    const ticked = await page.locator("[data-testid=onboarding] input:checked").evaluateAll(els => els.map(e => (e as HTMLInputElement).value));
-    expect(ticked.length).toBeLessThanOrEqual(3);
-    await page.getByRole("button", { name: "Start" }).click();
-    await expect(page).toHaveURL(/\/open$/);
-    await expect.poll(async () => (await q<{ target: string }>("select target from terminal.follows where user_id = $1 and kind = 'tracker' order by target", [MOCK_USER.sub])).map(r => r.target)).toEqual([...ticked].sort());
-    await shot("following-first");
+    const picked = await page.locator("[data-testid=copy-picker] input:checked").evaluateAll(els => els.map(e => (e as HTMLInputElement).value));
+    expect(picked).toHaveLength(1);
+    await page.getByRole("button", { name: "Copy this winner" }).click();
+    await expect(page).toHaveURL(/localhost:\d+\/$/);
+    const [kind, target] = picked[0]!.split(":");
+    await expect.poll(async () => (await q<{ kind: string; target: string }>("select kind, target from terminal.follows where user_id = $1", [MOCK_USER.sub])).map(r => `${r.kind}:${r.target}`)).toEqual([`${kind}:${target}`]);
+    await expect(page.getByTestId("copy-pnl").first()).toContainText("Copying");
+    await shot("my-copies-first");
 
     // Alerts: push on this device, a real test alert, then the history.
     await page.goto("/alerts");

@@ -87,7 +87,7 @@ test("/top: ranked by followable ROI on 30+ settled, each with its $100 line; ho
 
 test("/open: open positions from winning trackers; a visitor sees the newest 30 minutes late and how many more, a member every one", async ({ page, context }) => {
   await page.goto("/open");
-  const rows = page.getByTestId("open-now").locator("tbody tr");
+  const rows = page.getByTestId("open-now").locator("tbody tr.otable__row");
   await expect(rows).toHaveCount(2); // the 5-minute-old one is a member's only
   await expect(rows.first()).toContainText("Tennis");
   await expect(rows.first()).toContainText("+35.9% followable · 32 settled");
@@ -99,7 +99,7 @@ test("/open: open positions from winning trackers; a visitor sees the newest 30 
   await page.screenshot({ path: shotName("open", page), fullPage: true });
   await signIn(context, "pro");
   await page.goto("/open");
-  await expect(page.getByTestId("open-now").locator("tbody tr")).toHaveCount(3);
+  await expect(page.getByTestId("open-now").locator("tbody tr.otable__row")).toHaveCount(3);
   await expect(page.getByTestId("open-more")).toHaveCount(0);
 });
 
@@ -158,7 +158,9 @@ test("a company's insider trading page: every insider trade, newest first, and h
   await page.goto("/insider-trading/exdv");
   await expect(page).toHaveURL("/insider-trading/EXDV");
   await expect(page.getByRole("heading", { level: 1, name: "E2E Fixture Devices" })).toBeVisible();
-  await expect(page.getByTestId("bought-this-month")).toHaveText("1 insider bought this month");
+  // The fixture's buy is dated Oct 22, 2026: "this month" only while it's October 2026 in New York.
+  const month = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "2-digit", timeZone: "America/New_York" }).format(new Date());
+  await expect(page.getByTestId("bought-this-month")).toHaveText(month === "10/2026" ? "1 insider bought this month" : "No insiders bought this month");
   const rows = page.getByRole("table").locator("tbody tr");
   await expect(rows).toHaveCount(1);
   await expect(rows.first().getByRole("link", { name: "Jane Fixture" })).toHaveAttribute("href", "/insiders/888888-jane-fixture");

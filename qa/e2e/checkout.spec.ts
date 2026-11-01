@@ -23,7 +23,7 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
   await page.goto("/pricing");
   await page.locator('[data-checkout="pricing"]').first().click();
   await expect(page).toHaveURL(/\/start$/);
-  await expect(page.getByRole("heading", { name: "Follow the big money." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Copy the winners." })).toBeVisible();
   // Signed out: one button, and who handles sign-in and payment.
   const box = page.getByTestId("start-continue");
   await expect(box.getByRole("link")).toHaveCount(1);
@@ -52,8 +52,8 @@ test("start → Continue (Whop sign-in) → pay → in → sign out → log in �
 
   // In the moment Whop says so: onboarding, then the feed.
   await expect(page).toHaveURL(/\/onboarding$/, { timeout: 20_000 });
-  await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/\/open$/);
+  await page.getByRole("button", { name: "Skip for now" }).click();
+  await expect(page).toHaveURL(/localhost:\d+\/$/);
   expect((await q<{ plan: string }>("select plan from terminal.users where id = $1", [made.id]))[0]!.plan).toBe("insidir");
   const state = await (await whop("/__state")).json() as { payments: Array<{ metadata: Record<string, string> }> };
   expect(state.payments.at(-1)!.metadata).toEqual({ insidir_user_id: made.id });

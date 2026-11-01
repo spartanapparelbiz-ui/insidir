@@ -679,17 +679,7 @@ a.rtable__a:hover span { text-decoration: underline; }
 /* ---------- Home (app/page.tsx) ---------- */
 /* How it works: the step titles are links without the underline. */
 .steps__h a, .steps__h a:hover { color: inherit; text-decoration: none; }
-
-/* The markets as tabs (components/home/MarketTabs.tsx): one readable live card each. */
-.mtabs { margin-top: 56px; }
-@media (min-width: 900px) { .mtabs { margin-top: 72px; } }
-.mtabs__list { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-input); background: var(--bg); width: fit-content; max-width: 100%; margin: 0 auto; overflow-x: auto; }
-.mtabs__tab { flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: calc(var(--r-input) - 4px); background: none; color: var(--muted); font: 600 var(--t15)/1 var(--sans); cursor: pointer; }
-.mtabs__tab.is-on { background: var(--page); color: var(--text); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 12%, transparent); }
-.mtabs__tab:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-.mtabs__panel { max-width: 640px; margin: 20px auto 0; text-align: left; }
-.mtabs__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: 12px; color: var(--muted); font-size: var(--t13); }
-.mtab__empty { padding: 32px 24px; border: 1px solid var(--border); border-radius: var(--r-card); color: var(--muted); text-align: center; }
+/* The live top-wallet card on the home page (app/page.tsx TopWallet). */
 .mcard { display: grid; gap: 10px; padding: 24px; border: 1px solid var(--border); border-radius: var(--r-card); background: var(--page); }
 @media (max-width: 640px) { .mcard { padding: 20px; } }
 .mcard__top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: var(--t13); }
@@ -759,3 +749,69 @@ a.rtable__a:hover span { text-decoration: underline; }
 .hprice__fine { margin-top: 12px; color: var(--muted); font-size: var(--t13); text-align: center; }
 .hprice__fine a { color: inherit; }
 .board__items b { font-weight: 600; white-space: nowrap; }
+
+/* ---------- Copy the winners: My copies, the pick list, the recap (components/copies) ---------- */
+.mycp { padding-top: 40px; padding-bottom: 72px; display: grid; gap: 24px; }
+.mycp__h { font-size: clamp(28px, 4vw, 40px); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+.mycp__h2 { font-size: var(--t20); font-weight: 600; margin: 0 0 12px; }
+.mycp__lead { color: var(--muted); max-width: 60ch; margin: 0; }
+.mycp__pnl { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.mycp__row { padding: 20px 24px; border: 1px solid var(--border); border-radius: var(--r-card); background: var(--bg); }
+.mycp__line { margin: 0; font-size: clamp(20px, 2.6vw, 26px); letter-spacing: -0.01em; }
+.mycp__line b { font-weight: 600; }
+.mycp__sub { margin: 6px 0 0; color: var(--muted); }
+.mycp__fine { color: var(--muted); font-size: 14px; margin: 0; }
+.mycp .pos, .cpick .pos, .recap .pos { color: var(--money-text); }
+.mycp .neg, .cpick .neg, .recap .neg { color: var(--loss-text); }
+.cmoves { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+.cmove { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 24px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.cmove__h { margin: 0; font-weight: 600; }
+.cmove__s { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.cmove__prices { display: flex; gap: 20px; margin: 0; }
+.cmove__prices div { display: grid; gap: 2px; text-align: right; }
+.cmove__prices dt { color: var(--muted); font-size: 13px; }
+.cmove__prices dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cmove__note { grid-column: 1 / -1; margin: 0; color: var(--text); font-size: 15px; }
+.cmove__act { justify-self: end; }
+.cmove__view, .cmove__done { color: var(--muted); font-size: 14px; }
+@media (max-width: 640px) {
+  .cmove { grid-template-columns: minmax(0, 1fr) auto; }
+  .cmove__head { grid-column: 1 / -1; }
+  .cmove__prices div { text-align: left; }
+}
+.copy__empty { color: var(--muted); margin: 0; }
+.cpick__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cpick__row { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 16px 20px; border: 1px solid var(--border); border-radius: var(--r-card); cursor: pointer; min-height: var(--tap); }
+.cpick__row:has(input:checked) { border-color: var(--ink); }
+.cpick__rank { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cpick__main { display: grid; gap: 2px; }
+.cpick__name { font-weight: 600; }
+.cpick__line, .cpick__fig span { color: var(--muted); font-size: 14px; }
+.cpick__fig { display: grid; gap: 2px; text-align: right; max-width: 280px; }
+.cpick__fig b { font-weight: 600; font-size: var(--t20); }
+.cpick__fine { color: var(--muted); font-size: 14px; margin: 16px 0; }
+.cpick__ctas { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .cpick__row { grid-template-columns: auto minmax(0, 1fr); }
+  .cpick__rank { display: none; }
+  .cpick__fig { grid-column: 1 / -1; text-align: left; max-width: none; }
+}
+.recap { padding: 24px; border: 1px solid var(--border); border-radius: var(--r-card); background: var(--bg-alt); display: grid; gap: 12px; }
+.recap__h { margin: 0; font-size: var(--t20); font-weight: 600; }
+.recap__sub, .recap__share { margin: 0; color: var(--muted); font-size: 14px; }
+.recap__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.recap__grid > div { display: grid; gap: 4px; padding: 16px; background: var(--bg); border-radius: var(--r-input); }
+.recap__grid dt { color: var(--muted); font-size: 14px; }
+.recap__grid dd { margin: 0; font-size: clamp(24px, 3vw, 32px); font-weight: 600; font-variant-numeric: tabular-nums; }
+.recap__grid span { color: var(--muted); font-size: 14px; }
+.csize__opts { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+.csize__opt { display: inline-flex; gap: 8px; align-items: center; min-height: var(--tap); }
+/* The home hero's one long sentence, and the top wallet's latest bets. */
+.hero3__h.hero3__h--long { font-size: clamp(30px, 4.6vw, 56px); line-height: 1.1; max-width: 22ch; margin-left: auto; margin-right: auto; }
+.topw { max-width: 720px; }
+.topw__moves { list-style: none; margin: 4px 0 0; padding: 0; border-top: 1px solid var(--border); }
+.topw__moves li { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.topw__h { display: grid; gap: 2px; }
+.topw__h span { color: var(--muted); font-size: var(--t13); }
+.topw__moves b { font-weight: 600; white-space: nowrap; }
+.topw .pos { color: var(--money-text); } .topw .neg { color: var(--loss-text); }

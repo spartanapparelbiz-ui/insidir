@@ -15,8 +15,8 @@ export default async function OpengraphImage() {
         <img src={top} width={1200} height={STRIP_H.site} style={{ display: "flex" }} />
         <div style={{ display: "flex", flexGrow: 1, flexDirection: "column", justifyContent: "space-between", padding: "40px 72px 56px" }}>
           <OgLogo height={56} />
-          <div style={{ display: "flex", fontFamily: "Serif", fontSize: 88, lineHeight: 1.02 }}>Follow the big money.</div>
-          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>Live tracker for sports positions, prediction markets and insider stock trades.</div>
+          <div style={{ display: "flex", fontFamily: "Serif", fontSize: 88, lineHeight: 1.02 }}>Copy the winners.</div>
+          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>The wallets that actually win on Polymarket and Kalshi, and every bet they make.</div>
         </div>
       </div>
     ),

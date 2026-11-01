@@ -9,6 +9,7 @@ import { minutesOf, validTimeZone } from "@/lib/alerts/quiet";
 import { REGION_VENUES } from "@/lib/region";
 import type { Region, Venue } from "@/lib/types";
 import { VENUES } from "@/lib/types";
+import { COPY_SIZES, type CopySize } from "@/lib/copies/size";
 
 /** Categories a user can filter on (the normalised categories in lib/exchanges/categories.ts, minus combos). */
 export const CATEGORIES = ["politics", "sports", "crypto", "economics", "finance", "culture", "weather", "tech", "geopolitics", "mentions", "other"] as const;
@@ -25,7 +26,7 @@ export const MAX_MOVE_RULES = 10;
 export const MAX_SIZE_USD = 10_000_000;
 
 const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
-  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits",
+  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
@@ -88,6 +89,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     quietStart: current.quietStart ?? null, quietEnd: current.quietEnd ?? null, timeZone: current.timeZone ?? null,
     ...(current.moveRules ? { moveRules: [...current.moveRules] } : {}),
     ...(current.alertSplits === false ? { alertSplits: false } : {}),
+    ...(current.copySize ? { copySize: current.copySize } : {}),
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -122,6 +124,10 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   if (has("minSizeUsd")) {
     const v = number(input.minSizeUsd, 0, MAX_SIZE_USD);
     if (v === null) errors.push(SIZE_ERROR); else s.minSizeUsd = v;
+  }
+  if (has("copySize")) {
+    const v = Number(input.copySize);
+    if ((COPY_SIZES as readonly number[]).includes(v)) s.copySize = v as CopySize; else errors.push("Pick $10, $50 or $100 per move.");
   }
   if (has("alertCategories")) s.alertCategories = [...new Set(list(input.alertCategories).filter(c => (CATEGORIES as readonly string[]).includes(c)))];
   if (has("alertSafety")) {

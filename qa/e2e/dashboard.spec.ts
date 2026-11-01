@@ -7,33 +7,19 @@ import { q, signIn } from "./helpers";
 /** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
 const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
 
-test("members open the app on Trackers: every tracker ranked by ROI with what it holds now, then today's largest positions", async ({ page, context }) => {
-  test.setTimeout(120_000);
+test("members open the app on My copies: nothing copied yet → pick a winner; the menu holds Trackers, Following and the position check", async ({ page, context }) => {
+  await q("delete from terminal.follows where user_id = 'user_e2e_insidir'");
   await signIn(context, "insidir");
-  // The worker tags moves with their trackers; the seed doesn't, so tag the open $412K Chiefs position as Whales here.
-  await q("update terminal.moves set trackers = array['biggest-bets'] where id = 'e2e:m1'");
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
-  // Every visible tracker, each with its holdings line ("N open · $X · largest: …" or "No open positions").
-  const rows = page.locator(".tbook__row");
-  expect(await rows.count()).toBeGreaterThan(20);
-  for (const t of await page.locator(".tbook__hold").allInnerTexts()) expect(t).toMatch(/^(\d[\d,]* open · \$|No open positions)/);
-  // Holdings are shared for a minute (lib/trackers-store.ts trackerHoldings), so an earlier visit can be cached: reload until it turns.
-  const whales = page.locator(".tbook__row", { hasText: "Whales ($100K+)" }).locator(".tbook__hold");
-  // Worked out from the rows: everything open in the tracker over 60 days (other runs may have tagged more).
-  const [h] = await q<{ n: number; total: number }>("select count(*)::int as n, coalesce(sum(amount), 0)::float as total from terminal.moves where 'biggest-bets' = any(trackers) and result is null and hidden_at is null and at > now() - interval '60 days'");
-  const line = `${h!.n.toLocaleString("en-US")} open · ${money(h!.total)} · largest: `;
-  await expect.poll(async () => { await page.reload(); return whales.innerText(); }, { timeout: 75_000, intervals: [5_000] }).toMatch(new RegExp(`^${line.replace(/[$.]/g, "\\$&")}`));
-  expect(await whales.innerText()).toMatch(/largest: \S/);
-  await q("update terminal.moves set trackers = null where id = 'e2e:m1'");
-  for (const h of ["Largest positions today", "Most active markets", "Tonight's games"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Trackers" }).first()).toHaveAttribute("aria-current", "page");
-  // The position check lives only in the app menu, never on the bar.
+  await expect(page.getByRole("heading", { level: 1, name: "Pick a winner to copy" })).toBeVisible();
+  await expect(page.getByTestId("copy-picker").locator(".cpick__name").first()).toHaveText("0xe2…dd");
+  await expect(page.getByRole("link", { name: "My copies" }).first()).toHaveAttribute("aria-current", "page");
+  // The position check, trackers and follows live only in the app menu, never on the bar.
   await expect(page.locator(".nav__links").getByRole("link", { name: "Position check" })).toHaveCount(0);
   await expect(page.locator('.nav__sheet a[href="/check"]')).toHaveText("Position check");
+  await expect(page.locator('.nav__sheet a[href="/trackers"]')).toHaveText("Trackers");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
-
 test("a tracker page: holding now first, then following it, the traders' own return, stats, breakdowns, top traders, latest positions; nothing invented under 30 settled", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/trackers/nfl-big-money");

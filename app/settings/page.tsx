@@ -17,6 +17,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { pushSubscriptions } from "@/lib/db/schema";
 import { isPaid, PLANS } from "@/lib/plans";
 import { eq } from "drizzle-orm";
+import { COPY_SIZES, copySizeOf } from "@/lib/copies/size";
 import "../app.css";
 import "../account.css";
 
@@ -56,6 +57,21 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <main className="wrap app acct dark">
         <header className="phead"><h1 className="phead__h">Account</h1></header>
         {notice ? <p className="banner" role="status">{notice}</p> : null}
+
+        {paid ? (
+          <section className="agroup" aria-labelledby="g-copy" id="copy-size">
+            <h2 id="g-copy" className="agroup__h">Copy size</h2>
+            <form method="post" action="/api/settings" className="agroup__body csize" data-testid="copy-size">
+              <p className="asum">What My copies counts on each move from the winners you copy. Insidir never places a bet for you.</p>
+              <div className="csize__opts" role="radiogroup" aria-label="Dollars per move">
+                {COPY_SIZES.map(v => (
+                  <label key={v} className="csize__opt"><input type="radio" name="copySize" value={v} defaultChecked={copySizeOf(s) === v} /> ${v} a move</label>
+                ))}
+              </div>
+              <button type="submit" className="btn btn--secondary">Save size</button>
+            </form>
+          </section>
+        ) : null}
 
         <section className="agroup" aria-labelledby="g-alerts">
           <h2 id="g-alerts" className="agroup__h">Alerts</h2>
