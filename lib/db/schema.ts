@@ -435,6 +435,13 @@ export const walletPnl = terminal.table("wallet_pnl", {
   readAt: timestamp("read_at", { withTimezone: true }).notNull(),
 }, t => [index("wallet_pnl_read_idx").on(t.readAt)]);
 
+/** Wallets a Read needed that had no public record yet (terminal.wallet_pnl): the proven-wallet backfill reads these
+ *  first, oldest first, and drops each once its record is stored. */
+export const walletPnlQueue = terminal.table("wallet_pnl_queue", {
+  wallet: text("wallet").primaryKey(),
+  queuedAt: timestamp("queued_at", { withTimezone: true }).notNull(),
+});
+
 /** A Polymarket wallet's public profile picture (lib/moves/avatar.ts), re-read from Polymarket once a day. url is null
  *  when the wallet has none (or it isn't on Polymarket's own image host); blocked when its public username is blocked
  *  (lib/moves/names.ts), so the picture is never shown; hidden_at when an admin hid it (/admin). */

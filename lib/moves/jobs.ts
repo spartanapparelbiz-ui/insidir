@@ -13,10 +13,10 @@ import type { WalletTrade } from "./detect";
 import { MarketDirectory } from "./directory";
 import { MovesPoller } from "./poll";
 import { recordFrom } from "./records";
-import { readLeaderboard, readUserPnl } from "./sources";
+import { readLeaderboard } from "./sources";
 import { profileAvatar, profileBlocked } from "./avatar";
 import { saveAvatar, walletsDueForAvatar } from "./avatar-store";
-import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, saveWalletPnl, upsertMoves, walletsToBackfill, walletsToRecord } from "./store";
+import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
 import { readWalletFills, realizeMove } from "./realize";
 import { fromParts, MERGE_WINDOW_MS, sortParts } from "./detect";
 import { readPolymarketFills } from "./sources";
@@ -32,9 +32,6 @@ import { saveOpen } from "@/lib/smart/store";
 
 export const MOVES_MS = Number(process.env.MOVES_MS ?? 15_000);
 export const RECORD_STALE_MS = 12 * 3_600_000;
-/** A wallet's public Polymarket record (closed markets, all-time profit) is cached this long for the Read's proven
- *  wallets; the backfill re-reads every wallet from the last 90 days at this age. */
-export const PROVEN_RECORD_TTL_MS = 24 * 3_600_000;
 /** Closed-position pages read per wallet (50 each). A wallet with more history than this gets no record rather than
  *  a partial one. */
 export const RECORD_MAX_PAGES = 100;
@@ -198,31 +195,6 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
     await saveRecord(db, { ...record, biggestBet: Math.round(biggestBet * 100) / 100, avgPrice: pv.avgPrice, proven: pv.proven });
     await saveOpen(db, w.wallet, open, now);
     n++;
-  }
-  return n;
-}
-
-/** The 90-day backfill of public Polymarket records for the Read's proven wallets (terminal.wallet_pnl): every wallet
- *  with a large position in the last 90 days, read again once its record is a day old.
- *    closed markets  distinct markets on /closed-positions, paged up to RECORD_MAX_PAGES; a wallet with more is
- *                    recorded as having at least that many (closed_at_least), never dropped
- *    all-time profit pnl from the wallet's own /v1/leaderboard row (timePeriod=ALL), for every wallet
- *  A wallet whose pages or leaderboard row can't be read this run is left for the next. */
-export async function provenBackfillOnce(db: Db, poly: PolymarketClient, now: number, perRun = 10): Promise<number> {
-  let n = 0;
-  for (const wallet of await walletsToBackfill(db, now, PROVEN_RECORD_TTL_MS, perRun)) {
-    try {
-      const markets = new Set<string>();
-      let complete = false;
-      for (let page = 0; page < RECORD_MAX_PAGES; page++) {
-        const raw = await poly.getClosedPositionsPage(wallet, { limit: 50, offset: page * 50 });
-        for (const p of readClosedRows(raw)) markets.add(p.marketId);
-        if (rows(raw).length < 50) { complete = true; break; }
-      }
-      const pnl = readUserPnl(await poly.getLeaderboardUser(wallet), wallet);
-      await saveWalletPnl(db, wallet, { closed: markets.size, closedAtLeast: !complete, pnl }, now);
-      n++;
-    } catch { /* unreachable now: next run */ }
   }
   return n;
 }

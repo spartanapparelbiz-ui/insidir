@@ -131,17 +131,6 @@ export async function walletsToRecord(db: Db, now: number, staleMs: number, limi
   return (r.rows as Array<{ wallet: string; name: string | null }>);
 }
 
-/** Every Polymarket wallet with a large position in the last BACKFILL_DAYS whose public record (terminal.wallet_pnl)
- *  is missing or older than staleMs (the Read's 24-hour cache): never-read wallets first, then the most recent. */
-export const BACKFILL_DAYS = 90;
-export async function walletsToBackfill(db: Db, now: number, staleMs: number, limit: number): Promise<string[]> {
-  const r = await db.execute(sql`select m.wallet from terminal.moves m left join terminal.wallet_pnl p on p.wallet = m.wallet
-    where m.source = 'polymarket' and m.wallet is not null and m.at > ${new Date(now - BACKFILL_DAYS * 86_400_000)}
-      and (p.wallet is null or p.read_at < ${new Date(now - staleMs)})
-    group by m.wallet order by bool_or(p.wallet is null) desc, max(m.at) desc limit ${limit}`);
-  return (r.rows as Array<{ wallet: string }>).map(x => x.wallet);
-}
-
 export interface WalletPnl { closed: number; closedAtLeast: boolean; pnl: number | null }
 export async function saveWalletPnl(db: Db, wallet: string, v: WalletPnl, now: number): Promise<void> {
   const set = { closed: v.closed, closedAtLeast: v.closedAtLeast, pnl: v.pnl, readAt: new Date(now) };

@@ -19,12 +19,17 @@ import { infoFor } from "@/lib/markets/info";
 import { shortWallet } from "@/lib/moves/records";
 import type { VMarket } from "@/lib/types";
 import { MIN_SETTLED } from "@/lib/follow/math";
+import { onDemand } from "@/lib/moves/proven-backfill";
 import { walletPnlFor } from "@/lib/moves/store";
 import { isLive, TRACKERS, trackerWhere } from "@/lib/trackers";
 import { bigSplitOf, provenFrom, sidePrices, unusualOf, type OpenPosition } from "./math";
 import type { BigBet, BigSplit, Listing, ProvenMoney, ReadData, Venue } from "./types";
 
 export const VENUE_MS = 1_500;
+/** A Read aims to be built within this; wallets with no public record are read inline only in what's left, up to
+ *  INLINE_MS (lib/moves/proven-backfill.ts onDemand). */
+export const READ_BUDGET_MS = 3_000;
+export const INLINE_MS = 1_500;
 const DAY = 86_400_000;
 export interface Clients { polymarket: PolymarketClient; kalshi: KalshiClient }
 
@@ -95,7 +100,7 @@ async function openPositions(db: Db, ids: Ids): Promise<OpenPosition[]> {
 }
 
 /** Proven money (winning trackers and proven wallets), and the big-money split over every open tracked position. */
-async function provenAndBig(db: Db, ids: Ids, now: number): Promise<{ proven: ProvenMoney; big: BigSplit }> {
+async function provenAndBig(db: Db, ids: Ids, now: number, clients: Clients | null, started: number): Promise<{ proven: ProvenMoney; big: BigSplit }> {
   const [positions, trackers, follows, open] = await Promise.all([
     openPositions(db, ids),
     winningTrackers(db, now),
@@ -105,7 +110,15 @@ async function provenAndBig(db: Db, ids: Ids, now: number): Promise<{ proven: Pr
   ]);
   const walletOpen = (open.rows as Array<{ wallet: string; outcome_index: number; dollars: number }>).map(o => ({ wallet: o.wallet, side: (o.outcome_index === 0 ? "yes" : "no") as "yes" | "no", dollars: Number(o.dollars) }));
   const wallets = [...new Set([...positions.map(p => p.wallet).filter((w): w is string => Boolean(w)), ...walletOpen.map(o => o.wallet)])];
-  const recs = await walletPnlFor(db, wallets);
+  let recs = await walletPnlFor(db, wallets);
+  // Wallets with no public record yet go to the front of the backfill; up to INLINE_MAX are read now if the Read's
+  // time budget allows (what's left of READ_BUDGET_MS, at most INLINE_MS).
+  const missing = wallets.filter(w => !recs.has(w));
+  if (missing.length && clients) {
+    const left = Math.min(INLINE_MS, READ_BUDGET_MS - (Date.now() - started));
+    const done = await onDemand(db, clients.polymarket, missing, left, now).catch(() => [] as string[]);
+    if (done.length) recs = await walletPnlFor(db, wallets);
+  }
   const records = new Map([...recs].filter(([, r]) => r.pnl !== null).map(([w, r]) => [w, { closed: r.closed, closedAtLeast: r.closedAtLeast, profit: r.pnl! }]));
   const follow = new Map<string, { returnPct: number; settled: number; winner: boolean }>();
   for (const w of wallets) {
@@ -132,6 +145,7 @@ async function bigBets(db: Db, ids: { polymarket: string | null; kalshi: string 
 
 /** Everything but the analyst line. */
 export async function buildRead(db: Db, clients: Clients, venue: Venue, id: string, now: number): Promise<Omit<ReadData, "line">> {
+  const started = Date.now();
   const ids = await pairOf(db, venue, id);
   const [poly, kal] = await Promise.all([
     ids.polymarket ? listing(db, clients, "polymarket", ids.polymarket) : Promise.resolve(null),
@@ -140,7 +154,7 @@ export async function buildRead(db: Db, clients: Clients, venue: Venue, id: stri
   const main = poly ?? kal;
   if (!main) throw new ReadNotFound("not found");
   const [{ proven, big }, bets] = await Promise.all([
-    provenAndBig(db, { polymarket: poly ? ids.polymarket : null, kalshi: kal ? ids.kalshi : null, inverted: ids.inverted }, now),
+    provenAndBig(db, { polymarket: poly ? ids.polymarket : null, kalshi: kal ? ids.kalshi : null, inverted: ids.inverted }, now, clients, started),
     bigBets(db, ids, { polymarket: poly?.volume24h ?? null, kalshi: kal?.volume24h ?? null }, now),
   ]);
   const kYes = kal?.yesPrice ?? null;

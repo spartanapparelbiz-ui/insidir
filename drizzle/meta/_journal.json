@@ -225,6 +225,13 @@
       "when": 1793569529948,
       "tag": "0031_wallet_pnl",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793571142585,
+      "tag": "0032_wallet_pnl_queue",
+      "breakpoints": true
     }
   ]
 }

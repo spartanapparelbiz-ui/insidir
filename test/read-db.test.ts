@@ -11,9 +11,6 @@ import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { buildRead, type Clients } from "@/lib/read/build";
 import { readFacts, readHasMoney, templateLine } from "@/lib/read/math";
-import type { PolymarketClient } from "@/lib/exchanges";
-import { PROVEN_RECORD_TTL_MS, provenBackfillOnce, RECORD_MAX_PAGES } from "@/lib/moves/jobs";
-import { recordsFor, walletPnlFor, walletsToBackfill } from "@/lib/moves/store";
 import { resolveText } from "@/lib/read/resolve";
 import { cancelReasonCounts, duration, postFunnel, readTimings, retention } from "@/lib/read/admin";
 import { refreshWatched, tonightFor, weeklyRecap, yourMarkets } from "@/lib/read/member";
@@ -161,36 +158,6 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     // Two Celtics games: $300K + $150K tracked against $380K is no clear lead.
     const s = await resolveText(db, clients, "Celtics", NOW);
     expect(s.kind === "choices" && s.list.map(c => c.id)).toEqual(["0xlal1", "0xbosnyk"]);
-  });
-
-  it("backfills public Polymarket records for every wallet from the last 90 days, cached for 24 hours; a wallet past the page cap is kept as \"at least\"", async () => {
-    const OLD = "0xeeee" + "5".repeat(34) + "ee";
-    await move("old1", { market: "0xancient", side: "yes", amount: 50_000, price: 0.5, at: NOW - 100 * 24 * H, wallet: OLD });
-    // Never read first (PROVEN, FRESH); RECORDW and NOBODY were read an hour ago; OLD moved 100 days ago.
-    expect((await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).sort()).toEqual([FRESH, PROVEN].sort());
-    expect((await walletsToBackfill(db, NOW + 24 * H, PROVEN_RECORD_TTL_MS, 10)).sort()).toEqual([FRESH, NOBODY, PROVEN, RECORDW].sort());
-    // PROVEN (most recent first) has more closed positions than the cap: every page is full. FRESH has 35 closed markets.
-    const full = (offset: number) => Array.from({ length: 50 }, (_, i) => ({ conditionId: `0xp${offset + i}`, outcomeIndex: 0, title: "M", avgPrice: 0.5, totalBought: 100, realizedPnl: 10, timestamp: NOW / 1000 }));
-    const fresh = Array.from({ length: 35 }, (_, i) => ({ conditionId: `0xc${i}`, outcomeIndex: 0, title: `M${i}`, avgPrice: 0.5, totalBought: 1000, realizedPnl: i < 25 ? 400 : -300, timestamp: (NOW - i * H) / 1000 }));
-    const pages: string[] = [], boards: string[] = [];
-    const poly = {
-      getClosedPositionsPage: async (w: string, o: { offset?: number }) => { pages.push(w); return w === PROVEN ? full(o.offset ?? 0) : o.offset ? [] : fresh; },
-      // The wallet's own leaderboard row: pnl is read, nothing else.
-      getLeaderboardUser: async (w: string) => { boards.push(w); return [{ rank: "7", proxyWallet: w, userName: "someone", vol: 9e6, pnl: w === PROVEN ? 1_234_567.891 : 6_950 }]; },
-    } as unknown as PolymarketClient;
-    expect(await provenBackfillOnce(db, poly, NOW, 2)).toBe(2);
-    expect(pages.filter(w => w === PROVEN)).toHaveLength(RECORD_MAX_PAGES);
-    expect(boards.sort()).toEqual([FRESH, PROVEN].sort());
-    const got = await walletPnlFor(db, [FRESH, PROVEN]);
-    expect(got.get(PROVEN)).toEqual({ closed: RECORD_MAX_PAGES * 50, closedAtLeast: true, pnl: 1_234_567.89 });
-    expect(got.get(FRESH)).toEqual({ closed: 35, closedAtLeast: false, pnl: 6_950 });
-    // Not dropped: the capped wallet is proven, and the Read says "at least".
-    const r = await buildRead(db, clients, "polymarket", "0xkcbuf", NOW);
-    expect(r.proven.walletRows!.find(w => w.wallet === "0xaa…aa")).toMatchObject({ profit: 1_234_568, closed: 5_000, closedAtLeast: true });
-    expect(await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 10)).toEqual([]);
-    // Nothing here touches trader_records (no win rate from a capped wallet's first pages).
-    expect((await recordsFor(db, [FRESH, PROVEN])).size).toBe(0);
-    await pool.query("delete from terminal.wallet_pnl where wallet = any($1)", [[FRESH, PROVEN]]);
   });
 
   it("free Read: a Read with no proven money and no big bets doesn't count; markets a \"Which one?\" offered stay open to pick", async () => {
