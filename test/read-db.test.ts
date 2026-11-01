@@ -70,6 +70,24 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
       JSON.stringify({ venue: "polymarket", id: "0xsen1", title: "Which party wins Senate control in 2026?", eventTitle: "Senate control", yesLabel: "Republicans", noLabel: "Democrats", url: "https://polymarket.com/event/senate", yesPrice: 0.7, volume24h: 900_000, active: true, result: null, closeTime: NOW + 400 * 24 * H }),
       JSON.stringify({ venue: "polymarket", id: "0xsen2", title: "Senate control after the 2026 midterms: Democrats?", eventTitle: "Senate control", yesLabel: "Yes", noLabel: "No", url: "https://polymarket.com/event/senate-d", yesPrice: 0.3, volume24h: 200_000, active: true, result: null, closeTime: NOW + 400 * 24 * H }),
     ]);
+    // Search decoys: Kalshi combos and a Polymarket parlay with far more volume than the real markets; smaller lookalikes.
+    const mk = (venue: string, id: string, title: string, eventTitle: string | null, vol: number, url: string) =>
+      pool.query(`insert into terminal.markets (venue, id, data) values ($1, $2, $3)`, [venue, id, JSON.stringify({ venue, id, title, eventTitle, yesLabel: "Yes", noLabel: "No", url, yesPrice: 0.5, volume24h: vol, active: true, result: null, closeTime: NOW + 400 * 24 * H })]);
+    await mk("kalshi", "KXSENATE-26", "Will Republicans control the Senate after 2026?", "Senate control", 300_000, "https://kalshi.com/markets/kxsenate/senate");
+    await mk("kalshi", "KXMVESENATE-1", "yes Senate control R,yes House control R", null, 5_000_000, "https://kalshi.com/markets/kxmve/a");
+    await mk("kalshi", "KXMVEHOUSE-1", "yes House control D,no Senate control D", null, 3_000_000, "https://kalshi.com/markets/kxmve/b");
+    await mk("polymarket", "0xhouse1", "Which party wins House control in 2026?", "House control", 600_000, "https://polymarket.com/event/house-control-2026");
+    await mk("polymarket", "0xhouse2", "House control: Republicans by 10+ seats?", "House control", 150_000, "https://polymarket.com/event/house-control-2026/house-gop-10");
+    await mk("kalshi", "KXHOUSE-26", "Which party will control the House?", "House control", 250_000, "https://kalshi.com/markets/kxhouse/house");
+    await mk("polymarket", "0xlal1", "Lakers vs. Celtics", "NBA: Lakers vs. Celtics", 300_000, "https://polymarket.com/event/nba-lal-bos");
+    await mk("polymarket", "0xlal2", "Will the Lakers win the 2027 NBA Finals?", "NBA Champion 2027", 120_000, "https://polymarket.com/event/nba-champion-2027");
+    await mk("polymarket", "0xbosnyk", "Celtics vs. Knicks", "NBA: Celtics vs. Knicks", 380_000, "https://polymarket.com/event/nba-bos-nyk");
+    await mk("polymarket", "0xlalparlay", "Lakers win AND Over 220.5", "NBA parlays", 1_000_000, "https://polymarket.com/event/nba-parlays");
+    await move("lal1", { market: "0xlal1", side: "yes", amount: 150_000, price: 0.55, at: NOW - 3 * H, wallet: NOBODY, title: "Lakers vs. Celtics", url: "https://polymarket.com/event/nba-lal-bos" });
+    await pool.query(`insert into terminal.pairs (id, data, safety) values ('psen', $1, 'green'), ('phouse', $2, 'green')`, [
+      JSON.stringify({ id: "psen", a: { venue: "polymarket", id: "0xsen1" }, b: { venue: "kalshi", id: "KXSENATE-26" }, inverted: false, method: "llm", confidence: 0.9, safety: "green", safetyNotes: [], blocked: false }),
+      JSON.stringify({ id: "phouse", a: { venue: "polymarket", id: "0xhouse1" }, b: { venue: "kalshi", id: "KXHOUSE-26" }, inverted: false, method: "llm", confidence: 0.9, safety: "green", safetyNotes: [], blocked: false }),
+    ]);
     await pool.query(`insert into terminal.pairs (id, data, safety) values ('pkc', $1, 'green')`, [JSON.stringify({ id: "pkc", a: { venue: "polymarket", id: "0xkcbuf" }, b: { venue: "kalshi", id: "KXNFL-KCBUF" }, inverted: true, method: "llm", confidence: 0.9, safety: "green", safetyNotes: [], blocked: false })]);
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
@@ -119,15 +137,29 @@ describe.skipIf(!URL0)("The Read, in Postgres", () => {
     expect(templateLine(readFacts(r))).toBe("No proven money holds a position, and 100% of big money is on No; the largest is $25K on No at 30¢.");
   });
 
-  it("resolves typed words: one clear market, or up to 3 choices; a pasted Kalshi link; nothing found", async () => {
-    expect(await resolveText(db, clients, "Chiefs Bills", NOW)).toEqual({ kind: "market", venue: "polymarket", id: "0xkcbuf" });
-    const s = await resolveText(db, clients, "Senate control", NOW);
-    expect(s.kind).toBe("choices");
-    expect(s.kind === "choices" && s.list.map(c => c.id).sort()).toEqual(["0xsen1", "0xsen2"]);
-    expect(await resolveText(db, clients, "https://kalshi.com/markets/kxnfl/nfl-game/KXNFL-KCBUF", NOW)).toEqual({ kind: "market", venue: "kalshi", id: "KXNFL-KCBUF" });
-    expect(await resolveText(db, clients, "https://polymarket.com/event/chiefs-bills", NOW)).toEqual({ kind: "market", venue: "polymarket", id: "0xkcbuf" });
+  it("search: combos and parlays left out, ranked by 24h volume plus tracked money, a paired Polymarket market preferred", async () => {
+    const one = (venue: string, id: string) => ({ kind: "market", venue, id });
+    expect(await resolveText(db, clients, "Chiefs Bills", NOW)).toEqual(one("polymarket", "0xkcbuf"));
+    // The Senate and House control markets, not the Kalshi combos that mention them (with 5M and 3M of volume).
+    expect(await resolveText(db, clients, "Senate control", NOW)).toEqual(one("polymarket", "0xsen1"));
+    expect(await resolveText(db, clients, "House control", NOW)).toEqual(one("polymarket", "0xhouse1"));
+    // Tonight's game ($300K volume plus $150K tracked), not the futures market or the $1M parlay.
+    expect(await resolveText(db, clients, "Lakers", NOW)).toEqual(one("polymarket", "0xlal1"));
+    // Asked for, a parlay is found.
+    expect(await resolveText(db, clients, "Lakers parlay", NOW)).toEqual(one("polymarket", "0xlalparlay"));
+    // Links: a Kalshi market; a Polymarket event (offline: what we hold under it) resolves to its main market.
+    expect(await resolveText(db, clients, "https://kalshi.com/markets/kxsenate/senate/KXSENATE-26", NOW)).toEqual(one("kalshi", "KXSENATE-26"));
+    expect(await resolveText(db, clients, "https://polymarket.com/event/house-control-2026", NOW)).toEqual(one("polymarket", "0xhouse1"));
+    expect(await resolveText(db, clients, "https://kalshi.com/markets/kxnfl/nfl-game/KXNFL-KCBUF", NOW)).toEqual(one("kalshi", "KXNFL-KCBUF"));
+    expect(await resolveText(db, clients, "https://polymarket.com/event/chiefs-bills", NOW)).toEqual(one("polymarket", "0xkcbuf"));
     expect((await resolveText(db, clients, "curling world cup", NOW)).kind).toBe("none");
     expect((await resolveText(db, clients, "NVDA", NOW)).kind).toBe("none");
+  });
+
+  it("search: markets the words fit equally without a clear leader become 3 choices", async () => {
+    // Two Celtics games: $300K + $150K tracked against $380K is no clear lead.
+    const s = await resolveText(db, clients, "Celtics", NOW);
+    expect(s.kind === "choices" && s.list.map(c => c.id)).toEqual(["0xlal1", "0xbosnyk"]);
   });
 
   it("backfills public Polymarket records for every wallet from the last 90 days, cached for 24 hours", async () => {

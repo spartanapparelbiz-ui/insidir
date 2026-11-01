@@ -153,15 +153,24 @@ export function textScore(q: string, title: string, event: string | null): numbe
   return hit / qs.length;
 }
 
-/** The answer to a search: one market when it clearly wins, else up to 3 to pick from, else none. */
-export function choose(scored: ReadonlyArray<Choice & { score: number; volume: number }>, min = 0.5, margin = 0.2): Resolved {
-  const seen = new Set<string>();
-  const list = [...scored].filter(c => c.score >= min).sort((a, b) => b.score - a.score || b.volume - a.volume)
-    .filter(c => !seen.has(c.key) && Boolean(seen.add(c.key)));
+/** A search result before the choice: its text score, 24h volume and tracked big money, and whether it is a Polymarket
+ *  market with a Kalshi pair. */
+export type Candidate = Choice & { score: number; volume: number; money: number; paired: boolean };
+/** What ranks markets with the same words: 24h volume plus tracked big money, a paired market counted 1.5×. */
+export const weightOf = (c: Pick<Candidate, "volume" | "money" | "paired">): number => (c.volume + c.money) * (c.paired ? 1.5 : 1);
+/** The top market is read without asking when it carries this many times the next one's weight. */
+export const CLEAR_LEAD = 2;
+
+/** Search results → one market or up to 3 choices. Words decide first (the best text score, or one a margin ahead);
+ *  among markets the words fit about equally, the busiest is read when it clearly leads (CLEAR_LEAD), else choices. */
+export function chooseRanked(cands: readonly Candidate[], min = 0.5, margin = 0.2): Resolved {
+  const list = cands.filter(c => c.score >= min).sort((a, b) => b.score - a.score || weightOf(b) - weightOf(a));
   if (!list.length) return { kind: "none", why: "We couldn't find that market on Polymarket or Kalshi. Try a link, or other words." };
-  const [a, b] = list;
-  if (!b || (a!.score >= 0.99 && b.score < 0.99) || a!.score - b.score >= margin) return { kind: "market", venue: a!.venue, id: a!.id };
-  return { kind: "choices", list: list.slice(0, 3).map(({ score: _s, volume: _v, ...c }) => c) };
+  const best = list[0]!.score;
+  const near = list.filter(c => best - c.score < margin).sort((a, b) => weightOf(b) - weightOf(a));
+  const [a, b] = near;
+  if (!b || (best >= 0.99 && b.score < 0.99 && a!.score >= 0.99) || (weightOf(a!) > 0 && weightOf(a!) >= CLEAR_LEAD * weightOf(b))) return { kind: "market", venue: a!.venue, id: a!.id };
+  return { kind: "choices", list: near.slice(0, 3).map(({ score: _s, volume: _v, money: _m, paired: _p, ...c }) => c) };
 }
 
 /* ---------- the analyst line ---------- */

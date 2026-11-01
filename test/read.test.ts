@@ -3,7 +3,7 @@
  * the template, and the validator (one sentence, only the facts' numbers and names, no advice, no promises). */
 import { describe, expect, it } from "vitest";
 import { validateLine, writeLine } from "@/lib/read/line";
-import { bigSplitOf, choose, pmProven, pricesFor, provenFrom, provenSplit, readFacts, readHasMoney, sidePrices, signedPct, signedUsd, templateLine, textScore, UNUSUAL_TEXT, unusualOf } from "@/lib/read/math";
+import { bigSplitOf, chooseRanked, pmProven, pricesFor, provenFrom, provenSplit, readFacts, readHasMoney, sidePrices, signedPct, signedUsd, templateLine, textScore, UNUSUAL_TEXT, unusualOf, weightOf } from "@/lib/read/math";
 
 describe("proven money", () => {
   it("splits proven wallets' dollars by side; a wallet on both sides counts once", () => {
@@ -43,14 +43,19 @@ describe("matching typed words", () => {
     expect(textScore("Lakers tonight", "Lakers vs. Celtics", "NBA")).toBe(1);
     expect(textScore("Senate control", "Fed rate cut in December?", null)).toBe(0);
   });
-  it("one clear winner is read; close ones become up to 3 choices; nothing found says so", () => {
-    const c = (id: string, score: number, volume = 0) => ({ key: `p:${id}`, venue: "polymarket" as const, id, title: id, event: null, yesPrice: null, score, volume });
-    expect(choose([c("a", 1), c("b", 0.5)])).toEqual({ kind: "market", venue: "polymarket", id: "a" });
-    const r = choose([c("a", 1, 5), c("b", 1, 9), c("c", 1, 1), c("d", 1, 0)]);
-    expect(r.kind).toBe("choices");
-    expect(r.kind === "choices" && r.list.map(x => x.id)).toEqual(["b", "a", "c"]);
-    expect(choose([c("a", 0.2)]).kind).toBe("none");
-    expect(choose([c("a", 0.8), { ...c("a", 0.8), id: "a" }]).kind).toBe("market");
+  it("words decide first; among markets the words fit equally, the busiest is read when it clearly leads, else 3 choices", () => {
+    const c = (id: string, score: number, volume = 0, money = 0, paired = false) => ({ key: `p:${id}`, venue: "polymarket" as const, id, title: id, event: null, yesPrice: null, score, volume, money, paired });
+    expect(chooseRanked([c("a", 1), c("b", 0.5)])).toEqual({ kind: "market", venue: "polymarket", id: "a" });
+    // 24h volume plus tracked big money: 900K vs 200K + 50K is a clear lead.
+    expect(chooseRanked([c("sen2", 1, 200_000, 50_000), c("sen1", 1, 900_000)])).toEqual({ kind: "market", venue: "polymarket", id: "sen1" });
+    const r = chooseRanked([c("a", 1, 5), c("b", 1, 9), c("c", 1, 8), c("d", 1, 0)]);
+    expect(r.kind === "choices" && r.list.map(x => x.id)).toEqual(["b", "c", "a"]);
+    // A Polymarket market with a Kalshi pair counts 1.5×: 120 paired (180) clearly leads 85; unpaired it doesn't.
+    expect(chooseRanked([c("a", 1, 120, 0, true), c("b", 1, 85)])).toEqual({ kind: "market", venue: "polymarket", id: "a" });
+    expect(chooseRanked([c("a", 1, 120), c("b", 1, 85)]).kind).toBe("choices");
+    expect(weightOf(c("a", 1, 100, 20, true))).toBe(180);
+    expect(chooseRanked([c("a", 0.2)]).kind).toBe("none");
+    expect(chooseRanked([c("a", 1), c("b", 1)]).kind).toBe("choices");
   });
 });
 
