@@ -36,8 +36,14 @@ export const kalshiSeries = (ticker: string): string | null => /^([A-Z0-9]+)-/.e
 export async function readInfos(db: Db, clients: { polymarket: PolymarketClient; kalshi: KalshiClient }, source: "polymarket" | "kalshi", ids: readonly string[], now: number): Promise<MarketInfo[]> {
   if (!ids.length) return [];
   const got = await clients[source].getMarketsById([...ids]);
+  // Kalshi markets carry no start time: a sports market's comes from its event's milestone (one call per event).
+  const kalshiStart = new Map<string, number | null>();
+  if (source === "kalshi") {
+    const events = [...new Set([...got.values()].filter(m => m.category === "sports" && m.eventId && !m.startTime).map(m => m.eventId!))];
+    await Promise.all(events.map(async e => { try { kalshiStart.set(e, await clients.kalshi.getEventStart(e)); } catch { kalshiStart.set(e, null); } }));
+  }
   const infos: MarketInfo[] = [...got.values()].map(m => ({
-    source, marketId: m.id, yesPrice: m.yesPrice ?? null, startAt: m.startTime ?? null, closed: !m.active || m.result !== null,
+    source, marketId: m.id, yesPrice: m.yesPrice ?? null, startAt: m.startTime ?? (m.eventId ? kalshiStart.get(m.eventId) ?? null : null), closed: !m.active || m.result !== null,
     historyKey: source === "polymarket" ? m.yesTokenId : kalshiSeries(m.id), updatedAt: now, endAt: m.closeTime ?? null,
   }));
   for (const id of ids) if (!got.has(id)) infos.push({ source, marketId: id, yesPrice: null, startAt: null, closed: false, historyKey: null, updatedAt: now, endAt: null });

@@ -13,6 +13,7 @@ import { Sec } from "@/components/page/Page";
 import { unlockHref } from "@/components/app/links";
 import { ReadBox } from "@/components/read/ReadBox";
 import { TonightReads } from "@/components/read/TonightReads";
+import { isLive } from "@/lib/sports/team-names";
 import { tonightReadsCached, type TonightRead } from "@/lib/read/tonight";
 import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
 import { HEADLINE, INCLUDED, PAST, TRIAL_LINE } from "@/lib/copy";
@@ -39,7 +40,7 @@ const PARTS = [
 
 const AT_ET = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 
-function Tonight({ rows, asked }: { rows: TonightRow[]; asked: boolean }) {
+function Tonight({ rows, asked, now }: { rows: TonightRow[]; asked: boolean; now: number }) {
   if (!asked) return <p className="rpage__none">Tell us what you bet on and tonight&apos;s markets show up here. <Link href="/onboarding?again=1">Pick your leagues</Link></p>;
   if (!rows.length) return <p className="rpage__none" data-testid="tonight-none">Nothing with big money on it tonight in your leagues yet. <Link href="/onboarding?again=1">Change your leagues</Link></p>;
   return (
@@ -48,7 +49,7 @@ function Tonight({ rows, asked }: { rows: TonightRow[]; asked: boolean }) {
         <li key={`${r.venue}:${r.marketId}`}>
           <ReadPick venue={r.venue} id={r.marketId} className="rrecent__a rrecent__btn">
             <span className="rrecent__q">{r.title}</span>
-            <span className="rrecent__s">{r.label}{r.startAt ? ` · ${AT_ET.format(new Date(r.startAt))} ET` : ""} · {usd(r.total)} in big bets · Read it</span>
+            <span className="rrecent__s">{r.label}{isLive(r.startAt, now) ? " · Live" : r.startAt ? ` · ${AT_ET.format(new Date(r.startAt))} ET` : ""} · {usd(r.total)} in big bets · Read it</span>
           </ReadPick>
         </li>
       ))}
@@ -124,10 +125,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
         <main className="pg rhome rhome--member" data-testid="member-home">
           <h1 className="rhome__h rhome__h--small">{HEADLINE}</h1>
           <ReadBox autoFocus />
-          <TonightReads rows={taps} />
+          <TonightReads rows={taps} now={now} />
           <section className="rpage__next" aria-labelledby="tonight-h">
             <h2 id="tonight-h" className="rpage__h">Tonight in your leagues</h2>
-            <Tonight rows={tonight} asked={betOn.length > 0} />
+            <Tonight rows={tonight} asked={betOn.length > 0} now={now} />
           </section>
           <section className="rpage__next" aria-labelledby="mine-h">
             <h2 id="mine-h" className="rpage__h">Your markets</h2>
@@ -159,7 +160,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
             <p className="rhome__sub">Paste a Polymarket or Kalshi link, or type the market. In a few seconds: where proven money sits, the big bets, and the best price.</p>
             <ReadBox />
             <p className="rhome__fine">Your first Read is free. No account needed.</p>
-            <TonightReads rows={taps} />
+            <TonightReads rows={taps} now={now} />
           </div>
         </section>
         <Sec id="parts-h" title="What a Read shows" className="steps">

@@ -35,4 +35,6 @@ export interface Note {
   origin: "model" | "template";
   /** Why the model's note wasn't used, when it wasn't (an HTTP error, a timeout, the validator's problems). */
   error?: string;
+  /** OpenRouter replies that came back empty while writing it (each retried once). */
+  empties?: number;
 }

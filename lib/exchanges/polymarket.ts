@@ -207,7 +207,9 @@ export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, ve
     result: gammaResult(m),
     volume24h: num(pick(m, "volume24hr", "volume24hrClob", "volume_24hr")),
     yesPrice: gammaYesPrice(m),
-    startTime: epochMs(pick(m, "gameStartTime", "game_start_time")) ?? null,
+    // The game's start: gameStartTime; for sports markets without it, startDate (on other markets startDate is only
+    // when the market was listed).
+    startTime: epochMs(pick(m, "gameStartTime", "game_start_time")) ?? (category === "sports" ? epochMs(pick(m, "startDate", "start_date")) : null) ?? null,
   };
 }
 

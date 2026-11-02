@@ -94,7 +94,9 @@ describe.skipIf(!URL0)("proven-wallet backfill, in Postgres", () => {
     await pool.query(`insert into terminal.markets (venue, id, data) values ('polymarket', '0xread', $1)`, [JSON.stringify({ venue: "polymarket", id: "0xread", title: "Fixture", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, active: true, result: null, closeTime: NOW + DAY })]);
     const poly = fakePoly({ closed: () => 35, pnl: () => 5_000 });
     const dead = () => Promise.reject(new Error("offline"));
-    const clients = { polymarket: { ...poly, getMarketsById: dead }, kalshi: { getMarketsById: dead } } as unknown as Clients;
+    // Polymarket answers the Read's own market, so it's up: the wallets are read inline.
+    const answered = async () => new Map([["0xread", { venue: "polymarket", id: "0xread", title: "Fixture", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, closeTime: NOW + DAY }]]);
+    const clients = { polymarket: { ...poly, getMarketsById: answered }, kalshi: { getMarketsById: dead } } as unknown as Clients;
     const r = await buildRead(db, clients, "polymarket", "0xread", NOW);
     // Five read inline (35 closed, +$5,000: proven), shown on this Read.
     const stored = await walletPnlFor(db, ws);
@@ -111,11 +113,22 @@ describe.skipIf(!URL0)("proven-wallet backfill, in Postgres", () => {
     expect(Number((await pool.query("select count(*)::int as n from terminal.wallet_pnl_queue")).rows[0].n)).toBe(0);
   });
 
+  it("Polymarket not answering the Read's own market: no inline reads at all, the wallets only queued", async () => {
+    await move("o1", { market: "0xout", wallet: C, amount: 10_000, at: NOW - H });
+    await pool.query(`insert into terminal.markets (venue, id, data) values ('polymarket', '0xout', $1)`, [JSON.stringify({ venue: "polymarket", id: "0xout", title: "Out", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, active: true, result: null, closeTime: NOW + DAY })]);
+    const dead = () => Promise.reject(new Error("offline"));
+    const poly = fakePoly({ closed: () => 35, pnl: () => 1 });
+    await buildRead(db, { polymarket: { ...poly, getMarketsById: dead }, kalshi: { getMarketsById: dead } } as unknown as Clients, "polymarket", "0xout", NOW);
+    expect(poly.calls).toEqual([]);
+    expect(await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 1)).toEqual([C]);
+  });
+
   it("a slow Data API never holds a Read: nothing read inline past the budget, every wallet queued", async () => {
     await move("s1", { market: "0xslow", wallet: B, amount: 10_000, at: NOW - H });
     await pool.query(`insert into terminal.markets (venue, id, data) values ('polymarket', '0xslow', $1)`, [JSON.stringify({ venue: "polymarket", id: "0xslow", title: "Slow", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, active: true, result: null, closeTime: NOW + DAY })]);
     const dead = () => Promise.reject(new Error("offline"));
-    const clients = { polymarket: { ...fakePoly({ closed: () => 35, pnl: () => 1, delayMs: 2_500 }), getMarketsById: dead }, kalshi: { getMarketsById: dead } } as unknown as Clients;
+    const answered = async () => new Map([["0xslow", { venue: "polymarket", id: "0xslow", title: "Slow", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, closeTime: NOW + DAY }]]);
+    const clients = { polymarket: { ...fakePoly({ closed: () => 35, pnl: () => 1, delayMs: 2_500 }), getMarketsById: answered }, kalshi: { getMarketsById: dead } } as unknown as Clients;
     const t0 = Date.now();
     await buildRead(db, clients, "polymarket", "0xslow", NOW);
     expect(Date.now() - t0).toBeLessThan(2_500);
