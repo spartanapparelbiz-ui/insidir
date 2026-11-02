@@ -1,146 +1,50 @@
-/* The home page: one tool. "Paste any bet. See where the smart money is." and the box (components/read/ReadBox.tsx):
- * a Polymarket or Kalshi link, a market in plain words, or a sportsbook slip, read in seconds (lib/read).
- *   Visitors  the box (one free Read), what a Read shows, the $1 block and the FAQ.
- *   Members   the box, tonight's markets in the leagues they bet on, Your markets (every market they've read, with its
- *             latest Read, marked when proven money moved since their last visit) and the week: "proven money was
- *             right on X of Y" over their markets that settled (lib/read/member.ts).
- * Everything else Insidir has stays live by URL; it just isn't on this page or in the nav. */
-import Link from "next/link";
+/* The home page (the insidir system, app/sky.css).
+ *   Visitors  the landing (components/sky/Landing.tsx, data from lib/sky/landing.ts): the ask box beside the 3D money
+ *             skyline, live markets, the Read as an answer, the ticker, the record, pricing. One free Read.
+ *   Members   the dashboard home (components/sky/Shell.tsx, MemberHome.tsx, lib/nx/member.ts).
+ * Every number is live from the database. */
+import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { after } from "next/server";
-import { SiteHeader } from "@/components/SiteHeader";
-import { Sec } from "@/components/page/Page";
 import { unlockHref } from "@/components/app/links";
-import { ReadBox } from "@/components/read/ReadBox";
-import { TonightReads } from "@/components/read/TonightReads";
-import { isLive } from "@/lib/sports/team-names";
-import { tonightReadsCached, type TonightRead } from "@/lib/read/tonight";
-import { FaqV2, faqSchemaV2 } from "@/components/v2/Faq";
-import { HEADLINE, INCLUDED, PAST, TRIAL_LINE } from "@/lib/copy";
+import { FAQ, Landing } from "@/components/sky/Landing";
+import { MemberHome } from "@/components/sky/MemberHome";
+import { Shell } from "@/components/sky/Shell";
 import { AB_COOKIE, readUtm, recordEvent, UTM_COOKIE } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
+import { WHAT_IS } from "@/lib/copy";
 import { getDb, hasDatabase } from "@/lib/db";
+import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { cleanRef, REF_COOKIE } from "@/lib/home/ref";
-import { agoText } from "@/lib/moves/copy";
-import { isPaid, PLANS, TRIAL } from "@/lib/plans";
-import { pct, usd } from "@/lib/read/math";
-import { tonightFor, weeklyRecap, yourMarkets, type TonightRow, type WeekRecap, type YourMarket } from "@/lib/read/member";
-import { ReadPick } from "@/components/read/ReadPick";
+import { electionMode } from "@/lib/nx/data";
+import { greeting, hello, memberCats, memberHomeData, type MemberHomeData } from "@/lib/nx/member";
+import { isPaid } from "@/lib/plans";
+import { dedupeChips, landingData, type LandingData } from "@/lib/sky/landing";
+import { skyBets } from "@/lib/sky/skyline";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: { absolute: "insidir: where's the smart money?" }, description: WHAT_IS };
+export const viewport: Viewport = { themeColor: "#070B14" };
 
-/** What a Read shows, in the order the card shows it. Words only: no numbers on this page are made up. */
-const PARTS = [
-  ["Proven money", "Which side winning trackers and proven wallets are on, each with its record. Winning: 30+ settled and a positive all-time return. Proven wallets: 30+ closed Polymarket markets and positive all-time profit."],
-  ["Big bets, last 24 hours", "Every large position: its size, side, price and time. Unusual ones are flagged: a fresh wallet, a size big for that market, or the long-shot side."],
-  ["Price now", "Each side on Kalshi and Polymarket, the better price marked. In the US, Kalshi only."],
-  ["One analyst line", "What the data shows, in one sentence, checked against the numbers. Never a tip."],
-] as const;
-
-const AT_ET = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
-
-function Tonight({ rows, asked, now }: { rows: TonightRow[]; asked: boolean; now: number }) {
-  if (!asked) return <p className="rpage__none">Tell us what you bet on and tonight&apos;s markets show up here. <Link href="/onboarding?again=1">Pick your leagues</Link></p>;
-  if (!rows.length) return <p className="rpage__none" data-testid="tonight-none">Nothing with big money on it tonight in your leagues yet. <Link href="/onboarding?again=1">Change your leagues</Link></p>;
-  return (
-    <ul className="rrecent" data-testid="tonight">
-      {rows.map(r => (
-        <li key={`${r.venue}:${r.marketId}`}>
-          <ReadPick venue={r.venue} id={r.marketId} className="rrecent__a rrecent__btn">
-            <span className="rrecent__q">{r.title}</span>
-            <span className="rrecent__s">{r.label}{isLive(r.startAt, now) ? " · Live" : r.startAt ? ` · ${AT_ET.format(new Date(r.startAt))} ET` : ""} · {usd(r.total)} in big bets · Read it</span>
-          </ReadPick>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function YourMarkets({ list, now }: { list: YourMarket[]; now: number }) {
-  if (!list.length) return <p className="rpage__none">Every market you read stays here with its latest Read.</p>;
-  return (
-    <ul className="rrecent" data-testid="your-markets">
-      {list.map(({ key, latest: r, moved }) => {
-        const d = r.data, s = d.proven.yesShare;
-        return (
-          <li key={key} className={moved ? "is-moved" : undefined}>
-            <Link href={`/read/${r.id}`} className="rrecent__a">
-              <span className="rrecent__q">{d.question}</span>
-              <span className="rrecent__s">{s !== null ? `Proven money ${pct(s)} ${d.yesLabel}, ${pct(1 - s)} ${d.noLabel}` : "No proven money yet"} · read {agoText(r.createdAt, now)}</span>
-              {moved ? <span className="rrecent__moved" data-testid="moved">Proven money moved since your last visit{moved.from !== null && moved.to !== null ? `: ${pct(moved.from)} → ${pct(moved.to)} ${d.yesLabel}` : ""}</span> : null}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function Week({ w }: { w: WeekRecap }) {
-  return (
-    <section className="recap" aria-labelledby="week-h" data-testid="week-recap">
-      <h2 id="week-h" className="recap__h">{w.of ? `Your markets this week: proven money was right on ${w.right} of ${w.of}` : "Your markets this week"}</h2>
-      {w.of ? (
-        <ul className="recap__list">{w.lines.map(l => <li key={l.key}><b className={l.right ? "pos" : "neg"}>{l.right ? "Right" : "Wrong"}</b> {l.question}: proven money on {l.provenSide}, {l.won} won.</li>)}</ul>
-      ) : <p className="recap__sub">None of your markets settled this week. When they do, this shows whether proven money&apos;s side won, losses included.</p>}
-      <p className="recap__share">Proven money&apos;s side as your last Read before the result showed it. {PAST}</p>
-    </section>
-  );
-}
-
-function DollarBlock({ trial }: { trial: string }) {
-  return (
-    <section className="sec3 hprice" aria-labelledby="price-h">
-      <div className="pg">
-        <h2 id="price-h" className="sec3__h">{TRIAL_LINE}</h2>
-        <div className="hprice__card" data-testid="home-plan">
-          <p className="hprice__name">Insidir</p>
-          <p className="hprice__price"><b className="num">${PLANS.insidir.price}</b><span>/mo</span></p>
-          <p className="hprice__trial">{TRIAL_LINE}</p>
-          <ul className="hprice__list">{INCLUDED.map(x => <li key={x}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>{x}</li>)}</ul>
-          <a className="btn btn--primary hprice__cta" href={trial} data-checkout="home-pricing">Start for ${TRIAL.fee}</a>
-          <p className="hprice__fine">Pay first with Apple Pay, Google Pay or card, then sign in. Then ${PLANS.insidir.price}/month. Cancel anytime. Secure payments by Whop. {PAST}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
+const faqLd = () => JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
 
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const now = Date.now();
   const [jar, viewer, sp] = await Promise.all([cookies(), getViewer(), searchParams]);
-  const member = isPaid(viewer.plan);
-  if (member) {
-    const db = hasDatabase() ? getDb() : null, uid = viewer.user?.id ?? null, betOn = viewer.user?.settings.betOn ?? [];
-    const [taps, tonight, mine, week] = db && uid ? await Promise.all([
-      tonightReadsCached(db, now).catch((): TonightRead[] => []),
-      tonightFor(db, betOn, now).catch((): TonightRow[] => []),
-      yourMarkets(db, uid, now).catch((): YourMarket[] => []),
-      weeklyRecap(db, uid, now).catch((): WeekRecap => ({ right: 0, of: 0, lines: [] })),
-    ]) : [[], [], [], { right: 0, of: 0, lines: [] } as WeekRecap];
+  const clients = { polymarket: new PolymarketClient(), kalshi: new KalshiClient() };
+  if (isPaid(viewer.plan) && viewer.user) {
+    const u = viewer.user, cats = memberCats(u.settings.betOn ?? []);
+    const [d, sky] = hasDatabase() ? await Promise.all([
+      memberHomeData(getDb(), clients, u.id, u.settings.betOn ?? [], now),
+      skyBets(getDb(), now, { cats: cats.length ? cats : null }).catch(() => []),
+    ]) : [{ tabs: [], chips: [], mine: [], week: { right: 0, of: 0, lines: [] } } as MemberHomeData, []];
     return (
-      <>
-        <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={unlockHref()} />
-        <main className="pg rhome rhome--member" data-testid="member-home">
-          <h1 className="rhome__h rhome__h--small">{HEADLINE}</h1>
-          <ReadBox autoFocus />
-          <TonightReads rows={taps} now={now} />
-          <section className="rpage__next" aria-labelledby="tonight-h">
-            <h2 id="tonight-h" className="rpage__h">Tonight in your leagues</h2>
-            <Tonight rows={tonight} asked={betOn.length > 0} now={now} />
-          </section>
-          <section className="rpage__next" aria-labelledby="mine-h">
-            <h2 id="mine-h" className="rpage__h">Your markets</h2>
-            <YourMarkets list={mine} now={now} />
-          </section>
-          <div className="rpage__next"><Week w={week} /></div>
-        </main>
-      </>
+      <Shell current="home">
+        <MemberHome d={{ ...d, chips: dedupeChips(d.chips) }} hello={hello(greeting(now), u.name)} sky={sky} cats={cats} now={now} focus={sp.ask === "1"} />
+      </Shell>
     );
   }
-  const taps = hasDatabase() ? await tonightReadsCached(getDb(), now).catch((): TonightRead[] => []) : [];
-  const trial = unlockHref();
   const ref = cleanRef(typeof sp.ref === "string" ? sp.ref : null) ?? cleanRef(jar.get(REF_COOKIE)?.value);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
   // The post they came from (per-post funnel on /admin): this link's UTM tags, else the first-touch ones kept in the cookie.
@@ -149,28 +53,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const tags = Object.fromEntries((["utm_source", "utm_campaign", "utm_content"] as const).flatMap(k => utm[k] ? [[k, utm[k]!]] : []));
   const props = { ...(ref ? { ref } : {}), ...tags };
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null, props: Object.keys(props).length ? props : undefined }).catch(() => undefined));
+  const us = viewer.region !== "non_us";
+  const d: LandingData = hasDatabase() ? await landingData(getDb(), clients, now, us)
+    : { now, election: electionMode(now), us, sky: [], chips: [], proof: null, cards: {}, featured: null, ticker: [], record: { "1w": [], "1m": [], "3m": [], all: [] } };
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
-      <main className="lp3">
-        <section className="hero3 rhome" aria-labelledby="hero-h" data-hero="">
-          <div className="pg hero3__in">
-            <h1 id="hero-h" className="rhome__h">{HEADLINE}</h1>
-            <p className="rhome__sub">Paste a Polymarket or Kalshi link, or type the market. In a few seconds: where proven money sits, the big bets, and the best price.</p>
-            <ReadBox />
-            <p className="rhome__fine">Your first Read is free. No account needed.</p>
-            <TonightReads rows={taps} now={now} />
-          </div>
-        </section>
-        <Sec id="parts-h" title="What a Read shows" className="steps">
-          <ol className="steps__list">
-            {PARTS.map(([h, p], i) => <li key={h} className="steps__item"><span className="steps__n num">{i + 1}</span><h3 className="steps__h">{h}</h3><p className="steps__p">{p}</p></li>)}
-          </ol>
-        </Sec>
-        <DollarBlock trial={trial} />
-        <FaqV2 />
-      </main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd() }} />
+      <Landing d={d} startHref={unlockHref()} />
     </>
   );
 }

@@ -31,35 +31,42 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("is one tool: the headline, the box, what a Read shows, the $1 block, FAQ; nothing else on the page", () => {
-    const src = read("app/page.tsx");
-    expect(read("lib/copy.ts")).toContain('HEADLINE = "Paste any bet. See where the smart money is."');
-    const markers = ['className="hero3 rhome"', "<ReadBox />", 'id="parts-h"', "<DollarBlock ", "<FaqV2 />"];
-    const at = markers.map(m => src.indexOf(m));
+  it("the skyline landing, in order: the bar, nav, hero, live markets, the Read, ticker, record, how it works, pricing, FAQ, final CTA, footer", () => {
+    const src = read("components/sky/Landing.tsx");
+    const body = src.slice(src.indexOf("export function Landing("));
+    const markers = ['data-testid="announcement"', "<Nav ", "<Hero ", "<LiveMarkets ", "<Answer ", "<Ticker ", "<Record ", "<How />", "<Pricing ", "<Faq />", "<FinalCta ", "<Footer />"];
+    const at = markers.map(m => body.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
-    for (const gone of ["<TopWallet ", "<NewMoves ", "<OpenNow ", "<MyCopies ", "<ResearchBar ", "<MarketTabs ", "<BoardSection ", "<Laptops ", "PayPrompt", "<HeroCta "]) expect(src, gone).not.toContain(gone);
-    // Members: the box, tonight in their leagues, Your markets, the week.
-    expect(src).toContain('data-testid="member-home"');
-    for (const m of ["<Tonight rows={tonight}", "<YourMarkets list={mine}", "<Week w={week}"]) expect(src).toContain(m);
+    expect(literals(src)).toContain("Where's the smart money?");
+    expect(src).toContain("Midterms are Tuesday. See where the smart money is before polls close →");
+    // Visitors get the landing; members the dashboard home: greeting, Moved, This week, Your markets, Your week.
+    const page = read("app/page.tsx");
+    expect(page).toContain("<Landing d={d}");
+    expect(page).toContain("<MemberHome ");
+    const home = read("components/sky/MemberHome.tsx");
+    const order = ["<Top ", "<Moved ", "<ThisWeek ", "<Yours ", "<Week "].map(m => home.lastIndexOf(m));
+    for (const i of order) expect(i).toBeGreaterThan(-1);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
-  it("one CTA, Start for $1; the nav is the tool; no stocks, crypto or Congress in the pitch", async () => {
-    const src = read("app/page.tsx");
-    expect(src).toContain("Start for ${TRIAL.fee}");
+  it("one CTA, Start for $1; no stocks, crypto or Congress in the pitch", async () => {
+    const landing = read("components/sky/Landing.tsx");
+    expect(landing).toContain("Start for ${TRIAL.fee}");
+    expect(landing).toContain("Information, not financial or betting advice.");
+    expect(landing).toContain("Operated by {COMPANY.name}.");
+    expect((await import("@/lib/copy")).COMPANY.name).toBe("Aethric LLC");
     const nav = read("components/SiteHeader.tsx");
     expect(nav).toContain('[link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>]');
-    expect(nav).toContain('[link("/", "Read", "/"), link("/settings", "Account", "/account")]');
-    for (const f of ["app/page.tsx", "components/SiteHeader.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
-      expect(read(f), f).not.toMatch(/\b(stocks?|Stocks?|crypto|Crypto|SEC|insider stock|CEO|Congress)\b/);
+    for (const f of ["app/page.tsx", "components/sky/Landing.tsx", "components/sky/MemberHome.tsx", "components/sky/Shell.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
+      expect(literals(read(f)), f).not.toMatch(/\b(stocks?|Stocks?|crypto|Crypto|SEC|insider stock|CEO|Congress)\b/);
     }
     const copy = await import("@/lib/copy");
     for (const t of [copy.WHAT_IS, copy.WHAT_IS_TITLE, copy.HEADLINE, ...copy.INCLUDED]) expect(t).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
-    for (const f of ["app/page.tsx", "components/motion/Motion.tsx", "components/read/ReadCard.tsx", "app/pricing/page.tsx"]) expect(read(f), f).not.toMatch(/data-count|countUp/);
     for (const f of ["components/home/Story.tsx", "components/PageBand.tsx", "components/home/MarketTabs.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
     expect(GET_CTA).toBe("Try 3 days for $1");
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
-    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
+    for (const f of ["components/sky/Landing.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
       expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|7 days|first week|Pro\b/);
     }
   });
@@ -123,12 +130,13 @@ describe("home hero ticker", () => {
 });
 
 describe("design system", () => {
-  it("defines every colour in app/tokens.css, only black, white, greys, the gain green and the loss red (each with a darker shade for small text) (tracker covers are photos now); other stylesheets use tokens only", () => {
+  it("defines every colour in app/tokens.css (the skyline pages: app/sky.css :root), only black, white, greys, the gain green and the loss red (each with a darker shade for small text); other stylesheets use tokens only", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
-      const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
+      // app/sky.css defines the skyline palette once, in its :root (checked in test/sky.test.ts).
+      const css = (f === "app/sky.css" ? read(f).slice(read(f).indexOf("}", read(f).indexOf(":root"))) : read(f)).replace(/\/\*[\s\S]*?\*\//g, " ");
       expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
     }
   });

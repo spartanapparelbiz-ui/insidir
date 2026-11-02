@@ -63,7 +63,7 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await page.screenshot({ path: `qa/screenshots/view-as-member-${w}.png` });
   await bar.getByRole("button", { name: "Visitor" }).click();
   await expect(page.getByTestId("view-as").getByRole("button", { name: "Visitor" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator('a[href="/signin"]').first()).toBeAttached();
+  await expect(page.locator('a[href="/signin"], a[href="/login"]').first()).toBeAttached();
   await page.screenshot({ path: `qa/screenshots/view-as-visitor-${w}.png` });
   await page.goto("/following");
   await expect(page).toHaveURL(/\/login\?next=%2Ffollowing/);
@@ -152,9 +152,9 @@ test("the nav's 36px Start for $1 on public pages, home included, but not /start
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
   await page.goto("/");
-  await expect(page.locator(".nav__cta")).toHaveText("Start for $1");
-  if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
+  await expect(page.locator('.skl-nav a[data-unlock="nav"]')).toHaveText("Start for $1");
   await page.goto("/pricing");
+  if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
   await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");
   await page.goto("/login");
   await expect(page.locator(".nav__cta")).toHaveCount(0);

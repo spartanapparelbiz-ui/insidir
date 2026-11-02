@@ -30,35 +30,47 @@ function Split({ share, yes, no, what, yesSub, noSub }: { share: number; yes: st
   );
 }
 
-function PriceRow({ label, s, us }: { label: string; s: SidePrices; us: boolean }) {
+function PriceRow({ label, s, us, cols }: { label: string; s: SidePrices; us: boolean; cols: ReadonlyArray<"kalshi" | "polymarket"> }) {
   const cell = (v: "kalshi" | "polymarket") => {
     const p = s[v];
-    return <td className={`rprice__c${s.best === v && (!us || v === "kalshi") && p !== null ? " is-best" : ""}`} data-testid={`price-${v}`}>{cents(p)}{s.best === v && p !== null && !us ? <span className="rprice__best">Best</span> : null}</td>;
+    // No price for this side on a venue: an empty cell, never a dash.
+    return <td key={v} className={`rprice__c${s.best === v && (!us || v === "kalshi") && p !== null ? " is-best" : ""}`} data-testid={`price-${v}`}>{p !== null ? cents(p) : null}{s.best === v && p !== null && !us ? <span className="rprice__best">Best</span> : null}</td>;
   };
-  return <tr><th scope="row">{label}</th>{cell("kalshi")}{us ? null : cell("polymarket")}</tr>;
+  return <tr><th scope="row">{label}</th>{cols.map(cell)}</tr>;
 }
 
-export function ReadCard({ id, data, member, us, now, startHref }: { id: string; data: ReadData; member: boolean; us: boolean; now: number; startHref: string }) {
+/** What "proven money" means, behind an ⓘ (no paragraph on the card). */
+export const PROVEN_INFO = "Open positions from trackers with 30+ settled and a positive all-time return, and from wallets with 30+ closed Polymarket markets and positive all-time profit.";
+
+export function ReadCard({ id, data, member, us, now, startHref, level = 2, head = true }: { id: string; data: ReadData; member: boolean; us: boolean; now: number; startHref: string;
+  /** The market's heading level: 2 inside a page with its own h1. */
+  level?: 1 | 2;
+  /** The kicker and the market's name on the card; off where the page already shows the question. */
+  head?: boolean }) {
   const p = data.proven, prices = pricesFor(data.prices, us);
+  const Q = level === 1 ? "h1" : "h2";
+  // Venue columns that have a price on at least one side (Kalshi only in the US); none: no price section.
+  const cols = (us ? (["kalshi"] as const) : (["kalshi", "polymarket"] as const)).filter(v => prices.yes[v] !== null || prices.no[v] !== null);
   const yesShare = p.yesShare, trackers = p.trackers ?? [], walletRows = p.walletRows ?? [], big = data.big ?? null;
   const open = us ? (data.kalshi?.url ? { href: data.kalshi.url, venue: "Kalshi" } : null)
     : (prices.yes.best === "kalshi" && data.kalshi?.url ? { href: data.kalshi.url, venue: "Kalshi" } : data.polymarket?.url ? { href: data.polymarket.url, venue: "Polymarket" } : data.kalshi?.url ? { href: data.kalshi.url, venue: "Kalshi" } : null);
   const sideLabel = (s: "yes" | "no") => (s === "yes" ? data.yesLabel : data.noLabel);
   return (
     <article className="rcard" data-testid="read-card">
-      <header className="rcard__head">
-        <p className="rcard__kicker">The Read · {clockET(data.at)}</p>
-        <h1 className="rcard__q">{data.question}</h1>
-        {data.event && data.event !== data.question ? <p className="rcard__ev">{data.event}</p> : null}
-      </header>
+      {head ? (
+        <header className="rcard__head">
+          <p className="rcard__kicker">The Read · {clockET(data.at)}</p>
+          <Q className="rcard__q">{data.question}</Q>
+          {data.event && data.event !== data.question ? <p className="rcard__ev">{data.event}</p> : null}
+        </header>
+      ) : null}
 
       <section className="rsec" aria-labelledby="r-proven">
-        <h2 id="r-proven" className="rsec__h">Proven money</h2>
-        <p className="rsec__fine" data-testid="read-proven-def">Open positions from trackers with 30+ settled and a positive all-time return, and from wallets with 30+ closed Polymarket markets and positive all-time profit.</p>
+        <h2 id="r-proven" className="rsec__h">Proven money <details className="rinfo" data-testid="read-proven-def"><summary aria-label="What counts as proven money">ⓘ</summary><span className="rinfo__pop" role="note">{PROVEN_INFO}</span></details></h2>
         {yesShare !== null ? (
           <div data-testid="read-proven">
             <Split share={yesShare} yes={data.yesLabel} no={data.noLabel} what="proven money"
-              yesSub={`${usd(p.yes.dollars)} · ${count(p.yes.positions ?? p.yes.wallets, "position")}`} noSub={`${usd(p.no.dollars)} · ${count(p.no.positions ?? p.no.wallets, "position")}`} />
+              yesSub={p.yes.dollars > 0 ? `${usd(p.yes.dollars)} · ${count(p.yes.positions ?? p.yes.wallets, "position")}` : "None"} noSub={p.no.dollars > 0 ? `${usd(p.no.dollars)} · ${count(p.no.positions ?? p.no.wallets, "position")}` : "None"} />
             {trackers.length ? (
               <ul className="rprov" data-testid="read-trackers" aria-label="Winning trackers">
                 {trackers.map(t => (
@@ -93,25 +105,27 @@ export function ReadCard({ id, data, member, us, now, startHref }: { id: string;
               <div className="rbig" data-testid="read-big-split">
                 <h3 className="rsec__h">Big-money split · every tracked large position, not only proven</h3>
                 <Split share={big.yesShare} yes={data.yesLabel} no={data.noLabel} what="big money"
-                  yesSub={`${usd(big.yes.dollars)} · ${count(big.yes.positions, "position")}`} noSub={`${usd(big.no.dollars)} · ${count(big.no.positions, "position")}`} />
+                  yesSub={big.yes.dollars > 0 ? `${usd(big.yes.dollars)} · ${count(big.yes.positions, "position")}` : "None"} noSub={big.no.dollars > 0 ? `${usd(big.no.dollars)} · ${count(big.no.positions, "position")}` : "None"} />
               </div>
             ) : <p className="rsec__fine">No tracked large positions here either.</p>}
           </div>
         )}
       </section>
 
-      <section className="rsec" aria-labelledby="r-price">
-        <h2 id="r-price" className="rsec__h">Price now</h2>
-        <table className="rprice" data-testid="read-prices">
-          <thead><tr><th scope="col"><span className="sr-only">Side</span></th><th scope="col">Kalshi</th>{us ? null : <th scope="col">Polymarket</th>}</tr></thead>
-          <tbody><PriceRow label={data.yesLabel} s={prices.yes} us={us} /><PriceRow label={data.noLabel} s={prices.no} us={us} /></tbody>
-        </table>
-        {us ? <p className="rsec__fine">In the US we show Kalshi only.</p> : null}
-      </section>
+      {cols.length ? (
+        <section className="rsec" aria-labelledby="r-price">
+          <h2 id="r-price" className="rsec__h">Price now</h2>
+          <table className="rprice" data-testid="read-prices">
+            <thead><tr><th scope="col"><span className="sr-only">Side</span></th>{cols.map(v => <th key={v} scope="col">{v === "kalshi" ? "Kalshi" : "Polymarket"}</th>)}</tr></thead>
+            <tbody><PriceRow label={data.yesLabel} s={prices.yes} us={us} cols={cols} /><PriceRow label={data.noLabel} s={prices.no} us={us} cols={cols} /></tbody>
+          </table>
+          {us ? <p className="rsec__fine">In the US we show Kalshi only.</p> : null}
+        </section>
+      ) : null}
 
       {member ? (
         <>
-          <section className="rsec" aria-labelledby="r-bets">
+          {data.bets.length ? <section className="rsec" aria-labelledby="r-bets">
             <h2 id="r-bets" className="rsec__h">Big bets, last 24 hours</h2>
             {data.bets.length ? (
               <ul className="rbets" data-testid="read-bets">
@@ -123,8 +137,8 @@ export function ReadCard({ id, data, member, us, now, startHref }: { id: string;
                   </li>
                 ))}
               </ul>
-            ) : <p className="rsec__none">No big bets in the last 24 hours.</p>}
-          </section>
+            ) : null}
+          </section> : null}
           <section className="rsec" aria-labelledby="r-line">
             <h2 id="r-line" className="rsec__h">Analyst line</h2>
             {data.line ? <p className="rline" data-testid="read-line">{data.line.text}</p> : <p className="rsec__none">No line for this Read.</p>}

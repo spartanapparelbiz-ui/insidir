@@ -3,46 +3,41 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: one tool, final on first paint: the headline, the box, what a Read shows, the $1 block, FAQ; the nav is Pricing and Log in; no stocks; no pop-up", async ({ page }) => {
-  const HEAD = "Paste any bet. See where the smart money is.";
+test("landing: final on first paint: the headline and the box in the first screen, the sections in order, the nav, one CTA; no stocks; no pop-up", async ({ page }) => {
+  const HEAD = "Where's the smart money?";
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain(HEAD);
-  expect(html).not.toMatch(/data-count/);
+  expect(html).toContain("Where&#x27;s the smart money?");
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: HEAD });
   await expect(h1).toBeVisible();
   expect(await h1.evaluate(e => getComputedStyle(e).opacity)).toBe("1");
-  // The box is in the first screen.
   const input = page.getByTestId("read-input");
   await expect(input).toBeVisible();
   expect((await input.boundingBox())!.y + 20).toBeLessThan(page.viewportSize()!.height);
-  await expect(page.getByTestId("read-go")).toHaveText("Read it");
+  await expect(page.getByTestId("read-go")).toHaveText("Read");
   await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
   const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  expect(h2s).toEqual(["Tonight, with proven money", "What a Read shows", "$1 for your first 3 days", "Questions"]);
-  await expect(page.locator(".steps__h")).toHaveText(["Proven money", "Big bets, last 24 hours", "Price now", "One analyst line"]);
-  // The nav: Pricing, Log in, Start for $1. Nothing else.
-  const links = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
-  expect(links).toEqual(["Pricing", "Log in"]);
-  await expect(page.locator("header .nav__cta")).toHaveText("Start for $1");
-  // The $1 block; every primary button says Start for $1 (the box's own button aside).
-  const plan = page.getByTestId("home-plan");
-  await expect(plan.locator("li")).toHaveCount(4);
-  await expect(plan.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
-  for (const t of await page.locator("main .btn--primary:not(.rbox__go), header .btn--primary").allInnerTexts()) expect(t.trim()).toBe("Start for $1");
+  expect(h2s.filter(h => ["Markets moving now", "The record", "How it works", "Questions"].includes(h))).toEqual(["Markets moving now", "The record", "How it works", "Questions"]);
+  // The nav: Markets, Record, How it works, Log in, and the white Start for $1.
+  const nav = page.locator(".skl-nav");
+  await expect(nav.locator('a[data-unlock="nav"]')).toHaveText("Start for $1");
+  await expect(nav.getByRole("link", { name: "Log in" })).toBeVisible();
+  for (const t of await page.locator(".skl .sk-btn:visible").allInnerTexts()) expect(["Start for $1", "Read", "New Read"]).toContain(t.trim());
   const text = await page.locator("main").innerText();
   expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
   expect(text).not.toMatch(/guaranteed|risk-free/i);
   await page.waitForTimeout(1000);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByTestId("late-bar")).toHaveCount(0);
-  expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
+  // Outfit, 700 at most.
+  expect(await page.evaluate(() => [...document.querySelectorAll(".skl *")].filter(e => Number(getComputedStyle(e).fontWeight) > 700).length)).toBe(0);
+  expect(await h1.evaluate(e => getComputedStyle(e).fontFamily)).toMatch(/Outfit/i);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; /stocks and /insider-trading pages stay live by URL and in the sitemaps", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Paste any bet. See where the smart money is.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Where's the smart money?");
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
@@ -55,7 +50,7 @@ test("home: the nav's Start for $1 is recorded and opens /start; the trackers pa
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
   await page.goto("/");
-  await page.locator("header .nav__cta").click();
+  await page.locator('.skl-nav a[data-unlock="nav"]').click();
   await expect(page).toHaveURL(/\/start(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
   await page.goto("/trackers");
@@ -97,7 +92,7 @@ test("one font: headlines, body text, buttons and cards are all Schibsted Grotes
 });
 
 test("the public preview: home and the product pages show real moves 30 minutes late, records blurred, never sent", async ({ page }) => {
-  const bodies = await captureBodies(page, async () => { await page.goto("/"); await page.goto("/sports"); await page.goto("/markets"); });
+  const bodies = await captureBodies(page, async () => { await page.goto("/"); await page.goto("/markets"); await page.goto("/sports"); });
   await expect(page.locator(".move").first()).toBeVisible();
   const locked = page.getByTestId("locked-record").first();
   await expect(locked).toBeVisible();

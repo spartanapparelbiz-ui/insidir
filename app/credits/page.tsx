@@ -1,5 +1,7 @@
 /* Credits (/credits): every photo with its photographer and license (lib/photos.ts PHOTOS, all from Unsplash), every
  * logo source with its package license (scripts/logos.mjs PKG; licenses as published on npm), and the typeface. */
+import peopleJson from "@/public/people/people.json";
+import type { PersonRow } from "@/lib/sky/people-match";
 import type { Metadata } from "next";
 import { TrustPage } from "@/components/TrustPage";
 import { PHOTOS } from "@/lib/photos";
@@ -19,6 +21,8 @@ const LOGO_SOURCES = [
   { pkg: "nhl-team-logos", version: "1.2.0", license: "ISC", what: "NHL and every NHL team" },
   { pkg: "us-stock-logos", version: "1.0.0", license: "MIT", what: "US-listed companies, by ticker" },
 ] as const;
+
+const PEOPLE = peopleJson as PersonRow[];
 
 export default function CreditsPage() {
   const photos = Object.entries(PHOTOS);
@@ -45,8 +49,16 @@ export default function CreditsPage() {
         ))}
       </ul>
 
-      <h2>Typeface</h2>
-      <p><a href="https://fonts.google.com/specimen/Schibsted+Grotesk" target="_blank" rel="noopener noreferrer">Schibsted Grotesk</a> by Schibsted Media, under the <a href="https://openfontlicense.org" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>.</p>
+      <h2>Portraits</h2>
+      <p>Official portraits of members of Congress come from the <a href="https://github.com/unitedstates/images" target="_blank" rel="noopener noreferrer">unitedstates/images</a> project. They are works of the US government, in the public domain. We copy them onto our own server; nothing is loaded from elsewhere. Anyone without an official portrait is shown with their initials.</p>
+      {PEOPLE.length ? (
+        <ul className="credits" data-testid="credits-people">
+          {PEOPLE.map(p => <li key={p.bioguide}>{p.name}: official portrait, {p.bioguide}, public domain</li>)}
+        </ul>
+      ) : null}
+
+      <h2>Typefaces</h2>
+      <p><a href="https://fonts.google.com/specimen/Outfit" target="_blank" rel="noopener noreferrer">Outfit</a> by Rodrigo Fuenzalida, <a href="https://fonts.google.com/specimen/IBM+Plex+Mono" target="_blank" rel="noopener noreferrer">IBM Plex Mono</a> by IBM, and <a href="https://fonts.google.com/specimen/Schibsted+Grotesk" target="_blank" rel="noopener noreferrer">Schibsted Grotesk</a> by Schibsted Media, all under the <a href="https://openfontlicense.org" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>.</p>
 
       <h2>Screens</h2>
       <p>The recordings of Insidir itself are ours.</p>

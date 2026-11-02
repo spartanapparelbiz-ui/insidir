@@ -19,6 +19,12 @@ import { isPaid, PLANS } from "@/lib/plans";
 import { eq } from "drizzle-orm";
 import { COPY_SIZES, copySizeOf } from "@/lib/copies/size";
 import { CANCEL_REASONS } from "@/lib/billing/cancel-reasons";
+import { Shell } from "@/components/sky/Shell";
+import { PushButton } from "@/components/app/PushButton";
+import { vapidPublicKey } from "@/lib/alerts/vapid";
+import { BET_ON } from "@/lib/read/member";
+import type { SessionUser } from "@/lib/auth/session";
+import type { UserSettings } from "@/lib/db/schema";
 import "../app.css";
 import "../account.css";
 
@@ -52,6 +58,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const cancelNote = q.cancel === "done" ? null : q.cancel === "reason" ? "Pick one reason to cancel." : q.cancel === "failed" ? "Whop didn't take the cancellation. Try again, or cancel on your Whop orders page." : q.cancel === "none" ? "We couldn't find your subscription. Cancel on your Whop orders page." : null;
   const notice = q.saved ? "Saved." : q.cancel === "done" ? "Cancelled. You keep access until the end of the period you paid for." : null;
   const confirmDelete = q.delete === "confirm";
+
+  if (paid) return <MemberAccount user={user} m={m} memError={mem === "error"} notice={notice} cancelNote={cancelNote} confirmDelete={confirmDelete} />;
 
   return (
     <>
@@ -176,5 +184,89 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </section>
       </main>
     </>
+  );
+}
+
+/** A member's Account, in the member frame: plan and next charge, Manage billing (Whop), copy size, push alerts on
+ *  this device, their categories, sign out; Cancel asks for one reason; Delete asks for DELETE. */
+function MemberAccount({ user, m, memError, notice, cancelNote, confirmDelete }: { user: SessionUser; m: MembershipLite | null; memError: boolean; notice: string | null; cancelNote: string | null; confirmDelete: boolean }) {
+  const cats = BET_ON.filter(([k]) => (user.settings.betOn ?? []).includes(k)).map(([, label]) => label);
+  const price = `$${PLANS.insidir.price}`;
+  const s = user.settings as UserSettings;
+  return (
+    <Shell current="account" refresh={false}>
+      <div className="skm-sec ska" data-testid="account">
+        <h1 className="sk-h2">Account</h1>
+        {notice ? <p className="ska-note" role="status">{notice}</p> : null}
+        {cancelNote ? <p className="ska-note" role="alert">{cancelNote}</p> : null}
+
+        <section className="sk-panel ska-box" aria-labelledby="a-plan" id="billing">
+          <h2 id="a-plan">Plan</h2>
+          <p className="ska-big">Insidir · {price}/month</p>
+          {m?.renewalPeriodEnd ? (
+            user.cancelAtPeriodEnd
+              ? <p className="sk-muted" data-testid="cancels-on">Cancels on {day(m.renewalPeriodEnd)}. You keep access until then.</p>
+              : m.status === "trialing"
+                ? <p data-testid="next-charge">Your {TRIAL_ADJ} trial ends {day(m.renewalPeriodEnd)}, then {m.renewalPrice ?? `${price}.00 / month`} unless you cancel.</p>
+                : <p data-testid="next-charge">Next charge: {m.renewalPrice ?? price} on {day(m.renewalPeriodEnd)}.</p>
+          ) : <p className="sk-muted">{memError ? "Couldn't load the next charge now. Manage billing shows it." : "Manage billing shows your next charge."}</p>}
+          <a className="sk-pill" href={MANAGE_URL} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Manage billing</a>
+        </section>
+
+        <section className="sk-panel ska-box" aria-labelledby="a-copy" id="copy-size">
+          <h2 id="a-copy">Copy size</h2>
+          <form method="post" action="/api/settings" className="ska-form" data-testid="copy-size">
+            <p className="sk-muted">What My copies counts on each move from the winners you copy. Insidir never places a bet for you.</p>
+            <div role="radiogroup" aria-label="Dollars per move" className="sk-chips">
+              {COPY_SIZES.map(v => <label key={v} className="ska-opt"><input type="radio" name="copySize" value={v} defaultChecked={copySizeOf(s) === v} /> ${v} a move</label>)}
+            </div>
+            <button type="submit" className="sk-pill">Save size</button>
+          </form>
+        </section>
+
+        <section className="sk-panel ska-box" aria-labelledby="a-alerts">
+          <h2 id="a-alerts">Alerts on this device</h2>
+          <p className="sk-muted">A push alert when proven money moves on a market you&apos;ve read.</p>
+          <PushButton vapidKey={vapidPublicKey()} />
+        </section>
+
+        <section className="sk-panel ska-box" aria-labelledby="a-cats">
+          <h2 id="a-cats">Your categories</h2>
+          {cats.length ? <p className="sk-chips">{cats.map(c => <span key={c} className="sk-chip">{c}</span>)}</p> : <p className="sk-muted">None picked yet: your home shows every category.</p>}
+          <Link className="sk-pill" href="/onboarding?again=1">Edit categories</Link>
+        </section>
+
+        <section className="sk-panel ska-box" aria-labelledby="a-me">
+          <h2 id="a-me">Signed in</h2>
+          {user.email ? <p>{user.email}</p> : null}
+          <form method="post" action="/auth/logout"><button type="submit" className="sk-pill">Sign out</button></form>
+          {!user.cancelAtPeriodEnd ? (
+            <details className="ska-cancel" open={Boolean(cancelNote)}>
+              <summary>Cancel subscription</summary>
+              <form method="post" action="/api/billing/cancel" className="ska-form" data-testid="cancel-form">
+                <fieldset>
+                  <legend>Why are you cancelling? Pick one.</legend>
+                  {CANCEL_REASONS.map(([k, label]) => <label key={k} className="ska-opt"><input type="radio" name="reason" value={k} required /> {label}</label>)}
+                </fieldset>
+                <label className="ska-form">Anything to add? (optional)<textarea name="detail" maxLength={500} rows={2} /></label>
+                <button type="submit" className="sk-pill">Cancel at the end of this period</button>
+              </form>
+              <p className="sk-meta">You keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
+            </details>
+          ) : null}
+        </section>
+
+        <details className="ska-cancel" id="delete" open={confirmDelete}>
+          <summary>Delete account</summary>
+          <p className="sk-muted">Removes your account and your Reads from Insidir right away. It doesn&apos;t cancel your membership: cancel it above first.</p>
+          <form method="post" action="/auth/delete" className="ska-form" data-testid="delete-account">
+            <label htmlFor="confirm-delete">Type DELETE to confirm</label>
+            <input id="confirm-delete" name="confirm" autoComplete="off" required pattern="DELETE" aria-invalid={confirmDelete || undefined} />
+            {confirmDelete ? <p role="alert">Type DELETE in capitals to delete your account.</p> : null}
+            <button type="submit" className="sk-pill">Delete account</button>
+          </form>
+        </details>
+      </div>
+    </Shell>
   );
 }

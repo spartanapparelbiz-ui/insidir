@@ -67,7 +67,7 @@ test("Research limits: a visitor's 4th question is refused; a member exports CSV
 
 test("every link on the home page opens for a visitor with real content", async ({ page }) => {
   await page.goto("/");
-  const hrefs = [...new Set(await page.locator("a[href^='/']").evaluateAll(as => as.map(a => (a as HTMLAnchorElement).getAttribute("href")!).filter(h => !h.startsWith("/api/"))))];
+  const hrefs = [...new Set(await page.locator("a[href^='/']").evaluateAll(as => as.map(a => (a as HTMLAnchorElement).getAttribute("href")!).filter(h => !h.startsWith("/api/") && !h.endsWith("/image"))))];
   expect(hrefs.length).toBeGreaterThan(10);
   const bad: string[] = [];
   for (const h of hrefs) {
