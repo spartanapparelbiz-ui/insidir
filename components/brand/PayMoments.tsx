@@ -4,6 +4,7 @@
  *     Read finished ("insidir:read-done").
  *   A tap on anything locked ([data-locked]): opens with that item's context ("This wallet is up $3.1M…").
  *   Exit intent on desktop (the cursor leaves through the top).
+ *   The second check (the visitor's free one is used: "insidir:paywall" from the ask box): opens, it's their tap.
  * Rules: automatic ones never in the first 15 s on the page, and at most once per session; a close (button, Esc, a tap
  * outside) is remembered for 24 hours; taps on locked items always open. No countdowns, discounts or scarcity; the full
  * price is always in it. */
@@ -16,7 +17,7 @@ const CLOSED = "insidir_pay_closed", AUTO = "insidir_pay_auto";
 export const QUIET_MS = 15_000, AFTER_AHA_MS = 8_000;
 
 export interface PayContext { count: number; window: "hour" | "day"; biggest: { title: string; amount: number } | null }
-type Open = { kind: "after-read" | "locked" | "exit"; headline: string } | null;
+type Open = { kind: "after-read" | "locked" | "exit" | "limit"; headline: string } | null;
 
 const closedRecently = () => document.cookie.split("; ").some(c => c.startsWith(`${CLOSED}=`));
 const autoUsed = () => { try { return sessionStorage.getItem(AUTO) === "1"; } catch { return false; } };
@@ -56,12 +57,16 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
       if (e.relatedTarget || e.clientY > 0 || window.innerWidth < 768) return;
       show({ kind: "exit", headline: ctx.biggest ? `Before you go: today's biggest millionaire bet is ${dollars(ctx.biggest.amount)} on ${ctx.biggest.title}. See the side for $${TRIAL.fee}.` : `Before you go: see every millionaire bet with its side for $${TRIAL.fee}.` }, true);
     };
+    // The second check (the free one is used): always opens, it's their own tap.
+    const onLimit = (e: Event) => { e.preventDefault(); show({ kind: "limit", headline: `You've used your free check. Check every bet for $${TRIAL.fee} for ${TRIAL.days} days.` }, false); };
+    window.addEventListener("insidir:paywall", onLimit);
     window.addEventListener("insidir:aha-done", onAha);
     window.addEventListener("insidir:read-done", onRead);
     document.addEventListener("click", onLocked, true);
     document.documentElement.addEventListener("mouseleave", onExit);
     return () => {
       clearTimeout(aha);
+      window.removeEventListener("insidir:paywall", onLimit);
       window.removeEventListener("insidir:aha-done", onAha); window.removeEventListener("insidir:read-done", onRead);
       document.removeEventListener("click", onLocked, true); document.documentElement.removeEventListener("mouseleave", onExit);
     };

@@ -399,3 +399,32 @@ html.bm .b-new { animation: b-pillIn .7s var(--e-reveal) both; }
 .b-ticks li { display: flex; gap: 10px; align-items: center; }
 .b-ticks li[data-done="true"]::before { content: "✓"; color: var(--up); }
 .b-ticks li[data-done="false"]::before { content: "·"; color: var(--dim); }
+
+/* /go: one fixed background (the globe at 40%) behind every step; the steps' stages are clear. */
+.b-stage--clear { background: transparent; }
+.b-fixed-bg { position: fixed; inset: 0; z-index: 0; }
+.b-fixed-bg .b-stage__bg { position: absolute; }
+
+/* The check: side pills, the verdict (big, leads the card), its evidence line. */
+.b-side-pill { height: calc(36 * var(--u)); padding: 0 calc(16 * var(--u)); font-size: calc(13 * var(--u)); border-radius: 999px; }
+@media (max-width: 1160px) { .b-side-pill { height: 42px; padding: 0 18px; font-size: 15px; } }
+.b-verdict { margin: 0; font-weight: 500; font-size: calc(32 * var(--u)); line-height: 1.08; letter-spacing: calc(-0.9 * var(--u)); }
+.b-evidence { margin: 0; font-weight: 300; font-size: calc(15.5 * var(--u)); line-height: 1.5; color: #f0f0f0; }
+@media (max-width: 1160px) { .b-verdict { font-size: max(26px, calc(32 * var(--u))); } .b-evidence { font-size: 15.5px; } }
+
+/* The problem: the pain (muted) and the fix (white), one glass row each. */
+.b-pains { width: 100%; max-width: calc(860 * var(--u)); margin: calc(30 * var(--u)) auto 0; display: grid; gap: calc(8 * var(--u)); }
+.b-pain { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: calc(18 * var(--u)); padding: calc(18 * var(--u)) calc(22 * var(--u)); text-align: left; }
+.b-pain__p { color: var(--dim); font-weight: 400; font-size: calc(15 * var(--u)); letter-spacing: calc(-0.2 * var(--u)); }
+.b-pain__f { color: var(--ink); font-weight: 500; font-size: calc(15 * var(--u)); letter-spacing: calc(-0.2 * var(--u)); }
+.b-pain .b-arw { width: calc(13 * var(--u)); height: calc(11 * var(--u)); color: var(--dim); }
+@media (max-width: 1160px) { .b-pains { margin-top: 26px; gap: 8px; } .b-pain { padding: 16px 18px; gap: 14px; } .b-pain__p, .b-pain__f { font-size: 15px; } .b-pain .b-arw { width: 13px; height: 11px; } }
+@media (max-width: 552px) { .b-pain { grid-template-columns: 1fr; gap: 6px; } .b-pain .b-arw { display: none; } }
+
+/* The check page: a shorter header stage, then body stages that size to their content. */
+.b-stage--head { min-height: max(340px, calc(420 * var(--u))); align-items: flex-end; }
+.b-stage--head .b-stage__in { padding-bottom: calc(36 * var(--u)); }
+.b-stage--body { min-height: auto; }
+.b-stage--body .b-stage__in { padding-top: calc(28 * var(--u)); padding-bottom: calc(40 * var(--u)); }
+@media (max-width: 1160px) { .b-stage--head .b-stage__in { padding-bottom: 28px; } .b-stage--body .b-stage__in { padding-top: 24px; padding-bottom: 36px; } }
+.b-panel-pill .b-arw, .b-nav-start .b-arw { width: calc(11 * var(--u)); height: calc(9.2 * var(--u)); min-width: 11px; min-height: 9px; }

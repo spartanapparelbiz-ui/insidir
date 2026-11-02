@@ -1,18 +1,19 @@
 /* The landing: a scrolling page of stages in the hero spec's language. Each stage is a full-viewport black stage with
  * one background that never animates; its foreground performs once as it enters (components/brand/StageMotion.tsx).
- *   1 Hero (the globe) · 2 Live (the globe's poster, faint) · 3 The Read (markets.jpg) · 4 Markets (black) ·
- *   5 Proof (space.jpg) · 6 Pricing (world.jpg) · 7 FAQ (black) · 8 Final (the globe again, the footer inside).
+ *   1 Hero (the globe) · 2 The problem (black) · 3 The check (markets.jpg) · 4 Live (the globe's poster, faint) ·
+ *   5 Markets (black) · 6 Proof (space.jpg) · 7 Pricing (world.jpg) · 8 FAQ (black) · 9 Final (the globe again,
+ *   the footer inside).
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
-import { ASK_PLACEHOLDER, FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
+import { ASK_PLACEHOLDER, FAQ, HERO, PAST, PROBLEM, STAGES, faqLd } from "@/lib/brand/copy";
 import { slotPhoto } from "@/lib/brand/images";
 import type { LandingData } from "@/lib/brand/landing";
 import { dollars } from "@/lib/money";
-import { AhaWatch } from "../AhaWatch";
 import { AskBox } from "../AskBox";
-import { Lines, m, Pill } from "../Bits";
+import { Arrow, Lines, m, Pill } from "../Bits";
+import { CheckCard } from "../CheckCard";
 import { Faq } from "../Faq";
 import { LiveFeed } from "../LiveFeed";
 import { MoneyCard } from "../MoneyCard";
@@ -29,8 +30,8 @@ function Hero() {
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <p className="b-sub" {...m("lift", 0.58)}>{HERO.sub.map((l, i) => <span key={i}>{l}{i < HERO.sub.length - 1 ? <br /> : null}{i < HERO.sub.length - 1 ? " " : null}</span>)}</p>
         <div className="b-ctas">
-          <Pill href="/go" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
-          <Pill href="#live" kind="ghost" delay={0.97} data-testid="hero-live">See it live</Pill>
+          <Pill href="#check" delay={0.9} data-testid="hero-check">Check my bet</Pill>
+          <Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
         </div>
       </div>
     </Stage>
@@ -46,16 +47,42 @@ function Live({ d }: { d: LandingData }) {
   );
 }
 
-function TheRead({ d }: { d: LandingData }) {
+function Problem() {
   return (
-    <Stage bg={{ kind: "photo", photo: slotPhoto("markets") }} testid="the-read" labelledBy="read-h">
-      <div className="b-head"><Lines id="read-h" lines={STAGES.read} size={64} /></div>
-      <div className="b-col">
-        <AskBox chips={d.chips} placeholder={ASK_PLACEHOLDER} />
-        {d.market ? <MoneyCard m={d.market} positions={d.positions} build testid="aha-read"
-          footer={<a className="b-btn b-panel-pill" data-m="settle" style={{ justifySelf: "start", "--d": "1.4s" } as CSSProperties} href={`/read/open?pick=polymarket:${d.market.marketId}`}>Open the full Read</a>} /> : null}
+    <Stage testid="problem" labelledBy="problem-h">
+      <div className="b-center">
+        <Lines id="problem-h" lines={PROBLEM.h1} size={64} />
+        <p className="b-sub" {...m("lift", 0.58)}>{PROBLEM.sub}</p>
       </div>
-      {d.market ? <AhaWatch /> : null}
+      <ul className="b-pains" style={{ listStyle: "none", padding: 0 }}>
+        {PROBLEM.rows.map(([pain, fix], i) => (
+          <li key={pain} className="b-pain b-glass" data-testid="pain-row" data-m="settle" style={{ "--d": `${0.8 + i * 0.12}s` } as CSSProperties}>
+            <span className="b-pain__p">{pain}</span><Arrow /><span className="b-pain__f">{fix}</span>
+          </li>
+        ))}
+      </ul>
+    </Stage>
+  );
+}
+
+function Check({ d }: { d: LandingData }) {
+  const mk = d.market;
+  const top = (side: "yes" | "no") => d.positions.filter(p => p.tier === "millionaire" && p.side === side).sort((a, b) => b.dollars - a.dollars)[0]?.pnl ?? null;
+  return (
+    <Stage id="check" bg={{ kind: "photo", photo: slotPhoto("markets") }} testid="check" labelledBy="check-h">
+      <div className="b-head"><Lines id="check-h" lines={STAGES.check} size={64} /></div>
+      <div className="b-col">
+        <AskBox chips={d.chips} placeholder={ASK_PLACEHOLDER} cta="Check" />
+        {mk ? (
+          <div data-m="settle" style={{ "--d": "1s" } as CSSProperties}>
+            <CheckCard demo testid="demo-check" marketKey={`p:${mk.marketId}`} title={mk.title} label={`${categoryInfo(mk.category).name} · a real market, checked live`}
+              money={{ yes: mk.millionaire.yes, no: mk.millionaire.no, yesLabel: mk.yesLabel, noLabel: mk.noLabel, topPnl: { yes: top("yes"), no: top("no") } }}>
+              <MoneyCard m={mk} positions={d.positions} bare title={false} millionaire={false} testid="demo-details"
+                footer={<a className="b-btn b-panel-pill" style={{ justifySelf: "start" }} href={`/read/open?pick=polymarket:${mk.marketId}`}>Open the full check</a>} />
+            </CheckCard>
+          </div>
+        ) : null}
+      </div>
     </Stage>
   );
 }
@@ -125,7 +152,7 @@ function Final() {
         <Lines id="final-h" lines={STAGES.final} />
         <div className="b-ctas">
           <Pill href="/go" delay={0.9} data-testid="final-start" data-checkout="final">Start for $1</Pill>
-          <Pill href="#live" kind="ghost" delay={0.97}>See it live</Pill>
+          <Pill href="#check" kind="ghost" delay={0.97}>Check my bet</Pill>
         </div>
       </div>
     </Stage>
@@ -136,8 +163,9 @@ export function Landing({ d }: { d: LandingData }) {
   return (
     <main className="b-root" data-testid="landing">
       <Hero />
+      <Problem />
+      <Check d={d} />
       <Live d={d} />
-      <TheRead d={d} />
       <Markets d={d} />
       <Proof d={d} />
       <Pricing />

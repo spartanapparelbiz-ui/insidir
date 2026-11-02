@@ -4,21 +4,31 @@
 import { PLANS, TRIAL } from "@/lib/plans";
 
 export const HERO = {
-  h1: ["Bet with the", "millionaires"],
-  sub: ["Insidir tracks every big bet on Polymarket and Kalshi,", "finds the wallets that have made $1M+,", "and shows you where they're betting, live."],
+  h1: ["Stop betting", "blind."],
+  sub: ["Every market has wallets that have made millions.", "Insidir shows you which side they're on before you bet,", "and pings you the moment they move."],
 } as const;
-export const ASK_PLACEHOLDER = "Paste any Polymarket or Kalshi bet";
+export const ASK_PLACEHOLDER = "Paste your bet: a Kalshi or Polymarket link, or type it";
+export const PROBLEM = {
+  h1: ["You're not betting", "against the market."],
+  sub: "You're betting against the wallets that have made millions.",
+  rows: [
+    ["You can't see who's on the other side.", "Millionaire money on every market, live."],
+    ["Big bets hit X after the price moved.", "A ping the second a millionaire bets."],
+    ["Leaderboards show volume, not winners.", "Every wallet's real all-time profit."],
+    ["You might be paying more than you need to.", "The better price, Kalshi vs. Polymarket."],
+  ],
+} as const;
 export const START = `Start for $${TRIAL.fee}`;
 export const PAST = "Past results, not a promise.";
 export const LEGAL = "Information, not financial or betting advice. Operated by Aethric LLC.";
 export const STAGES = {
   live: ["Millionaire money,", "right now."],
-  read: ["One paste.", "The whole market."],
+  check: ["Check your bet", "before you place it."],
   markets: ["Every market", "people bet on."],
-  pricing: ["$1 for three days."],
-  pricingSub: `Then $${PLANS.insidir.price} a month. Cancel anytime.`,
+  pricing: ["Less than", "one bad bet."],
+  pricingSub: `$${TRIAL.fee} for three days, then $${PLANS.insidir.price} a month. Cancel anytime.`,
   faq: ["Questions."],
-  final: ["See where the", "money goes."],
+  final: ["Bet with the", "millionaires."],
 } as const;
 
 /** Five questions, one sentence each. */

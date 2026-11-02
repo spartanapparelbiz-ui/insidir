@@ -172,7 +172,8 @@ export async function marketMoney(db: Db, opts: { marketIds?: readonly string[];
   if (!opts.marketIds) w.push(sql`(i.closed is null or not i.closed)`);
   const r = await db.execute(sql`select b.market_id, b.tier, b.outcome_side,
       max(b.market_title) as title, max(b.event_title) as event, max(b.category) as category,
-      max(case when b.outcome_side = 'yes' then b.outcome end) as yes_label, max(case when b.outcome_side = 'no' then b.outcome end) as no_label,
+      coalesce(max(b.yes_label), max(case when b.outcome_side = 'yes' then b.outcome end)) as yes_label,
+      coalesce(max(b.no_label), max(case when b.outcome_side = 'no' then b.outcome end)) as no_label,
       sum(b.amount)::float as dollars, count(distinct b.wallet)::int as wallets, max(b.at) as last, max(i.yes_price) as yes_price
     from terminal.millionaire_bets b left join terminal.market_info i on i.source = b.source and i.market_id = b.market_id
     where ${sql.join(w.map(x => sql`(${x})`), sql` and `)}
@@ -192,8 +193,25 @@ export async function marketMoney(db: Db, opts: { marketIds?: readonly string[];
     if (x.no_label) m.noLabel = String(x.no_label);
     m.last = Math.max(m.last, t(x.last));
   }
+  for (const m of by.values()) Object.assign(m, outcomeNames(m.title, m.yesLabel, m.noLabel));
   const total = (m: MarketMoney) => m.millionaire.yes.dollars + m.millionaire.no.dollars + (m.pro.yes.dollars + m.pro.no.dollars) / 10;
   return [...by.values()].sort((a, b) => total(b) - total(a)).slice(0, opts.limit ?? 50);
+}
+
+/** Both outcome names for a market. When only one is known (the venue's names weren't read and only one side was bet
+ *  on), a "A vs. B" title names the other; a binary market is "Yes" / "No". Never "Yes" next to a team name. */
+export function outcomeNames(title: string, yes: string, no: string): { yesLabel: string; noLabel: string } {
+  const isDefault = (l: string, d: string) => !l || l === d;
+  if (!isDefault(yes, "Yes") && !isDefault(no, "No")) return { yesLabel: yes, noLabel: no };
+  if (isDefault(yes, "Yes") && isDefault(no, "No")) return { yesLabel: "Yes", noLabel: "No" };
+  const vs = /^(?:[^:]*:\s*)?(.+?)\s+vs\.?\s+(.+?)(?::.*)?$/i.exec(title.trim());
+  const known = isDefault(yes, "Yes") ? no : yes;
+  if (vs) {
+    const [a, b] = [vs[1]!.trim(), vs[2]!.trim()];
+    const other = known.toLowerCase() === a.toLowerCase() ? b : known.toLowerCase() === b.toLowerCase() ? a : null;
+    if (other) return isDefault(yes, "Yes") ? { yesLabel: other, noLabel: no } : { yesLabel: yes, noLabel: other };
+  }
+  return isDefault(yes, "Yes") ? { yesLabel: "Other side", noLabel: no } : { yesLabel: yes, noLabel: "Other side" };
 }
 
 /** The side most of a tier's money is on, when at least MIN_SPLIT_WALLETS wallets are in (else null: no split). */
@@ -203,15 +221,16 @@ export function leaningSide(t: MarketMoney["millionaire"]): "yes" | "no" | null 
   return t.yes.dollars >= t.no.dollars ? "yes" : "no";
 }
 
-export interface Position { short: string; wallet: string; tier: Tier; side: "yes" | "no"; outcome: string; dollars: number; price: number; at: number }
+export interface Position { short: string; wallet: string; tier: Tier; side: "yes" | "no"; outcome: string; dollars: number; price: number; at: number; /** The wallet's all-time profit (null once it left the watchlist). */ pnl: number | null }
 
 /** Each watchlist wallet's open money in one market (members only), biggest first. */
 export async function positions(db: Db, marketId: string): Promise<Position[]> {
-  const r = await db.execute(sql`select wallet, max(tier) as tier, outcome_side, max(outcome) as outcome, sum(amount)::float as dollars,
-      (sum(amount) / nullif(sum(amount / nullif(price, 0)), 0))::float as price, max(at) as at
-    from terminal.millionaire_bets where market_id = ${marketId} and result is null group by wallet, outcome_side order by dollars desc limit 25`);
+  const r = await db.execute(sql`select b.wallet, max(b.tier) as tier, b.outcome_side, max(b.outcome) as outcome, sum(b.amount)::float as dollars,
+      (sum(b.amount) / nullif(sum(b.amount / nullif(b.price, 0)), 0))::float as price, max(b.at) as at, max(w.pnl)::float as pnl
+    from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet
+    where b.market_id = ${marketId} and b.result is null group by b.wallet, b.outcome_side order by dollars desc limit 25`);
   return (r.rows as Row[]).map(x => ({ short: shortWallet(String(x.wallet)), wallet: String(x.wallet), tier: x.tier === "millionaire" ? "millionaire" : "pro",
-    side: x.outcome_side === "no" ? "no" : "yes", outcome: String(x.outcome), dollars: n(x.dollars), price: n(x.price), at: t(x.at) }));
+    side: x.outcome_side === "no" ? "no" : "yes", outcome: String(x.outcome), dollars: n(x.dollars), price: n(x.price), at: t(x.at), pnl: x.pnl === null ? null : n(x.pnl) }));
 }
 
 export interface Proof {

@@ -43,7 +43,7 @@ export function userNotFree(col = sql`email`): ReturnType<typeof sql> {
 export const dropOff = (cur: number, prev: number): number | null => (prev > 0 ? Math.max(0, 1 - cur / prev) : null);
 export type FunnelEvent = (typeof FUNNEL)[number];
 /** Events the browser may report (the rest are recorded by the server). */
-export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["unlock_click", "checkout_start", "onboarding_done", "onboarding_skip", "first_feed_hint",
+export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["go_step", "unlock_click", "checkout_start", "onboarding_done", "onboarding_skip", "first_feed_hint",
   // The timed pay prompt (components/paywall): shown, dismissed (how), its button clicked; paid_seen when /welcome
   // confirms a payment that started from it.
   "popup_shown", "popup_dismissed", "popup_click", "latebar_closed", "paid_seen",

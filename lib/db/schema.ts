@@ -53,6 +53,8 @@ export interface UserSettings {
   /** The /go quiz (lib/go): the categories they bet on (lib/brand/categories.ts slugs, first one is their banner), where
    *  they bet, and their normal bet size. */
   go?: { categories: string[]; where: string | null; size: string | null } | null;
+  /** "Remind me before I'm charged" on /go's paywall (on unless turned off): the trial_ending email on day 2. */
+  remindBeforeCharge?: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -880,6 +882,9 @@ export const millionaireBets = terminal.table("millionaire_bets", {
   price: doublePrecision("price").notNull(),
   category: text("category").notNull(),
   url: text("url"),
+  /** The market's two outcome names ("Pelicans" / "Grizzlies", or "Yes" / "No"), from the venue when the bet was read. */
+  yesLabel: text("yes_label"),
+  noLabel: text("no_label"),
   at: timestamp("at", { withTimezone: true }).notNull(),
   lastAt: timestamp("last_at", { withTimezone: true }).notNull(),
   result: text("result").$type<"won" | "lost" | "void">(),

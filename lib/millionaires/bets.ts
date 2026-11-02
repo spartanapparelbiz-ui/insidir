@@ -15,7 +15,7 @@ export { BET_MIN };
 export type BetRow = typeof millionaireBets.$inferInsert;
 
 /** Watched moves → bet rows (under BET_MIN, unwatched or anonymous ones dropped). */
-export function betsFrom(moves: readonly Move[], tierOf: (wallet: string) => Tier | null): BetRow[] {
+export function betsFrom(moves: readonly Move[], tierOf: (wallet: string) => Tier | null, labels?: ReadonlyMap<string, { yesLabel: string; noLabel: string }>): BetRow[] {
   const out: BetRow[] = [];
   for (const m of moves) {
     if (m.source !== "polymarket" || !m.wallet || m.amount < BET_MIN) continue;
@@ -25,7 +25,8 @@ export function betsFrom(moves: readonly Move[], tierOf: (wallet: string) => Tie
       id: m.id, wallet: m.wallet.toLowerCase(), tier, source: "polymarket", marketId: m.marketId, eventTitle: m.eventTitle, marketTitle: m.marketTitle,
       outcome: m.outcome, outcomeSide: m.outcomeSide, amount: m.amount, price: m.avgPrice,
       category: categoryOf({ title: m.marketTitle, event: m.eventTitle, venueCategory: m.category, tab: m.tab, league: m.league, url: m.url }),
-      url: m.url, at: new Date(m.at), lastAt: new Date(m.lastAt),
+      url: m.url, yesLabel: labels?.get(m.marketId)?.yesLabel ?? null, noLabel: labels?.get(m.marketId)?.noLabel ?? null,
+      at: new Date(m.at), lastAt: new Date(m.lastAt),
     });
   }
   return out;
@@ -36,7 +37,8 @@ export async function saveBets(db: Db, rows: readonly BetRow[]): Promise<number>
   if (!rows.length) return 0;
   await db.insert(millionaireBets).values([...rows]).onConflictDoUpdate({
     target: millionaireBets.id,
-    set: { amount: sql`excluded.amount`, price: sql`excluded.price`, lastAt: sql`excluded.last_at`, url: sql`coalesce(excluded.url, ${millionaireBets.url})` },
+    set: { amount: sql`excluded.amount`, price: sql`excluded.price`, lastAt: sql`excluded.last_at`, url: sql`coalesce(excluded.url, ${millionaireBets.url})`,
+      yesLabel: sql`coalesce(excluded.yes_label, ${millionaireBets.yesLabel})`, noLabel: sql`coalesce(excluded.no_label, ${millionaireBets.noLabel})` },
   });
   return rows.length;
 }

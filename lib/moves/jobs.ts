@@ -63,7 +63,13 @@ export async function movesOnce(db: Db, poller: MovesPoller, directory: MarketDi
     await beat("moves:polymarket", true);
     if (watch) {
       // Every bet of $5K+ by a watchlist wallet (lib/millionaires/bets.ts).
-      try { await saveBets(db, betsFrom(poller.lastWatchedBets(), w => watch.tier(w))); await beat("millionaires:bets", true); }
+      try {
+        const watched = poller.lastWatchedBets();
+        // The outcome names, from the directory (already in memory: the poll just looked these markets up).
+        const labels = watched.length ? await directory.lookup("polymarket", [...new Set(watched.map(m => m.marketId))], now).catch(() => new Map()) : new Map();
+        await saveBets(db, betsFrom(watched, w => watch.tier(w), labels));
+        await beat("millionaires:bets", true);
+      }
       catch (e) { await beat("millionaires:bets", false, e instanceof Error ? e.message : String(e)); }
     }
   } catch (e) { await beat("moves:polymarket", false, e instanceof Error ? e.message : String(e)); }

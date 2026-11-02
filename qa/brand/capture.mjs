@@ -8,7 +8,7 @@ import { mkdirSync } from "node:fs";
 const [base = "http://localhost:3000", out = "qa/screenshots/brand", ...extra] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
 const sizes = [{ w: 1280, h: 800, mobile: false }, { w: 390, h: 844, mobile: true }];
-const stages = ["hero", "live", "the-read", "markets", "proof", "pricing", "faq", "final-cta"];
+const stages = ["hero", "problem", "check", "live", "markets", "proof", "pricing", "faq", "final-cta"];
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium" });
 const shot = (p, path, full = false) => p.screenshot({ path, fullPage: full, caret: "initial" });
 const report = [];
@@ -29,6 +29,18 @@ for (const s of sizes) {
     const el = page.locator(`[data-testid="${id}"]`).first();
     if (!(await el.count())) { report.push(`${s.w} ${id}: not on the page`); continue; }
     await el.evaluate(n => window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY));
+    if (id === "check") {
+      // The check flow: the demo card on screen, then it picks a side and the verdict lands.
+      const card = page.locator("[data-testid=demo-check]");
+      await card.evaluate(n => n.scrollIntoView({ block: "center" }));
+      await page.waitForTimeout(2300);
+      await shot(page, `${out}/check-1-ask-${s.w}.png`);
+      await page.waitForSelector("[data-testid=demo-check][data-verdict]:not([data-verdict=''])", { timeout: 9000 }).catch(() => report.push(`${s.w} check: no verdict`));
+      await page.waitForTimeout(1400);
+      await shot(page, `${out}/check-2-verdict-${s.w}.png`);
+      report.push(`${s.w} check verdict: ${await card.getAttribute("data-verdict")} (${await page.locator("[data-testid=verdict-evidence]").first().textContent().catch(() => "")})`);
+      continue;
+    }
     await page.waitForTimeout(id === "hero" ? 2200 : 2800);
     await shot(page, `${out}/stage-${id}-${s.w}.png`);
   }
@@ -42,7 +54,7 @@ for (const s of sizes) {
   // Pop-up: the automatic one after the free Read (fresh session; never in the first 15 s).
   const p2 = await (await newCtx()).newPage();
   await p2.goto(base + "/", { waitUntil: "load" });
-  await p2.locator("[data-testid=the-read]").evaluate(n => window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY));
+  await p2.locator("[data-testid=demo-check]").evaluate(n => window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY));
   await p2.waitForTimeout(17_500);
   await shot(p2, `${out}/popup-after-read-${s.w}.png`);
   report.push(`${s.w} after-read pop-up: ${(await p2.locator("[data-testid=pay-sheet]").count()) ? "shown" : "not shown"}`);
