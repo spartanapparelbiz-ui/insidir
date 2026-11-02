@@ -1,4 +1,4 @@
-/* The skyline design system end to end, at 390px and 1440px (qa/e2e/playwright.config.ts projects).
+/* The landing (Cruip Open layout, Magic UI motion), the Millionaires' board and the member pages end to end, at 390px and 1440px (qa/e2e/playwright.config.ts projects).
  *   Home page (visitor): the announcement until the polls close, the hero sized to its content (not the full screen)
  *   with the glass ask box, live chips and the best tracker's record; live market cards by category; the Read as an
  *   answer with source chips; the ticker (still under reduced motion); the record by window; pricing; FAQ; footer. No
@@ -6,7 +6,6 @@
  *   Members: the sidebar on desktop, the bottom tab bar on phones; the member home; a Read as an answer with its
  *   sources and related markets; Library with search; Markets with tabs and search; Account. */
 import { expect, test, type Page } from "@playwright/test";
-import { electionMode } from "@/lib/nx/data";
 import { q, shotName, signIn } from "./helpers";
 
 const phone = (p: Page) => p.viewportSize()!.width < 600;
@@ -21,75 +20,77 @@ async function noDashes(page: Page) {
   expect(dashes).toBe(0);
 }
 
-test("home page: hero, live markets, the Read as an answer, ticker, record, pricing, FAQ, footer", async ({ page }) => {
+test("home page: the millionaires hero, the board an hour late, live numbers, a real Read, the bento, record, pricing, FAQ, footer", async ({ page }) => {
   await page.goto("/");
-  if (electionMode(Date.now())) await expect(page.getByTestId("announcement")).toHaveText("Midterms are Tuesday. See where the smart money is before polls close →");
-  else await expect(page.getByTestId("announcement")).toHaveCount(0);
-  const nav = page.locator(".skl-nav");
-  await expect(nav.getByRole("link", { name: "insidir home" })).toBeVisible();
-  await expect(nav.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
-  if (!phone(page)) for (const l of ["Markets", "Record", "How it works"]) await expect(nav.getByRole("link", { name: l })).toBeVisible();
-  // The hero: the headline and the box first (on a phone too), then the money skyline at 560px (360px on a phone).
-  const hero = page.locator(".skl-hero");
-  await expect(hero.getByRole("heading", { level: 1 })).toHaveText("Where's the smart money?");
-  const sky = page.getByTestId("skyline");
-  await expect(sky).toBeVisible();
-  expect(Math.round((await sky.boundingBox())!.height)).toBe(phone(page) ? 360 : 560);
-  if (phone(page)) expect((await sky.boundingBox())!.y).toBeGreaterThan((await page.getByTestId("read-input").boundingBox())!.y);
-  // Every image on the page loaded or has its drawn fallback: never a broken image.
-  const broken = await page.evaluate(() => [...document.images].filter(i => i.complete && i.naturalWidth === 0 && getComputedStyle(i).display !== "none").length);
-  expect(broken).toBe(0);
+  const head = page.getByTestId("op-header");
+  await expect(head.getByRole("link", { name: "insidir home" })).toBeVisible();
+  await expect(head.locator('a[data-unlock="nav"]')).toHaveText("Start for $1");
+  if (!phone(page)) for (const l of ["Millionaires", "Record", "Pricing"]) await expect(head.getByRole("link", { name: l })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("See what Polymarket's millionaires are betting.");
+  await expect(page.locator(".op-hero__sub")).toHaveText("Insidir tracks every big bet on Polymarket and Kalshi and shows you where wallets that have made $1M+ are putting their money.");
   await expect(page.getByTestId("read-input")).toHaveAttribute("placeholder", "Paste a Polymarket or Kalshi link, or ask about any market");
-  await expect(page.getByTestId("read-go")).toHaveText("Read");
   expect((await page.getByTestId("read-input").boundingBox())!.y + 40).toBeLessThan(page.viewportSize()!.height);
-  const chips = page.getByTestId("hero-chips").getByRole("button");
-  expect(await chips.count()).toBeGreaterThanOrEqual(1);
-  expect(await chips.count()).toBeLessThanOrEqual(5);
-  await expect(page.getByTestId("hero-proof")).toHaveText(/^ ?Tennis \+\d+\.\d% over 32 settled bets$/);
-  // Live markets: category tabs over cards, every card with a title, money and a price row.
-  const live = page.locator("#markets");
-  await expect(live.getByRole("tab").first()).toHaveAttribute("aria-selected", "true");
-  const panel = live.getByRole("tabpanel").first();
-  await expect(panel.getByTestId("sk-card-title").first()).toBeVisible();
-  const titles = await panel.getByTestId("sk-card-title").allInnerTexts();
-  expect(new Set(titles).size).toBe(titles.length);
-  for (const t of await panel.getByTestId("sk-card-money").allInnerTexts()) expect(t.trim()).not.toBe("");
-  // The Read: a small "You asked" line over the card (one heading for the question, no definition paragraph).
-  await expect(page.getByTestId("you-asked")).toContainText("You asked");
-  await expect(page.getByTestId("read-proven-def")).toBeAttached();
-  await expect(page.getByTestId("answer-sources")).toContainText(/Updated/);
-  await expect(page.locator("#answer").getByTestId("read-card")).toBeVisible();
-  await expect(page.getByTestId("ticker")).toContainText(/\$[\d,]+/);
-  await expect(page.getByTestId("record").getByRole("tab").first()).toBeVisible();
+  await expect(page.getByTestId("board-delay")).toContainText("60 minutes delayed. Members see this live.");
+  await expect(page.getByTestId("board-preview").or(page.getByTestId("board-none"))).toBeVisible();
+  // Live numbers: the real counts, in the HTML before any animation.
+  const n = await q<{ n: number }>("select count(*)::int as n from terminal.moves where source in ('polymarket', 'kalshi') and hidden_at is null");
+  await expect(page.getByTestId("stat-bets")).toHaveText(n[0]!.n.toLocaleString("en-US"));
+  await expect(page.getByTestId("bento")).toContainText("Millionaire money");
+  for (const t of ["Pings", "Best price", "Unusual bets"]) await expect(page.getByTestId("bento")).toContainText(t);
   await expect(page.locator("#pricing h2")).toHaveText("$1 for 3 days, then $39/month.");
-  await expect(page.locator(".skl-faq__item")).toHaveCount(6);
-  await expect(page.locator(".skl-final h2")).toHaveText("Know where the money is before you bet.");
+  await expect(page.locator(".op-faq details")).toHaveCount(7);
   await expect(page.getByTestId("sk-advice")).toHaveText("Information, not financial or betting advice. Operated by Aethric LLC.");
-  await expect(page.locator("footer.foot")).toBeHidden();
+  await expect(page.locator("canvas")).toHaveCount(0);
   const body = await page.locator("body").innerText();
   expect(body).not.toMatch(/guarantee|risk-free|easy money|sure thing/i);
   expect(body).not.toMatch(/user_e2e|undefined|NaN/);
+  const broken = await page.evaluate(() => [...document.images].filter(i => i.complete && i.naturalWidth === 0 && getComputedStyle(i).display !== "none").length);
+  expect(broken).toBe(0);
   await noSideScroll(page);
   await noDashes(page);
-  await page.screenshot({ path: shotName("nx-home", page), fullPage: true });
+  await page.screenshot({ path: shotName("op-home", page), fullPage: true });
 });
 
-test("home page: the record switches window; a chip opens its Read; the ticker holds still under reduced motion", async ({ page, browser }) => {
+test("home page: the record switches window; under reduced motion the marquee and list hold still and the numbers are final", async ({ page, browser }) => {
   await page.goto("/");
   const rec = page.getByTestId("record");
   const tabs = rec.getByRole("tab");
   if ((await tabs.count()) > 1) { await tabs.first().click(); await expect(tabs.first()).toHaveAttribute("aria-selected", "true"); await expect(rec.getByRole("tabpanel")).toHaveCount(1); await expect(rec.getByRole("tabpanel")).toBeVisible(); }
-  await page.getByTestId("hero-chips").getByRole("button").first().click();
-  await expect(page).toHaveURL(/\/read\/[A-Za-z0-9]+$/, { timeout: 10_000 });
-  await expect(page.getByTestId("read-question")).toBeVisible();
   const ctx = await browser.newContext({ reducedMotion: "reduce", viewport: page.viewportSize()! });
   const p = await ctx.newPage();
   await p.goto("/");
-  expect(await p.locator(".sk-ticker__track").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
-  // Without motion the skyline is the static SVG.
-  await expect(p.getByTestId("skyline")).toHaveAttribute("data-three", "off");
-  expect(await p.locator(".sk-live").first().evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+  if (await p.locator(".mu-marquee__track").count()) expect(await p.locator(".mu-marquee__track").first().evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+  const n = await q<{ n: number }>("select count(*)::int as n from terminal.moves where source in ('polymarket', 'kalshi') and hidden_at is null");
+  await expect(p.getByTestId("stat-bets")).toHaveText(n[0]!.n.toLocaleString("en-US"));
   await ctx.close();
+});
+
+test("the Millionaires' board: $1M+ wallets only, a tier badge and never a name; members live, visitors an hour late", async ({ page, context, browser }) => {
+  // E2E-Top's wallet has made $1M+ (Polymarket's leaderboard pnl, as the backfill stores it).
+  const TOP = "0xe2e00000000000000000000000000000000000aa";
+  await q("insert into terminal.wallet_pnl (wallet, closed, closed_at_least, pnl, read_at) values ($1, 900, false, 2400000, now()) on conflict (wallet) do update set pnl = 2400000", [TOP]);
+  try {
+    const fresh = await q<{ id: string }>("select id from terminal.moves where wallet = $1 and amount >= 10000 and at > now() - interval '60 minutes' and hidden_at is null", [TOP]);
+    const older = await q<{ id: string }>("select id from terminal.moves where wallet = $1 and amount >= 10000 and at <= now() - interval '60 minutes' and at > now() - interval '7 days' and hidden_at is null", [TOP]);
+    await page.goto("/board");
+    await expect(page.getByTestId("board-delay")).toContainText("60 minutes delayed. Members see this live.");
+    await expect(page.getByTestId("board").locator("li")).toHaveCount(older.length);
+    if (older.length) await expect(page.getByTestId("board").locator(".tier-badge").first()).toHaveText("$1M+");
+    expect(await page.locator("body").innerText()).not.toMatch(/E2E-Top/);
+    await page.screenshot({ path: shotName("op-board-visitor", page), fullPage: true });
+    const m = await browser.newContext({ viewport: page.viewportSize()! });
+    await signIn(m, "proIntl");
+    const mp = await m.newPage();
+    await mp.goto("/board");
+    await expect(mp.getByTestId("board-live")).toBeVisible();
+    await expect(mp.getByTestId("board").locator("li")).toHaveCount(fresh.length + older.length);
+    expect(await mp.locator("body").innerText()).not.toMatch(/E2E-Top/);
+    await mp.screenshot({ path: shotName("op-board-member", mp), fullPage: true });
+    await m.close();
+  } finally {
+    await q("delete from terminal.wallet_pnl where wallet = $1", [TOP]);
+  }
+  void context;
 });
 
 test("members: the frame, the member home, a Read as an answer, Library, Markets and Account", async ({ page, context }) => {
@@ -99,18 +100,17 @@ test("members: the frame, the member home, a Read as an answer, Library, Markets
   if (phone(page)) {
     await expect(page.locator(".skm-tabs")).toBeVisible();
     await expect(page.locator(".skm-side")).toBeHidden();
-    for (const l of ["Home", "Markets", "Read", "Your markets", "Account"]) await expect(page.locator(".skm-tabs").getByText(l, { exact: true })).toBeVisible();
+    for (const l of ["Home", "Millionaires", "Read", "Your markets", "Account"]) await expect(page.locator(".skm-tabs").getByText(l, { exact: true })).toBeVisible();
   } else {
     await expect(page.locator(".skm-side")).toBeVisible();
     await expect(page.locator(".skm-tabs")).toBeHidden();
     await expect(page.getByTestId("new-read")).toHaveText("New Read");
-    for (const l of ["Home", "Markets", "Your markets", "Library", "Record", "Account"]) await expect(page.locator(".skm-side__nav").getByRole("link", { name: l, exact: true })).toBeVisible();
+    for (const l of ["Home", "Millionaires", "Markets", "Your markets", "Library", "Record", "Account"]) await expect(page.locator(".skm-side__nav").getByRole("link", { name: l, exact: true })).toBeVisible();
   }
   // The greeting: a first name only when the account has one that looks like a name (never "user_e2e_…").
   await expect(page.getByTestId("hello")).toHaveText(/^Good (morning|afternoon|evening)(, [A-Z][\p{L}'’-]*)?\.$/u);
   await expect(page.getByTestId("hello")).not.toContainText("user_");
-  await expect(page.getByTestId("member-skyline")).toBeVisible();
-  expect(Math.round((await page.getByTestId("member-skyline").boundingBox())!.height)).toBeGreaterThanOrEqual(200);
+  await expect(page.locator("canvas")).toHaveCount(0);
   // A member who has read markets sees them; one who hasn't sees "Start with these".
   const yours = page.getByTestId("your-markets"), start = page.getByTestId("start-with");
   await expect(yours.or(start)).toBeVisible();

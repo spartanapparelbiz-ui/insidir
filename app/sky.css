@@ -10,6 +10,10 @@
   --sk-bg: #070B14; --sk-surface: #0D1424; --sk-raised: #121B2E; --sk-line: rgba(148, 163, 184, 0.14); --sk-line-strong: rgba(148, 163, 184, 0.28);
   --sk-text: #F1F5FB; --sk-muted: #8B96AB; --sk-ice: #8FB8FF; --sk-up: #3DD68C; --sk-down: #FF6B6B; --sk-dem: #4C8DFF; --sk-rep: #FF5A5F;
   --sk-glass: rgba(13, 20, 36, 0.62); --sk-ice-glow: rgba(143, 184, 255, 0.30); --sk-shade: rgba(7, 11, 20, 0.86);
+  /* The landing and dashboard layout (app/open.css, after Cruip's Open template): its gradient borders and buttons,
+   * in Insidir's palette (ice for the template's indigo). */
+  --op-edge: #1C2740; --op-edge-hi: #2E3B5C; --op-ice-deep: #5E8CE0; --op-ice-soft: #C9DCFF; --op-ice-dim: rgba(201, 220, 255, 0.65);
+  --op-panel: rgba(13, 20, 36, 0.9); --op-glow: rgba(94, 140, 224, 0.22);
 }
 
 .sk {
@@ -326,6 +330,8 @@ body:has(.sk) footer.foot, body:has(.sk) .latebar { display: none !important; }
   .skm .skr .rcard__acts { --sk-stick: 76px; }
   .sk .skr .rcard__acts .btn { flex: 1; }
   .sk .skr { padding-bottom: 112px; }
+  /* The fixed Open / Share bar sits over the page's end: the footer keeps its last line clear of it. */
+  .sk:has(.skr .rcard__acts) .skl-foot { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
 
 /* ---------- Library, Markets, Account ---------- */

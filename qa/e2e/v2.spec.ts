@@ -4,9 +4,9 @@ import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
 test("landing: final on first paint: the headline and the box in the first screen, the sections in order, the nav, one CTA; no stocks; no pop-up", async ({ page }) => {
-  const HEAD = "Where's the smart money?";
+  const HEAD = "See what Polymarket's millionaires are betting.";
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain("Where&#x27;s the smart money?");
+  expect(html).toContain("See what Polymarket&#x27;s millionaires are betting.");
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1, name: HEAD });
   await expect(h1).toBeVisible();
@@ -17,12 +17,13 @@ test("landing: final on first paint: the headline and the box in the first scree
   await expect(page.getByTestId("read-go")).toHaveText("Read");
   await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
   const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  expect(h2s.filter(h => ["Markets moving now", "The record", "How it works", "Questions"].includes(h))).toEqual(["Markets moving now", "The record", "How it works", "Questions"]);
-  // The nav: Markets, Record, How it works, Log in, and the white Start for $1.
-  const nav = page.locator(".skl-nav");
+  const want = ["Every $10K+ bet from a $1M+ wallet", "Know who's betting before you bet", "Real results, losses included", "Questions"];
+  expect(h2s.filter(h => want.includes(h))).toEqual(want);
+  // The header: Millionaires, Record, Pricing, Log in, and Start for $1.
+  const nav = page.getByTestId("op-header");
   await expect(nav.locator('a[data-unlock="nav"]')).toHaveText("Start for $1");
   await expect(nav.getByRole("link", { name: "Log in" })).toBeVisible();
-  for (const t of await page.locator(".skl .sk-btn:visible").allInnerTexts()) expect(["Start for $1", "Read", "New Read"]).toContain(t.trim());
+  for (const t of await page.locator(".op .op-primary:visible, .op .sk-btn:visible").allInnerTexts()) expect(["Start for $1", "Read"]).toContain(t.replace(/\s*→$/, "").trim());
   const text = await page.locator("main").innerText();
   expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
   expect(text).not.toMatch(/guaranteed|risk-free/i);
@@ -30,14 +31,14 @@ test("landing: final on first paint: the headline and the box in the first scree
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByTestId("late-bar")).toHaveCount(0);
   // Outfit, 700 at most.
-  expect(await page.evaluate(() => [...document.querySelectorAll(".skl *")].filter(e => Number(getComputedStyle(e).fontWeight) > 700).length)).toBe(0);
+  expect(await page.evaluate(() => [...document.querySelectorAll(".op *")].filter(e => Number(getComputedStyle(e).fontWeight) > 700).length)).toBe(0);
   expect(await h1.evaluate(e => getComputedStyle(e).fontFamily)).toMatch(/Outfit/i);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; /stocks and /insider-trading pages stay live by URL and in the sitemaps", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Where's the smart money?");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("See what Polymarket's millionaires are betting.");
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
@@ -50,7 +51,7 @@ test("home: the nav's Start for $1 is recorded and opens /start; the trackers pa
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
   await page.goto("/");
-  await page.locator('.skl-nav a[data-unlock="nav"]').click();
+  await page.getByTestId("op-header").locator('a[data-unlock="nav"]').click();
   await expect(page).toHaveURL(/\/start(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
   await page.goto("/trackers");

@@ -6,6 +6,9 @@
  *                  Kalshi only, and no Polymarket link anywhere.
  *   Big bets       the last 24 hours (size, side, price, time), unusual ones flagged. Members only.
  *   Analyst line   one sentence on what the data shows. Members only.
+ *   Millionaire    first, on Polymarket markets: open dollars by side from wallets with $1M+ all-time profit, and a
+ *                  second line for $100K+ (lib/millionaire/tiers.ts). A split needs 3+ wallets; with fewer, the count
+ *                  and their sides. Never who is behind a wallet.
  * Visitors see the split, the trackers and the prices (proven wallets as a count); the bets and the line are blurred behind "Start for $1", and their content
  * is never sent (the blur is drawn from nothing). Server component. */
 import { ADVICE, TRIAL_LINE } from "@/lib/copy";
@@ -13,8 +16,37 @@ import { clockET, agoText } from "@/lib/moves/copy";
 import { cents, pct, pricesFor, signedPct, signedUsd, UNUSUAL_TEXT, usd } from "@/lib/read/math";
 import type { ReadData, SidePrices } from "@/lib/read/types";
 import { ShareRead } from "./ShareRead";
+import { MIN_SPLIT_WALLETS, TIER_BADGE, tierCountLine, tierOf, type Tier, type TierMoney } from "@/lib/millionaire/tiers";
+import { TierBadge } from "@/components/millionaire/TierBadge";
 
 const count = (n: number, w: string) => `${n} ${n === 1 ? w : `${w}s`}`;
+
+/** One tier's line: the split (3+ wallets), or the count and the sides they're on, or nothing with none. */
+function TierLine({ tier, m, yes, no }: { tier: Tier; m: TierMoney; yes: string; no: string }) {
+  if (!m.wallets) return null;
+  const sides = [m.yes.dollars > 0 ? `${usd(m.yes.dollars)} on ${yes}` : null, m.no.dollars > 0 ? `${usd(m.no.dollars)} on ${no}` : null].filter(Boolean).join(" · ");
+  return (
+    <div className="rtier" data-testid={`read-tier-${tier}`}>
+      <p className="rtier__h"><span className="tier-badge" data-tier={tier}>{TIER_BADGE[tier]}</span> {tier === "millionaire" ? "Wallets with $1M+ all-time profit" : "Wallets with $100K+ all-time profit"}</p>
+      {m.yesShare !== null ? (
+        <Split share={m.yesShare} yes={yes} no={no} what={`${TIER_BADGE[tier]} money`}
+          yesSub={m.yes.dollars > 0 ? `${usd(m.yes.dollars)} · ${count(m.yes.wallets, "wallet")}` : "None"} noSub={m.no.dollars > 0 ? `${usd(m.no.dollars)} · ${count(m.no.wallets, "wallet")}` : "None"} />
+      ) : <p className="rtier__few" data-testid={`read-tier-${tier}-few`}>{tierCountLine(tier, m.wallets)}: {sides}.</p>}
+    </div>
+  );
+}
+
+/** Millionaire money: the Read's lead on Polymarket markets. */
+function TierSection({ tiers, yes, no }: { tiers: NonNullable<ReadData["tiers"]>; yes: string; no: string }) {
+  const any = tiers.millionaire.wallets + tiers.pro.wallets > 0;
+  return (
+    <section className="rsec rsec--lead" aria-labelledby="r-tier" data-testid="read-millionaire">
+      <h2 id="r-tier" className="rsec__h">Millionaire money <details className="rinfo"><summary aria-label="What counts as millionaire money">ⓘ</summary><span className="rinfo__pop" role="note">Open positions here from Polymarket wallets whose all-time profit on Polymarket&apos;s public leaderboard is $1M or more ($100K+ on the second line). A split needs {MIN_SPLIT_WALLETS} or more wallets. We never show who is behind a wallet.</span></details></h2>
+      {any ? <><TierLine tier="millionaire" m={tiers.millionaire} yes={yes} no={no} /><TierLine tier="pro" m={tiers.pro} yes={yes} no={no} /></>
+        : <p className="rsec__none" data-testid="read-millionaire-none">No $100K+ wallet holds a position here right now.</p>}
+    </section>
+  );
+}
 
 function Split({ share, yes, no, what, yesSub, noSub }: { share: number; yes: string; no: string; what: string; yesSub: string; noSub: string }) {
   return (
@@ -65,6 +97,8 @@ export function ReadCard({ id, data, member, us, now, startHref, level = 2, head
         </header>
       ) : null}
 
+      {data.tiers ? <TierSection tiers={data.tiers} yes={data.yesLabel} no={data.noLabel} /> : null}
+
       <section className="rsec" aria-labelledby="r-proven">
         <h2 id="r-proven" className="rsec__h">Proven money <details className="rinfo" data-testid="read-proven-def"><summary aria-label="What counts as proven money">ⓘ</summary><span className="rinfo__pop" role="note">{PROVEN_INFO}</span></details></h2>
         {yesShare !== null ? (
@@ -88,7 +122,7 @@ export function ReadCard({ id, data, member, us, now, startHref, level = 2, head
               <ul className="rprov" data-testid="read-wallets" aria-label="Proven wallets">
                 {walletRows.map((w, i) => (
                   <li key={`${w.wallet}:${w.side}:${i}`} className="rprov__row" data-testid="proven-wallet">
-                    <span className="rprov__main"><b>{w.wallet}</b> · {usd(w.dollars)} on {sideLabel(w.side)}</span>
+                    <span className="rprov__main"><TierBadge tier={tierOf(w.profit)} /><b>{w.wallet}</b> · {usd(w.dollars)} on {sideLabel(w.side)}</span>
                     <span className="rprov__sub">{[
                       w.profit !== null ? `${signedUsd(w.profit)} all-time on Polymarket over ${(w.closed ?? 0).toLocaleString("en-US")}${w.closedAtLeast ? "+" : ""} closed markets` : null,
                       w.follow ? `${signedPct(w.follow.returnPct)} followed over ${w.follow.settled} settled` : null,
@@ -131,7 +165,7 @@ export function ReadCard({ id, data, member, us, now, startHref, level = 2, head
               <ul className="rbets" data-testid="read-bets">
                 {data.bets.map((b, i) => (
                   <li key={i} className="rbet">
-                    <span className="rbet__main"><b>{usd(b.amount)}</b> on {sideLabel(b.side)} at {cents(b.price)}</span>
+                    <span className="rbet__main"><TierBadge tier={b.tier ?? null} /><b>{usd(b.amount)}</b> on {sideLabel(b.side)} at {cents(b.price)}</span>
                     <span className="rbet__sub">{agoText(b.at, now)} · {b.venue === "kalshi" ? "Kalshi (anonymous)" : `Polymarket · ${b.wallet ?? "wallet"}`}</span>
                     {b.unusual.length ? <span className="rbet__flag" data-testid="bet-unusual">Unusual: {b.unusual.map(u => u === "big_for_market" && b.ofVolume !== null ? `${pct(b.ofVolume)} of the day's volume` : UNUSUAL_TEXT[u]).join(", ")}</span> : null}
                   </li>

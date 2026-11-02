@@ -2,6 +2,7 @@
  * moment. Sides are always the main listing's YES and NO (Polymarket's when there is one, else Kalshi's); a Kalshi
  * listing that pays the other way round (an inverted pair) is turned around before it lands here. */
 
+import type { MarketTiers, Tier } from "@/lib/millionaire/tiers";
 export type Venue = "polymarket" | "kalshi";
 
 export interface Listing { venue: Venue; id: string; title: string; url: string | null; yesPrice: number | null; volume24h: number | null }
@@ -60,6 +61,8 @@ export interface BigBet {
   at: number;
   /** Polymarket only: the short address ("0x4f…c2"); Kalshi trades are anonymous. Never who is behind it. */
   wallet: string | null;
+  /** The wallet's profit tier (lib/millionaire/tiers.ts), Polymarket only; older Reads don't have it. */
+  tier?: Tier | null;
   unusual: Unusual[];
   /** For big_for_market: its share of the market's last-24h volume, 0..1. */
   ofVolume: number | null;
@@ -79,6 +82,9 @@ export interface ReadData {
   proven: ProvenMoney;
   /** All open tracked large positions by side (older Reads don't have it). */
   big?: BigSplit;
+  /** Millionaire money: $1M+ and $100K+ wallets' open dollars by side (lib/millionaire/tiers.ts); null for Kalshi-only
+   *  markets (Kalshi is anonymous); older Reads don't have it. */
+  tiers?: MarketTiers | null;
   bets: BigBet[];
   /** Prices for YES and NO on each venue; Polymarket's left out for the US (region rule applied at render). */
   prices: { yes: SidePrices; no: SidePrices };

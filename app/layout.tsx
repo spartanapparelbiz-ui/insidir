@@ -26,6 +26,7 @@ import "./light.css";
 import "./polish.css";
 import "./motion.css";
 import "./sky.css";
+import "./open.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
