@@ -4,8 +4,8 @@
 import { PLANS, TRIAL } from "@/lib/plans";
 
 export const HERO = {
-  h1: ["Stop betting", "blind."],
-  sub: ["Every market has wallets that have made millions.", "Insidir shows you which side they're on before you bet,", "and pings you the moment they move."],
+  h1: ["You're betting", "against millionaires."],
+  /** Under it, the live line (components/brand/HeroLine.tsx): "Wallets up $1M+ bet $X today. Which side were you on?" */
 } as const;
 export const ASK_PLACEHOLDER = "Paste your bet: a Kalshi or Polymarket link, or type it";
 export const PROBLEM = {

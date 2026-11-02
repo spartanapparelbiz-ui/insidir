@@ -16,6 +16,7 @@ import { dollars } from "@/lib/money";
 import { Arrow, Lines, m, signedDollars, TierBadge } from "../Bits";
 import { MoneyCard } from "../MoneyCard";
 import { PAY_BULLETS, Paywall } from "../Paywall";
+import { BrandFoot } from "../Nav";
 
 export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "follow" | "push";
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "follow", "push"];
@@ -285,6 +286,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       {bg}
       <div className="b-go-bar" aria-hidden="true"><span style={{ transform: `scaleX(${progress})` }} /></div>
       <div key={step} style={{ position: "relative", zIndex: 2 }}>{body}</div>
+      <div style={{ position: "relative", zIndex: 2 }}><BrandFoot inline /></div>
     </main>
   );
 }

@@ -93,7 +93,8 @@ export async function rateLimited(db: Db, ip: string | null, now = Date.now()): 
 
 /** Who just signed in at Whop → our account: by Whop user, else by email (linked now), else a new one. Then their
  *  access, read from Whop now (not the 5-minute cache), so a new member is in at once. */
-/** `utm`: the first-touch UTM tags (or ?ref=) from their cookie, stored on a new account for attribution. */
+/** `utm`: the first-touch UTM tags (or ?ref=) from their cookie, stored on a new account for attribution, or on an
+ *  account the billing webhook made before they signed in (pay first). */
 export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now = Date.now(), utm: Record<string, string> | null = null): Promise<{ userId: string; member: boolean; created: boolean }> {
   const email = who.email ? normEmail(who.email) : null;
   let u = (await db.select().from(users).where(eq(users.whopUserId, who.id)).limit(1))[0];
@@ -113,7 +114,11 @@ export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now
       .onConflictDoNothing().returning();
     u = made[0] ?? (await db.select().from(users).where(eq(users.whopUserId, who.id)).limit(1))[0];
     created = Boolean(made[0]);
-  } else if (!u.name && who.name) await db.update(users).set({ name: who.name }).where(eq(users.id, u.id));
+  } else {
+    // Paid first (the billing webhook made the account): their first sign-in brings the first-touch tags. Never overwrites.
+    const fill = { ...(!u.name && who.name ? { name: who.name } : {}), ...(!u.utm && utm ? { utm } : {}) };
+    if (Object.keys(fill).length) await db.update(users).set(fill).where(eq(users.id, u.id));
+  }
   if (!u) throw new LoginFailed("account");
   const plan = await refreshPlan(db, u.id, now).catch(() => null);
   const member = isFreeAccess(u.email) || (plan !== null ? plan !== "free" : u.plan !== "free");

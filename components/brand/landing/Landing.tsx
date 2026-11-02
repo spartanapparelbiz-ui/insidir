@@ -17,18 +17,19 @@ import { CheckCard } from "../CheckCard";
 import { Faq } from "../Faq";
 import { LiveFeed } from "../LiveFeed";
 import { MoneyCard } from "../MoneyCard";
+import { HeroLine } from "../HeroLine";
 import { BrandFoot, BrandNav } from "../Nav";
 import { PayMoments } from "../PayMoments";
 import { Stage } from "../Stage";
 import { StageMotion } from "../StageMotion";
 
-function Hero() {
+function Hero({ d }: { d: LandingData }) {
   return (
     <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h">
       <BrandNav motion />
       <div className="b-hero-inner">
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
-        <p className="b-sub" {...m("lift", 0.58)}>{HERO.sub.map((l, i) => <span key={i}>{l}{i < HERO.sub.length - 1 ? <br /> : null}{i < HERO.sub.length - 1 ? " " : null}</span>)}</p>
+        <HeroLine initial={d.pulse} />
         <div className="b-ctas">
           <Pill href="#check" delay={0.9} data-testid="hero-check">Check my bet</Pill>
           <Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
@@ -162,7 +163,7 @@ function Final() {
 export function Landing({ d }: { d: LandingData }) {
   return (
     <main className="b-root" data-testid="landing">
-      <Hero />
+      <Hero d={d} />
       <Problem />
       <Check d={d} />
       <Live d={d} />

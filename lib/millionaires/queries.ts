@@ -100,6 +100,22 @@ export interface Pulse {
   millionaires: number;
   /** Dollars millionaire-tier wallets bet in the last 24 hours. */
   today: number;
+  /** Dollars millionaire-tier wallets bet since midnight US Eastern (the hero's "today"). */
+  sinceMidnight: number;
+}
+
+/** Midnight US Eastern of the day `now` falls on, as epoch ms. */
+export function midnightET(now: number): number {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(now)).map(p => [p.type, p.value]));
+  const sinceMidnight = (Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second)) * 1000;
+  return Math.floor((now - sinceMidnight) / 1000) * 1000;
+}
+
+/** The hero's live line: today's total (since midnight ET), or the last 24 hours when today is under HERO_MIN. */
+export const HERO_MIN = 100_000;
+export function heroTotal(p: Pulse): { amount: number; window: "today" | "24h" } {
+  return p.sinceMidnight >= HERO_MIN ? { amount: p.sinceMidnight, window: "today" } : { amount: p.today, window: "24h" };
 }
 
 /** The live counter and the watchlist's size. */
@@ -109,11 +125,12 @@ export function pulse(db: Db, now: number): Promise<Pulse> {
         count(*) filter (where tier = 'millionaire' and at > ${new Date(now - HOUR)})::int as hour,
         count(*) filter (where tier = 'millionaire' and at > ${new Date(now - DAY)})::int as day,
         coalesce(sum(amount) filter (where tier = 'millionaire'), 0)::float as today,
+        coalesce(sum(amount) filter (where tier = 'millionaire' and at >= ${new Date(midnightET(now))}), 0)::float as since_midnight,
         (select count(*)::int from terminal.watchlist) as wallets,
         (select count(*)::int from terminal.watchlist where tier = 'millionaire') as millionaires
       from terminal.millionaire_bets where at > ${new Date(now - DAY)}`)).rows[0] as Row;
     const hour = n(r.hour);
-    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today) };
+    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight) };
   });
 }
 

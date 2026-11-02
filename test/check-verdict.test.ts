@@ -28,7 +28,7 @@ describe("the verdict", () => {
   });
   it("never reads as advice", () => {
     for (const h of Object.values(HEADLINE)) expect(bannedPhrases(h)).toEqual([]);
-    const all = [...HERO.h1, ...HERO.sub, ...PROBLEM.h1, PROBLEM.sub, ...PROBLEM.rows.flat(), ...Object.values(STAGES).flat(), ...FAQ.flatMap(f => [f.q, f.a])].join(" ");
+    const all = [...HERO.h1, ...PROBLEM.h1, PROBLEM.sub, ...PROBLEM.rows.flat(), ...Object.values(STAGES).flat(), ...FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(bannedPhrases(all)).toEqual([]);
     expect(all).not.toMatch(/guarantee/i);
   });
@@ -57,5 +57,18 @@ describe("/go", () => {
     expect(stakeFor("25-100")).toBe(50);
     expect(stakeFor(null)).toBe(100);
     expect(parseCats("football,nope,football,golf")).toEqual(["football", "golf"]);
+  });
+});
+
+import { HERO_MIN, heroTotal, midnightET } from "@/lib/millionaires/queries";
+describe("the hero's live line", () => {
+  it("today since midnight ET; under $100K, the last 24 hours", () => {
+    const p = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0 };
+    expect(heroTotal({ ...p, today: 900_000, sinceMidnight: 4_200_000 })).toEqual({ amount: 4_200_000, window: "today" });
+    expect(heroTotal({ ...p, today: 900_000, sinceMidnight: HERO_MIN - 1 })).toEqual({ amount: 900_000, window: "24h" });
+  });
+  it("midnight ET, in winter and summer", () => {
+    expect(new Date(midnightET(Date.parse("2026-11-03T04:30:00Z"))).toISOString()).toBe("2026-11-02T05:00:00.000Z");
+    expect(new Date(midnightET(Date.parse("2026-07-01T03:59:00Z"))).toISOString()).toBe("2026-06-30T04:00:00.000Z");
   });
 });

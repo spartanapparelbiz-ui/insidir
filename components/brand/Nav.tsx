@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
+import { COMPANY, DATA_COMPANY, GAMBLER } from "@/lib/copy";
 
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
 const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m": kind, style: { "--d": `${d}s` } as CSSProperties } : {});
@@ -41,14 +42,22 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
   );
 }
 
-/** The footer, in --ink-muted at 11.5u, set inside the bottom of the final stage. */
-export function BrandFoot() {
+/** The footer, in --ink-muted at 11.5u: the links, who builds Insidir and how to reach a person, what Insidir is not,
+ *  the problem-gambling line, and "Information, not financial or betting advice. Operated by Aethric LLC." Set inside
+ *  the bottom of the final stage on the landing (`inline` false), at the end of every other brand page. */
+export function BrandFoot({ inline = false }: { inline?: boolean }) {
   return (
-    <footer className="b-foot" data-testid="brand-foot">
+    <footer className={`b-foot${inline ? " b-foot--inline" : ""}`} data-testid="brand-foot">
       <nav aria-label="Footer">
-        {[["Markets", "/markets"], ["Board", "/board"], ["Record", "/results"], ["FAQ", "/faq"], ["Log in", "/login"], ["Terms", "/terms"], ["Privacy", "/privacy"], ["Methodology", "/methodology"]].map(([t, h]) => <a key={t} href={h}>{t}</a>)}
+        {[["Markets", "/markets"], ["Board", "/board"], ["Record", "/results"], ["FAQ", "/faq"], ["Methodology", "/methodology"], ["Our data", "/data"], ["Status", "/status"], ["Security", "/security"],
+          ["Disclosures", "/disclosures"], ["Terms", "/terms"], ["Privacy", "/privacy"], ["Credits", "/credits"], ["Changelog", "/changelog"]].map(([t, h]) => <a key={t} href={h}>{t}</a>)}
       </nav>
-      <span>Information, not financial or betting advice. Operated by Aethric LLC.</span>
+      <div className="b-foot__legal">
+        <span>{COMPANY.name} · {COMPANY.place} · <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span>
+        <span>{DATA_COMPANY}</span>
+        <span>{GAMBLER}</span>
+        <span>Information, not financial or betting advice. Operated by Aethric LLC.</span>
+      </div>
     </footer>
   );
 }

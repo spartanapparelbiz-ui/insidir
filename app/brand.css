@@ -428,3 +428,11 @@ html.bm .b-new { animation: b-pillIn .7s var(--e-reveal) both; }
 .b-stage--body .b-stage__in { padding-top: calc(28 * var(--u)); padding-bottom: calc(40 * var(--u)); }
 @media (max-width: 1160px) { .b-stage--head .b-stage__in { padding-bottom: 28px; } .b-stage--body .b-stage__in { padding-top: 24px; padding-bottom: 36px; } }
 .b-panel-pill .b-arw, .b-nav-start .b-arw { width: calc(11 * var(--u)); height: calc(9.2 * var(--u)); min-width: 11px; min-height: 9px; }
+.b-foot { flex-direction: column; align-items: flex-start; }
+.b-foot__legal { display: grid; gap: 4px; color: var(--dim); }
+.b-foot--inline { position: relative; background: #000; border-top: 1px solid var(--glass-line); }
+.b-main .b-foot--inline { background: transparent; padding-left: 0; padding-right: 0; }
+.b-stage:has(> .b-foot:not(.b-foot--inline)) .b-stage__in { padding-bottom: calc(190 * var(--u)); }
+@media (max-width: 1160px) { .b-stage:has(> .b-foot:not(.b-foot--inline)) .b-stage__in { padding-bottom: 220px; } }
+@media (max-width: 552px) { .b-stage:has(> .b-foot:not(.b-foot--inline)) .b-stage__in { padding-bottom: 340px; } }
+.b-fixed-bg ~ div .b-foot--inline { background: rgba(0, 0, 0, .6); }

@@ -31,7 +31,7 @@ export interface LandingData {
   bestPrice: BestPrice | null;
 }
 
-export const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0 };
+export const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0 };
 
 /** The newest Read that priced both venues (the Best price crop). */
 function bestPrice(db: Db): Promise<BestPrice | null> {

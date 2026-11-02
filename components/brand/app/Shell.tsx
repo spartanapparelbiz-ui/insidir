@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Arrow, Logo } from "../Bits";
 import { StageMotion } from "../StageMotion";
+import { BrandFoot } from "../Nav";
 
 type Tab = "home" | "board" | "markets" | "following" | "library" | "account";
 const I: Record<string, ReactNode> = {
@@ -29,7 +30,7 @@ export function Shell({ current, children }: { current: Tab; children: ReactNode
         </nav>
       </aside>
       <header className="b-topbar"><Logo /><a className="b-btn b-panel-pill" href="/settings">Account</a></header>
-      <div className="b-main">{children}</div>
+      <div className="b-main">{children}<BrandFoot inline /></div>
       <nav className="b-tabbar b-glass" aria-label="App">
         {NAV.slice(0, 2).map(([k, label, href]) => <a key={k} href={href} aria-current={current === k ? "page" : undefined}><Icon name={k} />{label}</a>)}
         <a className="b-tab-read" href={CHECK_HREF} aria-label="Check a bet" data-testid="tab-check"><Icon name="check" /></a>

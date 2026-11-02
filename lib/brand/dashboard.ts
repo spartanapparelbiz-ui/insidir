@@ -48,7 +48,7 @@ export async function dashboardData(db: Db, userId: string, settings: { go?: { c
   const cats = (settings.go?.categories ?? []).filter(isCategory);
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("dashboard", e instanceof Error ? e.message : e); return d; });
   const [p, feed, mine, follows, week] = await Promise.all([
-    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0 }),
+    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0 }),
     safe(recentBets(db, { now, limit: 8, member: true, categories: cats.length ? cats : undefined }), [] as BoardBet[]),
     safe(yourMarkets(db, userId, now, 8), [] as YourMarket[]),
     safe(followList(db, userId), []),

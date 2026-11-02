@@ -35,7 +35,7 @@ describe("V2 landing page", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<Dashboard d={d}");
-    const order = ["<Hero />", "<Problem />", "<Check d={d} />", "<Live d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
+    const order = ["<Hero d={d} />", "<Problem />", "<Check d={d} />", "<Live d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
@@ -44,13 +44,13 @@ describe("V2 landing page", () => {
 
   it("the hero's words, its two CTAs (Check my bet, Start for $1 → /go), and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
-    expect(copy.HERO.h1).toEqual(["Stop betting", "blind."]);
+    expect(copy.HERO.h1).toEqual(["You're betting", "against millionaires."]);
     expect(copy.STAGES.final).toEqual(["Bet with the", "millionaires."]);
     expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
     const landing = read("components/brand/landing/Landing.tsx");
     expect(landing).toContain('<Pill href="#check" delay={0.9} data-testid="hero-check">Check my bet</Pill>');
     expect(landing).toContain('<Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
-    const pitch = [...copy.HERO.h1, ...copy.HERO.sub, ...copy.PROBLEM.rows.flat(), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
+    const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);
     expect(GET_CTA).toBe("Try 3 days for $1");

@@ -5,7 +5,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { BrandNav } from "@/components/brand/Nav";
+import { BrandFoot, BrandNav } from "@/components/brand/Nav";
 import { PayMoments } from "@/components/brand/PayMoments";
 import { CheckPage } from "@/components/brand/read/CheckPage";
 import { StageMotion } from "@/components/brand/StageMotion";
@@ -52,6 +52,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
     <main className="b-root" data-testid="check-page">
       <BrandNav fixed member={member} />
       <CheckPage id={id} data={data} money={money} positions={pos} member={member} us={viewer.region !== "non_us"} now={now} startHref={startHref} />
+      <BrandFoot inline />
       {member ? null : <PayMoments ctx={{ count: p?.count ?? 0, window: p?.window ?? "hour", biggest: null }} now={now} />}
       <StageMotion />
     </main>
