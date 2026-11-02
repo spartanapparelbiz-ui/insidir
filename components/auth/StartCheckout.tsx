@@ -27,7 +27,9 @@ function loadScript(src: string): Promise<void> {
 
 type State = "age" | "opening" | "ready" | "error" | "unconfigured";
 
-export function StartCheckout({ elementsUrl, signedInAs, next = "/", ageConfirmed = false }: { elementsUrl: string; signedInAs: string | null; next?: string; ageConfirmed?: boolean }) {
+export function StartCheckout({ elementsUrl, signedInAs, next = "/", ageConfirmed = false, enclosed = false }: { elementsUrl: string; signedInAs: string | null; next?: string; ageConfirmed?: boolean;
+  /** Inside /go: no heading and no links out (the paywall above says the price and the plan). */
+  enclosed?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const [age, setAge] = useState(ageConfirmed);
   const [state, setState] = useState<State>(ageConfirmed ? "opening" : "age");
@@ -59,7 +61,7 @@ export function StartCheckout({ elementsUrl, signedInAs, next = "/", ageConfirme
 
   return (
     <div className="astart astart--pay" data-testid="start-pay">
-      <h1 className="astart__h astart__h--small">Start for $1.</h1>
+      {enclosed ? null : <h1 className="astart__h astart__h--small">Start for $1.</h1>}
       <p className="astart__plan" data-testid="charge-line" suppressHydrationWarning>{chargeLine(Date.now())}</p>
       <label className="astart__age" data-testid="age-18">
         <input type="checkbox" checked={age} disabled={age && state !== "age"} onChange={e => setAge(e.target.checked)} />
@@ -70,7 +72,7 @@ export function StartCheckout({ elementsUrl, signedInAs, next = "/", ageConfirme
       {state === "error" ? <p className="aerr" role="alert">{error ?? "The checkout didn't open. Try again."} <button type="button" className="aerr__retry" onClick={() => void open()}>Try again</button></p> : null}
       {state === "unconfigured" ? <p className="aerr" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
       <div ref={box} className="astart__frame" hidden={state !== "ready"} />
-      {signedInAs ? <p className="astart__who" data-testid="start-signed-in">Signed in as <b>{signedInAs}</b> · <a href="/login/start?next=%2Fstart&amp;fresh=1">Change account</a></p>
+      {enclosed ? null : signedInAs ? <p className="astart__who" data-testid="start-signed-in">Signed in as <b>{signedInAs}</b> · <a href="/login/start?next=%2Fstart&amp;fresh=1">Change account</a></p>
         : <p className="astart__who" data-testid="start-pay-first">Pay first; you sign in with Whop right after, then you&apos;re back on {next.startsWith("/read/") ? "your Read" : "Insidir"}. Already a member? <a href={`/login?next=${encodeURIComponent(next)}`}>Log in</a></p>}
       <p className="continue__by">Apple Pay and Google Pay where your device has them. Secure payments by Whop.</p>
     </div>

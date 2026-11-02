@@ -246,6 +246,13 @@
       "when": 1793638250344,
       "tag": "0034_millionaire_pings",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793648291860,
+      "tag": "0035_millionaire_watchlist",
+      "breakpoints": true
     }
   ]
 }

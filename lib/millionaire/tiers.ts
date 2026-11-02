@@ -28,19 +28,23 @@ export interface TierMoney {
   /** Share of the tier's dollars on YES, 0..1; null under MIN_SPLIT_WALLETS wallets or with no dollars. */
   yesShare: number | null;
 }
-export interface MarketTiers { millionaire: TierMoney; pro: TierMoney }
+/** One $1M+ wallet's position here, for members: "0x4f…c2 · +$3.1M all-time · $120K on Rams at 69¢". */
+export interface TierWallet { short: string; pnl: number; side: "yes" | "no"; dollars: number; price: number | null }
+export interface MarketTiers { millionaire: TierMoney; pro: TierMoney; wallets?: TierWallet[] }
 
 /** One wallet's open dollars on one side. A wallet listed twice on a side (open positions and tracked moves) keeps
  *  the larger figure, never the sum: they describe the same money. */
-export interface WalletSide { wallet: string; side: "yes" | "no"; dollars: number }
+export interface WalletSide { wallet: string; side: "yes" | "no"; dollars: number; price?: number | null }
 
-export function tierMoney(rows: readonly WalletSide[], pnl: ReadonlyMap<string, number | null>): MarketTiers {
-  const best = new Map<string, number>();
+export function tierMoney(rows: readonly WalletSide[], pnl: ReadonlyMap<string, number | null>, short: (w: string) => string = w => `${w.slice(0, 4)}…${w.slice(-2)}`): MarketTiers {
+  const best = new Map<string, number>(), price = new Map<string, number>();
   for (const r of rows) {
     if (!(r.dollars > 0)) continue;
     const k = `${r.wallet}|${r.side}`;
     best.set(k, Math.max(best.get(k) ?? 0, r.dollars));
+    if (r.price !== null && r.price !== undefined && !price.has(k)) price.set(k, r.price);
   }
+  const wallets: TierWallet[] = [];
   const empty = (): { yes: TierSide; no: TierSide; set: Set<string> } => ({ yes: { dollars: 0, wallets: 0 }, no: { dollars: 0, wallets: 0 }, set: new Set() });
   const acc: Record<Tier, ReturnType<typeof empty>> = { millionaire: empty(), pro: empty() };
   for (const [k, dollars] of best) {
@@ -48,16 +52,17 @@ export function tierMoney(rows: readonly WalletSide[], pnl: ReadonlyMap<string, 
     const t = tierOf(pnl.get(wallet));
     if (!t) continue;
     acc[t][side].dollars += dollars; acc[t][side].wallets += 1; acc[t].set.add(wallet);
+    if (t === "millionaire") wallets.push({ short: short(wallet), pnl: pnl.get(wallet)!, side, dollars, price: price.get(k) ?? null });
   }
   const done = (a: ReturnType<typeof empty>): TierMoney => {
     const total = a.yes.dollars + a.no.dollars;
     return { yes: a.yes, no: a.no, wallets: a.set.size, yesShare: a.set.size >= MIN_SPLIT_WALLETS && total > 0 ? a.yes.dollars / total : null };
   };
-  return { millionaire: done(acc.millionaire), pro: done(acc.pro) };
+  return { millionaire: done(acc.millionaire), pro: done(acc.pro), wallets: wallets.sort((a, b) => b.dollars - a.dollars).slice(0, 12) };
 }
 
-/** "2 millionaire wallets in this market" (the line under MIN_SPLIT_WALLETS). */
+/** "2 millionaire wallets here" (the line under MIN_SPLIT_WALLETS). */
 export function tierCountLine(t: Tier, n: number): string {
   const what = t === "millionaire" ? "millionaire" : "$100K+";
-  return `${n} ${what} wallet${n === 1 ? "" : "s"} in this market`;
+  return `${n} ${what} wallet${n === 1 ? "" : "s"} here`;
 }

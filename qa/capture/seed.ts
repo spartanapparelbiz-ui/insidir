@@ -6,6 +6,8 @@
 import { sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
 import { marketInfo, moves } from "@/lib/db/schema";
+import { watchlistOnce } from "@/lib/millionaire/watchlist";
+import { syncMillionaireBets } from "@/lib/millionaire/bets";
 import { TRACKER_RULES_V } from "@/lib/trackers";
 
 const MIN = 60_000, HOUR = 3_600_000, DAY = 86_400_000;
@@ -35,7 +37,7 @@ const wallet = (n: number) => "0x" + (BigInt(n) * 0x9e3779b97f4a7c15n).toString(
 async function main() {
   const db = getDb(), now = Date.now();
   // Out with the e2e fixtures' markets and positions (users, sessions and the rest stay).
-  for (const t of ["terminal.millionaire_pings", "terminal.move_tags", "terminal.moves", "terminal.market_info", "terminal.markets", "terminal.pairs", "terminal.read_seen", "terminal.reads", "terminal.whale_trades", "terminal.near_misses"]) {
+  for (const t of ["terminal.millionaire_pings", "terminal.millionaire_bets", "terminal.millionaire_wallets", "terminal.move_tags", "terminal.moves", "terminal.market_info", "terminal.markets", "terminal.pairs", "terminal.read_seen", "terminal.reads", "terminal.whale_trades", "terminal.near_misses"]) {
     await db.execute(sql.raw(`delete from ${t}`)).catch(() => undefined);
   }
   const all = Object.values(M) as Mkt[];
@@ -88,6 +90,10 @@ async function main() {
     const w = byId.get(id);
     if (w) await db.execute(sql`insert into terminal.wallet_pnl (wallet, closed, closed_at_least, pnl, read_at) values (${w}, ${400 + Math.round(v / 10_000)}, false, ${v}, ${new Date(now)}) on conflict (wallet) do update set pnl = excluded.pnl`);
   }
+  // The watchlist and its bets, as the worker builds them: the leaderboard pass (none here) plus every wallet_pnl
+  // wallet, then the watchlist wallets' $5K+ tracked moves copied in as millionaire bets.
+  await watchlistOnce(db, { getLeaderboardPage: async () => [] }, now);
+  await syncMillionaireBets(db);
 
   // Tracker records: settled positions, $100 followed at the shown price plus one cent, spread over 120 days, wins
   // interleaved so every window carries the same rate. One price per tracker makes "All" come out at the stated

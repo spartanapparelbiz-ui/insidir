@@ -84,7 +84,7 @@ test("a visitor's one Read (US rule), blurred bets and line never sent, Share, t
   await page.getByTestId("read-go").click();
   const err = page.getByTestId("read-box").getByRole("alert");
   await expect(err).toContainText("You've used your free Read. Members read every market.");
-  await expect(err.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
+  await expect(err.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/go");
   // From the blurred part: pay first (no sign-in), Whop sign-in, and back on this Read as a member.
   await page.goto(url);
   await page.getByTestId("read-locked").getByRole("link", { name: "Start for $1" }).click();

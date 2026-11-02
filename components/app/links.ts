@@ -1,3 +1,3 @@
-/* Where every "Get Insidir" button goes: the checkout embedded on /start. Server or client. */
-export const unlockHref = (): string => "/start";
+/** Every "Start for $1" lands on the /go funnel (app/go/page.tsx); /start stays for direct links. */
+export const unlockHref = (): string => "/go";
 

@@ -16,37 +16,39 @@ import { clockET, agoText } from "@/lib/moves/copy";
 import { cents, pct, pricesFor, signedPct, signedUsd, UNUSUAL_TEXT, usd } from "@/lib/read/math";
 import type { ReadData, SidePrices } from "@/lib/read/types";
 import { ShareRead } from "./ShareRead";
-import { MIN_SPLIT_WALLETS, TIER_BADGE, tierCountLine, tierOf, type Tier, type TierMoney } from "@/lib/millionaire/tiers";
+import { MIN_SPLIT_WALLETS, TIER_BADGE, tierCountLine, tierOf, type TierMoney } from "@/lib/millionaire/tiers";
 import { TierBadge } from "@/components/millionaire/TierBadge";
 
 const count = (n: number, w: string) => `${n} ${n === 1 ? w : `${w}s`}`;
 
-/** One tier's line: the split (3+ wallets), or the count and the sides they're on, or nothing with none. */
-function TierLine({ tier, m, yes, no }: { tier: Tier; m: TierMoney; yes: string; no: string }) {
-  if (!m.wallets) return null;
-  const sides = [m.yes.dollars > 0 ? `${usd(m.yes.dollars)} on ${yes}` : null, m.no.dollars > 0 ? `${usd(m.no.dollars)} on ${no}` : null].filter(Boolean).join(" · ");
-  return (
-    <div className="rtier" data-testid={`read-tier-${tier}`}>
-      <p className="rtier__h"><span className="tier-badge" data-tier={tier}>{TIER_BADGE[tier]}</span> {tier === "millionaire" ? "Wallets with $1M+ all-time profit" : "Wallets with $100K+ all-time profit"}</p>
-      {m.yesShare !== null ? (
-        <Split share={m.yesShare} yes={yes} no={no} what={`${TIER_BADGE[tier]} money`}
-          yesSub={m.yes.dollars > 0 ? `${usd(m.yes.dollars)} · ${count(m.yes.wallets, "wallet")}` : "None"} noSub={m.no.dollars > 0 ? `${usd(m.no.dollars)} · ${count(m.no.wallets, "wallet")}` : "None"} />
-      ) : <p className="rtier__few" data-testid={`read-tier-${tier}-few`}>{tierCountLine(tier, m.wallets)}: {sides}.</p>}
-    </div>
-  );
-}
+const k = (v: number) => (v >= 1e6 ? `$${(v / 1e6).toFixed(1).replace(/\.0$/, "")}M` : `$${Math.round(v / 1e3)}K`);
 
-/** Millionaire money: the Read's lead on Polymarket markets. */
-function TierSection({ tiers, yes, no }: { tiers: NonNullable<ReadData["tiers"]>; yes: string; no: string }) {
-  const any = tiers.millionaire.wallets + tiers.pro.wallets > 0;
+/** Millionaire money: $1M+ wallets' dollars on each side with wallet counts (a split from 3+ wallets, else the count
+ *  and their sides), "Pro money" ($100K+) on one line, then, for members, each $1M+ wallet's position. */
+function TierSection({ tiers, yes, no, member }: { tiers: NonNullable<ReadData["tiers"]>; yes: string; no: string; member: boolean }) {
+  const m = tiers.millionaire, p = tiers.pro;
+  const sides = (t: TierMoney) => [t.yes.dollars > 0 ? `${usd(t.yes.dollars)} on ${yes}` : null, t.no.dollars > 0 ? `${usd(t.no.dollars)} on ${no}` : null].filter(Boolean).join(" · ");
+  const rows = tiers.wallets ?? [];
   return (
     <section className="rsec rsec--lead" aria-labelledby="r-tier" data-testid="read-millionaire">
-      <h2 id="r-tier" className="rsec__h">Millionaire money <details className="rinfo"><summary aria-label="What counts as millionaire money">ⓘ</summary><span className="rinfo__pop" role="note">Open positions here from Polymarket wallets whose all-time profit on Polymarket&apos;s public leaderboard is $1M or more ($100K+ on the second line). A split needs {MIN_SPLIT_WALLETS} or more wallets. We never show who is behind a wallet.</span></details></h2>
-      {any ? <><TierLine tier="millionaire" m={tiers.millionaire} yes={yes} no={no} /><TierLine tier="pro" m={tiers.pro} yes={yes} no={no} /></>
-        : <p className="rsec__none" data-testid="read-millionaire-none">No $100K+ wallet holds a position here right now.</p>}
+      <h2 id="r-tier" className="rsec__h">Millionaire money <details className="rinfo"><summary aria-label="What counts as millionaire money">ⓘ</summary><span className="rinfo__pop" role="note">Open positions here from Polymarket wallets whose all-time profit on Polymarket&apos;s public leaderboard is $1M or more. Pro money is $100K to $1M. A split needs {MIN_SPLIT_WALLETS} or more wallets. We never show who is behind a wallet.</span></details></h2>
+      {m.wallets ? (m.yesShare !== null ? (
+        <div data-testid="read-tier-millionaire">
+          <Split share={m.yesShare} yes={yes} no={no} what="millionaire money"
+            yesSub={m.yes.dollars > 0 ? `${usd(m.yes.dollars)} · ${count(m.yes.wallets, "wallet")}` : "None"} noSub={m.no.dollars > 0 ? `${usd(m.no.dollars)} · ${count(m.no.wallets, "wallet")}` : "None"} />
+        </div>
+      ) : <p className="rtier__few" data-testid="read-tier-millionaire-few"><span className="tier-badge" data-tier="millionaire">{TIER_BADGE.millionaire}</span>{tierCountLine("millionaire", m.wallets)}: {sides(m)}.</p>)
+        : <p className="rsec__none" data-testid="read-millionaire-none">No $1M+ wallet holds a position here right now.</p>}
+      {p.wallets ? <p className="rtier__pro" data-testid="read-tier-pro"><b>Pro money</b> <span className="tier-badge" data-tier="pro">{TIER_BADGE.pro}</span>{p.yesShare !== null ? `${sides(p)} · ${count(p.wallets, "wallet")}` : `${tierCountLine("pro", p.wallets)}: ${sides(p)}`}</p> : null}
+      {rows.length && member ? (
+        <ul className="rprov" data-testid="read-millionaire-wallets" aria-label="Millionaire wallets">
+          {rows.map((w, i) => <li key={`${w.short}:${w.side}:${i}`} className="rprov__row" data-testid="millionaire-wallet"><span className="rprov__main"><b>{w.short}</b> · {w.pnl >= 0 ? "+" : "−"}{k(Math.abs(w.pnl))} all-time · {usd(w.dollars)} on {w.side === "yes" ? yes : no}{w.price !== null ? ` at ${cents(w.price)}` : ""}</span></li>)}
+        </ul>
+      ) : rows.length ? <p className="rsec__fine" data-testid="read-millionaire-locked">Members see each millionaire wallet&apos;s position, price and all-time profit.</p> : null}
     </section>
   );
 }
+
 
 function Split({ share, yes, no, what, yesSub, noSub }: { share: number; yes: string; no: string; what: string; yesSub: string; noSub: string }) {
   return (
@@ -97,7 +99,8 @@ export function ReadCard({ id, data, member, us, now, startHref, level = 2, head
         </header>
       ) : null}
 
-      {data.tiers ? <TierSection tiers={data.tiers} yes={data.yesLabel} no={data.noLabel} /> : null}
+      {data.tiers ? <TierSection tiers={data.tiers} yes={data.yesLabel} no={data.noLabel} member={member} />
+        : data.kalshi && !data.polymarket ? <p className="rsec__fine" data-testid="read-kalshi-only">Kalshi trades are anonymous, so there is no millionaire money here: below is what winning trackers hold.</p> : null}
 
       <section className="rsec" aria-labelledby="r-proven">
         <h2 id="r-proven" className="rsec__h">Proven money <details className="rinfo" data-testid="read-proven-def"><summary aria-label="What counts as proven money">ⓘ</summary><span className="rinfo__pop" role="note">{PROVEN_INFO}</span></details></h2>

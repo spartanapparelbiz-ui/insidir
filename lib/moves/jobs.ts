@@ -36,8 +36,9 @@ export const RECORD_STALE_MS = 12 * 3_600_000;
  *  a partial one. */
 export const RECORD_MAX_PAGES = 100;
 
-export function movesPoller(poly: PolymarketClient, kalshi: KalshiClient): MovesPoller {
+export function movesPoller(poly: PolymarketClient, kalshi: KalshiClient, watchlist?: () => Promise<ReadonlyMap<string, number>>): MovesPoller {
   return new MovesPoller({
+    ...(watchlist ? { watchlist } : {}),
     polyTradesPage: offset => poly.getTradesPage({ filterAmount: Number(process.env.WHALE_FILL_MIN ?? 500), offset, priority: "hot" }),
     polyWalletTrades: async (wallet, sinceMs): Promise<WalletTrade[]> =>
       (await poly.getActivity(wallet, { type: "TRADE", start: sinceMs, maxPages: 1, priority: "normal" }))

@@ -14,7 +14,7 @@ import { boardRows } from "./board";
 import { dayET, PING_MAX_AGE_MS, PING_MIN, pingCatsOf, pingJobs, pingText } from "./pings-pure";
 
 export async function pingsOnce(db: Db, now: number, send: typeof sendPush = sendPush): Promise<number> {
-  const bets = await boardRows(db, now, { min: PING_MIN, limit: 50 });
+  const bets = await boardRows(db, now, { min: PING_MIN, limit: 50, tier: "millionaire" });
   const fresh = bets.filter(b => now - b.at <= PING_MAX_AGE_MS);
   if (!fresh.length) return 0;
   const users = (await moveAlertUsers(db)).filter(u => u.push);
@@ -48,7 +48,7 @@ export async function pingReceipts(db: Db): Promise<{ won: number; lost: number;
   const r = await db.execute(sql`select
       count(*) filter (where m.result = 'won')::int as won, count(*) filter (where m.result = 'lost')::int as lost,
       count(*) filter (where m.result is null)::int as open
-    from (select distinct move_id from terminal.millionaire_pings) p join terminal.moves m on m.id = p.move_id`);
+    from (select distinct move_id from terminal.millionaire_pings) p join terminal.millionaire_bets m on m.id = p.move_id`);
   const x = r.rows[0] as { won: number; lost: number; open: number } | undefined;
   return { won: Number(x?.won ?? 0), lost: Number(x?.lost ?? 0), open: Number(x?.open ?? 0) };
 }

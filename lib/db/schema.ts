@@ -53,6 +53,8 @@ export interface UserSettings {
   /** Millionaire pings (lib/millionaire/pings.ts) are on for these categories (lib/nx/data.ts CATS keys); unset: the
    *  categories from onboarding (betOn), or every category when there are none. */
   pingCats?: string[];
+  /** "Remind me before I'm charged" from /go's paywall (on by default): the day-2 reminder (lib/millionaire). */
+  remindBeforeCharge?: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -865,3 +867,33 @@ export const millionairePings = terminal.table("millionaire_pings", {
   day: text("day").notNull(),
   sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
 }, t => [primaryKey({ columns: [t.userId, t.moveId] }), index("millionaire_pings_day_idx").on(t.userId, t.day), index("millionaire_pings_move_idx").on(t.moveId)]);
+
+/** The millionaire watchlist (lib/millionaire/watchlist.ts): the top wallets by all-time profit on Polymarket's public
+ *  leaderboard, plus every wallet in wallet_pnl, refreshed daily. pnl only: never the username or the rank. */
+export const millionaireWallets = terminal.table("millionaire_wallets", {
+  wallet: text("wallet").primaryKey(),
+  pnl: doublePrecision("pnl").notNull(),
+  source: text("source").notNull(),
+  readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+}, t => [index("millionaire_wallets_pnl_idx").on(t.pnl)]);
+
+/** Millionaire bets: every bet of $5K+ by a watchlist wallet (lib/millionaire/bets.ts), from the big-trade poller's
+ *  own fills, and the big moves those wallets made before. The wallet's all-time pnl when it bet is kept with it. */
+export const millionaireBets = terminal.table("millionaire_bets", {
+  id: text("id").primaryKey(),
+  wallet: text("wallet").notNull(),
+  marketId: text("market_id").notNull(),
+  eventTitle: text("event_title"),
+  marketTitle: text("market_title").notNull(),
+  outcome: text("outcome"),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  amount: doublePrecision("amount").notNull(),
+  price: doublePrecision("price").notNull(),
+  pnl: doublePrecision("pnl").notNull(),
+  tab: text("tab"),
+  league: text("league"),
+  category: text("category"),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+  result: text("result").$type<"won" | "lost" | "void">(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+}, t => [index("millionaire_bets_at_idx").on(t.at), index("millionaire_bets_market_idx").on(t.marketId), index("millionaire_bets_wallet_idx").on(t.wallet)]);

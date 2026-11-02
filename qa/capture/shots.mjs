@@ -11,7 +11,7 @@ mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const problems = [];
-for (const [name, path, cookie] of [["landing", "/", null], ["dashboard", "/", MEMBER], ["board", "/board", null], ["board-member", "/board", MEMBER]]) {
+for (const [name, path, cookie] of [["landing", "/", null], ["dashboard", "/", MEMBER], ["board", "/board", null], ["board-member", "/board", MEMBER], ["go-hook", "/go", null], ["board-election", "/board?f=election-night", MEMBER]]) {
   for (const width of [390, 1440]) {
     const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: width < 600 ? 2 : 1 });
     if (cookie) await ctx.addCookies([{ name: "insidir_session", value: cookie, url: BASE }]);
