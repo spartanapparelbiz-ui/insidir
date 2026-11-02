@@ -8,7 +8,7 @@
  *   A member outside the US: "tennis" reads the main tennis market (paired, the most tracked money); both venues with
  *   the better price marked, Open on it; the Read is on their home page. A visitor: a Read with no money doesn't count;
  *   picking from "Which one?" doesn't use up the free Read (the other match is a tap away under it); a new search does.
- *   Home: tonight's markets with proven money, one tap each. /admin shows landing → first Read and → paid. */
+ *   Home: up to five one-tap Reads under the box. /admin shows landing → first Read and → paid. */
 import { expect, test, type Page } from "@playwright/test";
 import { TRIAL } from "@/lib/plans";
 import { base32Decode, stepAt, totpCode } from "@/lib/admin";
@@ -111,18 +111,16 @@ test("a visitor's one Read (US rule), blurred bets and line never sent, Share, t
   await expect(page.getByTestId("read-locked")).toHaveCount(0);
   await expect(page.getByTestId("read-advice")).toHaveText("Information, not financial or betting advice. Public data from Polymarket and Kalshi.");
   await page.screenshot({ path: shotName("read-after-pay", page), fullPage: true });
-  // Their home: tonight's NFL game (ready to read), this market in Your markets, and the week.
+  // Their home: this market in Your markets with the side proven money favors, and the week.
   await page.goto("/");
-  await expect(page.getByTestId("tonight")).toContainText("E2E fixture: Jets vs. Dolphins");
-  await expect(page.getByTestId("tonight")).toContainText("NFL ·");
   await expect(page.getByTestId("your-markets").locator("a").first()).toContainText("E2E fixture: Tennis match 100");
-  await expect(page.getByTestId("your-markets")).toContainText("Proven money 100% Player A");
-  await expect(page.getByTestId("week-recap")).toContainText("Your markets this week");
-  await page.screenshot({ path: shotName("member-home-tonight", page), fullPage: true });
-  // A tonight market opens its Read in one tap.
-  await page.getByTestId("tonight").getByRole("button").first().click();
+  await expect(page.getByTestId("your-markets")).toContainText("Proven money favors Player A");
+  await expect(page.getByTestId("week-recap")).toContainText("Your week");
+  await page.screenshot({ path: shotName("member-home", page), fullPage: true });
+  // A chip under the box opens its Read in one tap.
+  await page.getByTestId("member-chips").getByRole("button").first().click();
   await expect(page).toHaveURL(/\/read\/[A-Za-z0-9]+$/, { timeout: 10_000 });
-  await expect(page.getByTestId("read-card").getByRole("heading", { level: 1 })).toHaveText("E2E fixture: Jets vs. Dolphins");
+  await expect(page.getByTestId("read-card").getByRole("heading", { level: 1 })).toBeVisible();
 });
 
 test("a member outside the US: \"tennis\" reads the main market, both venues with the better price marked, Open on it; on their home page after", async ({ page, context }) => {
@@ -179,17 +177,17 @@ test("free Read: picking from \"Which one?\" doesn't use it up, nor does a Read 
   }
 });
 
-test("home: under the box, one-tap Reads for tonight's busiest markets with proven money", async ({ page }) => {
+test("home: under the box, up to five one-tap Reads of live markets, no two alike", async ({ page }) => {
   await page.goto("/");
-  const taps = page.getByTestId("tonight-reads");
-  await expect(taps.getByRole("heading")).toHaveText("Tonight, with proven money");
-  // Tennis match 100 starts tonight and has proven money; tonight's NFL game has big money but none of it proven.
-  await expect(taps.getByRole("button")).toHaveCount(1);
-  await expect(taps.getByRole("button")).toContainText(/E2E fixture: Tennis match 100.*\$90K proven in 1 position/);
-  await page.screenshot({ path: shotName("home-tonight-taps", page), fullPage: false });
-  await taps.getByRole("button").click();
+  const taps = page.getByTestId("hero-chips").getByRole("button");
+  const n = await taps.count();
+  expect(n).toBeGreaterThanOrEqual(1); expect(n).toBeLessThanOrEqual(5);
+  const words = (await taps.allInnerTexts()).map(t => t.trim().toLowerCase());
+  expect(new Set(words).size).toBe(words.length);
+  const first = (await taps.first().innerText()).trim().replace(/…$/, "");
+  await taps.first().click();
   await expect(page).toHaveURL(/\/read\/[A-Za-z0-9]+$/, { timeout: 10_000 });
-  await expect(page.getByTestId("read-card").getByRole("heading", { level: 1 })).toHaveText("E2E fixture: Tennis match 100");
+  await expect(page.getByTestId("read-card").getByRole("heading", { level: 1 })).toContainText(first.slice(0, 12));
 });
 
 test("/admin: landing → first Read and → paid, median and 75th percentile, and the Reads' build time", async ({ page }) => {

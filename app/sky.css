@@ -19,6 +19,8 @@
   background: var(--sk-bg); color: var(--sk-text); font-family: var(--sk-font); font-weight: 400; font-size: 15px; line-height: 1.5;
   -webkit-font-smoothing: antialiased; min-height: 100vh;
 }
+/* Headings and form controls take Outfit too (the site-wide h1/h2 rules name Schibsted). */
+.sk :is(h1, h2, h3, h4, h5, h6, button, input, textarea, select, summary) { font-family: inherit; }
 @media (min-width: 768px) { .sk { --sk-pad: 32px; --sk-gap: 96px; } }
 .sk *, .sk *::before, .sk *::after { box-sizing: border-box; }
 .sk a { color: inherit; }
