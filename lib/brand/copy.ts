@@ -23,7 +23,8 @@ export const PAST = "Past results, not a promise.";
 export const LEGAL = "Information, not financial or betting advice. Operated by Aethric LLC.";
 export const STAGES = {
   live: ["Millionaire money,", "right now."],
-  check: ["Check your bet", "before you place it."],
+  free: ["Free right now.", "No account."],
+  members: ["Everything the", "millionaires do.", "As it happens."],
   markets: ["Every market", "people bet on."],
   pricing: ["Less than", "one bad bet."],
   pricingSub: `$${TRIAL.fee} for three days, then $${PLANS.insidir.price} a month. Cancel anytime.`,
@@ -44,3 +45,12 @@ export const faqLd = (): string => JSON.stringify({
   "@context": "https://schema.org", "@type": "FAQPage",
   mainEntity: FAQ.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
 });
+
+/** What members get, said once: the five rows on the landing, the five tabs of their home. */
+export const MEMBERS = [
+  { k: "before", when: "Before you bet", tab: "Check", t: "Check any bet. See if millionaires are with you or against you, plus the better price on Kalshi or Polymarket." },
+  { k: "allday", when: "All day", tab: "Board", t: "The live board of every millionaire bet, and a ping the second one lands in your categories. Unusual bets flagged." },
+  { k: "morning", when: "Every morning", tab: "Brief", t: "The Daily Brief: the 3 markets with the most millionaire money today, and how yesterday's went." },
+  { k: "overtime", when: "Over time", tab: "Following", t: "Follow a wallet that's up millions and get pinged on every bet it makes. Every result public, losses included." },
+  { k: "nights", when: "Big nights", tab: "Live", t: "Election night and game nights: a live board pinned to the races and games that matter." },
+] as const;

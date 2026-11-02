@@ -17,7 +17,7 @@ const I: Record<string, ReactNode> = {
 };
 const Icon = ({ name }: { name: string }) => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{I[name]}</svg>;
 const NAV: Array<[Tab, string, string]> = [["home", "Home", "/"], ["board", "Board", "/board"], ["markets", "Markets", "/markets"], ["following", "Following", "/following"], ["library", "Library", "/library"], ["account", "Account", "/settings"]];
-export const CHECK_HREF = "/#ask";
+export const CHECK_HREF = "/#ask"; // the Check tab, its box
 
 export function Shell({ current, children }: { current: Tab; children: ReactNode }) {
   return (

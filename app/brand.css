@@ -436,3 +436,14 @@ html.bm .b-new { animation: b-pillIn .7s var(--e-reveal) both; }
 @media (max-width: 1160px) { .b-stage:has(> .b-foot:not(.b-foot--inline)) .b-stage__in { padding-bottom: 220px; } }
 @media (max-width: 552px) { .b-stage:has(> .b-foot:not(.b-foot--inline)) .b-stage__in { padding-bottom: 340px; } }
 .b-fixed-bg ~ div .b-foot--inline { background: rgba(0, 0, 0, .6); }
+
+/* Free right now: three glass tiles. What members get: five rows, words left, a live preview right. */
+.b-tiles3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(14 * var(--u)); align-items: start; width: 100%; }
+.b-tile3 { display: grid; gap: 4px; min-width: 0; }
+@media (max-width: 1060px) { .b-tiles3 { grid-template-columns: 1fr; gap: 14px; max-width: 640px; margin: 0 auto; } }
+.b-feats { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: calc(10 * var(--u)); width: 100%; max-width: calc(1040 * var(--u)); }
+.b-feat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(24 * var(--u)); padding: calc(20 * var(--u)) calc(22 * var(--u)); align-items: center; }
+.b-feat__t { margin: 0; font-weight: 500; font-size: calc(17 * var(--u)); line-height: 1.4; letter-spacing: calc(-0.3 * var(--u)); }
+.b-feat__prev { padding: calc(12 * var(--u)); border-radius: calc(12 * var(--u)); background: rgba(255, 255, 255, .03); border: 1px solid var(--glass-line); min-width: 0; }
+@media (max-width: 1160px) { .b-feats { gap: 10px; max-width: 1040px; } .b-feat { gap: 18px; padding: 18px; } .b-feat__t { font-size: 16px; } .b-feat__prev { padding: 12px; border-radius: 12px; } }
+@media (max-width: 760px) { .b-feat { grid-template-columns: 1fr; gap: 12px; } }

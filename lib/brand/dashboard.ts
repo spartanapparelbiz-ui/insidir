@@ -4,7 +4,8 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { isCategory, type CategorySlug } from "@/lib/brand/categories";
-import { marketMoney, pulse, recentBets, type BoardBet, type MarketMoney, type Pulse } from "@/lib/millionaires/queries";
+import { marketMoney, midnightET, pulse, recentBets, settledBetween, walletPnls, type BoardBet, type MarketMoney, type Pulse, type Settled } from "@/lib/millionaires/queries";
+import { shortWallet } from "@/lib/millionaires/watchlist";
 import { followList } from "@/lib/moves/store";
 import { yourMarkets, type YourMarket } from "@/lib/read/member";
 
@@ -18,9 +19,16 @@ export interface Dashboard {
   pulse: Pulse;
   feed: BoardBet[];
   markets: Array<YourMarket & { money: MarketMoney | null }>;
-  following: { wallets: number; bets: BoardBet[] };
+  following: { wallets: number; bets: BoardBet[]; cards: Array<{ wallet: string; short: string; pnl: number | null }> };
   week: Week;
+  /** The Daily Brief: today's 3 markets with the most millionaire money, and how yesterday's settled ones went. */
+  brief: { top: MarketMoney[]; yesterday: Settled[] };
+  /** Big nights: the races and games with the most millionaire money now, and the bets in them. */
+  live: { markets: MarketMoney[]; bets: BoardBet[] };
 }
+
+const NIGHT = ["elections", "politics", "football", "basketball", "baseball", "hockey", "soccer", "tennis", "golf", "racing"] as const;
+const mil = (m: MarketMoney) => m.millionaire.yes.dollars + m.millionaire.no.dollars;
 
 /** Their checked markets that settled this week: did the side with more millionaire money win? */
 export async function weekFor(db: Db, userId: string, now: number): Promise<Week> {
@@ -48,7 +56,7 @@ export async function dashboardData(db: Db, userId: string, settings: { go?: { c
   const cats = (settings.go?.categories ?? []).filter(isCategory);
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("dashboard", e instanceof Error ? e.message : e); return d; });
   const [p, feed, mine, follows, week] = await Promise.all([
-    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0 }),
+    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }),
     safe(recentBets(db, { now, limit: 8, member: true, categories: cats.length ? cats : undefined }), [] as BoardBet[]),
     safe(yourMarkets(db, userId, now, 8), [] as YourMarket[]),
     safe(followList(db, userId), []),
@@ -61,9 +69,21 @@ export async function dashboardData(db: Db, userId: string, settings: { go?: { c
     wallets.length ? safe(recentBets(db, { now, limit: 6, member: true, wallets }), [] as BoardBet[]) : Promise.resolve([] as BoardBet[]),
   ]);
   const byId = new Map(money.map(x => [x.marketId, x]));
+  const midnight = midnightET(now);
+  const [today, yesterday, night, nightBets, pnls] = await Promise.all([
+    safe(marketMoney(db, { since: midnight, limit: 20, now }), [] as MarketMoney[]),
+    safe(settledBetween(db, midnight - DAY, midnight, 10), [] as Settled[]),
+    safe(marketMoney(db, { categories: [...NIGHT], since: now - DAY, limit: 20, now }), [] as MarketMoney[]),
+    safe(recentBets(db, { now, limit: 10, member: true, categories: [...NIGHT], since: now - 6 * 3_600_000 }), [] as BoardBet[]),
+    safe(walletPnls(db, wallets), new Map<string, number>()),
+  ]);
+  let top = today.filter(m => mil(m) > 0).sort((a, b) => mil(b) - mil(a)).slice(0, 3);
+  if (!top.length) top = (await safe(marketMoney(db, { since: now - DAY, limit: 20, now }), [] as MarketMoney[])).filter(m => mil(m) > 0).sort((a, b) => mil(b) - mil(a)).slice(0, 3);
   return {
     now, cats, pulse: p, feed, week,
     markets: mine.map(x => ({ ...x, money: byId.get(x.latest.data.polymarket?.id ?? "") ?? null })),
-    following: { wallets: wallets.length, bets: fbets },
+    following: { wallets: wallets.length, bets: fbets, cards: wallets.map(w => ({ wallet: w, short: shortWallet(w), pnl: pnls.get(w) ?? null })) },
+    brief: { top, yesterday },
+    live: { markets: night.filter(m => mil(m) > 0).sort((a, b) => mil(b) - mil(a)).slice(0, 5), bets: nightBets },
   };
 }

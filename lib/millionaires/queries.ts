@@ -102,6 +102,8 @@ export interface Pulse {
   today: number;
   /** Dollars millionaire-tier wallets bet since midnight US Eastern (the hero's "today"). */
   sinceMidnight: number;
+  /** How many millionaire-tier bets since midnight US Eastern. */
+  countToday: number;
 }
 
 /** Midnight US Eastern of the day `now` falls on, as epoch ms. */
@@ -126,11 +128,12 @@ export function pulse(db: Db, now: number): Promise<Pulse> {
         count(*) filter (where tier = 'millionaire' and at > ${new Date(now - DAY)})::int as day,
         coalesce(sum(amount) filter (where tier = 'millionaire'), 0)::float as today,
         coalesce(sum(amount) filter (where tier = 'millionaire' and at >= ${new Date(midnightET(now))}), 0)::float as since_midnight,
+        count(*) filter (where tier = 'millionaire' and at >= ${new Date(midnightET(now))})::int as count_today,
         (select count(*)::int from terminal.watchlist) as wallets,
         (select count(*)::int from terminal.watchlist where tier = 'millionaire') as millionaires
       from terminal.millionaire_bets where at > ${new Date(now - DAY)}`)).rows[0] as Row;
     const hour = n(r.hour);
-    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight) };
+    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight), countToday: n(r.count_today) };
   });
 }
 
@@ -301,4 +304,28 @@ export async function betsToday(db: Db, categories: readonly string[], now: numb
   const r = await db.execute(sql`select category, count(*)::int as bets from terminal.millionaire_bets
     where at > ${new Date(now - DAY)} and category in (${sql.join(categories.map(c => sql`${c}`), sql`, `)}) group by category`);
   return new Map((r.rows as Row[]).map(x => [String(x.category), n(x.bets)]));
+}
+
+/** A wallet's last settled watchlist bets, newest first (the follow card's "last 5"). */
+export async function lastResults(db: Db, wallet: string, limit = 5): Promise<Array<{ title: string; outcome: string; result: "won" | "lost" | "void"; amount: number }>> {
+  const r = await db.execute(sql`select market_title, outcome, result, amount from terminal.millionaire_bets
+    where wallet = ${wallet.toLowerCase()} and result is not null order by settled_at desc nulls last limit ${limit}`);
+  return (r.rows as Row[]).map(x => ({ title: String(x.market_title), outcome: String(x.outcome), result: x.result as "won" | "lost" | "void", amount: n(x.amount) }));
+}
+
+export interface Settled { marketId: string; title: string; heavier: string; won: string | null; right: boolean; dollars: number }
+/** Markets with millionaire money that settled in a window: did the side with more millionaire money win? */
+export async function settledBetween(db: Db, from: number, to: number, limit = 10): Promise<Settled[]> {
+  const r = await db.execute(sql`select market_id, max(market_title) as title, outcome_side, max(outcome) as outcome, sum(amount)::float as dollars, max(result) as result
+    from terminal.millionaire_bets where tier = 'millionaire' and result in ('won', 'lost') and settled_at >= ${new Date(from)} and settled_at < ${new Date(to)}
+    group by market_id, outcome_side`);
+  const by = new Map<string, Row[]>();
+  for (const x of r.rows as Row[]) by.set(String(x.market_id), [...(by.get(String(x.market_id)) ?? []), x]);
+  const out: Settled[] = [];
+  for (const [id, sides] of by) {
+    sides.sort((a, b) => n(b.dollars) - n(a.dollars));
+    const heavy = sides[0]!, winner = sides.find(x => x.result === "won");
+    out.push({ marketId: id, title: String(heavy.title), heavier: String(heavy.outcome), won: winner ? String(winner.outcome) : null, right: heavy.result === "won", dollars: sides.reduce((t, x) => t + n(x.dollars), 0) });
+  }
+  return out.sort((a, b) => b.dollars - a.dollars).slice(0, limit);
 }

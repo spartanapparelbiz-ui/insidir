@@ -56,7 +56,7 @@ export async function paidByVisitor(db: Db, visitorId: string | null): Promise<b
 export async function goData(db: Db, cats: readonly CategorySlug[], now: number, paid: boolean): Promise<GoData> {
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("go", e instanceof Error ? e.message : e); return d; });
   const [p, hooks, perCat, today, week, pr, wallets] = await Promise.all([
-    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0 }),
+    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }),
     safe(recentBets(db, { now, limit: 1, tier: "millionaire", member: paid }), [] as BoardBet[]),
     safe(betsToday(db, cats, now), new Map<string, number>()),
     safe(marketMoney(db, { categories: cats.length ? cats : undefined, since: now - DAY, limit: 20, now }), [] as MarketMoney[]),

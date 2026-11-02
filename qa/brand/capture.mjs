@@ -8,7 +8,7 @@ import { mkdirSync } from "node:fs";
 const [base = "http://localhost:3000", out = "qa/screenshots/brand", ...extra] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
 const sizes = [{ w: 1280, h: 800, mobile: false }, { w: 390, h: 844, mobile: true }];
-const stages = ["hero", "problem", "check", "live", "markets", "proof", "pricing", "faq", "final-cta"];
+const stages = ["hero", "problem", "free", "members", "proof", "markets", "pricing", "faq", "final-cta"];
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium" });
 const shot = (p, path, full = false) => p.screenshot({ path, fullPage: full, caret: "initial" });
 const report = [];
@@ -29,35 +29,45 @@ for (const s of sizes) {
     const el = page.locator(`[data-testid="${id}"]`).first();
     if (!(await el.count())) { report.push(`${s.w} ${id}: not on the page`); continue; }
     await el.evaluate(n => window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY));
-    if (id === "check") {
-      // The check flow: the demo card on screen, then it picks a side and the verdict lands.
-      const card = page.locator("[data-testid=demo-check]");
-      await card.evaluate(n => n.scrollIntoView({ block: "center" }));
-      await page.waitForTimeout(2300);
-      await shot(page, `${out}/check-1-ask-${s.w}.png`);
-      await page.waitForSelector("[data-testid=demo-check][data-verdict]:not([data-verdict=''])", { timeout: 9000 }).catch(() => report.push(`${s.w} check: no verdict`));
-      await page.waitForTimeout(1400);
-      await shot(page, `${out}/check-2-verdict-${s.w}.png`);
-      report.push(`${s.w} check verdict: ${await card.getAttribute("data-verdict")} (${await page.locator("[data-testid=verdict-evidence]").first().textContent().catch(() => "")})`);
+    if (id === "free") {
+      await el.evaluate(n => window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY));
+      await page.waitForTimeout(2800);
+      await shot(page, `${out}/stage-free-${s.w}.png`);
+      // The free check: tap the first chip, pick a side, the verdict.
+      const tile = page.locator("[data-testid=free-check-tile]");
+      const chip = tile.locator("[data-testid=ask-chip]").first();
+      if (await chip.count()) {
+        await chip.click();
+        const card = tile.locator("[data-testid=free-check]");
+        await card.waitFor({ timeout: 20_000 }).catch(() => report.push(`${s.w} free check: no card`));
+        if (await card.count()) {
+          await card.evaluate(n => n.scrollIntoView({ block: "start" }));
+          await page.waitForTimeout(500);
+          await shot(page, `${out}/check-1-side-${s.w}.png`);
+          await card.locator("[data-testid=pick-yes]").click();
+          await page.waitForTimeout(1300);
+          await shot(page, `${out}/check-2-verdict-${s.w}.png`);
+          report.push(`${s.w} free check verdict: ${await card.getAttribute("data-verdict")} (${await card.locator("[data-testid=verdict-evidence]").textContent().catch(() => "")})`);
+        }
+      } else report.push(`${s.w} free check: no chips`);
       continue;
     }
     await page.waitForTimeout(id === "hero" ? 2200 : 2800);
     await shot(page, `${out}/stage-${id}-${s.w}.png`);
   }
   report.push(`${s.w} landing: overflow ${await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)}px; errors: ${errors.length ? errors.join(" | ") : "none"}`);
-  // Pop-up: a tap on a locked side.
-  await page.locator("[data-testid=live]").evaluate(n => window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY));
-  await page.waitForTimeout(1500);
-  const lock = page.locator("[data-locked]").first();
-  if (await lock.count()) { await lock.click(); await page.waitForTimeout(900); await shot(page, `${out}/popup-locked-${s.w}.png`); await page.keyboard.press("Escape"); }
-  else report.push(`${s.w}: no locked item`);
-  // Pop-up: the automatic one after the free Read (fresh session; never in the first 15 s).
+  // Pop-up: a tap on a free bet names what they just saw (a fresh session, so nothing was closed).
   const p2 = await (await newCtx()).newPage();
   await p2.goto(base + "/", { waitUntil: "load" });
-  await p2.locator("[data-testid=demo-check]").evaluate(n => window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY));
-  await p2.waitForTimeout(17_500);
-  await shot(p2, `${out}/popup-after-read-${s.w}.png`);
-  report.push(`${s.w} after-read pop-up: ${(await p2.locator("[data-testid=pay-sheet]").count()) ? "shown" : "not shown"}`);
+  const freeBet = p2.locator("[data-testid=free-last3] [data-free]").first();
+  if (await freeBet.count()) {
+    await freeBet.evaluate(n => n.scrollIntoView({ block: "center" }));
+    await p2.waitForTimeout(2600);
+    await freeBet.click();
+    await p2.waitForTimeout(900);
+    await shot(p2, `${out}/popup-free-${s.w}.png`);
+    report.push(`${s.w} free pop-up: ${await p2.locator("[data-testid=paywall-headline]").textContent().catch(() => "not shown")}`);
+  } else report.push(`${s.w}: no free bet to tap`);
   await p2.context().close();
   for (const e of extra) {
     const [name, path, cookie] = e.split("|");

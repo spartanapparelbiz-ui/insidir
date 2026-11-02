@@ -12,7 +12,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { isPaid } from "@/lib/plans";
 import { cleanRef, REF_COOKIE } from "@/lib/home/ref";
 import { Landing } from "@/components/brand/landing/Landing";
-import { Dashboard } from "@/components/brand/app/Dashboard";
+import { Dashboard, isTab } from "@/components/brand/app/Dashboard";
 import { dashboardData } from "@/lib/brand/dashboard";
 import { emptyLanding, landingData } from "@/lib/brand/landing";
 
@@ -26,7 +26,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
     const db = hasDatabase() ? getDb() : null, u = viewer.user;
     if (!db || !u) return <Landing d={emptyLanding(now)} />;
     const d = await dashboardData(db, u.id, u.settings, now);
-    return <Dashboard d={d} firstName={(u.name ?? "").trim().split(/\s+/)[0] || null} />;
+    return <Dashboard d={d} firstName={(u.name ?? "").trim().split(/\s+/)[0] || null} tab={isTab(sp.tab) ? sp.tab : "check"} />;
   }
   const ref = cleanRef(typeof sp.ref === "string" ? sp.ref : null) ?? cleanRef(jar.get(REF_COOKIE)?.value);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;

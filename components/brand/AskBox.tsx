@@ -9,7 +9,11 @@ import { Arrow } from "./Bits";
 
 export interface Chip { pick: string; label: string }
 
-export function AskBox({ chips = [], placeholder = "Paste your bet: a Kalshi or Polymarket link, or type it", cta = "Check", autoFocus = false, id = "ask", settle = true }: { chips?: Chip[]; placeholder?: string; cta?: string; autoFocus?: boolean; id?: string; settle?: boolean }) {
+export function AskBox({ chips = [], placeholder = "Paste your bet: a Kalshi or Polymarket link, or type it", cta = "Check", autoFocus = false, id = "ask", settle = true, onResolved }: {
+  chips?: Chip[]; placeholder?: string; cta?: string; autoFocus?: boolean; id?: string; settle?: boolean;
+  /** Inline: hand the check's id back instead of opening its page. */
+  onResolved?: (id: string) => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [choices, setChoices] = useState<Choice[] | null>(null);
@@ -24,7 +28,7 @@ export function AskBox({ chips = [], placeholder = "Paste your bet: a Kalshi or 
     try {
       const r = await fetch("/api/read", { method: "POST", body: form });
       const j = await r.json().catch(() => ({}));
-      if (j.id) { window.location.assign(`/read/${j.id}`); return; }
+      if (j.id) { if (onResolved) { onResolved(j.id); setChoices(null); setBusy(false); } else window.location.assign(`/read/${j.id}`); return; }
       if (j.choices?.length) { setChoices(j.choices); setBusy(false); return; }
       if (j.code === "limit") {
         // The free check is used: the paywall pop-up (components/brand/PayMoments.tsx), else /go.

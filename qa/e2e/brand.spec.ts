@@ -16,63 +16,82 @@ import { MW } from "./seed-millionaires";
 const post = (path: string, body: unknown) => fetch(`http://localhost:${WHOP_PORT}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 const closed = { name: "insidir_pay_closed", value: "1", url: "http://localhost:3100" };
 
-test("landing: the stages, the check demo's verdict, sides locked for visitors, a lock opens the paywall", async ({ page, context }) => {
+test("landing: value first (free tiles), then what members get; sides locked only where they're members'", async ({ page, context }) => {
   test.setTimeout(60_000);
   await context.addCookies([closed]);
   await page.goto("/");
-  const order = ["hero", "problem", "check", "live", "markets", "proof", "pricing", "faq", "final-cta"];
+  const order = ["hero", "problem", "free", "members", "proof", "markets", "pricing", "faq", "final-cta"];
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
   await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("You're bettingagainst millionaires.");
-  await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$1M\+ bet \$[\d.]+[KM] (today|in the last 24 hours)\. Which side were you on\?$/);
+  // Today's real total since midnight ET (the fixtures' six Millionaire bets of the last 90 minutes: $299K).
+  await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", "299000");
+  await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $1M+ bet $299K today. Which side were you on?", { timeout: 5_000 });
   await expect(page.getByTestId("hero-check")).toHaveAttribute("href", "#check");
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
   await expect(page.getByTestId("pain-row")).toHaveCount(4);
-  await expect(page.getByTestId("pain-row").first()).toContainText("You can't see who's on the other side.Millionaire money on every market, live.");
   await page.screenshot({ path: shotName("brand-hero", page) });
 
-  // The check demo: the market with the most millionaire money and a real split (Chiefs vs. Bills, 3 wallets) picks
-  // the heavier side, and the verdict lands.
-  const demo = page.getByTestId("demo-check");
-  await demo.scrollIntoViewIfNeeded();
-  await expect(demo).toContainText("E2E fixture: Chiefs vs. Bills");
-  await expect(demo.getByTestId("pick-yes")).toHaveText("Chiefs");
-  await expect(demo).toHaveAttribute("data-verdict", "agree", { timeout: 10_000 });
-  await expect(demo.getByTestId("verdict-headline")).toHaveText("✓ Millionaires agree with you");
-  await expect(demo.getByTestId("verdict-evidence")).toHaveText("$105K on Chiefs from 2 wallets, $30K on Bills from 1 wallet");
-  await expect(demo).toContainText("Chiefs 51¢ · Bills 49¢");
-  await expect(demo).toContainText("Information, not advice.");
-  await page.screenshot({ path: shotName("brand-check", page) });
+  // Free right now: today's #1 millionaire market whole (Chiefs vs. Bills: the split, the wallets, the price, the line).
+  const free = page.getByTestId("free");
+  await free.scrollIntoViewIfNeeded();
+  await expect(free.getByRole("heading", { level: 2 })).toHaveText("Free right now.No account.");
+  const top = page.getByTestId("free-top");
+  await expect(top).toContainText("E2E fixture: Chiefs vs. Bills");
+  await expect(top.getByTestId("tier-millionaire")).toContainText("$135K · 3 wallets");
+  await expect(top).toContainText("Chiefs 51¢ · Bills 49¢");
+  await expect(page.getByTestId("free-top-line")).toHaveText("Millionaire money is 78% on Chiefs: $105K from 2 wallets against $30K from 1 wallet.");
+  // The last 3 millionaire bets, sides included.
+  const last3 = page.getByTestId("free-last3");
+  await expect(last3.getByTestId("bet-row")).toHaveCount(3);
+  await expect(last3.getByTestId("bet-row").first()).toContainText("Chiefs");
+  await expect(last3.locator("[data-locked]")).toHaveCount(0);
+  await expect(page.getByTestId("free-more")).toHaveText(/^\+3 more today\. Members see every one live\.$/);
+  await page.screenshot({ path: shotName("brand-free", page) });
 
-  // The live feed: every bet, live, with its side locked; the sides are never in the page.
-  const feed = page.getByTestId("live-feed");
-  await feed.scrollIntoViewIfNeeded();
-  await expect(feed.getByTestId("bet-row").first()).toBeVisible();
-  await expect(feed.locator("[data-locked=side]").first()).toBeVisible();
-  const html = await feed.innerHTML();
-  expect(html).not.toMatch(/b-side--(yes|no)/);
-  expect(html).not.toContain(MW(1));
-  // A tap on a lock: the paywall, with that wallet's profit and the full price.
-  await feed.locator("[data-locked=side]").first().click();
+  // What members get: five rows, each with a live preview.
+  const members = page.getByTestId("members");
+  await members.scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("member-row")).toHaveCount(5);
+  await expect(page.getByTestId("prev-check")).toContainText("Millionaires agree with you");
+  await expect(page.getByTestId("prev-brief").locator("li")).toHaveCount(3);
+  await expect(page.getByTestId("prev-wallet")).toContainText("Millionaire");
+  await expect(members).toContainText("$1 for 3 days, then $39/month.");
+  await page.screenshot({ path: shotName("brand-members", page) });
+
+  // A tap on a free bet: the pop-up names what they just saw.
+  await last3.getByTestId("bet-row").first().click();
   const sheet = page.getByTestId("pay-sheet");
-  await expect(sheet).toBeVisible();
-  await expect(sheet.getByTestId("paywall-headline")).toContainText(/This wallet is up \$[\d.]+[MK]\. See which side it took\. \$1 for 3 days\./);
+  await expect(sheet).toHaveAttribute("data-kind", "free");
+  await expect(sheet.getByTestId("paywall-headline")).toHaveText("That was 1 of 6 millionaire bets today. See them all live, with a ping when the next one lands. $1 for 3 days.");
   await expect(sheet.getByTestId("paywall-price")).toContainText("$1 today, then $39/month from");
-  await expect(sheet.getByTestId("paywall-remind")).toBeChecked();
   await page.screenshot({ path: shotName("brand-popup", page) });
   await page.keyboard.press("Escape");
   await expect(sheet).toHaveCount(0);
 
-  // Proof: the millionaires' own record (30 settled: 20 won at 45¢ + a cent, 10 lost) and the quiet line.
   await expect(page.getByTestId("proof-net")).toHaveText("+$1,348");
   await expect(page.getByTestId("proof")).toContainText("$100 on every millionaire bet · 30 settled");
-  await expect(page.getByTestId("proof")).toContainText("Past results, not a promise.");
   await expect(page.getByTestId("pricing")).toContainText("Less thanone bad bet.");
-  await expect(page.getByTestId("price-line")).toHaveText("$1 for three days, then $39 a month. Cancel anytime.");
   await expect(page.getByTestId("final-cta").getByRole("heading")).toHaveText("Bet with themillionaires.");
   await expect(page.getByTestId("brand-foot")).toContainText("Gambling problem? Call 1-800-GAMBLER.");
   await noHorizontalScroll(page);
+});
+
+test("the free check, inline: paste, pick your side, the verdict, the price; nothing else sent", async ({ page, context }) => {
+  test.setTimeout(60_000);
+  await context.addCookies([closed, { name: "insidir_vid", value: `e2e-inline-${page.viewportSize()!.width}-${Date.now()}`, url: "http://localhost:3100" }]);
+  await page.goto("/#check");
+  const tile = page.getByTestId("free-check-tile");
+  await tile.getByTestId("ask-input").fill("Tennis match 100");
+  await tile.getByTestId("ask-go").click();
+  const card = tile.getByTestId("free-check");
+  await expect(card).toContainText("E2E fixture: Tennis match 100", { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/(#check)?$/);
+  await card.getByTestId("pick-yes").click();
+  await expect(card.getByTestId("verdict-evidence")).toHaveText("2 wallets with $1M+ all-time profit have $114K on Player A");
+  await expect(card.getByTestId("free-check-price")).toBeVisible();
+  await page.screenshot({ path: shotName("brand-free-check", page) });
 });
 
 test("the check: pick your side, the verdict and its evidence (remembered), locked details, the second check opens the paywall", async ({ page, context }) => {
@@ -181,12 +200,22 @@ test("a member's home: greeting, Check a bet, the feed with sides, their panels"
   await page.goto("/");
   const home = page.getByTestId("member-home");
   await expect(home.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), user_e2e_insidir\.$/);
+  // The five things they bought, as tabs.
+  await expect(page.getByTestId("home-tabs").getByRole("link")).toHaveText(["Check", "Board", "Brief", "Following", "Live"]);
+  await expect(home).toHaveAttribute("data-tab", "check");
   await expect(home.getByTestId("ask-go")).toHaveText("Check");
+  for (const id of ["your-markets", "week-recap"]) await expect(page.getByTestId(id)).toBeVisible();
+  await page.screenshot({ path: shotName("brand-dashboard", page) });
+  await page.getByTestId("home-tabs").getByRole("link", { name: "Board" }).click();
   await expect(page.getByTestId("live-feed").getByTestId("bet-row").first()).toBeVisible();
   await expect(page.getByTestId("live-feed").locator("[data-locked]")).toHaveCount(0);
-  for (const id of ["your-markets", "following-panel", "week-recap"]) await expect(page.getByTestId(id)).toBeVisible();
+  await page.getByTestId("home-tabs").getByRole("link", { name: "Brief" }).click();
+  await expect(page.getByTestId("brief-top").locator("li")).toHaveCount(3);
+  await page.getByTestId("home-tabs").getByRole("link", { name: "Following" }).click();
+  await expect(page.getByTestId("following-panel")).toBeVisible();
+  await page.getByTestId("home-tabs").getByRole("link", { name: "Live" }).click();
+  await expect(page.getByTestId("live-markets").locator("li").first()).toContainText("E2E fixture");
   if (page.viewportSize()!.width > 860) await expect(page.getByTestId("side-check")).toHaveText("Check a bet");
   else await expect(page.getByTestId("tab-check")).toBeVisible();
-  await page.screenshot({ path: shotName("brand-dashboard", page) });
   await noHorizontalScroll(page);
 });

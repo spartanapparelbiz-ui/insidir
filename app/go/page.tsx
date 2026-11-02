@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Bet with the millionaires", robots: { index: false } };
 
 const STEPS = new Set<Step>(["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "follow", "push"]);
-const EMPTY = (now: number): GoData => ({ now, paid: false, pulse: { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0 }, hook: null, build: { wallets: 0, perCat: {} }, aha: { cards: [], more: 0 }, proof: null, wallets: [] });
+const EMPTY = (now: number): GoData => ({ now, paid: false, pulse: { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, hook: null, build: { wallets: 0, perCat: {} }, aha: { cards: [], more: 0 }, proof: null, wallets: [] });
 
 export default async function GoPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const now = Date.now();

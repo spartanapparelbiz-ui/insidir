@@ -21,7 +21,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   const cat = isCategory(sp.cat) ? sp.cat : null;
   const db = hasDatabase() ? getDb() : null;
   const [p, bets] = db ? await Promise.all([pulse(db, now), recentBets(db, { now, limit: 30, member, categories: cat ? [cat] : undefined })]).catch(() => [null, []] as const) : [null, []] as const;
-  const initial = { now, pulse: p ?? { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0 }, bets: [...bets] };
+  const initial = { now, pulse: p ?? { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, bets: [...bets] };
   return (
     <Frame member={member} current="board" testid="board">
       <Stage>

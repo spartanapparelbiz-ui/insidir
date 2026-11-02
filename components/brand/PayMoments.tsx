@@ -5,6 +5,8 @@
  *   A tap on anything locked ([data-locked]): opens with that item's context ("This wallet is up $3.1M…").
  *   Exit intent on desktop (the cursor leaves through the top).
  *   The second check (the visitor's free one is used: "insidir:paywall" from the ask box): opens, it's their tap.
+ *   A free tile used: 2.5 s after the free check's verdict ("insidir:free-used"), or a tap into the #1 market or a free
+ *     bet ([data-free]): "That was 1 of 38 millionaire bets today. See them all live…".
  * Rules: automatic ones never in the first 15 s on the page, and at most once per session; a close (button, Esc, a tap
  * outside) is remembered for 24 hours; taps on locked items always open. No countdowns, discounts or scarcity; the full
  * price is always in it. */
@@ -16,8 +18,8 @@ import { Paywall } from "./Paywall";
 const CLOSED = "insidir_pay_closed", AUTO = "insidir_pay_auto";
 export const QUIET_MS = 15_000, AFTER_AHA_MS = 8_000;
 
-export interface PayContext { count: number; window: "hour" | "day"; biggest: { title: string; amount: number } | null }
-type Open = { kind: "after-read" | "locked" | "exit" | "limit"; headline: string } | null;
+export interface PayContext { count: number; window: "hour" | "day"; biggest: { title: string; amount: number } | null; /** Millionaire bets since midnight ET. */ today?: number }
+type Open = { kind: "after-read" | "locked" | "exit" | "limit" | "free"; headline: string } | null;
 
 const closedRecently = () => document.cookie.split("; ").some(c => c.startsWith(`${CLOSED}=`));
 const autoUsed = () => { try { return sessionStorage.getItem(AUTO) === "1"; } catch { return false; } };
@@ -29,6 +31,10 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
   const panel = useRef<HTMLDivElement>(null), back = useRef<HTMLElement | null>(null);
   const bets = `${ctx.count} millionaire ${ctx.count === 1 ? "bet" : "bets"} from ${ctx.window === "hour" ? "the last hour" : "today"}`;
   const afterRead = `See the side on all ${bets}. $${TRIAL.fee} for ${TRIAL.days} days.`;
+  // After a free tile (a check, the #1 market, a free bet): name what they just saw.
+  const free = ctx.today
+    ? `That was 1 of ${ctx.today} millionaire bets today. See them all live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`
+    : `See every millionaire bet live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`;
 
   const show = useCallback((o: NonNullable<Open>, automatic: boolean) => {
     if (automatic) {
@@ -46,7 +52,10 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
     let aha: ReturnType<typeof setTimeout> | undefined;
     const onAha = () => { aha = setTimeout(() => show({ kind: "after-read", headline: afterRead }, true), AFTER_AHA_MS); };
     const onRead = () => setTimeout(() => show({ kind: "after-read", headline: afterRead }, true), 1500);
+    const onFreeUsed = () => setTimeout(() => show({ kind: "free", headline: free }, true), 2500);
     const onLocked = (e: MouseEvent) => {
+      const f = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-free]");
+      if (f && !(e.target as HTMLElement).closest("[data-locked]")) { e.preventDefault(); e.stopPropagation(); show({ kind: "free", headline: free }, false); return; }
       const el = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-locked]");
       if (!el) return;
       e.preventDefault(); e.stopPropagation();
@@ -60,6 +69,7 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
     // The second check (the free one is used): always opens, it's their own tap.
     const onLimit = (e: Event) => { e.preventDefault(); show({ kind: "limit", headline: `You've used your free check. Check every bet for $${TRIAL.fee} for ${TRIAL.days} days.` }, false); };
     window.addEventListener("insidir:paywall", onLimit);
+    window.addEventListener("insidir:free-used", onFreeUsed);
     window.addEventListener("insidir:aha-done", onAha);
     window.addEventListener("insidir:read-done", onRead);
     document.addEventListener("click", onLocked, true);
@@ -67,10 +77,11 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
     return () => {
       clearTimeout(aha);
       window.removeEventListener("insidir:paywall", onLimit);
+      window.removeEventListener("insidir:free-used", onFreeUsed);
       window.removeEventListener("insidir:aha-done", onAha); window.removeEventListener("insidir:read-done", onRead);
       document.removeEventListener("click", onLocked, true); document.documentElement.removeEventListener("mouseleave", onExit);
     };
-  }, [show, afterRead, ctx.biggest]);
+  }, [show, afterRead, free, ctx.biggest]);
 
   useEffect(() => {
     if (!open) return;

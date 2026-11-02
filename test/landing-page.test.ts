@@ -31,11 +31,11 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("is a scroll of stages: hero, the problem, the check, live, markets, proof, pricing, FAQ, final; members get their home", () => {
+  it("is a scroll of stages: hero, the problem, free right now, what members get, proof, markets, pricing, FAQ, final; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<Dashboard d={d}");
-    const order = ["<Hero d={d} />", "<Problem />", "<Check d={d} />", "<Live d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
+    const order = ["<Hero d={d} />", "<Problem />", "<Free d={d} />", "<Members d={d} />", "<Proof d={d} />", "<Markets d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
@@ -50,7 +50,7 @@ describe("V2 landing page", () => {
     const landing = read("components/brand/landing/Landing.tsx");
     expect(landing).toContain('<Pill href="#check" delay={0.9} data-testid="hero-check">Check my bet</Pill>');
     expect(landing).toContain('<Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
-    const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
+    const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);
     expect(GET_CTA).toBe("Try 3 days for $1");

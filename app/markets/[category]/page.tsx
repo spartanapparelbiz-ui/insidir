@@ -52,7 +52,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
               })}</ul>
             ) : <p className="b-empty">No millionaire money in {c.name} this week yet.</p>}
           </div>
-          <LiveFeed initial={{ now, pulse: p ?? { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0 }, bets }} n={12} cats={[slug]} />
+          <LiveFeed initial={{ now, pulse: p ?? { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, bets }} n={12} cats={[slug]} />
         </div>
       </Stage>
       {member ? null : <PayMoments ctx={{ count: p?.count ?? 0, window: p?.window ?? "hour", biggest: null }} now={now} />}
