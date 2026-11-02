@@ -1,17 +1,19 @@
 "use client";
-/* The ask box: paste a Polymarket or Kalshi link, or type the market. POSTs to /api/read (lib/read) and opens the Read;
- * when it could be more than one market it offers three; the visitor's one free Read is the API's rule (402 → /go).
- * The chips under it are the busiest markets right now: one tap reads that market. */
-import { useRef, useState } from "react";
+/* The glass ask-pill: paste a Polymarket or Kalshi link, or type the market. POSTs to /api/read and opens the Read;
+ * offers three when it could be more than one market; the visitor's one free Read is the API's rule (402 → /go). The
+ * chips under it are the busiest markets right now (panel pills): one tap reads that market. */
+import { useRef, useState, type CSSProperties } from "react";
 import type { Choice } from "@/lib/read/types";
+import { Arrow } from "./Bits";
 
 export interface Chip { pick: string; label: string }
 
-export function AskBox({ chips = [], placeholder = "Paste any Polymarket or Kalshi bet", autoFocus = false, id = "ask" }: { chips?: Chip[]; placeholder?: string; autoFocus?: boolean; id?: string }) {
+export function AskBox({ chips = [], placeholder = "Paste any Polymarket or Kalshi bet", autoFocus = false, id = "ask", settle = true }: { chips?: Chip[]; placeholder?: string; autoFocus?: boolean; id?: string; settle?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [choices, setChoices] = useState<Choice[] | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const st = (d: number) => (settle ? { "data-m": "settle" as const, style: { "--d": `${d}s` } as CSSProperties } : {});
 
   async function ask(body: { text?: string; pick?: string }) {
     setBusy(true); setMsg(null);
@@ -30,28 +32,22 @@ export function AskBox({ chips = [], placeholder = "Paste any Polymarket or Kals
   }
 
   return (
-    <div className="b-askwrap" style={{ display: "grid", gap: 12 }} data-testid="ask">
-      <form className="b-ask" onSubmit={e => { e.preventDefault(); const t = input.current?.value.trim(); if (t) void ask({ text: t }); }} role="search">
-        <label htmlFor={id} className="sr-only" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>{placeholder}</label>
-        <input ref={input} id={id} name="text" placeholder={placeholder} autoComplete="off" enterKeyHint="go" autoFocus={autoFocus} data-testid="ask-input" maxLength={500} />
-        <button className="b-btn" type="submit" disabled={busy} data-testid="ask-go">{busy ? "Reading…" : <><span className="b-ask__go-label">Read it </span>→</>}</button>
+    <div className="b-col" data-testid="ask">
+      <form className="b-ask" role="search" onSubmit={e => { e.preventDefault(); const t = input.current?.value.trim(); if (t) void ask({ text: t }); }} {...st(0.7)}>
+        <label htmlFor={id} className="b-sr">{placeholder}</label>
+        <input ref={input} id={id} name="text" placeholder={placeholder} autoComplete="off" enterKeyHint="go" autoFocus={autoFocus} maxLength={500} data-testid="ask-input" />
+        <button className="b-btn b-btn-lg b-primary" type="submit" disabled={busy} data-testid="ask-go">{busy ? "Reading…" : <>Read<Arrow /></>}</button>
       </form>
-      {msg ? <p className="b-ask__msg" role="alert" data-testid="ask-error">{msg}</p> : null}
+      {msg ? <p className="b-msg" role="alert" data-testid="ask-error">{msg}</p> : null}
       {choices ? (
         <div style={{ display: "grid", gap: 8 }} data-testid="ask-choices">
           <span className="b-label">Which one?</span>
-          <ul className="b-choices">
-            {choices.map(c => (
-              <li key={c.key}><button type="button" onClick={() => void ask({ pick: `${c.venue}:${c.id}` })}><b>{c.title}</b><span className="b-small">{c.event ?? (c.venue === "kalshi" ? "Kalshi" : "Polymarket")}</span></button></li>
-            ))}
-          </ul>
+          <ul className="b-choices">{choices.map(c => <li key={c.key}><button type="button" onClick={() => void ask({ pick: `${c.venue}:${c.id}` })}><b style={{ fontWeight: 500 }}>{c.title}</b><span className="b-small">{c.event ?? (c.venue === "kalshi" ? "Kalshi" : "Polymarket")}</span></button></li>)}</ul>
         </div>
       ) : null}
       {chips.length ? (
         <div className="b-chips" data-testid="ask-chips">
-          {chips.map(c => (
-            <button key={c.pick} type="button" className="b-chip" onClick={() => void ask({ pick: c.pick })} data-testid="ask-chip"><span className="b-dot" aria-hidden="true" /><span>{c.label}</span></button>
-          ))}
+          {chips.map((c, i) => <button key={c.pick} type="button" className="b-btn b-panel-pill b-chip" onClick={() => void ask({ pick: c.pick })} data-testid="ask-chip" {...st(0.85 + i * 0.05)}><span className="b-dot" aria-hidden="true" /><span>{c.label}</span></button>)}
         </div>
       ) : null}
     </div>

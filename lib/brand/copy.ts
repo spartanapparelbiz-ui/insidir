@@ -3,36 +3,23 @@
  * from lib/plans.ts. Never "guaranteed" or "risk-free" (test/compliance.test.ts). */
 import { PLANS, TRIAL } from "@/lib/plans";
 
-export const FIRST = { before: "See where ", accent: "millionaires", after: " are betting. Live." };
+export const HERO = {
+  h1: ["Bet with the", "millionaires"],
+  sub: ["Insidir tracks every big bet on Polymarket and Kalshi,", "finds the wallets that have made $1M+,", "and shows you where they're betting, live."],
+} as const;
 export const ASK_PLACEHOLDER = "Paste any Polymarket or Kalshi bet";
-export const ASK_FREE = "One free Read, no account.";
 export const START = `Start for $${TRIAL.fee}`;
-export const PRICE_LINE = `for ${TRIAL.days} days, then $${PLANS.insidir.price}/month. Cancel anytime.`;
 export const PAST = "Past results, not a promise.";
 export const LEGAL = "Information, not financial or betting advice. Operated by Aethric LLC.";
-
-/** Section heads: label, headline (≤ 6 words, `accent` is the one orange word), one line. */
-export const SCENES = {
-  mark: { line: "Where the money is." },
-  markets: { label: "Markets", before: "Every market people ", accent: "bet", after: " on." },
-  how: { label: "How it works", before: "One paste. The whole ", accent: "market", after: "." },
-  proof: { label: "The record" },
-  features: { label: "Features", before: "Everything you check before ", accent: "betting", after: "." },
-  final: { before: "Ready to see where the ", accent: "money", after: " is?" },
+export const STAGES = {
+  live: ["Millionaire money,", "right now."],
+  read: ["One paste.", "The whole market."],
+  markets: ["Every market", "people bet on."],
+  pricing: ["$1 for three days."],
+  pricingSub: `Then $${PLANS.insidir.price} a month. Cancel anytime.`,
+  faq: ["Questions."],
+  final: ["See where the", "money goes."],
 } as const;
-
-export const STEPS = [
-  { k: "Paste", t: "Paste any market.", d: "A link, a few words, or a tap on the board." },
-  { k: "Read", t: "Read the money.", d: "$1M+ wallets per side, counted." },
-  { k: "Bet smarter", t: "Bet with eyes open.", d: "Best price, and a ping when they move." },
-] as const;
-
-export const FEATURES = [
-  { k: "money", t: "Millionaire money", d: "Dollars per side from $1M+ wallets." },
-  { k: "pings", t: "Pings", d: "A push when a millionaire bets $5K+." },
-  { k: "follow", t: "Follow a millionaire", d: "Pick a wallet by its record." },
-  { k: "price", t: "Best price", d: "Kalshi and Polymarket, side by side." },
-] as const;
 
 /** Five questions, one sentence each. */
 export const FAQ: Array<{ id: string; q: string; a: string }> = [

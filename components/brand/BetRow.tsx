@@ -1,6 +1,6 @@
-/* One millionaire bet: the category photo as a thumbnail, then "+$3.1M wallet · just now", "$120K on <market>",
- * the side (locked for visitors), and price then → now when known. Wallets only as tier, profit and a short address.
- * Safe in server and client components (no hooks). */
+/* One millionaire bet as a glass row: the category photo as a thumbnail, the wallet's profit tier and profit, the
+ * market, the side (locked for visitors), size and time, price then → now when known. Safe in server and client
+ * components. */
 import Image from "next/image";
 import { categoryPhoto } from "@/lib/brand/categories";
 import type { BoardBet } from "@/lib/millionaires/queries";
@@ -15,22 +15,24 @@ export function agoShort(ms: number, now: number): string {
   return `${Math.round(s / 86400)}d ago`;
 }
 
-export function BetRow({ bet, now, href }: { bet: BoardBet; now: number; href?: string }) {
+export function BetRow({ bet, now, href, className = "", settle }: { bet: BoardBet; now: number; href?: string; className?: string; settle?: number }) {
   const photo = categoryPhoto(bet.category);
-  const title = href ? <a href={href} className="b-fitem__what">{bet.title}</a> : <span className="b-fitem__what">{bet.title}</span>;
+  const title = href ? <a href={href}>{bet.title}</a> : bet.title;
   return (
-    <div className="b-fitem" data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier}>
-      <span className="b-fitem__thumb b-photo b-photo--flat" style={{ backgroundColor: photo.tone }} aria-hidden="true">
-        <span className="b-photo__img"><Image src={photo.src} alt="" fill sizes="48px" quality={55} style={{ objectFit: "cover" }} /></span>
-      </span>
-      <span className="b-fitem__body">
-        <span className="b-fitem__top">
+    <div className={`b-row ${className}`} data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier} {...(settle !== undefined ? { "data-m": "settle", style: { "--d": `${settle}s` } as React.CSSProperties } : {})}>
+      <span className="b-row__thumb" aria-hidden="true"><Image src={photo.src} alt="" fill sizes="48px" quality={55} /></span>
+      <span className="b-row__main">
+        <span className="b-row__title">{title}</span>
+        <span className="b-row__meta">
           <TierBadge tier={bet.tier} />
-          {bet.pnl !== null ? <span className="b-fitem__pnl">{signedDollars(bet.pnl)} wallet</span> : null}
-          <span>· {agoShort(bet.at, now)}</span>
+          {bet.pnl !== null ? <span>{signedDollars(bet.pnl)} wallet</span> : null}
+          <Side outcome={bet.outcome} side={bet.side} pnl={bet.pnl} />
+          <PriceMove then={bet.priceThen} now={bet.priceNow} />
         </span>
-        <span><span className="b-fitem__amt">{dollars(bet.amount)}</span> on {title}</span>
-        <span className="b-fitem__top"><Side outcome={bet.outcome} side={bet.side} pnl={bet.pnl} /><span>{bet.short}</span><PriceMove then={bet.priceThen} now={bet.priceNow} /></span>
+      </span>
+      <span className="b-row__money">
+        <span className="b-row__size b-num">{dollars(bet.amount)}</span>
+        <span className="b-small">{agoShort(bet.at, now)}</span>
       </span>
     </div>
   );

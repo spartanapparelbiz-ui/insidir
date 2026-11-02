@@ -1,25 +1,18 @@
 "use client";
-/* THE LIVE FEED: real millionaire bets streaming in as they happen (/api/millionaires/live every 15 seconds while the tab
- * is visible), each new one sliding in from the top, with the total millionaires bet today ticking on top. Visitors:
- * when, how much, the wallet's profit and the market are live; the side comes as a lock that opens the paywall sheet.
- * The server renders the first list, so it is complete before any JavaScript runs. */
+/* Real millionaire bets streaming in (/api/millionaires/live every 15 s while the tab is visible); a new one settles in
+ * at the top. A counter on top: what millionaire wallets bet today. Visitors get every bet live with the side removed
+ * on the server (a lock that opens the paywall). The server renders the first list. */
 import { useEffect, useRef, useState } from "react";
 import type { BoardBet, Pulse } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
 import { BetRow } from "./BetRow";
-import { gsap, reduced, register } from "./scroll/engine";
 
 export interface FeedState { now: number; pulse: Pulse; bets: BoardBet[] }
 
-export function LiveFeed({ initial, n = 6, cats = [], readHref = true, title = "Live: millionaire bets" }: { initial: FeedState; n?: number; cats?: readonly string[]; readHref?: boolean; title?: string }) {
+export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean }) {
   const [s, set] = useState(initial);
-  const list = useRef<HTMLUListElement>(null);
-  const total = useRef<HTMLSpanElement>(null);
-  const seen = useRef(new Set(initial.bets.map(b => b.id)));
-  const shown = useRef(initial.pulse.today);
-
+  const first = useRef(new Set(initial.bets.map(b => b.id)));
   useEffect(() => {
-    register();
     let stop = false;
     const tick = async () => {
       if (document.visibilityState !== "visible") return;
@@ -31,36 +24,22 @@ export function LiveFeed({ initial, n = 6, cats = [], readHref = true, title = "
     const id = setInterval(tick, 15_000);
     return () => { stop = true; clearInterval(id); };
   }, [n, cats.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // New rows slide in from the top; the total ticks to its new value.
-  useEffect(() => {
-    const fresh = [...(list.current?.querySelectorAll<HTMLElement>("[data-feed-id]") ?? [])].filter(el => !seen.current.has(el.dataset.feedId!));
-    for (const el of fresh) seen.current.add(el.dataset.feedId!);
-    if (fresh.length && !reduced()) gsap.from(fresh, { y: -18, opacity: 0, duration: 0.8, ease: "expo.out", stagger: 0.08, clearProps: "transform,opacity" });
-    const to = s.pulse.today, from = shown.current;
-    if (to !== from && total.current) {
-      const o = { v: from };
-      if (reduced()) total.current.textContent = dollars(to);
-      else gsap.to(o, { v: to, duration: 1, ease: "power3.out", onUpdate: () => { if (total.current) total.current.textContent = dollars(o.v); } });
-      shown.current = to;
-    }
-  }, [s]);
-
   return (
-    <aside className="b-feed b-glass b-glass--solid" aria-label={title} data-testid="live-feed">
+    <div className="b-feed b-glass b-pad" data-testid="live-feed" {...(settle ? { "data-m": "settle", style: { "--d": ".5s" } as React.CSSProperties } : {})}>
       <div className="b-feed__top">
-        <span className="b-label"><span className="b-dot" aria-hidden="true" /> {title}</span>
-        <span className="b-small"><span className="b-feed__total" ref={total} data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires today</span>
+        <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> Live</span>
+        <span className="b-small"><span className="b-feed__total b-num" style={{ color: "var(--ink)" }} data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires today</span>
       </div>
       {s.bets.length ? (
-        <ul className="b-feed__list" ref={list} data-testid="feed-rows" aria-live="polite">
-          {s.bets.map(b => (
-            <li key={b.id} data-feed-id={b.id}>
-              <BetRow bet={b} now={s.now} href={readHref ? `/read/open?pick=polymarket:${b.marketId}` : undefined} />
+        <ul className="b-rows" data-testid="feed-rows" aria-live="polite">
+          {s.bets.map((b, i) => (
+            <li key={b.id}>
+              <BetRow bet={b} now={s.now} href={links ? `/read/open?pick=polymarket:${b.marketId}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
+                settle={settle && first.current.has(b.id) ? 0.6 + i * 0.07 : undefined} />
             </li>
           ))}
         </ul>
-      ) : <p className="b-small" data-testid="feed-empty">No millionaire bets yet today. They show here the moment one lands.</p>}
-    </aside>
+      ) : <p className="b-empty" data-testid="feed-empty">No millionaire bets yet today. They show here the moment one lands.</p>}
+    </div>
   );
 }
