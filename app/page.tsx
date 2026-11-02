@@ -27,6 +27,8 @@ import { isPaid, PLANS, TRIAL } from "@/lib/plans";
 import { pct, usd } from "@/lib/read/math";
 import { tonightFor, weeklyRecap, yourMarkets, type TonightRow, type WeekRecap, type YourMarket } from "@/lib/read/member";
 import { ReadPick } from "@/components/read/ReadPick";
+import { Landing } from "@/components/brand/landing/Landing";
+import { emptyLanding, landingData } from "@/lib/brand/landing";
 
 export const dynamic = "force-dynamic";
 
@@ -139,8 +141,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
       </>
     );
   }
-  const taps = hasDatabase() ? await tonightReadsCached(getDb(), now).catch((): TonightRead[] => []) : [];
-  const trial = unlockHref();
   const ref = cleanRef(typeof sp.ref === "string" ? sp.ref : null) ?? cleanRef(jar.get(REF_COOKIE)?.value);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;
   // The post they came from (per-post funnel on /admin): this link's UTM tags, else the first-touch ones kept in the cookie.
@@ -149,28 +149,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const tags = Object.fromEntries((["utm_source", "utm_campaign", "utm_content"] as const).flatMap(k => utm[k] ? [[k, utm[k]!]] : []));
   const props = { ...(ref ? { ref } : {}), ...tags };
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null, props: Object.keys(props).length ? props : undefined }).catch(() => undefined));
-  return (
-    <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/" trialHref={trial} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2() }} />
-      <main className="lp3">
-        <section className="hero3 rhome" aria-labelledby="hero-h" data-hero="">
-          <div className="pg hero3__in">
-            <h1 id="hero-h" className="rhome__h">{HEADLINE}</h1>
-            <p className="rhome__sub">Paste a Polymarket or Kalshi link, or type the market. In a few seconds: where proven money sits, the big bets, and the best price.</p>
-            <ReadBox />
-            <p className="rhome__fine">Your first Read is free. No account needed.</p>
-            <TonightReads rows={taps} now={now} />
-          </div>
-        </section>
-        <Sec id="parts-h" title="What a Read shows" className="steps">
-          <ol className="steps__list">
-            {PARTS.map(([h, p], i) => <li key={h} className="steps__item"><span className="steps__n num">{i + 1}</span><h3 className="steps__h">{h}</h3><p className="steps__p">{p}</p></li>)}
-          </ol>
-        </Sec>
-        <DollarBlock trial={trial} />
-        <FaqV2 />
-      </main>
-    </>
-  );
+  const d = hasDatabase() ? await landingData(getDb(), now, false) : emptyLanding(now);
+  return <Landing d={d} />;
 }

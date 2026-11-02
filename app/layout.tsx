@@ -24,6 +24,8 @@ import "./v2.css";
 import "./light.css";
 import "./polish.css";
 import "./motion.css";
+import "./brand.css";
+import { brandFontClasses } from "@/lib/brand/fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
@@ -51,7 +53,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const jar = await cookies();
   const visitor = !jar.get(SESSION_COOKIE)?.value;
   return (
-    <html lang="en" className={schibsted.variable} suppressHydrationWarning>
+    <html lang="en" className={`${schibsted.variable} ${brandFontClasses}`} suppressHydrationWarning>
       <head>
         {/* Every photo comes from Unsplash's image CDN (lib/unsplash.ts): open the connection before the first one is asked for. */}
         <link rel="preconnect" href="https://images.unsplash.com" />

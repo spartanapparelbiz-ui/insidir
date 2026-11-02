@@ -55,7 +55,7 @@ const RULES: ReadonlyArray<readonly [CategorySlug, RegExp]> = [
   ["basketball", /\b(nba|wnba|ncaab|march madness|final four|nba finals)\b/i],
   ["baseball", /\b(mlb|world series|home runs?|al mvp|nl mvp|cy young)\b/i],
   ["hockey", /\b(nhl|stanley cup)\b/i],
-  ["tennis", /\b(tennis|atp|wta|wimbledon|roland garros|french open|australian open|us open tennis)\b/i],
+  ["tennis", /\b(tennis|atp|wta|wimbledon|roland garros|french open|australian open|us open tennis|paris masters|rolex paris|masters 1000)\b/i],
   ["golf", /\b(golf|pga|lpga|masters tournament|the masters|ryder cup|open championship)\b/i],
   ["soccer", /\b(soccer|premier league|epl|la liga|serie a|bundesliga|ligue 1|champions league|uefa|mls|fifa|world cup|fc)\b/i],
   ["elections", /\b(elections?|electoral|primary|primaries|nominee|nomination|midterms?|ballot|runoff|caucus|popular vote|win the seat|mayoral|mayor of|governor race|senate race|house race|wins? the (?:presidency|senate|house))\b/i],
@@ -83,6 +83,29 @@ export interface CategoryInput {
   /** The move classifier's tab and league, when known. */
   tab?: string | null;
   league?: string | null;
+  /** The market's link: Polymarket's event slug starts with its league ("nba-atl-ind-2026-11-02"). */
+  url?: string | null;
+}
+
+/** Polymarket event-slug prefixes → category (the slug names the league even when the title is just two teams). */
+const SLUG: Readonly<Record<string, CategorySlug>> = {
+  nfl: "football", cfb: "football", ncaaf: "football",
+  nba: "basketball", wnba: "basketball", cbb: "basketball", ncaab: "basketball", euroleague: "basketball",
+  mlb: "baseball", kbo: "baseball", npb: "baseball",
+  nhl: "hockey", khl: "hockey", shl: "hockey",
+  atp: "tennis", wta: "tennis",
+  pga: "golf", lpga: "golf", liv: "golf",
+  f1: "racing", nascar: "racing", indycar: "racing", motogp: "racing",
+  epl: "soccer", ucl: "soccer", uel: "soccer", uecl: "soccer", lal: "soccer", es2: "soccer", bun: "soccer", bl2: "soccer", sea: "soccer", itsb: "soccer",
+  fl1: "soccer", fl2: "soccer", por: "soccer", ere: "soccer", mls: "soccer", lmx: "soccer", bra: "soccer", arg: "soccer", tur: "soccer", efl: "soccer",
+  elc: "soccer", spl: "soccer", jpn: "soccer", kor: "soccer", fifa: "soccer", wc: "soccer",
+  ufc: "culture", boxing: "culture",
+};
+
+/** The category a Polymarket link's event slug names, if any. */
+export function slugCategory(url: string | null | undefined): CategorySlug | null {
+  const m = /polymarket\.com\/event\/([a-z0-9]+)-/.exec(url ?? "");
+  return m ? SLUG[m[1]!] ?? null : null;
 }
 
 /** The one category a market belongs to. */
@@ -93,9 +116,12 @@ export function categoryOf(m: CategoryInput): CategorySlug {
   // The venue knows these better than any word list ("Will Powell say 'inflation'?" is a mentions market).
   if (m.venueCategory === "mentions") return "culture";
   if (m.venueCategory === "weather") return "weather";
+  const bySlug = slugCategory(m.url);
+  if (bySlug) return bySlug;
   // Sports first, from the classifier's league when it has one (it knows club names and Kalshi series tickers).
   const isSport = m.tab === "sports" || m.venueCategory === "sports";
   const league = (m.league as League | null | undefined) ?? (isSport ? sportsLeagueOf(words) : null);
+  if (league === "golf" && RULES.find(r => r[0] === "tennis")![1].test(text)) return "tennis"; // "Rolex Paris Masters" is tennis
   if (league && LEAGUE_CATEGORY[league]) return LEAGUE_CATEGORY[league]!;
   if (league === "college") return /\b(basketball|ncaab|march madness|final four)\b/i.test(text) ? "basketball" : "football";
   for (const [slug, re] of RULES.slice(1)) {

@@ -24,7 +24,7 @@ export function betsFrom(moves: readonly Move[], tierOf: (wallet: string) => Tie
     out.push({
       id: m.id, wallet: m.wallet.toLowerCase(), tier, source: "polymarket", marketId: m.marketId, eventTitle: m.eventTitle, marketTitle: m.marketTitle,
       outcome: m.outcome, outcomeSide: m.outcomeSide, amount: m.amount, price: m.avgPrice,
-      category: categoryOf({ title: m.marketTitle, event: m.eventTitle, venueCategory: m.category, tab: m.tab, league: m.league }),
+      category: categoryOf({ title: m.marketTitle, event: m.eventTitle, venueCategory: m.category, tab: m.tab, league: m.league, url: m.url }),
       url: m.url, at: new Date(m.at), lastAt: new Date(m.lastAt),
     });
   }

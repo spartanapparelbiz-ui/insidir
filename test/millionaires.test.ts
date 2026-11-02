@@ -74,7 +74,7 @@ describe("millionaire bets from the moves poller", () => {
     const fills = [fill({ wallet: millionaire, usd: 6000, at: now - 60_000 }), fill({ wallet: pro, usd: 4000, at: now - 60_000, market: "0xm2" }), fill({ wallet: stranger, usd: 6000, at: now - 60_000, market: "0xm3" })];
     const lookups: string[][] = [];
     const poller = new MovesPoller({
-      polyTradesPage: async off => (off === 0 ? fills : []), polyWalletTrades: async () => [], kalshiTradesPage: async () => ({ trades: [] }),
+      polyTradesPage: async page => (page === 0 ? fills : []), polyWalletTrades: async () => [], kalshiTradesPage: async () => ({ trades: [] }),
       watched: w => w === millionaire || w === pro,
     });
     const moves = await poller.pollPolymarket(now, async ids => { lookups.push([...ids]); return new Map(); });
@@ -132,6 +132,13 @@ describe("category map", () => {
     [{ title: "Best Picture at the Oscars", venueCategory: "culture" }, "culture"],
     [{ title: "Will Powell say 'inflation' 10+ times?", venueCategory: "mentions" }, "culture"],
     [{ title: "Something nobody can classify", venueCategory: "other" }, "world"],
+    // Real markets from the live poll: the title names only teams or players; the event slug names the league.
+    [{ title: "Hawks vs. Pacers", tab: "sports", league: "other", url: "https://polymarket.com/event/nba-atl-ind-2026-11-02/nba-atl-ind-2026-11-02" }, "basketball"],
+    [{ title: "Red Wings vs. Panthers: O/U 5.5", tab: "sports", league: "other", url: "https://polymarket.com/event/nhl-det-fla-2026-11-02/nhl-det-fla-2026-11-02-total-5pt5" }, "hockey"],
+    [{ title: "Spread: Seahawks (-10.5)", tab: "sports", url: "https://polymarket.com/event/nfl-chi-sea-2026-11-03/x" }, "football"],
+    [{ title: "Rolex Paris Masters: Ugo Humbert vs Botic van de Zandschulp", tab: "sports", league: "golf", url: "https://polymarket.com/event/atp-humbert-zandsch-2026-11-02/x" }, "tennis"],
+    [{ title: "Rolex Paris Masters: Ugo Humbert vs Botic van de Zandschulp", tab: "sports", league: "golf" }, "tennis"],
+    [{ title: "Will RC Deportivo A Coruña win on 2026-11-02?", tab: "sports", url: "https://polymarket.com/event/lal-dep-osa-2026-11-02/x" }, "soccer"],
   ];
   it.each(cases)("%o → %s", (m, slug) => { expect(categoryOf(m)).toBe(slug); });
 

@@ -41,7 +41,7 @@ export const RECORD_MAX_PAGES = 100;
 export function movesPoller(poly: PolymarketClient, kalshi: KalshiClient, watch?: WatchCache): MovesPoller {
   return new MovesPoller({
     watched: watch ? (wallet: string) => watch.has(wallet) : undefined,
-    polyTradesPage: offset => poly.getTradesPage({ filterAmount: Number(process.env.WHALE_FILL_MIN ?? 500), offset, priority: "hot" }),
+    polyTradesPage: (_page, cursor) => poly.getTradesPage({ filterAmount: Number(process.env.WHALE_FILL_MIN ?? 500), cursor, priority: "hot" }),
     polyWalletTrades: async (wallet, sinceMs): Promise<WalletTrade[]> =>
       (await poly.getActivity(wallet, { type: "TRADE", start: sinceMs, maxPages: 1, priority: "normal" }))
         .filter(a => a.conditionId && a.side)
