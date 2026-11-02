@@ -49,13 +49,15 @@ export function newReadId(): string {
   return Array.from(b, x => ALPHA[x % ALPHA.length]).join("");
 }
 
-export interface StoredRead { id: string; userId: string | null; visitorId: string | null; input: string; data: ReadData; ms: number | null; createdAt: number }
-const rowOf = (r: typeof reads.$inferSelect): StoredRead => ({ id: r.id, userId: r.userId, visitorId: r.visitorId, input: r.input, data: r.data as unknown as ReadData, ms: r.ms, createdAt: r.createdAt.getTime() });
+export interface StoredRead { id: string; userId: string | null; visitorId: string | null; input: string; data: ReadData; ms: number | null; createdAt: number;
+  /** What they asked, as they wrote it; null for older Reads and the worker's refreshes (the market's own title is shown). */
+  question?: string | null }
+const rowOf = (r: typeof reads.$inferSelect): StoredRead => ({ id: r.id, userId: r.userId, visitorId: r.visitorId, input: r.input, data: r.data as unknown as ReadData, ms: r.ms, createdAt: r.createdAt.getTime(), question: r.question });
 
 /** Saves a Read. It counts toward the free Read only when it shows proven money or big bets (readHasMoney). */
-export async function saveRead(db: Db, r: { userId: string | null; visitorId: string | null; input: StoredRead["input"]; data: ReadData; ms: number }, now: number): Promise<string> {
+export async function saveRead(db: Db, r: { userId: string | null; visitorId: string | null; input: StoredRead["input"]; data: ReadData; ms: number; question?: string | null }, now: number): Promise<string> {
   const id = newReadId();
-  await db.insert(reads).values({ id, userId: r.userId, visitorId: r.visitorId, input: r.input as "link", marketKey: r.data.key, data: r.data as unknown as Record<string, unknown>, ms: r.ms, counted: readHasMoney(r.data), createdAt: new Date(now) });
+  await db.insert(reads).values({ id, userId: r.userId, visitorId: r.visitorId, input: r.input as "link", marketKey: r.data.key, data: r.data as unknown as Record<string, unknown>, ms: r.ms, counted: readHasMoney(r.data), question: r.question ?? null, createdAt: new Date(now) });
   return id;
 }
 
@@ -103,4 +105,20 @@ export async function wasOffered(db: Db, who: { userId: string | null; visitorId
   if (!k) return false;
   const r = await db.execute(sql`select 1 from terminal.read_offers where who = ${k} and ${key} = any(keys) and created_at > ${new Date(now - READ_OFFER_MS)} limit 1`);
   return r.rows.length > 0;
+}
+
+/** A member's Library (/library): every Read they opened, newest first, filtered by words in what they asked or the
+ *  market's question; each marked when proven money has moved 5+ points since (the market's latest Read, anyone's). */
+export async function library(db: Db, userId: string, o: { q?: string | null; limit?: number } = {}): Promise<Array<StoredRead & { moved: boolean }>> {
+  const words = (o.q ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 5);
+  const like = words.map(w => sql`(coalesce(question, '') ilike ${`%${w}%`} or data->>'question' ilike ${`%${w}%`} or coalesce(data->>'event', '') ilike ${`%${w}%`})`);
+  const r = await db.execute(sql`select r.*, l.share as latest_share from terminal.reads r
+    left join lateral (select (data->'proven'->>'yesShare')::float as share from terminal.reads x where x.market_key = r.market_key order by created_at desc limit 1) l on true
+    where r.user_id = ${userId}${like.length ? sql` and ${sql.join(like, sql` and `)}` : sql``} order by r.created_at desc limit ${o.limit ?? 100}`);
+  return (r.rows as Array<Record<string, unknown>>).map(x => {
+    const data = x.data as ReadData, then = data.proven.yesShare, latest = x.latest_share as number | null;
+    return { id: String(x.id), userId: (x.user_id as string | null) ?? null, visitorId: (x.visitor_id as string | null) ?? null, input: String(x.input), data,
+      ms: (x.ms as number | null) ?? null, createdAt: new Date(x.created_at as string).getTime(), question: (x.question as string | null) ?? null,
+      moved: then !== null && latest !== null && Math.abs(latest - then) >= 0.05 };
+  });
 }

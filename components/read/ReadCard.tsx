@@ -30,16 +30,19 @@ function Split({ share, yes, no, what, yesSub, noSub }: { share: number; yes: st
   );
 }
 
-function PriceRow({ label, s, us }: { label: string; s: SidePrices; us: boolean }) {
+function PriceRow({ label, s, us, cols }: { label: string; s: SidePrices; us: boolean; cols: ReadonlyArray<"kalshi" | "polymarket"> }) {
   const cell = (v: "kalshi" | "polymarket") => {
     const p = s[v];
-    return <td className={`rprice__c${s.best === v && (!us || v === "kalshi") && p !== null ? " is-best" : ""}`} data-testid={`price-${v}`}>{cents(p)}{s.best === v && p !== null && !us ? <span className="rprice__best">Best</span> : null}</td>;
+    // A venue with no price for this side shows an empty cell, never a dash.
+    return <td key={v} className={`rprice__c${s.best === v && (!us || v === "kalshi") && p !== null ? " is-best" : ""}`} data-testid={`price-${v}`}>{p !== null ? cents(p) : null}{s.best === v && p !== null && !us ? <span className="rprice__best">Best</span> : null}</td>;
   };
-  return <tr><th scope="row">{label}</th>{cell("kalshi")}{us ? null : cell("polymarket")}</tr>;
+  return <tr><th scope="row">{label}</th>{cols.map(cell)}</tr>;
 }
 
 export function ReadCard({ id, data, member, us, now, startHref }: { id: string; data: ReadData; member: boolean; us: boolean; now: number; startHref: string }) {
   const p = data.proven, prices = pricesFor(data.prices, us);
+  // Venue columns with a price on at least one side (Kalshi only in the US); none: no price section.
+  const cols = (us ? (["kalshi"] as const) : (["kalshi", "polymarket"] as const)).filter(v => prices.yes[v] !== null || prices.no[v] !== null);
   const yesShare = p.yesShare, trackers = p.trackers ?? [], walletRows = p.walletRows ?? [], big = data.big ?? null;
   const open = us ? (data.kalshi?.url ? { href: data.kalshi.url, venue: "Kalshi" } : null)
     : (prices.yes.best === "kalshi" && data.kalshi?.url ? { href: data.kalshi.url, venue: "Kalshi" } : data.polymarket?.url ? { href: data.polymarket.url, venue: "Polymarket" } : data.kalshi?.url ? { href: data.kalshi.url, venue: "Kalshi" } : null);
@@ -100,14 +103,16 @@ export function ReadCard({ id, data, member, us, now, startHref }: { id: string;
         )}
       </section>
 
-      <section className="rsec" aria-labelledby="r-price">
-        <h2 id="r-price" className="rsec__h">Price now</h2>
-        <table className="rprice" data-testid="read-prices">
-          <thead><tr><th scope="col"><span className="sr-only">Side</span></th><th scope="col">Kalshi</th>{us ? null : <th scope="col">Polymarket</th>}</tr></thead>
-          <tbody><PriceRow label={data.yesLabel} s={prices.yes} us={us} /><PriceRow label={data.noLabel} s={prices.no} us={us} /></tbody>
-        </table>
-        {us ? <p className="rsec__fine">In the US we show Kalshi only.</p> : null}
-      </section>
+      {cols.length ? (
+        <section className="rsec" aria-labelledby="r-price">
+          <h2 id="r-price" className="rsec__h">Price now</h2>
+          <table className="rprice" data-testid="read-prices">
+            <thead><tr><th scope="col"><span className="sr-only">Side</span></th>{cols.map(v => <th key={v} scope="col">{v === "kalshi" ? "Kalshi" : "Polymarket"}</th>)}</tr></thead>
+            <tbody><PriceRow label={data.yesLabel} s={prices.yes} us={us} cols={cols} /><PriceRow label={data.noLabel} s={prices.no} us={us} cols={cols} /></tbody>
+          </table>
+          {us ? <p className="rsec__fine">In the US we show Kalshi only.</p> : null}
+        </section>
+      ) : null}
 
       {member ? (
         <>

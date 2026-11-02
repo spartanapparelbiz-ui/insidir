@@ -794,6 +794,8 @@ export const reads = terminal.table("reads", {
   ms: integer("ms"),
   /** Whether it counts toward the free Read: false when it had no proven money and no big bets (lib/read readHasMoney). */
   counted: boolean("counted").notNull().default(true),
+  /** What they asked, as they wrote it (the words or link, or the words behind a "Which one?" pick); the Read's title. */
+  question: text("question"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("reads_user_idx").on(t.userId, t.createdAt), index("reads_visitor_idx").on(t.visitorId), index("reads_created_idx").on(t.createdAt)]);
 
@@ -845,5 +847,8 @@ export const readSeen = terminal.table("read_seen", {
   marketKey: text("market_key").notNull(),
   yesShare: doublePrecision("yes_share"),
   wallets: integer("wallets").notNull().default(0),
+  /** Proven money's open dollars on each side then: "+$120K proven on YES since 9:14 AM". */
+  yesDollars: doublePrecision("yes_dollars"),
+  noDollars: doublePrecision("no_dollars"),
   seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.userId, t.marketKey] })]);

@@ -22,7 +22,11 @@ function saveOffer(list: Choice[] | null, picked: string | null = null) {
   try { if (list) sessionStorage.setItem(OFFER_KEY, JSON.stringify({ list, picked, at: Date.now() })); else sessionStorage.removeItem(OFFER_KEY); } catch { /* storage off */ }
 }
 
-export function ReadBox({ autoFocus = false, size = "big", label = "Read it" }: { autoFocus?: boolean; size?: "big" | "small"; label?: string }) {
+export function ReadBox({ autoFocus = false, size = "big", label = "Read it", glass = false, placeholder = "Paste a link, or type “Senate control”" }: {
+  autoFocus?: boolean; size?: "big" | "small"; label?: string;
+  /** The new design system's glass ask box (app/nx.css .nx-ask). */
+  glass?: boolean; placeholder?: string;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ text: string; href?: string } | null>(null);
   const [choices, setChoices] = useState<Choice[] | null>(null);
@@ -54,36 +58,36 @@ export function ReadBox({ autoFocus = false, size = "big", label = "Read it" }: 
   };
 
   return (
-    <div className={`rbox rbox--${size}`} data-testid="read-box">
-      <form className="rbox__form" aria-busy={busy || undefined} onSubmit={e => { e.preventDefault(); submitText(); }}>
-        <label className="rbox__field">
+    <div className={glass ? "nx-askwrap" : `rbox rbox--${size}`} data-testid="read-box">
+      <form className={glass ? "nx-ask" : "rbox__form"} aria-busy={busy || undefined} onSubmit={e => { e.preventDefault(); submitText(); }}>
+        <label className={glass ? "nx-ask__field" : "rbox__field"} style={glass ? { flex: 1, minWidth: 0, display: "flex" } : undefined}>
           <span className="sr-only">A Polymarket or Kalshi link, or a market in plain words</span>
-          <input ref={text} name="text" className="rbox__input" placeholder="Paste a link, or type “Senate control”" autoComplete="off" autoFocus={autoFocus} enterKeyHint="go" data-testid="read-input" />
+          <input ref={text} name="text" className={glass ? "nx-ask__input" : "rbox__input"} placeholder={placeholder} autoComplete="off" autoFocus={autoFocus} enterKeyHint="go" data-testid="read-input" />
         </label>
-        <button type="submit" className="btn btn--primary rbox__go" disabled={busy} data-testid="read-go">{busy ? "Reading…" : label}</button>
+        <button type="submit" className={glass ? "nx-pill nx-pill--accent" : "btn btn--primary rbox__go"} disabled={busy} data-testid="read-go">{busy ? "Reading…" : label}</button>
       </form>
-      <p className="rbox__alt">
+      <p className={glass ? "nx-ask__slip" : "rbox__alt"}>
         <button type="button" className="rbox__slip" onClick={() => file.current?.click()} disabled={busy}>Or upload a sportsbook slip</button>
         <input ref={file} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="sr-only" data-testid="read-slip"
           onChange={e => { const f = e.target.files?.[0]; if (f) { const b = new FormData(); b.set("slip", f); void send(b); } }} />
       </p>
-      {busy ? <p className="rbox__wait" role="status">Reading the market: proven money, big bets and prices. A few seconds.</p> : null}
+      {busy ? <p className={glass ? "nx-ask__wait nx-muted" : "rbox__wait"} role="status">Reading the market: proven money, big bets and prices. A few seconds.</p> : null}
       {choices || others ? (
-        <div className="rbox__choices" data-testid={choices ? "read-choices" : "read-others"}>
-          <p className="rbox__q">{choices ? "Which one?" : "Not this one? Your other matches"}</p>
+        <div className={glass ? "nx-choices" : "rbox__choices"} data-testid={choices ? "read-choices" : "read-others"}>
+          <p className={glass ? "nx-label" : "rbox__q"}>{choices ? "Which one?" : "Not this one? Your other matches"}</p>
           <ul>
             {(choices ?? others ?? []).map(c => (
               <li key={c.key}>
-                <button type="button" className="rbox__choice" disabled={busy} onClick={() => { const o = loadOffer(); saveOffer(o?.list ?? choices ?? others, c.key); const b = new FormData(); b.set("pick", `${c.venue}:${c.id}`); void send(b); }}>
-                  <span className="rbox__ct">{c.title}</span>
-                  <span className="rbox__cs">{[c.event && c.event !== c.title ? c.event : null, c.venue === "kalshi" ? "Kalshi" : "Polymarket", c.yesPrice !== null ? `Yes ${Math.round(c.yesPrice * 100)}¢` : null].filter(Boolean).join(" · ")}</span>
+                <button type="button" className={glass ? "nx-choice" : "rbox__choice"} disabled={busy} onClick={() => { const o = loadOffer(); saveOffer(o?.list ?? choices ?? others, c.key); const b = new FormData(); b.set("pick", `${c.venue}:${c.id}`); const typed = text.current?.value.trim(); if (typed) b.set("q", typed); void send(b); }}>
+                  <span className={glass ? undefined : "rbox__ct"}>{c.title}</span>
+                  <span className={glass ? "nx-muted" : "rbox__cs"} style={glass ? { fontSize: 13 } : undefined}>{[c.event && c.event !== c.title ? c.event : null, c.venue === "kalshi" ? "Kalshi" : "Polymarket", c.yesPrice !== null ? `Yes ${Math.round(c.yesPrice * 100)}¢` : null].filter(Boolean).join(" · ")}</span>
                 </button>
               </li>
             ))}
           </ul>
         </div>
       ) : null}
-      {error ? <p className="rbox__err" role="alert">{error.text} {error.href ? <a href={error.href} data-unlock="read-limit">Start for $1</a> : null}</p> : null}
+      {error ? <p className={glass ? "nx-ask__err" : "rbox__err"} role="alert">{error.text} {error.href ? <a href={error.href} data-unlock="read-limit">Start for $1</a> : null}</p> : null}
     </div>
   );
 }

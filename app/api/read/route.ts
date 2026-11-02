@@ -38,6 +38,9 @@ export async function POST(req: NextRequest) {
   if (!form) return fail(400, "bad_input", "Paste a Polymarket or Kalshi link, or type a market.");
   const text = String(form.get("text") ?? "").trim().slice(0, 500);
   const pick = String(form.get("pick") ?? "");
+  // What they asked, as they wrote it: the words or link they gave (or, for a pick from "Which one?", the words that
+  // offered it). Shown as the Read's title.
+  const asked = (text || String(form.get("q") ?? "").trim()).slice(0, 200) || null;
   const file = form.get("slip");
   // The free Read: one that shows proven money or big bets. A market offered in a "Which one?" can still be opened:
   // picking is part of that search.
@@ -70,7 +73,7 @@ export async function POST(req: NextRequest) {
     const line = paid && userId ? await lineFor(db, base, userId, now) : null;
     const data = { ...base, line: line ? { text: line.text, origin: line.origin, model: line.model } : null };
     const ms = Date.now() - t0;
-    const id = await saveRead(db, { userId, visitorId: userId ? null : visitorId, input, data, ms }, now);
+    const id = await saveRead(db, { userId, visitorId: userId ? null : visitorId, input, data, ms, question: asked }, now);
     void recordEvent({ name: "read", visitorId, userId, props: { ms, input } }).catch(() => undefined);
     return NextResponse.json({ id }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {

@@ -24,6 +24,7 @@ import "./v2.css";
 import "./light.css";
 import "./polish.css";
 import "./motion.css";
+import "./nx.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
@@ -41,6 +42,10 @@ export const metadata: Metadata = {
 /** Schibsted Grotesk for everything, self-hosted by next/font: no third-party request at runtime. It is the variable font (400–900) with one change
  * (app/fonts, SIL OFL): its tabular figures apply to digits only, so "$160,000" keeps a normal comma. */
 const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap" });
+/** The new design system (app/nx.css): Outfit 700 for the wordmark, IBM Plex Mono 500 for small labels (both SIL OFL,
+ *  app/fonts). */
+const outfit = localFont({ src: "./fonts/outfit-latin-700.woff2", weight: "700", variable: "--font-outfit", display: "swap" });
+const plexMono = localFont({ src: "./fonts/ibm-plex-mono-latin-500.woff2", weight: "500", variable: "--font-plex-mono", display: "swap" });
 
 export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
@@ -51,7 +56,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const jar = await cookies();
   const visitor = !jar.get(SESSION_COOKIE)?.value;
   return (
-    <html lang="en" className={schibsted.variable} suppressHydrationWarning>
+    <html lang="en" className={`${schibsted.variable} ${outfit.variable} ${plexMono.variable}`} suppressHydrationWarning>
       <head>
         {/* Every photo comes from Unsplash's image CDN (lib/unsplash.ts): open the connection before the first one is asked for. */}
         <link rel="preconnect" href="https://images.unsplash.com" />

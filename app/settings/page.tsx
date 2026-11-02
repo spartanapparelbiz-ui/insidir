@@ -1,5 +1,5 @@
 /* Account (/settings): Alerts (a summary; the switches live on /alerts and /following), Location, Billing, Account. Every
- * change saves itself with a "Saved" confirmation; no Save button. Signed-in only. No bankroll.
+ * change saves itself with a "Saved" confirmation; no Save button. Signed-in only.
  * Billing is read from Whop on each visit: the plan, the next charge date and amount, Manage subscription (Whop's own
  * orders page, where they change their card or cancel). */
 import { GET_CTA, TRIAL_ADJ } from "@/lib/copy";
@@ -19,6 +19,11 @@ import { isPaid, PLANS } from "@/lib/plans";
 import { eq } from "drizzle-orm";
 import { COPY_SIZES, copySizeOf } from "@/lib/copies/size";
 import { CANCEL_REASONS } from "@/lib/billing/cancel-reasons";
+import { Shell } from "@/components/nx/Shell";
+import { PushButton } from "@/components/app/PushButton";
+import { vapidPublicKey } from "@/lib/alerts/vapid";
+import { BET_ON } from "@/lib/read/member";
+import type { SessionUser } from "@/lib/auth/session";
 import "../app.css";
 import "../account.css";
 
@@ -52,6 +57,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const cancelNote = q.cancel === "done" ? null : q.cancel === "reason" ? "Pick one reason to cancel." : q.cancel === "failed" ? "Whop didn't take the cancellation. Try again, or cancel on your Whop orders page." : q.cancel === "none" ? "We couldn't find your subscription. Cancel on your Whop orders page." : null;
   const notice = q.saved ? "Saved." : q.cancel === "done" ? "Cancelled. You keep access until the end of the period you paid for." : null;
   const confirmDelete = q.delete === "confirm";
+
+  if (paid) return <MemberAccount user={user} m={m} memError={mem === "error"} notice={notice} cancelNote={cancelNote} confirmDelete={confirmDelete} />;
 
   return (
     <>
@@ -176,5 +183,75 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </section>
       </main>
     </>
+  );
+}
+
+/** A member's Account (new design system, in the member frame): plan and next charge, Manage billing (Whop), push
+ *  alerts on this device, their categories (edit onboarding), sign out; Cancel still asks for one reason. */
+function MemberAccount({ user, m, memError, notice, cancelNote, confirmDelete }: { user: SessionUser; m: MembershipLite | null; memError: boolean; notice: string | null; cancelNote: string | null; confirmDelete: boolean }) {
+  const cats = BET_ON.filter(([k]) => (user.settings.betOn ?? []).includes(k)).map(([, label]) => label);
+  const price = `$${PLANS.insidir.price}`;
+  return (
+    <Shell current="account" refresh={false}>
+      <div className="nxm-sec nxa" data-testid="account">
+        <h1 className="nx-h2">Account</h1>
+        {notice ? <p className="nxa-note" role="status">{notice}</p> : null}
+        {cancelNote ? <p className="nxa-note nxa-note--err" role="alert">{cancelNote}</p> : null}
+
+        <section className="nx-panel nxa-box" aria-labelledby="a-plan" id="billing">
+          <h2 id="a-plan" className="nx-label">Plan</h2>
+          <p className="nxa-big">Insidir · {price}/month</p>
+          {m?.renewalPeriodEnd ? (
+            user.cancelAtPeriodEnd
+              ? <p className="nx-muted" data-testid="cancels-on">Cancels on {day(m.renewalPeriodEnd)}. You keep access until then.</p>
+              : <p data-testid="next-charge">{m.status === "trialing" ? `Your ${TRIAL_ADJ} trial ends ${day(m.renewalPeriodEnd)}, then ` : "Next charge: "}<b>{m.renewalPrice ?? price} on {day(m.renewalPeriodEnd)}</b></p>
+          ) : <p className="nx-muted">{memError ? "Couldn't load the next charge now. Manage billing shows it." : "Manage billing shows your next charge."}</p>}
+          <a className="nx-pill" href={MANAGE_URL} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Manage billing</a>
+        </section>
+
+        <section className="nx-panel nxa-box" aria-labelledby="a-alerts">
+          <h2 id="a-alerts" className="nx-label">Alerts on this device</h2>
+          <p className="nx-muted">A push alert when proven money moves on a market you&apos;ve read.</p>
+          <PushButton vapidKey={vapidPublicKey()} />
+        </section>
+
+        <section className="nx-panel nxa-box" aria-labelledby="a-cats">
+          <h2 id="a-cats" className="nx-label">Your categories</h2>
+          {cats.length ? <p className="nx-chips nx-chips--left">{cats.map(c => <span key={c} className="nx-chip">{c}</span>)}</p> : <p className="nx-muted">None picked yet: your home shows every category.</p>}
+          <Link className="nx-pill" href="/onboarding?again=1">Edit categories</Link>
+        </section>
+
+        <section className="nx-panel nxa-box" aria-labelledby="a-me">
+          <h2 id="a-me" className="nx-label">Signed in</h2>
+          {user.email ? <p>{user.email}</p> : null}
+          <form method="post" action="/auth/logout"><button type="submit" className="nx-pill">Sign out</button></form>
+          {!user.cancelAtPeriodEnd ? (
+            <details className="nxa-cancel" open={Boolean(cancelNote)}>
+              <summary>Cancel subscription</summary>
+              <form method="post" action="/api/billing/cancel" className="nxa-cancel__form" data-testid="cancel-form">
+                <fieldset>
+                  <legend>Why are you cancelling? Pick one.</legend>
+                  {CANCEL_REASONS.map(([k, label]) => <label key={k} className="nxa-opt"><input type="radio" name="reason" value={k} required /> {label}</label>)}
+                </fieldset>
+                <label className="nxa-detail">Anything to add? (optional)<textarea name="detail" maxLength={500} rows={2} /></label>
+                <button type="submit" className="nx-pill">Cancel at the end of this period</button>
+              </form>
+              <p className="nx-muted nxa-fine">You keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
+            </details>
+          ) : null}
+        </section>
+
+        <details className="nxa-cancel" id="delete" open={confirmDelete}>
+          <summary>Delete account</summary>
+          <p className="nx-muted">Removes your account and your Reads from Insidir right away. It doesn&apos;t cancel your membership: cancel it above first.</p>
+          <form method="post" action="/auth/delete" className="nxa-cancel__form" data-testid="delete-account">
+            <label htmlFor="confirm-delete">Type DELETE to confirm</label>
+            <input id="confirm-delete" name="confirm" autoComplete="off" required pattern="DELETE" aria-invalid={confirmDelete || undefined} />
+            {confirmDelete ? <p role="alert">Type DELETE in capitals to delete your account.</p> : null}
+            <button type="submit" className="nx-pill">Delete account</button>
+          </form>
+        </details>
+      </div>
+    </Shell>
   );
 }

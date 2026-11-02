@@ -27,30 +27,36 @@ const V2_UI = [
   "app/page.tsx", "app/feed/page.tsx", "app/trader/[wallet]/page.tsx", "app/market/[id]/page.tsx", "app/results/page.tsx", "app/following/page.tsx",
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
   "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/copies/MyCopies.tsx", "components/copies/CopyPicker.tsx", "lib/copies/store.ts", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx", "app/read/[id]/page.tsx", "lib/home/ref.ts", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
-  "lib/moves/copy.ts", "lib/moves/ticker.ts",
+  "lib/moves/copy.ts", "lib/moves/ticker.ts", ...tree("components/nx"), "app/library/page.tsx", "app/markets/page.tsx", "app/settings/page.tsx",
 ];
 
 describe("V2 landing page", () => {
-  it("is one tool: the headline, the box, what a Read shows, the $1 block, FAQ; nothing else on the page", () => {
-    const src = read("app/page.tsx");
-    expect(read("lib/copy.ts")).toContain('HEADLINE = "Paste any bet. See where the smart money is."');
-    const markers = ['className="hero3 rhome"', "<ReadBox />", 'id="parts-h"', "<DollarBlock ", "<FaqV2 />"];
-    const at = markers.map(m => src.indexOf(m));
-    for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
+  it("the new home page: announcement, nav, hero, live markets, the Read as an answer, ticker, record, how it works, pricing, FAQ, final CTA, footer", () => {
+    const page = read("app/page.tsx"), src = read("components/nx/Landing.tsx");
+    expect(page).toContain("<Landing d={d}");
+    expect(page).toContain("<MemberHome d={d}");
+    const markers = ['data-testid="announcement"', "<Nav ", "<Hero ", "<LiveMarkets ", "<Answer ", "<Ticker ", "<Record ", "<How ", "<Pricing ", "<Faq />", "<FinalCta ", "<NxFooter />"];
+    const body = src.slice(src.indexOf("export function Landing("));
+    const at = markers.map(m => body.indexOf(m));
+    for (const [k, m] of markers.entries()) expect(at[k], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
-    for (const gone of ["<TopWallet ", "<NewMoves ", "<OpenNow ", "<MyCopies ", "<ResearchBar ", "<MarketTabs ", "<BoardSection ", "<Laptops ", "PayPrompt", "<HeroCta "]) expect(src, gone).not.toContain(gone);
-    // Members: the box, tonight in their leagues, Your markets, the week.
-    expect(src).toContain('data-testid="member-home"');
-    for (const m of ["<Tonight rows={tonight}", "<YourMarkets list={mine}", "<Week w={week}"]) expect(src).toContain(m);
+    expect(src).toContain("Where&apos;s the smart money?");
+    expect(src).toContain("Midterms are Tuesday. See where the smart money is before polls close →");
+    expect(src).toContain("Works with Polymarket and Kalshi. Insidir never touches your money.");
+    expect(src).toContain("Know where the money is before you bet.");
+    // Members: the banner with the ask box, moved since the last visit, their categories, Your markets, the week.
+    const mh = read("components/nx/MemberHome.tsx");
+    const mm = ["<Banner ", "<Moved ", "<ThisWeek ", "<Yours ", "<Week "].map(m => mh.slice(mh.indexOf("export function MemberHome(")).indexOf(m));
+    for (const x of mm) expect(x).toBeGreaterThan(-1);
+    expect([...mm].sort((a, b) => a - b)).toEqual(mm);
   });
 
   it("one CTA, Start for $1; the nav is the tool; no stocks, crypto or Congress in the pitch", async () => {
-    const src = read("app/page.tsx");
-    expect(src).toContain("Start for ${TRIAL.fee}");
+    expect(read("components/nx/Landing.tsx")).toContain("Start for ${TRIAL.fee}");
     const nav = read("components/SiteHeader.tsx");
     expect(nav).toContain('[link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>]');
     expect(nav).toContain('[link("/", "Read", "/"), link("/settings", "Account", "/account")]');
-    for (const f of ["app/page.tsx", "components/SiteHeader.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
+    for (const f of ["app/page.tsx", "components/nx/Landing.tsx", "components/nx/MemberHome.tsx", "components/SiteHeader.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
       expect(read(f), f).not.toMatch(/\b(stocks?|Stocks?|crypto|Crypto|SEC|insider stock|CEO|Congress)\b/);
     }
     const copy = await import("@/lib/copy");
@@ -127,15 +133,22 @@ describe("design system", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
-    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
+    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css" && f !== "app/nx.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
       expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
     }
+    // The new design system (app/nx.css) defines its palette once, in its :root token block, and uses tokens elsewhere.
+    const nx = read("app/nx.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+    const root = nx.match(/:root\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(new Set((root.match(/#[0-9a-fA-F]{6}\b/g) ?? []).map(x => x.toUpperCase()))).toEqual(new Set(["#0A0C10", "#14171C", "#23272E", "#FFFFFF", "#9BA3AE", "#22C58B", "#F0565B", "#2BD99B", "#3A404A", "#181B21", "#0D1014", "#0B0D12", "#1B1F25"]));
+    expect(nx.replace(root, "").match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([]);
   });
 
-  it("uses one font, Schibsted Grotesk; the serif and older fonts are gone", () => {
+  it("fonts: Schibsted Grotesk for the older pages; the new system's Outfit (wordmark) and IBM Plex Mono (labels), all self-hosted; the serif and older fonts are gone", () => {
     const layout = read("app/layout.tsx");
     expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
+    expect(layout).toMatch(/outfit-latin-700\.woff2/);
+    expect(layout).toMatch(/ibm-plex-mono-latin-500\.woff2/);
     expect(layout).not.toMatch(/Rufina/);
     expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
