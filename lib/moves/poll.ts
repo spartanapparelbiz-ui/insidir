@@ -9,6 +9,7 @@ import { kalshiMoves, noisyWallet, polymarketMoves, type MarketInfo, type Wallet
 import { readKalshiFills, readPolymarketFills } from "./sources";
 import type { Fill, Move } from "./types";
 import { rows, str, isObject } from "@/lib/exchanges/parse";
+import { tradesCursor } from "@/lib/exchanges/polymarket";
 import type { VMarket } from "@/lib/types";
 
 export const FILL_MIN = Number(process.env.WHALE_FILL_MIN ?? 500);
@@ -23,7 +24,8 @@ const KALSHI_PAGES = 10;
 export type MarketLookup = (ids: string[]) => Promise<ReadonlyMap<string, VMarket>>;
 
 export interface MoveSources {
-  polyTradesPage(offset: number): Promise<unknown>;
+  /** Page `page` of the newest fills; `cursor` is the previous page's next_cursor (null on the first). */
+  polyTradesPage(page: number, cursor: string | null): Promise<unknown>;
   /** The wallet's trades over the last day (for the noise checks). */
   polyWalletTrades(wallet: string, sinceMs: number): Promise<WalletTrade[]>;
   /** True when the wallet has no activity at all before `beforeMs` ("A brand-new wallet"); null when unknown. */
@@ -50,12 +52,14 @@ export class MovesPoller {
 
   /** `info` is a map, or a lookup called with the market ids of this poll's candidate moves (lib/moves/directory.ts). */
   async pollPolymarket(now: number, infoOrLookup: ReadonlyMap<string, MarketInfo> | MarketLookup): Promise<Move[]> {
+    let cursor: string | null = null;
     for (let page = 0; page < POLY_PAGES; page++) {
-      const raw = await this.src.polyTradesPage(page * 500);
+      const raw = await this.src.polyTradesPage(page, cursor);
       const fills = readPolymarketFills(raw);
       for (const f of fills) this.polyFills.set(f.id, f);
       const oldest = fills.reduce((m, f) => Math.min(m, f.at), Infinity);
-      if (rows(raw).length < 500 || oldest < now - LOOKBACK_MS) break;
+      cursor = tradesCursor(raw);
+      if (rows(raw).length < 500 || oldest < now - LOOKBACK_MS || !cursor) break;
     }
     for (const [k, f] of this.polyFills) if (f.at < now - LOOKBACK_MS) this.polyFills.delete(k);
     const fills = [...this.polyFills.values()];

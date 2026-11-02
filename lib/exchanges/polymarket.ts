@@ -694,34 +694,43 @@ export class PolymarketClient implements VenueClient {
   /* Data API */
 
   /** Large trades across every market (taker side only, newest first). */
-  async getWhaleTrades(opts: { minCash?: number; limit?: number; offset?: number; priority?: Priority } = {}): Promise<WhaleTrade[]> {
+  async getWhaleTrades(opts: { minCash?: number; limit?: number; priority?: Priority } = {}): Promise<WhaleTrade[]> {
     const minCash = opts.minCash ?? WHALE_MIN_CASH;
-    const params = { filterType: "CASH", filterAmount: minCash, limit: opts.limit ?? DATA_PAGE_LIMIT, offset: opts.offset, takerOnly: true };
-    return readWhaleTrades(await this.data.json(`${this.dataUrl}/trades${qs(params)}`, { priority: opts.priority }), minCash);
+    const params = { filterType: "CASH", filterAmount: minCash, limit: opts.limit ?? DATA_PAGE_LIMIT, takerOnly: true };
+    return readWhaleTrades((await this.tradesV2(params, null, opts.priority)).data, minCash);
   }
 
-  /** One page of public trades, newest first (GET /trades). `filterAmount` with filterType=CASH keeps fills of at
-   *  least that many dollars. Raw rows: lib/moves/sources.ts reads them. */
-  async getTradesPage(opts: { filterAmount: number; limit?: number; offset?: number; priority?: Priority }): Promise<unknown> {
-    const params = { filterType: "CASH", filterAmount: opts.filterAmount, limit: opts.limit ?? DATA_PAGE_LIMIT, offset: opts.offset, takerOnly: true };
-    return this.data.json(`${this.dataUrl}/trades${qs(params)}`, { priority: opts.priority });
+  /** One page of public trades, newest first (GET /v2/trades). `filterAmount` with filterType=CASH keeps fills of at
+   *  least that many dollars. Pages by cursor: pass the previous page's next_cursor (tradesCursor). Raw rows in the
+   *  v1 field names (v1Trade), which lib/moves/sources.ts reads. */
+  async getTradesPage(opts: { filterAmount: number; limit?: number; cursor?: string | null; priority?: Priority }): Promise<unknown> {
+    const params = { filterType: "CASH", filterAmount: opts.filterAmount, limit: opts.limit ?? DATA_PAGE_LIMIT, takerOnly: true };
+    return this.tradesV2(params, opts.cursor ?? null, opts.priority);
   }
 
-  /** A wallet's trades in one market (GET /trades?user=&market=), raw. For the accuracy check. */
+  /** A wallet's trades in one market (GET /v2/trades?user=&market=), raw rows in v1 names. For the accuracy check. */
   async getWalletMarketTrades(user: string, market: string, priority: Priority = "normal"): Promise<unknown> {
-    return this.data.json(`${this.dataUrl}/trades${qs({ user, market, limit: DATA_PAGE_LIMIT, takerOnly: true })}`, { priority });
+    return (await this.tradesV2({ user, market, limit: DATA_PAGE_LIMIT, takerOnly: true }, null, priority)).data;
   }
 
   /** Every trade a wallet made in one market, as maker or taker (for what a settled bet really made). Up to 4 pages. */
   async getWalletMarketTradesAll(user: string, market: string, priority: Priority = "normal"): Promise<unknown[]> {
     const out: unknown[] = [];
+    let cursor: string | null = null;
     for (let page = 0; page < 4; page++) {
-      const rows = await this.data.json(`${this.dataUrl}/trades${qs({ user, market, limit: DATA_PAGE_LIMIT, offset: page * DATA_PAGE_LIMIT, takerOnly: false })}`, { priority });
-      if (!Array.isArray(rows)) break;
-      out.push(...rows);
-      if (rows.length < DATA_PAGE_LIMIT) break;
+      const r: { data: JsonObject[]; pagination: unknown } = await this.tradesV2({ user, market, limit: DATA_PAGE_LIMIT, takerOnly: false }, cursor, priority);
+      out.push(...r.data);
+      cursor = tradesCursor(r);
+      if (!cursor || r.data.length < DATA_PAGE_LIMIT) break;
     }
     return out;
+  }
+
+  /** GET /v2/trades (v1 /trades answers 410 Gone): { data, pagination: { has_more, next_cursor } }, rows renamed to
+   *  the v1 fields every parser reads (v1Trade). Cursor pages only; an offset is rejected. */
+  private async tradesV2(params: Record<string, string | number | boolean | undefined>, cursor: string | null, priority?: Priority): Promise<{ data: JsonObject[]; pagination: unknown }> {
+    const raw = await this.data.json(`${this.dataUrl}/v2/trades${qs({ ...params, cursor: cursor ?? undefined })}`, { priority });
+    return { data: rows(raw).map(v1Trade), pagination: isObject(raw) ? raw.pagination ?? null : null };
   }
 
   /** One page of a wallet's closed (resolved) positions, with realized profit (GET /closed-positions). */
@@ -1092,4 +1101,19 @@ export function watchBooks(tokenIds: readonly string[], onChange: (tokenId: stri
     stream.stop();
     stopPoll?.();
   };
+}
+
+/** A v2 trade row in v1's field names (proxy_wallet → proxyWallet, condition_id → conditionId, token_id → asset, …);
+ *  rows already in v1 names pass through. */
+export function v1Trade(r: JsonObject): JsonObject {
+  const out: JsonObject = {};
+  for (const [k, v] of Object.entries(r)) out[k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())] = v;
+  if (out.tokenId !== undefined && out.asset === undefined) out.asset = out.tokenId;
+  return out;
+}
+
+/** The next page's cursor of a v2 trades page; null on the last page (or a v1-style list). */
+export function tradesCursor(raw: unknown): string | null {
+  const p = isObject(raw) && isObject(raw.pagination) ? raw.pagination : null;
+  return p && p.has_more === true && typeof p.next_cursor === "string" ? p.next_cursor : null;
 }
