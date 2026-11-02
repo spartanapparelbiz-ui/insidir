@@ -77,7 +77,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks, terminal.market_info, terminal.move_tags CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks, terminal.market_info, terminal.move_tags, terminal.millionaire_wallets, terminal.millionaire_bets, terminal.millionaire_pings CASCADE`);
   const u = universe(now);
   // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
   await saveMarkets(db, u.markets);

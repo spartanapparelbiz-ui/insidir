@@ -29,7 +29,7 @@ import type { OpenLanding } from "@/lib/open/landing";
 import { PLANS, TRIAL } from "@/lib/plans";
 
 const HEAD = "See what Polymarket's millionaires are betting.";
-const SUB = "Insidir tracks every big bet on Polymarket and Kalshi and shows you where wallets that have made $1M+ are putting their money.";
+const SUB = "Insidir tracks every big bet on Polymarket and Kalshi and shows you, on any market, where wallets that have made $1M+ put their money.";
 
 function SectionHead({ eyebrow, title, sub, id }: { eyebrow: string; title: string; sub?: string; id: string }) {
   return (
@@ -47,11 +47,11 @@ function Hero({ d, startHref }: { d: OpenLanding; startHref: string }) {
       <div className="op-wrap">
         <h1 id="hero-h" className="op-h1">{HEAD}</h1>
         <p className="op-hero__sub">{SUB}</p>
-        <div className="op-hero__ask"><ReadBox glass label="Read" placeholder="Paste a Polymarket or Kalshi link, or ask about any market" /></div>
         <div className="op-hero__acts">
-          <a className="op-btn op-primary" href={startHref} data-unlock="hero">Start for ${TRIAL.fee} <span className="op-arrow" aria-hidden="true">→</span></a>
-          <p className="op-hero__fine">${TRIAL.fee} for {TRIAL.days} days, then ${PLANS.insidir.price}/month. Cancel anytime.</p>
+          <a className="op-btn op-primary op-btn--big" href={startHref} data-unlock="hero" data-testid="hero-show">Show me <span className="op-arrow" aria-hidden="true">→</span></a>
         </div>
+        <div className="op-hero__ask"><ReadBox glass label="Read" placeholder="Paste a Polymarket or Kalshi link, or ask about any market" /></div>
+        <p className="op-hero__fine">${TRIAL.fee} for {TRIAL.days} days, then ${PLANS.insidir.price}/month. Cancel anytime.</p>
       </div>
       {d.ticker.length ? (
         <div className="op-ticker" aria-label="Biggest bets of the last 24 hours" data-testid="ticker">
@@ -68,9 +68,10 @@ function Board({ d, startHref }: { d: OpenLanding; startHref: string }) {
   return (
     <section className="op-sec" aria-labelledby="board-h" id="board">
       <div className="op-wrap">
-        <SectionHead id="board-h" eyebrow="The Millionaires' board" title="Every $10K+ bet from a $1M+ wallet" sub="Wallets that have made $1M or more on Polymarket, by their public all-time profit. We show the tier, never who is behind a wallet." />
-        {d.board.length ? <BoardPreview rows={d.board} now={d.now} /> : <p className="op-board__none" data-testid="board-none">No $1M+ wallet has placed a $10K+ bet in the last week that we can show yet.</p>}
-        <p className="op-board__note" data-testid="board-delay">60 minutes delayed. Members see this live. <a className="op-btn-sm op-primary" href={startHref} data-unlock="board">Start for ${TRIAL.fee}</a></p>
+        <SectionHead id="board-h" eyebrow="The Millionaires' board" title="Every bet from wallets that made $1M+" sub="Wallets ranked by their public all-time profit on Polymarket. We show the tier, never who is behind a wallet." />
+        <p className="op-board__count" data-testid="board-hour"><span className="sk-live" aria-hidden="true" /> <b><NumberTicker value={d.hour} /></b> millionaire bet{d.hour === 1 ? "" : "s"} in the last hour. Members see them as they happen.</p>
+        {d.board.length ? <BoardPreview rows={d.board} now={d.now} /> : <p className="op-board__none" data-testid="board-none">No millionaire bets more than an hour old to show yet.</p>}
+        <p className="op-board__note" data-testid="board-delay">60 minutes delayed. <a className="op-btn-sm op-primary" href={startHref} data-unlock="board">Show me live</a></p>
       </div>
     </section>
   );
@@ -86,9 +87,9 @@ function Numbers({ d }: { d: OpenLanding }) {
   return (
     <section className="op-sec" aria-label="Live numbers" data-testid="stats">
       <div className="op-wrap op-stats">
+        <div className="op-card op-edge op-stat"><NumberTicker className="op-stat__n" value={s.millionaires} data-testid="stat-millionaires" /><span className="op-stat__l">millionaire wallets tracked</span></div>
+        <div className="op-card op-edge op-stat"><NumberTicker className="op-stat__n" value={m.value} decimalPlaces={m.decimals} prefix="$" suffix={m.suffix} data-testid="stat-moved" /><span className="op-stat__l">millionaire money bet today</span></div>
         <div className="op-card op-edge op-stat"><NumberTicker className="op-stat__n" value={s.bigBets} data-testid="stat-bets" /><span className="op-stat__l">big bets tracked</span></div>
-        <div className="op-card op-edge op-stat"><NumberTicker className="op-stat__n" value={s.millionaires} data-testid="stat-millionaires" /><span className="op-stat__l">{TIER_BADGE.millionaire} wallets tracked</span></div>
-        <div className="op-card op-edge op-stat"><NumberTicker className="op-stat__n" value={m.value} decimalPlaces={m.decimals} prefix="$" suffix={m.suffix} data-testid="stat-moved" /><span className="op-stat__l">millionaire money moved today</span></div>
       </div>
     </section>
   );
@@ -101,7 +102,7 @@ function TheRead({ d }: { d: OpenLanding }) {
   return (
     <section className="op-sec" aria-labelledby="read-h" id="answer">
       <div className="op-wrap">
-        <SectionHead id="read-h" eyebrow="A real Read" title="Tonight's top market, read now" sub="What a Read shows: millionaire money on each side, proven money, the best price, and one line on what the data says." />
+        <SectionHead id="read-h" eyebrow="A real Read" title="The market with the most millionaire money" sub="What a Read shows: millionaire money on each side, the best price, and one line on what the data says." />
         <div className="op-read">
           <p className="op-read__asked" data-testid="you-asked">You asked <b>{q}</b></p>
           <ReadCard id={f.id} data={f.data} member={false} us={d.us} now={d.now} startHref="/start" level={2} />
@@ -114,7 +115,7 @@ function TheRead({ d }: { d: OpenLanding }) {
 
 const Icon = (name: Parameters<typeof LineIcon>[0]["name"]) => function I({ className }: { className?: string }) { return <span className={className}><LineIcon name={name} size={32} /></span>; };
 
-function Bento({ d }: { d: OpenLanding }) {
+function Bento({ d, startHref }: { d: OpenLanding; startHref: string }) {
   const ping = d.board.find(b => b.amount >= 25_000) ?? null;
   const tiers = d.featured?.data.tiers ?? null;
   const unusual = d.featured?.data.bets.filter(b => b.unusual.length).length ?? 0;
@@ -129,11 +130,12 @@ function Bento({ d }: { d: OpenLanding }) {
           <BentoCard name="Pings" Icon={Icon("spark")} href="/settings#pings" cta="Pick your categories"
             description="A push the moment a $1M+ wallet bets $25K+ in a category you follow. At most 5 a day."
             background={ping ? <p className="op-muted" data-testid="bento-ping">{pingText(ping).body}</p> : null} />
-          <BentoCard name="Best price" Icon={Icon("chart")} href="/#answer" cta="See a Read"
-            description="YES and NO on Kalshi and Polymarket side by side, the cheaper one marked. In the US, Kalshi only." />
-          <BentoCard className="mu-bento__card--wide" name="Unusual bets" Icon={Icon("bank")} href="/#answer" cta="See a Read"
-            description="Every big bet of the last 24 hours, flagged when it's from a brand-new wallet, a long shot, or a big share of the day's volume."
-            background={unusual ? <p className="op-muted">{unusual} unusual bet{unusual === 1 ? "" : "s"} on tonight's top market</p> : ping ? <p className="op-muted">{boardLine(ping)}</p> : null} />
+          <BentoCard name="Follow a millionaire" Icon={Icon("trophy")} href={startHref} cta="Show me"
+            description="Pick a wallet that has made $1M+ and get a push every time it bets $10K or more. Tier and short address only, never who is behind it."
+            background={ping ? <p className="op-muted">{boardLine(ping)}</p> : null} />
+          <BentoCard className="mu-bento__card--wide" name="Best price" Icon={Icon("chart")} href="/#answer" cta="See a Read"
+            description="YES and NO on Kalshi and Polymarket side by side, the cheaper one marked. In the US, Kalshi only."
+            background={unusual ? <p className="op-muted">{unusual} unusual bet{unusual === 1 ? "" : "s"} on this market today</p> : null} />
         </BentoGrid>
       </div>
     </section>
@@ -228,7 +230,7 @@ export function OpenLandingPage({ d, startHref }: { d: OpenLanding; startHref: s
         <Board d={d} startHref={startHref} />
         <Numbers d={d} />
         <TheRead d={d} />
-        <Bento d={d} />
+        <Bento d={d} startHref={startHref} />
         <Record d={d} />
         <Pricing startHref={startHref} />
         <Faq />

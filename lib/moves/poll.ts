@@ -9,6 +9,9 @@ import { kalshiMoves, noisyWallet, polymarketMoves, type MarketInfo, type Wallet
 import { readKalshiFills, readPolymarketFills } from "./sources";
 import type { Fill, Move } from "./types";
 import { rows, str, isObject } from "@/lib/exchanges/parse";
+
+/** A watchlist wallet's bet counts as a millionaire bet from this size (lib/millionaire/bets.ts). */
+export const WATCH_MIN = 5_000;
 import type { VMarket } from "@/lib/types";
 
 export const FILL_MIN = Number(process.env.WHALE_FILL_MIN ?? 500);
@@ -29,6 +32,9 @@ export interface MoveSources {
   /** True when the wallet has no activity at all before `beforeMs` ("A brand-new wallet"); null when unknown. */
   polyWalletIsNew?(wallet: string, beforeMs: number): Promise<boolean | null>;
   kalshiTradesPage(minTsSec: number, cursor?: string): Promise<unknown>;
+  /** The millionaire watchlist's wallets and their all-time pnl (lib/millionaire/watchlist.ts): their bets of
+   *  WATCH_MIN+ are kept apart (watchMoves), with no per-wallet polling. */
+  watchlist?(): Promise<ReadonlyMap<string, number>>;
 }
 
 export class MovesPoller {
@@ -38,6 +44,10 @@ export class MovesPoller {
   private fresh = new Map<string, { isNew: boolean | null; at: number }>();
   private kalshiSeen = new Map<string, number>();
   private kalshiSince: number | null = null;
+  private watch: Move[] = [];
+
+  /** The last poll's watchlist bets of WATCH_MIN+ (the fills already read; nothing extra is polled), with each wallet's pnl. */
+  watchMoves(): Move[] { return this.watch; }
 
   constructor(private readonly src: MoveSources) {}
 
@@ -63,6 +73,10 @@ export class MovesPoller {
       ? MovesPoller.infoFrom([...(await infoOrLookup([...new Set(polymarketMoves(fills, new Map()).map(m => m.marketId))])).values()])
       : infoOrLookup;
     const candidates = polymarketMoves(fills, info);
+    if (this.src.watchlist) {
+      const watch = await this.src.watchlist().catch(() => new Map<string, number>());
+      this.watch = watch.size ? polymarketMoves(fills, info, WATCH_MIN).filter(m => m.wallet && watch.has(m.wallet)) : [];
+    }
     const out: Move[] = [];
     let checks = 0;
     for (const m of candidates) {

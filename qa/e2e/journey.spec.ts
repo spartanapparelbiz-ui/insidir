@@ -50,8 +50,9 @@ test("visitor → paid → alerts → cancel", async ({ page, context, browserNa
     // A visitor: the landing page, then "Start for $1" → the embedded checkout (pay first) → Whop sign-in → in.
     await page.goto("/");
     await page.goto("/pricing");
-    await page.locator('[data-checkout="pricing"]').first().click();
-    await expect(page).toHaveURL(/\/start$/);
+    // Every Start for $1 goes to the /go funnel; /start is the checkout on its own, for direct links.
+    await expect(page.locator('[data-checkout="pricing"]').first()).toHaveAttribute("href", "/go");
+    await page.goto("/start");
     await whop("/__whop_user", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: EMAIL(w), name: null }) });
     await page.getByTestId("age-18").getByRole("checkbox").check();
     await page.locator("[data-mock-checkout]").getByLabel("Email").fill(EMAIL(w));

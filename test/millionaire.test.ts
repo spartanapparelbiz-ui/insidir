@@ -33,9 +33,9 @@ describe("profit tiers", () => {
     const t = tierMoney([{ wallet: "a", side: "yes", dollars: 139_771 }, { wallet: "b", side: "yes", dollars: 34_004 }], new Map([["a", 2.4e6], ["b", 3.2e6]]));
     expect(t.millionaire.yesShare).toBeNull();
     expect(t.millionaire.wallets).toBe(2);
-    expect(tierCountLine("millionaire", 2)).toBe("2 millionaire wallets in this market");
-    expect(tierCountLine("millionaire", 1)).toBe("1 millionaire wallet in this market");
-    expect(tierCountLine("pro", 1)).toBe("1 $100K+ wallet in this market");
+    expect(tierCountLine("millionaire", 2)).toBe("2 millionaire wallets here");
+    expect(tierCountLine("millionaire", 1)).toBe("1 millionaire wallet here");
+    expect(tierCountLine("pro", 1)).toBe("1 $100K+ wallet here");
   });
 
   it("a wallet on both sides counts once in the tier", () => {

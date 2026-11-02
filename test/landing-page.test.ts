@@ -39,7 +39,7 @@ describe("V2 landing page", () => {
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
     expect(src).toContain('const HEAD = "See what Polymarket\'s millionaires are betting.";');
-    expect(src).toContain("Insidir tracks every big bet on Polymarket and Kalshi and shows you where wallets that have made $1M+ are putting their money.");
+    expect(src).toContain("Insidir tracks every big bet on Polymarket and Kalshi and shows you, on any market, where wallets that have made $1M+ put their money.");
     // Magic UI for motion only: the number ticker, the marquee, the animated list, the bento grid. No 3D.
     for (const m of ["<NumberTicker ", "<Marquee ", "<BentoGrid ", "<BoardPreview "]) expect(src).toContain(m);
     expect(read("components/open/BoardPreview.tsx")).toContain("<AnimatedList ");

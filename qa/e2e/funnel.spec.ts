@@ -110,7 +110,7 @@ test("/start: pay first: the checkout straight away, the charge line, Apple Pay 
   await expect(page.locator(".aerr")).toHaveText("Sign-in was cancelled. Continue when you're ready.");
   await page.goto("/login");
   await expect(page.getByRole("heading", { level: 1, name: "Welcome back." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
+  await expect(page.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/go");
   await page.screenshot({ path: `qa/screenshots/login-${page.viewportSize()!.width}.png`, fullPage: true });
 });
 
@@ -155,7 +155,7 @@ test("the nav's 36px Start for $1 on public pages, home included, but not /start
   await expect(page.getByTestId("op-header").locator('a[data-unlock="nav"]')).toHaveText("Start for $1");
   await page.goto("/pricing");
   if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
-  await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");
+  await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/go");
   await page.goto("/login");
   await expect(page.locator(".nav__cta")).toHaveCount(0);
 });

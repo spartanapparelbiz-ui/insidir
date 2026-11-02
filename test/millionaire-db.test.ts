@@ -7,14 +7,19 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { boardRows, boardStats, VISITOR_DELAY_MS } from "@/lib/millionaire/board";
+import { boardRows, boardStats, lastHourCount, VISITOR_DELAY_MS } from "@/lib/millionaire/board";
 import { pingReceipts, pingsOnce } from "@/lib/millionaire/pings";
+import { saveWatchMoves, syncMillionaireBets } from "@/lib/millionaire/bets";
+import { watchlistOnce, watchPnl } from "@/lib/millionaire/watchlist";
+import type { Move } from "@/lib/moves/types";
 
 const URL0 = process.env.E2E_DATABASE_URL;
 const NAME = `terminal_mil_${process.pid}`;
 let admin: pg.Client, pool: pg.Pool, db: Db;
 const MIN = 60_000, NOW = Date.now();
-const RICH = "0x" + "1".repeat(40), PRO = "0x" + "2".repeat(40), POOR = "0x" + "3".repeat(40);
+const RICH = "0x" + "1".repeat(40), PRO = "0x" + "2".repeat(40), POOR = "0x" + "3".repeat(40), LEAD = "0x" + "4".repeat(40);
+// The leaderboard's rows carry a name and a rank too: only the wallet and its pnl are kept.
+const LEADERBOARD = { getLeaderboardPage: async (o: { offset?: number }) => (o.offset ? [] : [{ proxyWallet: LEAD, pnl: 1_500_000, userName: "someone", rank: "1" }, { proxyWallet: RICH, pnl: 2_500_000, userName: "x", rank: "2" }]) };
 
 async function move(id: string, o: { market: string; title: string; side: "yes" | "no"; outcome: string; amount: number; wallet: string; ago: number; price?: number; tab?: string; league?: string | null; category?: string; result?: "won" | "lost" | null }) {
   await pool.query(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, wallet, at, last_at, tab, league, category, result, settled_at)
@@ -33,7 +38,7 @@ describe.skipIf(!URL0)("the Millionaires' board and pings, in Postgres", () => {
     db = drizzle(pool, { schema });
     await migrate(db, { migrationsFolder: "drizzle", migrationsSchema: "terminal" });
     for (const [w, pnl] of [[RICH, 2_400_000], [PRO, 400_000], [POOR, 20_000]] as const) {
-      await pool.query(`insert into terminal.wallet_pnl (wallet, closed, closed_at_least, pnl, read_at) values ($1, 500, false, $2, now())`, [w, pnl]);
+      await pool.query(`insert into terminal.wallet_pnl (wallet, closed, closed_at_least, pnl, read_at) values ($1, 500, false, $2, now() - interval '1 day')`, [w, pnl]);
     }
     await move("rams", { market: "0xrams", title: "Chargers vs. Rams", side: "no", outcome: "Rams", amount: 139_771, wallet: RICH, ago: 4 * MIN });
     await move("chiefs", { market: "0xkc", title: "Chiefs vs. Broncos", side: "yes", outcome: "Chiefs", amount: 61_500, wallet: RICH, ago: 2 * 60 * MIN });
@@ -44,6 +49,8 @@ describe.skipIf(!URL0)("the Millionaires' board and pings, in Postgres", () => {
     await move("settled-w", { market: "0xs1", title: "Old game one", side: "yes", outcome: "A", amount: 40_000, wallet: RICH, ago: 3 * 24 * 60 * MIN, result: "won" });
     await move("settled-l", { market: "0xs2", title: "Old game two", side: "yes", outcome: "B", amount: 40_000, wallet: RICH, ago: 3 * 24 * 60 * MIN, result: "lost" });
     await pool.query(`insert into terminal.market_info (source, market_id, yes_price) values ('polymarket', '0xrams', 0.3)`);
+    expect(await watchlistOnce(db, LEADERBOARD, NOW)).toBe(3);
+    await syncMillionaireBets(db);
     // Two paid members with push on and a device: one follows sports only, the other elections only.
     for (const [id, cats] of [["u_sports", ["sports"]], ["u_elect", ["elections"]]] as const) {
       await pool.query(`insert into terminal.users (id, email, plan, settings) values ($1, $2, 'insidir', $3)`, [id, `${id}@example.test`, JSON.stringify({ ...schema.DEFAULT_SETTINGS, alertPush: true, pingCats: cats })]);
@@ -52,24 +59,43 @@ describe.skipIf(!URL0)("the Millionaires' board and pings, in Postgres", () => {
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
 
-  it("lists only $1M+ wallets' $10K+ bets, newest first, with the price now for their side; visitors see it an hour late", async () => {
+  it("keeps the leaderboard's wallet and pnl only, plus every wallet_pnl wallet; the poller's $5K+ fills of watchlist wallets become bets", async () => {
+    const cols = (await pool.query("select column_name from information_schema.columns where table_schema = 'terminal' and table_name = 'millionaire_wallets' order by 1")).rows.map(r => r.column_name);
+    expect(cols).toEqual(["pnl", "read_at", "source", "wallet"]);
+    const pnl = await watchPnl(db);
+    expect(pnl.get(RICH)).toBe(2_500_000);
+    expect(pnl.get(LEAD)).toBe(1_500_000);
+    expect(pnl.get(PRO)).toBe(400_000);
+    expect(pnl.has(POOR)).toBe(false);
+    const fill = (id: string, wallet: string, amount: number): Move => ({ id, source: "polymarket", marketId: "0xfill", eventTitle: "Jets vs. Bills", marketTitle: "Jets vs. Bills", outcome: "Bills", outcomeSide: "no", amount, avgPrice: 0.6, wallet, at: NOW - 30 * MIN, lastAt: NOW - 30 * MIN, tab: "sports", league: "NFL", category: "sports" } as unknown as Move);
+    expect(await saveWatchMoves(db, [fill("f1", LEAD, 6_000), fill("f2", POOR, 50_000), fill("f3", LEAD, 4_000)], pnl)).toBe(1);
+    expect(await saveWatchMoves(db, [fill("f1", LEAD, 8_000)], pnl)).toBe(0);
+    expect((await pool.query("select amount::float as a from terminal.millionaire_bets where id = 'f1'")).rows[0].a).toBe(8_000);
+    await pool.query("delete from terminal.millionaire_bets where id = 'f1'");
+  });
+
+  it("lists $100K+ wallets' $5K+ bets, newest first, with the tier, pnl and price now for their side; visitors see it an hour late", async () => {
     const live = await boardRows(db, NOW);
-    expect(live.map(r => r.id).slice(0, 3)).toEqual(["rams", "senate", "chiefs"]);
-    expect(new Set(live.map(r => r.id).slice(3))).toEqual(new Set(["settled-w", "settled-l"]));
-    expect(live.find(r => r.id === "small")).toBeUndefined();
-    expect(live.find(r => r.id === "pro")).toBeUndefined();
+    expect(live.map(r => r.id).slice(0, 5)).toEqual(["pro", "small", "rams", "senate", "chiefs"]);
+    expect(new Set(live.map(r => r.id).slice(5))).toEqual(new Set(["settled-w", "settled-l"]));
+    expect(live.find(r => r.id === "poor")).toBeUndefined();
+    expect(live.find(r => r.id === "pro")).toMatchObject({ tier: "pro", pnl: 400_000 });
     const rams = live.find(r => r.id === "rams")!;
-    expect(rams).toMatchObject({ side: "Rams", amount: 139_771, priceThen: 0.69, tier: "millionaire" });
+    expect(rams).toMatchObject({ side: "Rams", amount: 139_771, priceThen: 0.69, tier: "millionaire", pnl: 2_500_000, short: "0x11…11" });
     expect(rams.priceNow).toBeCloseTo(0.7, 5);
+    expect((await boardRows(db, NOW, { tier: "millionaire" })).map(r => r.id)).not.toContain("pro");
     const late = await boardRows(db, NOW, { delayMs: VISITOR_DELAY_MS });
     expect(late.map(r => r.id)).not.toContain("rams");
     expect(late.map(r => r.id)).toContain("chiefs");
     expect(await boardRows(db, NOW, { cats: ["elections"] })).toHaveLength(1);
+    const night = await boardRows(db, NOW, { filter: "election-night" });
+    expect(night.map(r => [r.id, r.pinned])).toEqual([["senate", true]]);
+    expect(await lastHourCount(db, NOW)).toBe(4);
   });
 
   it("counts big bets, $1M+ wallets and their money today", async () => {
     const s = await boardStats(db, NOW);
-    expect(s.millionaires).toBe(1);
+    expect(s.millionaires).toBe(2);
     expect(s.bigBets).toBe(8);
     expect(s.movedToday).toBe(139_771 + 61_500 + 30_000 + 9_000);
   });

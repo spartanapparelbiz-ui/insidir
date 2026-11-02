@@ -52,6 +52,9 @@ import { isTopTrader } from "@/lib/moves/records";
 import { isReady } from "@/lib/features";
 import { sendPush } from "@/lib/alerts/send";
 import { pingsOnce } from "@/lib/millionaire/pings";
+import { watchlistOnce, watchPnl, WATCH_MS } from "@/lib/millionaire/watchlist";
+import { memo } from "@/lib/memo";
+import { saveWatchMoves, syncMillionaireBets } from "@/lib/millionaire/bets";
 import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
 import { ACCURACY_MS, runAccuracyCheck } from "@/lib/accuracy/check";
@@ -226,7 +229,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const lastTickAt = new Map<string, number>();
   log(`worker starting (Price gaps ${gaps ? "on" : "off: GAPS_ENABLED is not 1"})`);
   // Big money moves (docs/INSIDIR-V2.md): only with both public clients in place.
-  const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi) : null;
+  const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi, () => memo("millionaire:watch", 10 * 60_000, () => watchPnl(getDb()))) : null;
   const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
   const sec = SecClient.fromEnv();
   if (!sec) log("stocks: SEC_USER_AGENT not set (name and email), Stocks ingest is off");
@@ -240,6 +243,12 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("moves", MOVES_MS, async () => {
         const fresh = await movesOnce(getDb(), poller, directory, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null));
         if (fresh.length) log(`moves: ${fresh.length} new`);
+        // Millionaire bets: the watchlist's $5K+ bets from the same fills (lib/millionaire/bets.ts).
+        const watch = poller.watchMoves();
+        if (watch.length) {
+          const n = await saveWatchMoves(getDb(), watch, await memo("millionaire:watch", 10 * 60_000, () => watchPnl(getDb())));
+          if (n) log(`millionaire: ${n} new bets`);
+        }
       }),
       every("moves:settle", 10 * 60_000, async () => {
         const n = await settleMovesOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
@@ -338,6 +347,12 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         if (m.live || s.live || resolved) log(`smart: ${m.markets} markets with smart money, ${m.live + s.live} live splits, ${m.flagged.length + s.flagged.length} new, ${resolved} scored`);
         await splitAlertsOnce();
       }),
+      // The millionaire watchlist: the top 1,000 wallets by all-time pnl, plus wallet_pnl's, once a day.
+      every("millionaire:watchlist", WATCH_MS, async () => {
+        const n = await watchlistOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
+        log(`millionaire: ${n} wallets with $100K+ all-time on the watchlist`);
+      }),
+      every("millionaire:sync", 2 * 60_000, async () => { await syncMillionaireBets(getDb()); }),
       every("moves:leaderboard", 6 * 3_600_000, async () => {
         const n = await leaderboardOnce(getDb(), clients.polymarket as PolymarketClient);
         log(`moves: ${n} leaderboard wallets tracked`);

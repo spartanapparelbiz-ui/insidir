@@ -100,6 +100,20 @@ async function openPositions(db: Db, ids: Ids): Promise<OpenPosition[]> {
   });
 }
 
+/** Millionaire money on a Polymarket market (lib/millionaire/tiers.ts): open positions and tracked bets, plus the
+ *  watchlist's millionaire bets here ($5K+), tiered by the watchlist's all-time pnl (else wallet_pnl's). */
+async function marketTiers(db: Db, market: string, walletOpen: ReadonlyArray<{ wallet: string; side: "yes" | "no"; dollars: number }>,
+  positions: ReadonlyArray<{ wallet: string | null; side: "yes" | "no"; dollars: number }>, recs: ReadonlyMap<string, { pnl: number | null }>): Promise<MarketTiers> {
+  const bets = (await db.execute(sql`select wallet, outcome_side as side, sum(amount)::float as dollars, (sum(amount * price) / nullif(sum(amount), 0))::float as price
+    from terminal.millionaire_bets where market_id = ${market} and result is null group by wallet, outcome_side`).catch(() => ({ rows: [] }))).rows as Array<{ wallet: string; side: "yes" | "no"; dollars: number; price: number | null }>;
+  const wallets = [...new Set([...walletOpen.map(o => o.wallet), ...positions.map(p => p.wallet).filter((w): w is string => Boolean(w)), ...bets.map(b => b.wallet)])];
+  const watch = wallets.length ? (await db.execute(sql`select wallet, pnl::float as pnl from terminal.millionaire_wallets where wallet in (${sql.join(wallets.map(w => sql`${w}`), sql`, `)})`).catch(() => ({ rows: [] }))).rows as Array<{ wallet: string; pnl: number }> : [];
+  const pnl = new Map<string, number | null>([...recs].map(([w, r]) => [w, r.pnl]));
+  for (const w of watch) pnl.set(w.wallet, Number(w.pnl));
+  return tierMoney([...bets.map(b => ({ ...b, dollars: Number(b.dollars), price: b.price === null ? null : Number(b.price) })), ...walletOpen,
+    ...positions.filter(p => p.wallet).map(p => ({ wallet: p.wallet!, side: p.side, dollars: p.dollars }))], pnl, shortWallet);
+}
+
 /** Proven money (winning trackers and proven wallets), and the big-money split over every open tracked position. */
 async function provenAndBig(db: Db, ids: Ids, now: number, clients: Clients | null, started: number, polyAnswered: boolean): Promise<{ proven: ProvenMoney; big: BigSplit; tiers: MarketTiers | null }> {
   const [positions, trackers, follows, open] = await Promise.all([
@@ -129,8 +143,7 @@ async function provenAndBig(db: Db, ids: Ids, now: number, clients: Clients | nu
     if (f && f.n >= MIN_SETTLED && f.staked > 0) follow.set(w, { returnPct: f.net / f.staked, settled: f.n, winner: isWinner(f) });
   }
   // Millionaire money (lib/millionaire/tiers.ts): Polymarket wallets only, by all-time profit; Kalshi is anonymous.
-  const tiers = ids.polymarket ? tierMoney([...walletOpen, ...positions.filter(p => p.wallet).map(p => ({ wallet: p.wallet!, side: p.side, dollars: p.dollars }))],
-    new Map([...recs].map(([w, r]) => [w, r.pnl]))) : null;
+  const tiers = ids.polymarket ? await marketTiers(db, ids.polymarket, walletOpen, positions, recs) : null;
   return { proven: provenFrom({ positions, walletOpen, trackers, records, follow, short: shortWallet }), big: bigSplitOf(positions), tiers };
 }
 

@@ -27,16 +27,18 @@ test("home page: the millionaires hero, the board an hour late, live numbers, a 
   await expect(head.locator('a[data-unlock="nav"]')).toHaveText("Start for $1");
   if (!phone(page)) for (const l of ["Millionaires", "Record", "Pricing"]) await expect(head.getByRole("link", { name: l })).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("See what Polymarket's millionaires are betting.");
-  await expect(page.locator(".op-hero__sub")).toHaveText("Insidir tracks every big bet on Polymarket and Kalshi and shows you where wallets that have made $1M+ are putting their money.");
+  await expect(page.locator(".op-hero__sub")).toHaveText("Insidir tracks every big bet on Polymarket and Kalshi and shows you, on any market, where wallets that have made $1M+ put their money.");
+  await expect(page.getByTestId("hero-show")).toHaveAttribute("href", "/go");
   await expect(page.getByTestId("read-input")).toHaveAttribute("placeholder", "Paste a Polymarket or Kalshi link, or ask about any market");
   expect((await page.getByTestId("read-input").boundingBox())!.y + 40).toBeLessThan(page.viewportSize()!.height);
-  await expect(page.getByTestId("board-delay")).toContainText("60 minutes delayed. Members see this live.");
+  await expect(page.getByTestId("board-delay")).toContainText("60 minutes delayed.");
+  await expect(page.getByTestId("board-hour")).toBeVisible();
   await expect(page.getByTestId("board-preview").or(page.getByTestId("board-none"))).toBeVisible();
   // Live numbers: the real counts, in the HTML before any animation.
   const n = await q<{ n: number }>("select count(*)::int as n from terminal.moves where source in ('polymarket', 'kalshi') and hidden_at is null");
   await expect(page.getByTestId("stat-bets")).toHaveText(n[0]!.n.toLocaleString("en-US"));
   await expect(page.getByTestId("bento")).toContainText("Millionaire money");
-  for (const t of ["Pings", "Best price", "Unusual bets"]) await expect(page.getByTestId("bento")).toContainText(t);
+  for (const t of ["Pings", "Follow a millionaire", "Best price"]) await expect(page.getByTestId("bento")).toContainText(t);
   await expect(page.locator("#pricing h2")).toHaveText("$1 for 3 days, then $39/month.");
   await expect(page.locator(".op-faq details")).toHaveCount(7);
   await expect(page.getByTestId("sk-advice")).toHaveText("Information, not financial or betting advice. Operated by Aethric LLC.");
@@ -65,18 +67,28 @@ test("home page: the record switches window; under reduced motion the marquee an
   await ctx.close();
 });
 
-test("the Millionaires' board: $1M+ wallets only, a tier badge and never a name; members live, visitors an hour late", async ({ page, context, browser }) => {
-  // E2E-Top's wallet has made $1M+ (Polymarket's leaderboard pnl, as the backfill stores it).
+test("the Millionaires' board: watchlist wallets' $5K+ bets, a tier badge and pnl, never a name; members live, visitors an hour late with the live count", async ({ page, context, browser }) => {
+  // E2E-Top's wallet is on the watchlist with $2.4M all-time (Polymarket's leaderboard pnl); its tracked moves become
+  // millionaire bets the way the worker's sync copies them.
   const TOP = "0xe2e00000000000000000000000000000000000aa";
-  await q("insert into terminal.wallet_pnl (wallet, closed, closed_at_least, pnl, read_at) values ($1, 900, false, 2400000, now()) on conflict (wallet) do update set pnl = 2400000", [TOP]);
+  await q("insert into terminal.millionaire_wallets (wallet, pnl, source, read_at) values ($1, 2400000, 'leaderboard', now()) on conflict (wallet) do update set pnl = 2400000", [TOP]);
+  await q(`insert into terminal.millionaire_bets (id, wallet, market_id, event_title, market_title, outcome, outcome_side, amount, price, pnl, tab, league, category, at)
+    select id, wallet, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, 2400000, tab, league, category, at from terminal.moves
+    where wallet = $1 and source = 'polymarket' and amount >= 5000 and hidden_at is null on conflict (id) do nothing`, [TOP]);
   try {
-    const fresh = await q<{ id: string }>("select id from terminal.moves where wallet = $1 and amount >= 10000 and at > now() - interval '60 minutes' and hidden_at is null", [TOP]);
-    const older = await q<{ id: string }>("select id from terminal.moves where wallet = $1 and amount >= 10000 and at <= now() - interval '60 minutes' and at > now() - interval '7 days' and hidden_at is null", [TOP]);
+    const fresh = await q<{ id: string }>("select id from terminal.millionaire_bets where wallet = $1 and at > now() - interval '60 minutes'", [TOP]);
+    const older = await q<{ id: string }>("select id from terminal.millionaire_bets where wallet = $1 and at <= now() - interval '60 minutes' and at > now() - interval '7 days'", [TOP]);
     await page.goto("/board");
-    await expect(page.getByTestId("board-delay")).toContainText("60 minutes delayed. Members see this live.");
+    await expect(page.getByTestId("board-delay")).toContainText("Members see them as they happen. This board is 60 minutes behind.");
+    await expect(page.getByTestId("board-hour")).toHaveText(String(fresh.length));
     await expect(page.getByTestId("board").locator("li")).toHaveCount(older.length);
-    if (older.length) await expect(page.getByTestId("board").locator(".tier-badge").first()).toHaveText("$1M+");
-    expect(await page.locator("body").innerText()).not.toMatch(/E2E-Top/);
+    if (older.length) {
+      await expect(page.getByTestId("board").locator(".tier-badge").first()).toHaveText("$1M+");
+      await expect(page.getByTestId("board").locator("li").first()).toContainText("+$2.4M all-time");
+    }
+    // Visitors never get the address, short or long.
+    expect(await page.content()).not.toContain(TOP);
+    expect(await page.locator("body").innerText()).not.toMatch(/E2E-Top|0xe2/);
     await page.screenshot({ path: shotName("op-board-visitor", page), fullPage: true });
     const m = await browser.newContext({ viewport: page.viewportSize()! });
     await signIn(m, "proIntl");
@@ -88,7 +100,8 @@ test("the Millionaires' board: $1M+ wallets only, a tier badge and never a name;
     await mp.screenshot({ path: shotName("op-board-member", mp), fullPage: true });
     await m.close();
   } finally {
-    await q("delete from terminal.wallet_pnl where wallet = $1", [TOP]);
+    await q("delete from terminal.millionaire_bets where wallet = $1", [TOP]);
+    await q("delete from terminal.millionaire_wallets where wallet = $1", [TOP]);
   }
   void context;
 });
