@@ -232,6 +232,13 @@
       "when": 1793571142585,
       "tag": "0032_wallet_pnl_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793658047059,
+      "tag": "0033_millionaires",
+      "breakpoints": true
     }
   ]
 }

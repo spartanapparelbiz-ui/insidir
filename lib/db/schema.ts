@@ -50,6 +50,9 @@ export interface UserSettings {
   betOn?: string[];
   /** Dollars per copied move (lib/copies): 10, 50 or 100; DEFAULT_COPY_SIZE when unset. */
   copySize?: 10 | 50 | 100;
+  /** The /go quiz (lib/go): the categories they bet on (lib/brand/categories.ts slugs, first one is their banner), where
+   *  they bet, and their normal bet size. */
+  go?: { categories: string[]; where: string | null; size: string | null } | null;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -847,3 +850,43 @@ export const readSeen = terminal.table("read_seen", {
   wallets: integer("wallets").notNull().default(0),
   seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.userId, t.marketKey] })]);
+
+/** The millionaire watchlist (lib/millionaires): the top wallets by all-time profit on Polymarket's public leaderboard
+ *  (GET /v2/leaderboard?timePeriod=ALL&orderBy=PNL, cursor pages), refreshed once a day. A wallet that falls out of the
+ *  top is removed. Only the wallet, its tier and its profit are kept: never a username or anything about who is behind
+ *  it, and the leaderboard position is not stored. tier: "millionaire" ($1M+ all-time profit) or "pro" ($100K+). */
+export const watchlist = terminal.table("watchlist", {
+  wallet: text("wallet").primaryKey(),
+  tier: text("tier").$type<"millionaire" | "pro">().notNull(),
+  pnl: doublePrecision("pnl").notNull(),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true }).notNull(),
+}, t => [index("watchlist_tier_idx").on(t.tier)]);
+
+/** Every bet of $5K+ by a watchlist wallet (lib/millionaires/bets.ts): the moves poller's Polymarket fills, merged the
+ *  same way as moves (one wallet, one market and outcome, fills within 10 minutes), matched against the watchlist.
+ *  price is the average price paid then; tier is the wallet's tier when it bet; category is lib/brand/categories.ts.
+ *  result is set when the market settles (won / lost / void). */
+export const millionaireBets = terminal.table("millionaire_bets", {
+  id: text("id").primaryKey(),
+  wallet: text("wallet").notNull(),
+  tier: text("tier").$type<"millionaire" | "pro">().notNull(),
+  source: text("source").$type<"polymarket">().notNull(),
+  marketId: text("market_id").notNull(),
+  eventTitle: text("event_title").notNull(),
+  marketTitle: text("market_title").notNull(),
+  outcome: text("outcome").notNull(),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  amount: doublePrecision("amount").notNull(),
+  price: doublePrecision("price").notNull(),
+  category: text("category").notNull(),
+  url: text("url"),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+  lastAt: timestamp("last_at", { withTimezone: true }).notNull(),
+  result: text("result").$type<"won" | "lost" | "void">(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+}, t => [
+  index("millionaire_bets_at_idx").on(t.at),
+  index("millionaire_bets_category_at_idx").on(t.category, t.at),
+  index("millionaire_bets_market_idx").on(t.marketId),
+  index("millionaire_bets_wallet_idx").on(t.wallet),
+]);

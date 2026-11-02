@@ -37,6 +37,7 @@ import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
 import { provenBackfillOnce } from "@/lib/moves/proven-backfill";
+import { refreshWatchlist, WATCHLIST_MS, WatchCache, watchlistAge } from "@/lib/millionaires/watchlist";
 import { avatarsOnce, dedupeOnce, leagueBackfillOnce, repairSwappedOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { historyOnce } from "@/lib/stocks/history";
@@ -225,7 +226,9 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const lastTickAt = new Map<string, number>();
   log(`worker starting (Price gaps ${gaps ? "on" : "off: GAPS_ENABLED is not 1"})`);
   // Big money moves (docs/INSIDIR-V2.md): only with both public clients in place.
-  const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi) : null;
+  // The millionaire watchlist in memory (lib/millionaires/watchlist.ts): the poller counts its wallets' bets from $5K.
+  const watch = new WatchCache();
+  const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi, watch) : null;
   const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
   const sec = SecClient.fromEnv();
   if (!sec) log("stocks: SEC_USER_AGENT not set (name and email), Stocks ingest is off");
@@ -237,8 +240,16 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [
       every("moves", MOVES_MS, async () => {
-        const fresh = await movesOnce(getDb(), poller, directory, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null));
+        const fresh = await movesOnce(getDb(), poller, directory, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null), watch);
         if (fresh.length) log(`moves: ${fresh.length} new`);
+      }),
+      // Checked hourly, refreshed when a day old (so a restart doesn't re-read it, and a missed day catches up).
+      every("millionaires:watchlist", 3_600_000, async () => {
+        const db = getDb(), now = Date.now(), age = await watchlistAge(db);
+        if (age !== null && now - age < WATCHLIST_MS) return;
+        const r = await refreshWatchlist(db, clients.polymarket as PolymarketClient, now);
+        await watch.load(db, now + WATCHLIST_MS);
+        log(`millionaires: watchlist ${r.wallets} wallets, ${r.millionaires} millionaires`);
       }),
       every("moves:settle", 10 * 60_000, async () => {
         const n = await settleMovesOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());

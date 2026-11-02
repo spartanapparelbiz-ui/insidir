@@ -18,12 +18,18 @@ export interface MarketInfo { source: "polymarket" | "kalshi"; marketId: string;
 
 const DAY = 86_400_000;
 
-/** Markets with open moves from the last 60 days, never read or least recently read first. */
+/** Markets with open moves or millionaire bets (lib/millionaires: their "now" price) from the last 60 days, never read
+ *  or least recently read first. */
 async function due(db: Db, now: number, limit: number): Promise<Array<{ source: "polymarket" | "kalshi"; marketId: string }>> {
-  const r = await db.execute(sql`select m.source, m.market_id from terminal.moves m
+  const since = new Date(now - 60 * DAY);
+  const r = await db.execute(sql`select m.source, m.market_id from (
+      select source, market_id from terminal.moves
+        where source in ('polymarket', 'kalshi') and result is null and hidden_at is null and at > ${since}
+      union
+      select source, market_id from terminal.millionaire_bets where result is null and at > ${since}
+    ) m
     left join terminal.market_info i on i.source = m.source and i.market_id = m.market_id
-    where m.source in ('polymarket', 'kalshi') and m.result is null and m.hidden_at is null and m.at > ${new Date(now - 60 * DAY)}
-      and (i.market_id is null or not i.closed)
+    where i.market_id is null or not i.closed
     group by m.source, m.market_id, i.updated_at order by i.updated_at asc nulls first limit ${limit}`);
   return (r.rows as Array<{ source: "polymarket" | "kalshi"; market_id: string }>).map(x => ({ source: x.source, marketId: x.market_id }));
 }

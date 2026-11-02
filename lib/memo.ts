@@ -13,3 +13,6 @@ export function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promi
   if (store.size > 500) for (const [k, v] of store) if (now - v.at > ttlMs) store.delete(k);
   return value;
 }
+
+/** Forgets everything (tests). */
+export function clearMemo(): void { store.clear(); }

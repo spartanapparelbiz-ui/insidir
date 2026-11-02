@@ -3,17 +3,18 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // next/image is only used for trader pictures (components/v2/Avatar.tsx): Polymarket's own image host (lib/moves/avatar.ts
-  // AVATAR_HOST, checked by test/avatar.test.ts). Photos are plain <img>s straight from Unsplash's image CDN, which crops and
-  // sizes them itself (components/Photo.tsx); it's listed here so any next/image use of a photo is allowed too.
+  // next/image serves the brand photos (public/brand/*.jpg, lib/brand/images.ts) as AVIF or WebP at the width each
+  // screen needs, and trader pictures from Polymarket's own image host (lib/moves/avatar.ts AVATAR_HOST, checked by
+  // test/avatar.test.ts). Older pages' photos are plain <img>s from Unsplash's image CDN (components/Photo.tsx).
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "polymarket-upload.s3.us-east-2.amazonaws.com", port: "", pathname: "/**" },
       { protocol: "https", hostname: "images.unsplash.com", port: "", pathname: "/photo-*" },
     ],
-    formats: ["image/webp"],
-    deviceSizes: [96, 192],
-    imageSizes: [40, 80],
+    formats: ["image/avif", "image/webp"],
+    // 96/192 for avatars; the rest for full-bleed photos (the masters are 1672px wide, never upscaled).
+    deviceSizes: [96, 192, 390, 640, 828, 1080, 1280, 1672],
+    imageSizes: [40, 80, 160, 320],
     minimumCacheTTL: 86_400,
     dangerouslyAllowSVG: false,
   },

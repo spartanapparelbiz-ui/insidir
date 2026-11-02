@@ -2,7 +2,8 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
-import { follows, markets, moves, traderRecords, waitlist, walletPnl, type FollowKind } from "@/lib/db/schema";
+import { follows, markets, millionaireBets, moves, traderRecords, waitlist, walletPnl, type FollowKind } from "@/lib/db/schema";
+import { settleBets } from "@/lib/millionaires/bets";
 import type { FillPart, League, Move, Tab, TraderRecord } from "./types";
 import { fromParts, mergeParts } from "./detect";
 import { notComboSql } from "./combos";
@@ -89,12 +90,19 @@ export async function collapsePosition(db: Db, ids: string[], parts: FillPart[] 
 export async function unsettledMarkets(db: Db, before: Date, limit = 300): Promise<Array<{ source: "polymarket" | "kalshi"; marketId: string }>> {
   const rows = await db.selectDistinct({ source: moves.source, marketId: moves.marketId }).from(moves)
     .where(and(isNull(moves.result), lt(moves.at, before), inArray(moves.source, ["polymarket", "kalshi"]))).limit(limit);
-  return rows as Array<{ source: "polymarket" | "kalshi"; marketId: string }>;
+  // Markets that only hold millionaire bets under the moves threshold (lib/millionaires/bets.ts) settle the same way.
+  const left = limit - rows.length;
+  const bets = left > 0 ? await db.selectDistinct({ marketId: millionaireBets.marketId }).from(millionaireBets)
+    .where(and(isNull(millionaireBets.result), lt(millionaireBets.at, before))).limit(limit) : [];
+  const have = new Set(rows.map(r => `${r.source}:${r.marketId}`));
+  const extra = bets.filter(b => !have.has(`polymarket:${b.marketId}`)).slice(0, left).map(b => ({ source: "polymarket" as const, marketId: b.marketId }));
+  return [...rows as Array<{ source: "polymarket" | "kalshi"; marketId: string }>, ...extra];
 }
 
 /** Marks every move in a settled market won or lost (or void when the market was refunded). */
 export async function settleMarket(db: Db, source: "polymarket" | "kalshi", marketId: string, result: "yes" | "no" | "void", at: Date): Promise<void> {
   const w = and(eq(moves.source, source), eq(moves.marketId, marketId), isNull(moves.result));
+  if (source === "polymarket") await settleBets(db, marketId, result, at);
   if (result === "void") { await db.update(moves).set({ result: "void", settledAt: at }).where(w); return; }
   await db.update(moves).set({ result: sql`case when ${moves.outcomeSide} = ${result} then 'won' else 'lost' end`, settledAt: at }).where(w);
 }

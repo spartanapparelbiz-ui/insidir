@@ -754,16 +754,19 @@ export class PolymarketClient implements VenueClient {
     }
   }
 
-  /** One wallet's all-time row on the public leaderboard (GET /v1/leaderboard?timePeriod=ALL&orderBy=PNL&limit=1&user=):
-   *  [{ rank, proxyWallet, userName, vol, pnl, ... }]. Raw; read it with lib/moves/sources.ts readUserPnl (pnl only). */
+  /** One wallet's all-time row on the public leaderboard (GET /v2/leaderboard?timePeriod=ALL&orderBy=PNL&user=):
+   *  { data: { user_id, pnl, volume, rank_pnl, user_name, ... } } (v1 was retired). Raw; read it with
+   *  lib/moves/sources.ts readUserPnl (pnl only). */
   async getLeaderboardUser(user: string, priority: Priority = "normal"): Promise<unknown> {
-    return this.data.json(`${this.dataUrl}/v1/leaderboard${qs({ timePeriod: "ALL", orderBy: "PNL", limit: 1, user: user.toLowerCase() })}`, { priority });
+    return this.data.json(`${this.dataUrl}/v2/leaderboard${qs({ timePeriod: "ALL", orderBy: "PNL", limit: 1, user: user.toLowerCase() })}`, { priority });
   }
 
-  /** One page of the public leaderboard (GET /v1/leaderboard): rank, proxyWallet, userName, vol, pnl. Raw. */
-  async getLeaderboardPage(opts: { timePeriod: "DAY" | "WEEK" | "MONTH" | "ALL"; category?: string; limit?: number; offset?: number; priority?: Priority }): Promise<unknown> {
-    const params = { timePeriod: opts.timePeriod, category: opts.category ?? "OVERALL", orderBy: "PNL", limit: opts.limit ?? 50, offset: opts.offset ?? 0 };
-    return this.data.json(`${this.dataUrl}/v1/leaderboard${qs(params)}`, { priority: opts.priority ?? "normal" });
+  /** One page of the public leaderboard (GET /v2/leaderboard): { data: [{ rank, user_id, pnl, volume, user_name, ... }],
+   *  pagination: { has_more, next_cursor } }. Pages by cursor only (an `offset` is rejected); pass the previous page's
+   *  next_cursor (lib/moves/sources.ts leaderboardCursor). Raw. */
+  async getLeaderboardPage(opts: { timePeriod: "DAY" | "WEEK" | "MONTH" | "ALL"; category?: string; limit?: number; cursor?: string | null; priority?: Priority }): Promise<unknown> {
+    const params = { timePeriod: opts.timePeriod, category: opts.category ?? "OVERALL", orderBy: "PNL", limit: opts.limit ?? 50, cursor: opts.cursor ?? undefined };
+    return this.data.json(`${this.dataUrl}/v2/leaderboard${qs(params)}`, { priority: opts.priority ?? "normal" });
   }
 
   /** A wallet's history, newest first. GET /v2/activity pages by cursor ({data, pagination: {has_more, next_cursor}};
