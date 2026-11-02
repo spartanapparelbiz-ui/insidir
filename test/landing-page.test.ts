@@ -31,37 +31,29 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("is one tool: the headline, the box, what a Read shows, the $1 block, FAQ; nothing else on the page", () => {
-    const src = read("app/page.tsx");
-    expect(read("lib/copy.ts")).toContain('HEADLINE = "Paste any bet. See where the smart money is."');
-    const markers = ['className="hero3 rhome"', "<ReadBox />", 'id="parts-h"', "<DollarBlock ", "<FaqV2 />"];
-    const at = markers.map(m => src.indexOf(m));
-    for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
-    expect([...at].sort((a, b) => a - b)).toEqual(at);
-    for (const gone of ["<TopWallet ", "<NewMoves ", "<OpenNow ", "<MyCopies ", "<ResearchBar ", "<MarketTabs ", "<BoardSection ", "<Laptops ", "PayPrompt", "<HeroCta "]) expect(src, gone).not.toContain(gone);
-    // Members: the box, tonight in their leagues, Your markets, the week.
-    expect(src).toContain('data-testid="member-home"');
-    for (const m of ["<Tonight rows={tonight}", "<YourMarkets list={mine}", "<Week w={week}"]) expect(src).toContain(m);
+  it("is a scroll of stages: hero, the problem, the check, live, markets, proof, pricing, FAQ, final; members get their home", () => {
+    const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
+    expect(src).toContain("<Landing d={d} />");
+    expect(src).toContain("<Dashboard d={d}");
+    const order = ["<Hero />", "<Problem />", "<Check d={d} />", "<Live d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
+    const at = order.map(m => landing.indexOf(m));
+    for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
+    expect([...at].sort((x, y) => x - y)).toEqual(at);
+    expect(read("components/brand/app/Dashboard.tsx")).toContain('data-testid="member-home"');
   });
 
-  it("one CTA, Start for $1; the nav is the tool; no stocks, crypto or Congress in the pitch", async () => {
-    const src = read("app/page.tsx");
-    expect(src).toContain("Start for ${TRIAL.fee}");
-    const nav = read("components/SiteHeader.tsx");
-    expect(nav).toContain('[link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>]');
-    expect(nav).toContain('[link("/", "Read", "/"), link("/settings", "Account", "/account")]');
-    for (const f of ["app/page.tsx", "components/SiteHeader.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
-      expect(read(f), f).not.toMatch(/\b(stocks?|Stocks?|crypto|Crypto|SEC|insider stock|CEO|Congress)\b/);
-    }
-    const copy = await import("@/lib/copy");
-    for (const t of [copy.WHAT_IS, copy.WHAT_IS_TITLE, copy.HEADLINE, ...copy.INCLUDED]) expect(t).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
-    for (const f of ["app/page.tsx", "components/motion/Motion.tsx", "components/read/ReadCard.tsx", "app/pricing/page.tsx"]) expect(read(f), f).not.toMatch(/data-count|countUp/);
-    for (const f of ["components/home/Story.tsx", "components/PageBand.tsx", "components/home/MarketTabs.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
+  it("the hero's words, its two CTAs (Check my bet, Start for $1 → /go), and no stocks, crypto or Congress in the pitch", async () => {
+    const copy = await import("@/lib/brand/copy");
+    expect(copy.HERO.h1).toEqual(["Stop betting", "blind."]);
+    expect(copy.STAGES.final).toEqual(["Bet with the", "millionaires."]);
+    expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
+    const landing = read("components/brand/landing/Landing.tsx");
+    expect(landing).toContain('<Pill href="#check" delay={0.9} data-testid="hero-check">Check my bet</Pill>');
+    expect(landing).toContain('<Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
+    const pitch = [...copy.HERO.h1, ...copy.HERO.sub, ...copy.PROBLEM.rows.flat(), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
+    expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
+    expect(bannedPhrases(pitch)).toEqual([]);
     expect(GET_CTA).toBe("Try 3 days for $1");
-    expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
-    for (const f of ["app/page.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
-      expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|7 days|first week|Pro\b/);
-    }
   });
 
   it("says what Insidir is in one plain sentence: the first FAQ answer, the title and the meta description", async () => {
@@ -123,24 +115,27 @@ describe("home hero ticker", () => {
 });
 
 describe("design system", () => {
-  it("defines every colour in app/tokens.css, only black, white, greys, the gain green and the loss red (each with a darker shade for small text) (tracker covers are photos now); other stylesheets use tokens only", () => {
+  it("older pages: every colour in app/tokens.css; the brand (app/brand.css): only the hero spec's tokens and the data colours", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
-    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
+    const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8"];
+    const brand = read("app/brand.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
+    for (const c of new Set(brand.match(/#[0-9a-f]{3,8}\b/g))) expect(spec, c).toContain(c);
+    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css" && f !== "app/brand.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
       expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
     }
   });
 
-  it("uses one font, Schibsted Grotesk; the serif and older fonts are gone", () => {
+  it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and nothing else)", () => {
     const layout = read("app/layout.tsx");
     expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
-    expect(layout).not.toMatch(/Rufina/);
+    expect(read("lib/brand/fonts.ts")).toMatch(/Plus_Jakarta_Sans/);
     expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
       const src = read(f);
-      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|--font-mono|Plus.Jakarta/);
+      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
     }
   });
 

@@ -39,8 +39,11 @@ describe("polish", () => {
     expect(cumulative([], 4)).toEqual([]);
   });
 
-  it("no stylesheet sets a weight above 600", () => {
-    const files = [...readdirSync("app").filter(f => f.endsWith(".css")).map(f => join("app", f)), "components/app/terminal.css"];
+  it("no stylesheet sets a weight above 600 (the brand's wordmark is the hero spec's 800, nothing else)", () => {
+    const brand = readFileSync("app/brand.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+    expect(brand.match(/font-weight:\s*(700|800|900|bold)/g)).toEqual(["font-weight: 800"]);
+    expect(brand).toMatch(/\.b-logo \{[^}]*font-weight: 800/);
+    const files = [...readdirSync("app").filter(f => f.endsWith(".css") && f !== "brand.css").map(f => join("app", f)), "components/app/terminal.css"];
     for (const f of files) {
       const css = readFileSync(f, "utf8");
       expect(css, f).not.toMatch(/font-weight:\s*(700|800|900|bold)/);

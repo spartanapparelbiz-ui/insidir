@@ -84,9 +84,13 @@ describe.skipIf(!URL0)("millionaires, in Postgres", () => {
     expect(live[1]!.priceNow).toBeCloseTo(0.45); // the NO side
     const late = await recentBets(db, { now: NOW, delayMs: VISITOR_DELAY_MS });
     expect(late.map(b => b.id)).toEqual(["b2", "b4"]);
-    expect(late[0]!.wallet).toBeNull();
+    // A visitor gets every bet but never its side (nor the prices that would give it away, nor the full wallet).
+    const visitor = await recentBets(db, { now: NOW });
+    expect(visitor.map(b => b.id)).toEqual(["b1", "b3", "b2", "b4"]);
+    for (const b of visitor) expect([b.wallet, b.outcome, b.side, b.priceThen, b.priceNow]).toEqual([null, null, null, null, null]);
+    expect(visitor[0]).toMatchObject({ amount: 15_000, tier: "millionaire", pnl: 2_400_000, short: "0x0000…0001" });
 
-    expect(await pulse(db, NOW)).toEqual({ count: 1, window: "hour", wallets: 4, millionaires: 3 });
+    expect(await pulse(db, NOW)).toEqual({ count: 1, window: "hour", wallets: 4, millionaires: 3, today: 35_000 + 10_000 });
     const cats = await liveCategories(db, NOW);
     expect(cats.window).toBe("day");
     expect(cats.list[0]).toMatchObject({ slug: "football", millionaire: 35_000, pro: 8000, markets: 1 });
