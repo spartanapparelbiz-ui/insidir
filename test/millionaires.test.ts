@@ -3,7 +3,7 @@
  * counting watchlist wallets' bets from $5K while everyone else stays at the moves threshold, and every market
  * landing in exactly one category with a photo. */
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, CATEGORY_SLUGS, categoryOf, categoryPhoto, isCategory } from "@/lib/brand/categories";
+import { CATEGORIES, CATEGORY_SLUGS, categoryOf, categoryPhoto, categoryPhotos, isCategory } from "@/lib/brand/categories";
 import { FALLBACK, PHOTOS, SLOT } from "@/lib/brand/images";
 import { betsFrom } from "@/lib/millionaires/bets";
 import { leaningSide, type MarketMoney } from "@/lib/millionaires/queries";
@@ -151,6 +151,12 @@ describe("category map", () => {
     }
     for (const [slot, file] of Object.entries(SLOT)) expect(PHOTOS[file], slot).toBeTruthy();
     for (const file of Object.values(FALLBACK)) expect(PHOTOS[file]).toBeTruthy();
+  });
+
+  it("a row of cards never shows the same photo twice while a fallback is free", () => {
+    expect(categoryPhotos(["soccer", "football"]).map(p => p.src)).toEqual(["/brand/soccer.jpg", "/brand/baseball.jpg"]);
+    expect(categoryPhotos(["football"]).map(p => p.src)).toEqual(["/brand/soccer.jpg"]);
+    expect(new Set(categoryPhotos(["politics", "elections", "markets"]).map(p => p.src)).size).toBe(2); // elections' fallbacks are both taken
   });
 
   it("the hero master is small enough to stay under 250KB as delivered", () => {

@@ -1,39 +1,46 @@
-/* The brand's words: said once here, used by the landing, /go, the Read and the member home. Prices always from
- * lib/plans.ts. Never "guaranteed" or "risk-free" (test/compliance.test.ts). */
+/* The brand's words, said once here and used by the landing, /go, the Read and the member home. Landing rules: section
+ * headlines of six words or fewer, at most one sentence under each, numbers over adjectives, no paragraphs. Prices always
+ * from lib/plans.ts. Never "guaranteed" or "risk-free" (test/compliance.test.ts). */
 import { PLANS, TRIAL } from "@/lib/plans";
 
-export const H1 = { before: "Bet with the ", accent: "millionaires", after: "." };
-export const HERO_SUB = "Insidir tracks every big bet on Polymarket and Kalshi and shows you where wallets that have made $1M+ put their money.";
-export const BASE_STRIP = "Reads every market on Polymarket · Kalshi";
+export const FIRST = { before: "See where ", accent: "millionaires", after: " are betting. Live." };
+export const ASK_PLACEHOLDER = "Paste any Polymarket or Kalshi bet";
+export const ASK_FREE = "One free Read, no account.";
 export const START = `Start for $${TRIAL.fee}`;
-export const PRICE_LINE = `$${TRIAL.fee} for your first ${TRIAL.days} days, then $${PLANS.insidir.price}/month. Cancel anytime.`;
-export const DELAY_LABEL = "60-minute delay";
+export const PRICE_LINE = `for ${TRIAL.days} days, then $${PLANS.insidir.price}/month. Cancel anytime.`;
 export const PAST = "Past results, not a promise.";
-export const LOSSES = "Losses shown on the record.";
 export const LEGAL = "Information, not financial or betting advice. Operated by Aethric LLC.";
 
+/** Section heads: label, headline (≤ 6 words, `accent` is the one orange word), one line. */
+export const SCENES = {
+  mark: { line: "Where the money is." },
+  markets: { label: "Markets", before: "Every market people ", accent: "bet", after: " on." },
+  how: { label: "How it works", before: "One paste. The whole ", accent: "market", after: "." },
+  proof: { label: "The record" },
+  features: { label: "Features", before: "Everything you check before ", accent: "betting", after: "." },
+  final: { before: "Ready to see where the ", accent: "money", after: " is?" },
+} as const;
+
 export const STEPS = [
-  { k: "Paste", t: "Paste any market.", d: "A Polymarket or Kalshi link, or the market in plain words. Or tap any market on the board." },
-  { k: "Read", t: "Read the money.", d: "Where wallets that made $1M+ are, how many of them, the big bets of the last day and the best price now." },
-  { k: "Bet smarter", t: "Bet with your eyes open.", d: "Follow the wallets you trust and get pinged the second they bet. You decide; we show the data." },
+  { k: "Paste", t: "Paste any market.", d: "A link, a few words, or a tap on the board." },
+  { k: "Read", t: "Read the money.", d: "$1M+ wallets per side, counted." },
+  { k: "Bet smarter", t: "Bet with eyes open.", d: "Best price, and a ping when they move." },
 ] as const;
 
 export const FEATURES = [
-  { k: "money", t: "Millionaire money", d: "Dollars on each side from wallets with $1M+ in all-time profit, and how many wallets. Pro wallets ($100K+) shown apart." },
-  { k: "pings", t: "Pings", d: "A push the moment a millionaire bets $5K or more in the categories you pick." },
-  { k: "follow", t: "Follow a millionaire", d: "Pick a wallet by its record, not its name, and see every bet it makes." },
-  { k: "price", t: "Best price", d: "Kalshi and Polymarket side by side. In the US, Kalshi only." },
+  { k: "money", t: "Millionaire money", d: "Dollars per side from $1M+ wallets." },
+  { k: "pings", t: "Pings", d: "A push when a millionaire bets $5K+." },
+  { k: "follow", t: "Follow a millionaire", d: "Pick a wallet by its record." },
+  { k: "price", t: "Best price", d: "Kalshi and Polymarket, side by side." },
 ] as const;
 
+/** Five questions, one sentence each. */
 export const FAQ: Array<{ id: string; q: string; a: string }> = [
-  { id: "what", q: "What is Insidir?", a: HERO_SUB + " Paste any market and see the millionaire money on each side, the big bets of the last day and the best price." },
-  { id: "who-counts", q: "Who counts as a millionaire?", a: "A Polymarket wallet with $1M or more in all-time profit on Polymarket's public leaderboard. We watch the top 1,000 wallets by all-time profit, re-read every day: $1M+ are Millionaires, $100K+ are Pro. A bet counts from $5,000." },
-  { id: "who-wallet", q: "Do you say who is behind a wallet?", a: "No. A wallet is shown by its tier and short address only. We never show a username or a rank, and never try to identify the person behind it." },
-  { id: "delay", q: "Is it live?", a: "For members, yes: bets show as they happen. Visitors see the board 60 minutes late, labeled." },
-  { id: "kalshi", q: "What about Kalshi?", a: "Kalshi trades are anonymous, so millionaire money comes from Polymarket wallets. Every Read shows Kalshi's price, and in the US Open goes to Kalshi." },
-  { id: "advice", q: "Is this betting advice?", a: "No. Insidir shows what the data says right now. Millionaires lose bets too; every loss stays on the record. You decide what to bet." },
-  { id: "cancel", q: "How do I cancel?", a: `In Account, any time. Cancel in the first ${TRIAL.days} days and you only pay the $${TRIAL.fee}. After that it's $${PLANS.insidir.price}/month and you keep access until the month you paid for ends.` },
-  { id: "who", q: "Who's behind it?", a: "Insidir is built by Aethric LLC, Pompano Beach, FL. Write to hello@aethric.llc and a person will answer." },
+  { id: "who-counts", q: "Who counts as a millionaire?", a: "A Polymarket wallet with $1M+ all-time profit on the public leaderboard; we watch the top 1,000 daily, and $100K+ wallets show as Pro." },
+  { id: "who-wallet", q: "Do you say who is behind a wallet?", a: "No: a wallet is its tier and a short address, never a username, a rank or a person." },
+  { id: "kalshi", q: "What about Kalshi?", a: "Kalshi trades are anonymous, so millionaire money comes from Polymarket wallets, and every Read shows Kalshi's price (US: Kalshi only)." },
+  { id: "advice", q: "Is this betting advice?", a: "No: Insidir shows the data, millionaires lose bets too, and every loss stays on the record." },
+  { id: "cancel", q: "How do I cancel?", a: `In Account, any time: cancel in the first ${TRIAL.days} days and you pay only the $${TRIAL.fee}, then it's $${PLANS.insidir.price}/month.` },
 ];
 
 export const faqLd = (): string => JSON.stringify({

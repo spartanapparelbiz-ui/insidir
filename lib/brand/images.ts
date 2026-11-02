@@ -32,9 +32,12 @@ export const PHOTOS: Record<PhotoFile, Photo> = {
 export type Slot = "hero" | "cta" | "markets" | "space" | "world";
 export const SLOT: Record<Slot, PhotoFile> = { hero: "hero", cta: "cta", markets: "markets", space: "hurricane", world: "racing" };
 
-/** Slots and categories using a related photo until their own arrives (shown in the pull request, kept honest here). */
-export const FALLBACK: Readonly<Record<string, PhotoFile>> = {
-  space: "hurricane", world: "racing", culture: "racing", elections: "politics", football: "soccer", hockey: "baseball", weather: "cta",
+/** Slots and categories using a related photo until their own arrives (shown in the pull request, kept honest here):
+ *  nearest first. A row of cards takes the first one no other card in it uses (categoryPhotos). */
+export const FALLBACKS: Readonly<Record<string, readonly PhotoFile[]>> = {
+  space: ["hurricane", "cta"], world: ["racing", "markets", "hurricane"], culture: ["racing", "markets"], elections: ["politics", "markets"],
+  football: ["soccer", "baseball"], hockey: ["baseball", "soccer"], weather: ["cta", "hurricane"],
 };
+export const FALLBACK: Readonly<Record<string, PhotoFile>> = Object.fromEntries(Object.entries(FALLBACKS).map(([k, v]) => [k, v[0]!]));
 
 export const slotPhoto = (s: Slot): Photo => PHOTOS[SLOT[s]];

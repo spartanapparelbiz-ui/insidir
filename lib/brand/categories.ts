@@ -4,7 +4,7 @@
  * is Hurricane, not Weather; a Fed market is Markets, not Politics). */
 import { sportsLeagueOf } from "@/lib/moves/classify";
 import type { League } from "@/lib/moves/types";
-import { FALLBACK, PHOTOS, type Photo, type PhotoFile } from "./images";
+import { FALLBACK, FALLBACKS, PHOTOS, type Photo, type PhotoFile } from "./images";
 
 export const CATEGORY_SLUGS = [
   "elections", "politics", "football", "basketball", "soccer", "baseball", "tennis", "hockey", "golf", "racing",
@@ -44,6 +44,18 @@ export const category = (slug: CategorySlug): Category => BY_SLUG.get(slug)!;
 export function categoryPhoto(slug: CategorySlug): Photo {
   const own = (slug in PHOTOS ? slug : FALLBACK[slug] ?? "markets") as PhotoFile;
   return PHOTOS[own];
+}
+
+/** Photos for a row of categories shown together: each its own, else its first fallback no other card uses yet. */
+export function categoryPhotos(slugs: readonly CategorySlug[]): Photo[] {
+  const used = new Set<PhotoFile>(slugs.filter(s => s in PHOTOS) as PhotoFile[]);
+  return slugs.map(slug => {
+    if (slug in PHOTOS) return PHOTOS[slug as PhotoFile];
+    const list = FALLBACKS[slug] ?? ["markets"];
+    const pick = list.find(f => !used.has(f)) ?? list[0]!;
+    used.add(pick);
+    return PHOTOS[pick];
+  });
 }
 
 const LEAGUE_CATEGORY: Partial<Record<League, CategorySlug>> = { NFL: "football", NBA: "basketball", MLB: "baseball", NHL: "hockey", soccer: "soccer", tennis: "tennis", golf: "golf" };

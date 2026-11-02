@@ -1,11 +1,12 @@
-/* The nav over the hero: mono links left (MARKETS · BOARD · RECORD · FAQ), the logo centred, Log in and Start for $1
- * right. On phones: logo left, the Start button right (the links are in the footer). */
+/* The nav: fixed, clear over the first screen, a glass bar once you scroll past it (data-glass, set by the scroll
+ * engine). Mono links left (MARKETS · BOARD · RECORD · FAQ), the logo centred, Log in and Start for $1 right. On phones:
+ * logo left, Start right; the links are in the footer. */
 import { START } from "@/lib/brand/copy";
 import { BrandLogo } from "./Logo";
 
-export function BrandNav({ startHref = "/go" }: { startHref?: string }) {
+export function BrandNav({ startHref = "/go", glass = false }: { startHref?: string; glass?: boolean }) {
   return (
-    <header className="b-nav" data-testid="brand-nav">
+    <header className="b-nav" data-nav="" data-glass={glass ? "true" : "false"} data-testid="brand-nav">
       <div className="b-wrap b-nav__in">
         <nav className="b-nav__links" aria-label="Main">
           <a href="/markets">Markets</a><a href="/board">Board</a><a href="/results">Record</a><a href="/#faq">FAQ</a>
@@ -13,7 +14,7 @@ export function BrandNav({ startHref = "/go" }: { startHref?: string }) {
         <span className="b-nav__logo"><BrandLogo /></span>
         <span className="b-nav__right">
           <a className="b-btn b-btn--ghost b-btn--sm b-nav__login" href="/login">Log in</a>
-          <a className="b-btn b-btn--sm" href={startHref} data-testid="nav-start" data-checkout="nav">{START} <span className="b-arrow" aria-hidden="true">↗</span></a>
+          <a className="b-btn b-btn--sm" href={startHref} data-testid="nav-start" data-checkout="nav">{START} <span aria-hidden="true">→</span></a>
         </span>
       </div>
     </header>

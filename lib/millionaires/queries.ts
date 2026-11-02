@@ -1,6 +1,6 @@
 /* What the site shows about millionaire bets, all from terminal.millionaire_bets (lib/millionaires/bets.ts) and
- * terminal.watchlist, with "now" prices from terminal.market_info. Visitors see bets VISITOR_DELAY_MS late (the caller
- * passes the delay); counts and totals are live. Wallets leave here as their tier and a shortened address, plus the
+ * terminal.watchlist, with "now" prices from terminal.market_info. Visitors see bets live with the side removed on the
+ * server (redact): when, how much, the wallet's profit tier and the market are real; which side is never sent. Wallets leave here as their tier and a shortened address, plus the
  * full address only where a member can follow it. Server only. */
 import { sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
@@ -10,6 +10,7 @@ import { trackerFollowAll } from "@/lib/follow/records";
 import { memo } from "@/lib/memo";
 import { shortWallet, type Tier } from "./watchlist";
 
+/** Visitors see the feed live with the side hidden (redact); the delay is kept for callers that want a late board. */
 export const VISITOR_DELAY_MS = 60 * 60_000;
 const HOUR = 3_600_000, DAY = 86_400_000;
 
@@ -23,11 +24,15 @@ export interface BoardBet {
   marketId: string;
   title: string;
   event: string;
-  outcome: string;
-  side: "yes" | "no";
+  /** The wallet's all-time profit (the watchlist's; null once it left the list). */
+  pnl: number | null;
+  /** What they bought. Null for visitors (redact): the side is the one thing a visitor doesn't get, and its prices
+   *  would give it away, so they go too. */
+  outcome: string | null;
+  side: "yes" | "no" | null;
   amount: number;
   /** The side's average price when the bet was made, and now (null when not read yet), 0..1. */
-  priceThen: number;
+  priceThen: number | null;
   priceNow: number | null;
   closed: boolean;
   at: number;
@@ -45,6 +50,7 @@ function toBet(r: Row, member: boolean): BoardBet {
   return {
     id: String(r.id), short: shortWallet(String(r.wallet)), wallet: member ? String(r.wallet) : null, tier: r.tier === "millionaire" ? "millionaire" : "pro",
     category: isCategory(cat) ? cat : "world", marketId: String(r.market_id), title: String(r.market_title), event: String(r.event_title),
+    pnl: r.pnl === null || r.pnl === undefined ? null : n(r.pnl),
     outcome: String(r.outcome), side, amount: n(r.amount), priceThen: n(r.price), priceNow: yes === null ? null : side === "no" ? 1 - yes : yes,
     closed: Boolean(r.closed), at: t(r.at), url: (r.url as string | null) ?? null,
   };
@@ -60,6 +66,8 @@ export interface BetFilter {
   tier?: Tier;
   marketId?: string;
   member?: boolean;
+  /** Keep the side for a visitor (the free Read's own market only). */
+  withSide?: boolean;
   /** Only bets in markets still open. */
   open?: boolean;
   since?: number;
@@ -74,11 +82,15 @@ export async function recentBets(db: Db, f: BetFilter): Promise<BoardBet[]> {
   if (f.tier) w.push(sql`b.tier = ${f.tier}`);
   if (f.marketId) w.push(sql`b.market_id = ${f.marketId}`);
   if (f.open) w.push(sql`b.result is null and (i.closed is null or not i.closed)`);
-  const r = await db.execute(sql`select b.*, i.yes_price, coalesce(i.closed, false) as closed from terminal.millionaire_bets b
+  const r = await db.execute(sql`select b.*, i.yes_price, coalesce(i.closed, false) as closed, w.pnl from terminal.millionaire_bets b
     left join terminal.market_info i on i.source = b.source and i.market_id = b.market_id
+    left join terminal.watchlist w on w.wallet = b.wallet
     where ${sql.join(w.map(x => sql`(${x})`), sql` and `)} order by b.at desc limit ${f.limit ?? 20}`);
-  return (r.rows as Row[]).map(x => toBet(x, Boolean(f.member)));
+  return (r.rows as Row[]).map(x => toBet(x, Boolean(f.member))).map(b => (f.member || f.withSide ? b : redact(b)));
 }
+
+/** A bet as a visitor gets it: everything but the side (and the prices that would give the side away). */
+export const redact = (b: BoardBet): BoardBet => ({ ...b, outcome: null, side: null, priceThen: null, priceNow: null, wallet: null });
 
 export interface Pulse {
   /** Millionaire-tier bets in the window, and which window it is (the last hour, or today when the hour had none). */
@@ -86,6 +98,8 @@ export interface Pulse {
   window: "hour" | "day";
   wallets: number;
   millionaires: number;
+  /** Dollars millionaire-tier wallets bet in the last 24 hours. */
+  today: number;
 }
 
 /** The live counter and the watchlist's size. */
@@ -94,11 +108,12 @@ export function pulse(db: Db, now: number): Promise<Pulse> {
     const r = (await db.execute(sql`select
         count(*) filter (where tier = 'millionaire' and at > ${new Date(now - HOUR)})::int as hour,
         count(*) filter (where tier = 'millionaire' and at > ${new Date(now - DAY)})::int as day,
+        coalesce(sum(amount) filter (where tier = 'millionaire'), 0)::float as today,
         (select count(*)::int from terminal.watchlist) as wallets,
         (select count(*)::int from terminal.watchlist where tier = 'millionaire') as millionaires
       from terminal.millionaire_bets where at > ${new Date(now - DAY)}`)).rows[0] as Row;
     const hour = n(r.hour);
-    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires) };
+    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today) };
   });
 }
 

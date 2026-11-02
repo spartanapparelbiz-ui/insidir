@@ -1,53 +1,77 @@
-/* The landing page (visitors): one cinematic scroll over the brand photos. Every number on it is live from
- * lib/brand/landing.ts; a section with nothing real to show says so or steps aside. */
-import { category as categoryInfo, categoryPhoto } from "@/lib/brand/categories";
-import { BASE_STRIP, DELAY_LABEL, FAQ, FEATURES, H1, HERO_SUB, LOSSES, PAST, PRICE_LINE, START, faqLd } from "@/lib/brand/copy";
+/* The landing page: a scroll story over the brand photos. The first screen is the product, working: the ask box, the
+ * live feed, and a free Read that builds itself. Then the mark, Markets, How it works, Proof, Features, Pricing, FAQ and
+ * the final call. Server-rendered complete and at rest (data-* hooks); components/brand/landing/Motion.tsx animates it.
+ * Every number is live from lib/brand/landing.ts; a scene with nothing real to show says so or steps aside. */
+import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
+import { ASK_FREE, ASK_PLACEHOLDER, FAQ, FEATURES, FIRST, PAST, PRICE_LINE, SCENES, START, STEPS, faqLd } from "@/lib/brand/copy";
 import { slotPhoto } from "@/lib/brand/images";
 import type { LandingData } from "@/lib/brand/landing";
 import { shortWallet } from "@/lib/millionaires/watchlist";
 import { dollars } from "@/lib/money";
-import { PLANS, TRIAL } from "@/lib/plans";
-import { BetRow } from "../BetRow";
+import { TRIAL } from "@/lib/plans";
+import { AskBox } from "../AskBox";
 import { BrandImage } from "../BrandImage";
-import { Btn, cents, SecLabel, Side, TierBadge } from "../Bits";
-import { LiveBoard, LivePill } from "../Live";
+import { Btn, cents, Num, SecLabel, signedDollars, TierBadge } from "../Bits";
+import { LiveFeed } from "../LiveFeed";
 import { MoneyCard } from "../MoneyCard";
 import { BrandFoot, BrandNav } from "../Nav";
-import { Rise } from "../motion";
-import { HowSteps } from "./How";
+import { PayMoments } from "../PayMoments";
+import { Faq } from "./Faq";
+import { LandingMotion } from "./Motion";
 
-const readHref = (marketId: string) => `/read/open?pick=polymarket:${marketId}`;
-const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
+/** The brackets mark, one L per SVG so each can travel on its own. */
+const BracketA = () => <svg viewBox="0 0 64 64" aria-hidden="true" fill="currentColor"><rect x="0" y="0" width="40" height="18" /><rect x="0" y="0" width="18" height="46" /></svg>;
+const BracketB = () => <svg viewBox="0 0 64 64" aria-hidden="true" fill="currentColor"><rect x="46" y="18" width="18" height="46" /><rect x="24" y="46" width="40" height="18" /></svg>;
 
-function Hero({ d }: { d: LandingData }) {
+function Head({ label, before, accent, after, id }: { label: string; before: string; accent: string; after: string; id: string }) {
   return (
-    <BrandImage as="section" photo={slotPhoto("hero")} sizes="100vw" priority zoom="hero" className="b-hero" data-testid="hero">
-      <div className="b-hero__shade" aria-hidden="true" />
-      <div className="b-wrap b-hero__grid">
-        <div className="b-hero__left">
-          <LivePill initial={d.pulse} />
-          <h1 className="b-h1">{H1.before}<span className="b-grad">{H1.accent}</span>{H1.after}</h1>
-        </div>
-        <div className="b-hero__right">
-          <p>{HERO_SUB}</p>
-          <Btn href="/go" data-testid="hero-cta" data-checkout="hero">Show me</Btn>
-        </div>
-      </div>
-      <div className="b-hero__base"><div className="b-wrap"><span className="b-label">{BASE_STRIP}</span></div></div>
-    </BrandImage>
+    <div className="b-sec__head">
+      <SecLabel>{label}</SecLabel>
+      <h2 id={id} className="b-h2" data-split="">{before}<span className="b-grad">{accent}</span>{after}</h2>
+    </div>
   );
 }
 
-function Board({ d }: { d: LandingData }) {
+function First({ d }: { d: LandingData }) {
   return (
-    <section className="b-board" aria-labelledby="board-h" data-testid="live-board">
-      <div className="b-wrap">
-        <div className="b-board__head">
-          <h2 id="board-h" className="b-label"><span className="b-dot" aria-hidden="true" /> Millionaire bets, live board</h2>
-          {d.delayed ? <span className="b-delay" data-testid="board-delay">{DELAY_LABEL}</span> : null}
+    <section className="b-first" data-scene="first" aria-labelledby="first-h" data-testid="first">
+      <div className="b-first__bg" aria-hidden="true">
+        <div data-pushbg="" style={{ position: "absolute", inset: 0 }}>
+          <BrandImage photo={slotPhoto("hero")} sizes="100vw" priority parallax={false} alt="" />
         </div>
-        <LiveBoard initial={{ now: d.now, pulse: d.pulse, bets: d.bets }} n={5} rowHref={b => readHref(b.marketId)}
-          empty="No millionaire bets in the last hours yet. The board fills as the watchlist bets." />
+        <div className="b-first__shade" />
+      </div>
+      <div className="b-wrap b-first__in">
+        <div className="b-first__main">
+          <h1 id="first-h" className="b-first__h" data-intro="">{FIRST.before}<span className="b-grad">{FIRST.accent}</span>{FIRST.after}</h1>
+          <div data-intro=""><AskBox chips={d.chips} placeholder={ASK_PLACEHOLDER} /></div>
+          <p className="b-small" data-intro="">{ASK_FREE}</p>
+          {d.market ? (
+            <div data-intro="" style={{ display: "grid", gap: 8, maxWidth: 620 }}>
+              <span className="b-label"><span className="b-dot" aria-hidden="true" /> Live Read · most millionaire money right now</span>
+              <MoneyCard m={d.market} positions={d.positions} build testid="aha-read"
+                footer={<a className="b-btn b-btn--ghost b-btn--sm" href={`/read/open?pick=polymarket:${d.market.marketId}`} style={{ justifySelf: "start" }}>Open the full Read →</a>} />
+            </div>
+          ) : null}
+        </div>
+        <div data-intro="">
+          <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.bets }} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Mark() {
+  return (
+    <section className="b-mark" data-scene="mark" aria-label="Where the money is" data-testid="mark">
+      <div className="b-mark__beam" data-mark-beam="" />
+      <div className="b-mark__in">
+        <div className="b-mark__svg" style={{ position: "relative" }}>
+          <span data-bracket="a" style={{ position: "absolute", inset: 0 }}><BracketA /></span>
+          <span data-bracket="b" style={{ position: "absolute", inset: 0 }}><BracketB /></span>
+        </div>
+        <p className="b-mark__line" data-mark-line="">{SCENES.mark.line}</p>
       </div>
     </section>
   );
@@ -55,43 +79,64 @@ function Board({ d }: { d: LandingData }) {
 
 function Markets({ d }: { d: LandingData }) {
   const list = d.categories.list;
+  const photos = categoryPhotos(list.map(c => c.slug));
+  const when = d.categories.window === "day" ? "today" : "this week";
   return (
-    <section className="b-sec" id="markets" aria-labelledby="markets-h" data-testid="markets">
-      <div className="b-wrap">
-        <Rise className="b-sec__head"><SecLabel>Markets</SecLabel><h2 id="markets-h" className="b-h2">Every market people <span className="b-grad">bet</span> on.</h2></Rise>
-        {list.length ? (
-          <div className="b-cards" data-testid="category-cards">
-            {list.map(c => (
-              <BrandImage key={c.slug} as="a" href={`/markets/${c.slug}`} photo={categoryPhoto(c.slug)} sizes="(min-width: 1100px) 300px, (min-width: 640px) 40vw, 72vw" fade zoom
-                className="b-ccard" data-testid="category-card" alt="">
-                <span style={{ display: "grid" }}>
-                  <h3 className="b-ccard__name">{categoryInfo(c.slug).name}</h3>
-                  <span className="b-mono b-ccard__line">
-                    {c.millionaire ? `${dollars(c.millionaire)} millionaire money` : `${dollars(c.pro)} Pro money`} {d.categories.window === "day" ? "today" : "this week"} · {c.markets} {c.markets === 1 ? "market" : "markets"}
-                  </span>
-                </span>
+    <section className="b-sec b-scene" data-scene="markets" aria-labelledby="markets-h" data-testid="markets">
+      <div className="b-wrap"><Head id="markets-h" label={SCENES.markets.label} before={SCENES.markets.before} accent={SCENES.markets.accent} after={SCENES.markets.after} /></div>
+      {list.length ? (
+        <div className="b-hwrap">
+          <div className="b-cards" data-hrow="" data-testid="category-cards">
+            {list.map((c, i) => (
+              <BrandImage key={c.slug} as="a" href={`/markets/${c.slug}`} photo={photos[i]!} sizes="(min-width: 768px) 320px, 72vw" fade className="b-ccard" data-testid="category-card" alt="">
+                <h3 className="b-ccard__name">{categoryInfo(c.slug).name}</h3>
+                <span className="b-ccard__line">{c.millionaire ? `${dollars(c.millionaire)} millionaire money ${when}` : `${dollars(c.pro)} Pro money ${when}`}</span>
               </BrandImage>
             ))}
           </div>
-        ) : <p className="b-muted">No category has live millionaire money right now.</p>}
-      </div>
+        </div>
+      ) : <div className="b-wrap"><p className="b-muted">No category has live millionaire money right now.</p></div>}
     </section>
   );
 }
 
 function How({ d }: { d: LandingData }) {
-  const stage = (
-    <BrandImage photo={slotPhoto("markets")} sizes="(min-width: 900px) 58vw, 100vw" zoom className="b-how__stage" data-testid="how-stage">
-      {d.market ? <MoneyCard m={d.market} testid="how-read" /> : (
-        <div className="b-read b-glass b-glass--solid"><span className="b-label">The Read</span><p className="b-read__q">Paste a market to see its millionaire money.</p></div>
-      )}
-    </BrandImage>
-  );
+  const market = d.market;
+  const ping = d.biggest;
   return (
-    <section className="b-sec" aria-labelledby="how-h" data-testid="how">
+    <section className="b-sec b-scene" data-scene="how" aria-labelledby="how-h" data-testid="how">
       <div className="b-wrap">
-        <Rise className="b-sec__head"><SecLabel>How it works</SecLabel><h2 id="how-h" className="b-h2">One paste. The whole <span className="b-grad">market</span>.</h2></Rise>
-        <HowSteps stage={stage} />
+        <Head id="how-h" label={SCENES.how.label} before={SCENES.how.before} accent={SCENES.how.accent} after={SCENES.how.after} />
+        <div className="b-how">
+          <ol className="b-steps" data-testid="how-steps">
+            {STEPS.map((s, i) => (
+              <li key={s.k} className="b-step" data-step={i} data-on={i === 0 ? "true" : "false"}>
+                <span className="b-label">0{i + 1} · {s.k}</span>
+                <h3>{s.t}</h3>
+                <p>{s.d}</p>
+              </li>
+            ))}
+          </ol>
+          <BrandImage photo={slotPhoto("markets")} sizes="(min-width: 900px) 58vw, 100vw" className="b-how__stage" data-testid="how-stage">
+            <div className="b-how__panel">
+              <div className="b-how__pane" data-pane="0">
+                <div className="b-ask" aria-hidden="true"><span className="b-typed" data-typed={market?.title ?? "Chiefs vs. Bills"} style={{ flex: 1, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{market?.title ?? "Chiefs vs. Bills"}</span><span className="b-btn" style={{ minHeight: 48 }}>→</span></div>
+              </div>
+              <div className="b-how__pane" data-pane="1" hidden>
+                {market ? <MoneyCard m={market} positions={d.positions} testid="how-read" /> : <div className="b-read b-glass b-glass--solid"><p className="b-read__q">Paste a market to read its money.</p></div>}
+              </div>
+              <div className="b-how__pane" data-pane="2" hidden>
+                {market ? <MoneyCard m={market} testid="how-open" footer={<span className="b-open" data-open="">Open on Kalshi ↗</span>} /> : null}
+              </div>
+            </div>
+            {ping ? (
+              <div className="b-ping b-glass b-glass--solid" data-ping="" data-testid="how-ping">
+                <span className="b-label"><span className="b-dot" aria-hidden="true" /> Insidir · ping</span>
+                <span>A {ping.pnl !== null ? `${signedDollars(ping.pnl)} ` : ""}wallet just bet <b className="b-mono">{dollars(ping.amount)}</b> on {ping.title}</span>
+              </div>
+            ) : null}
+          </BrandImage>
+        </div>
       </div>
     </section>
   );
@@ -101,55 +146,57 @@ function Proof({ d }: { d: LandingData }) {
   if (!d.proof) return null;
   const r = d.proof.record;
   return (
-    <BrandImage as="section" photo={slotPhoto("space")} sizes="100vw" zoom className="b-over" data-testid="proof" aria-label="The record">
+    <BrandImage as="section" photo={slotPhoto("space")} sizes="100vw" className="b-over" data-testid="proof" aria-label="The record">
       <div className="b-wrap">
-        <Rise className="b-proof b-glass b-glass--solid">
-          <SecLabel>The record</SecLabel>
-          <p className="b-proof__stat">$100 on every {d.proof.label}: <span className={r.net >= 0 ? "b-up" : "b-down"} data-testid="proof-net">{signed(r.net)}</span> over {r.n.toLocaleString("en-US")} settled.</p>
-          <p className="b-muted" style={{ margin: 0 }}>{r.won} won, {r.lost} lost, at the price we showed plus a cent. {PAST} {LOSSES}</p>
-          <div><Btn href="/results" ghost small>See the record</Btn></div>
-        </Rise>
+        <div className="b-proof b-glass b-glass--solid" data-rise="">
+          <SecLabel>{SCENES.proof.label}</SecLabel>
+          <p className="b-proof__stat"><Num value={Math.round(r.net)} format="usd-signed" className={r.net >= 0 ? "b-up" : "b-down"} data-testid="proof-net" data-count="">{`${r.net >= 0 ? "+" : "−"}$${Math.abs(Math.round(r.net)).toLocaleString("en-US")}`}</Num></p>
+          <p className="b-proof__sub">$100 on every {d.proof.label} · <span className="b-mono">{r.n.toLocaleString("en-US")}</span> settled</p>
+          <p className="b-small">{PAST}</p>
+        </div>
       </div>
     </BrandImage>
   );
 }
 
 function Features({ d }: { d: LandingData }) {
-  const bet = d.bets[0] ?? null;
+  const bet = d.biggest;
   const crop: Record<string, React.ReactNode> = {
-    money: d.market ? <MoneyCard m={d.market} className="b-crop" testid="crop-money" /> : null,
+    money: d.market ? (
+      <div className="b-crop" data-testid="crop-money">
+        <span className="b-small">{d.market.title}</span>
+        <div className="b-kv"><span className="b-label">Millionaire money</span><span className="b-mono">{dollars(d.market.millionaire.yes.dollars + d.market.millionaire.no.dollars)}</span></div>
+        <div className="b-kv"><span className="b-label">Wallets</span><span className="b-mono">{d.market.millionaire.yes.wallets + d.market.millionaire.no.wallets}</span></div>
+      </div>
+    ) : null,
     pings: bet ? (
       <div className="b-crop" data-testid="crop-ping">
-        <span className="b-label"><span className="b-dot" aria-hidden="true" /> Insidir · {d.delayed ? "an hour ago" : "now"}</span>
-        <span><TierBadge tier={bet.tier} /> {bet.short} bet <b>{dollars(bet.amount)}</b> on <Side outcome={bet.outcome} side={bet.side} /> at {cents(bet.priceThen)}</span>
-        <span className="b-muted">{bet.title}</span>
+        <span className="b-label"><span className="b-dot" aria-hidden="true" /> Insidir</span>
+        <span>A {bet.pnl !== null ? `${signedDollars(bet.pnl)} ` : ""}wallet bet <b className="b-mono">{dollars(bet.amount)}</b></span>
+        <span className="b-small">{bet.title}</span>
       </div>
     ) : null,
     follow: d.wallet ? (
       <div className="b-crop" data-testid="crop-follow">
         <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><TierBadge tier={d.wallet.tier} /><span className="b-mono">{shortWallet(d.wallet.wallet)}</span></span>
-        <span className="b-big b-up">{signed(d.wallet.pnl)}</span>
-        <span className="b-muted">all-time profit · {d.wallet.bets} {d.wallet.bets === 1 ? "bet" : "bets"} of $5K+ in 30 days</span>
+        <span className="b-big b-up">{signedDollars(d.wallet.pnl)}</span>
+        <span className="b-small"><span className="b-mono">{d.wallet.bets}</span> bets of $5K+ in 30 days</span>
       </div>
     ) : null,
     price: d.bestPrice ? (
       <div className="b-crop" data-testid="crop-price">
-        <span className="b-muted">{d.bestPrice.question}</span>
-        <div className="b-kv"><span>Kalshi</span><span className="b-num">{d.bestPrice.yes.kalshi === null ? "–" : `YES ${cents(d.bestPrice.yes.kalshi)}`}</span></div>
-        <div className="b-kv"><span>Polymarket</span><span className="b-num">{d.bestPrice.yes.polymarket === null ? "–" : `YES ${cents(d.bestPrice.yes.polymarket)}`}</span></div>
+        <span className="b-small">{d.bestPrice.question}</span>
+        <div className="b-kv"><span>Kalshi</span><span className="b-mono">{d.bestPrice.yes.kalshi === null ? "–" : `YES ${cents(d.bestPrice.yes.kalshi)}`}</span></div>
+        <div className="b-kv"><span>Polymarket</span><span className="b-mono">{d.bestPrice.yes.polymarket === null ? "–" : `YES ${cents(d.bestPrice.yes.polymarket)}`}</span></div>
       </div>
     ) : null,
   };
   return (
     <section className="b-sec" aria-labelledby="feat-h" data-testid="features">
       <div className="b-wrap">
-        <Rise className="b-sec__head"><SecLabel>Features</SecLabel><h2 id="feat-h" className="b-h2">Everything you check <span className="b-grad">before</span> you bet.</h2></Rise>
-        <div className="b-bento">
-          {FEATURES.map((f, i) => (
-            <Rise key={f.k} className="b-tile b-glass" delay={i % 2}>
-              <h3>{f.t}</h3><p>{f.d}</p>{crop[f.k]}
-            </Rise>
-          ))}
+        <Head id="feat-h" label={SCENES.features.label} before={SCENES.features.before} accent={SCENES.features.accent} after={SCENES.features.after} />
+        <div className="b-bento" data-stagger="">
+          {FEATURES.map(f => <div key={f.k} className="b-tile b-glass"><h3>{f.t}</h3><p>{f.d}</p>{crop[f.k]}</div>)}
         </div>
       </div>
     </section>
@@ -158,45 +205,26 @@ function Features({ d }: { d: LandingData }) {
 
 function Pricing() {
   return (
-    <BrandImage as="section" photo={slotPhoto("world")} sizes="100vw" zoom className="b-over" data-testid="pricing" aria-labelledby="price-h">
+    <BrandImage as="section" photo={slotPhoto("world")} sizes="100vw" className="b-over" data-testid="pricing" aria-labelledby="price-h">
       <div className="b-wrap">
-        <Rise className="b-price b-glass b-glass--solid">
-          <SecLabel>Pricing</SecLabel>
-          <h2 id="price-h" className="b-price__big">${TRIAL.fee} for your first {TRIAL.days} days.</h2>
-          <p style={{ margin: 0 }} data-testid="price-line">{PRICE_LINE}</p>
-          <ul className="b-list">
-            <li>Every millionaire bet, live, in the categories you pick</li>
-            <li>Millionaire and Pro money on every market you paste</li>
-            <li>Pings when the wallets you follow bet</li>
-            <li>The best price on Kalshi and Polymarket</li>
-          </ul>
-          <Btn href="/go" block data-testid="pricing-cta" data-checkout="pricing">{START}</Btn>
-          <p className="b-small" style={{ margin: 0 }}>Then ${PLANS.insidir.price}/month. 18+. Information, not advice.</p>
-        </Rise>
+        <div className="b-price b-glass b-glass--solid" data-rise="">
+          <h2 id="price-h" className="b-price__big">${TRIAL.fee}</h2>
+          <p className="b-price__line" data-testid="price-line">{PRICE_LINE}</p>
+          <Btn href="/go" data-testid="pricing-cta" data-checkout="pricing">{START}</Btn>
+        </div>
       </div>
     </BrandImage>
   );
 }
 
-function Faq() {
+function Final() {
   return (
-    <section className="b-sec" id="faq" aria-labelledby="faq-h" data-testid="faq">
-      <div className="b-wrap">
-        <Rise className="b-sec__head"><SecLabel>FAQ</SecLabel><h2 id="faq-h" className="b-h2">Questions.</h2></Rise>
-        <div className="b-faq">
-          {FAQ.map(f => <details key={f.id} data-testid="faq-item"><summary>{f.q}</summary><div>{f.a}</div></details>)}
-        </div>
-      </div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd() }} />
-    </section>
-  );
-}
-
-function FinalCta() {
-  return (
-    <BrandImage as="section" photo={slotPhoto("cta")} sizes="100vw" zoom className="b-cta" data-testid="final-cta" aria-labelledby="cta-h">
-      <div className="b-cta__body">
-        <h2 id="cta-h" className="b-h2">Ready to see where the <span className="b-grad">money</span> is?</h2>
+    <BrandImage as="section" photo={slotPhoto("cta")} sizes="100vw" className="b-cta" data-testid="final-cta" aria-labelledby="cta-h">
+      <div className="b-cta__body" data-scene="final">
+        <svg className="b-cta__mark" viewBox="-1 -1 66 66" aria-hidden="true" data-draw="">
+          <rect x="0" y="0" width="40" height="18" /><rect x="0" y="0" width="18" height="46" /><rect x="46" y="18" width="18" height="46" /><rect x="24" y="46" width="40" height="18" />
+        </svg>
+        <h2 id="cta-h" className="b-h2" data-split="">{SCENES.final.before}<span className="b-grad">{SCENES.final.accent}</span>{SCENES.final.after}</h2>
         <Btn href="/go" data-testid="final-start" data-checkout="final">{START}</Btn>
       </div>
       <BrandFoot />
@@ -207,18 +235,22 @@ function FinalCta() {
 export function Landing({ d }: { d: LandingData }) {
   return (
     <main className="b-root" data-testid="landing">
+      <div className="b-progress" data-progress="" aria-hidden="true" />
       <BrandNav />
-      <Hero d={d} />
-      <Board d={d} />
+      <First d={d} />
+      <Mark />
       <Markets d={d} />
       <How d={d} />
       <Proof d={d} />
       <Features d={d} />
       <Pricing />
-      <Faq />
-      <FinalCta />
+      <section className="b-sec" id="faq" aria-labelledby="faq-h" data-testid="faq">
+        <div className="b-wrap"><Head id="faq-h" label="FAQ" before="" accent="Questions" after="." /><Faq items={FAQ} /></div>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd() }} />
+      </section>
+      <Final />
+      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest }} now={d.now} />}
+      <LandingMotion />
     </main>
   );
 }
-
-export { BetRow };
