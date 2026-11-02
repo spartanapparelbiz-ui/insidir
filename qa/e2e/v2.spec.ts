@@ -17,13 +17,13 @@ test("landing: final on first paint: the headline and the box in the first scree
   await expect(page.getByTestId("read-go")).toHaveText("Read");
   await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
   const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  const want = ["Every $10K+ bet from a $1M+ wallet", "Know who's betting before you bet", "Real results, losses included", "Questions"];
+  const want = ["Every bet from wallets that made $1M+", "The market with the most millionaire money", "Know who's betting before you bet", "Real results, losses included", "Questions"];
   expect(h2s.filter(h => want.includes(h))).toEqual(want);
   // The header: Millionaires, Record, Pricing, Log in, and Start for $1.
   const nav = page.getByTestId("op-header");
   await expect(nav.locator('a[data-unlock="nav"]')).toHaveText("Start for $1");
   await expect(nav.getByRole("link", { name: "Log in" })).toBeVisible();
-  for (const t of await page.locator(".op .op-primary:visible, .op .sk-btn:visible").allInnerTexts()) expect(["Start for $1", "Read"]).toContain(t.replace(/\s*→$/, "").trim());
+  for (const t of await page.locator(".op .op-primary:visible, .op .sk-btn:visible").allInnerTexts()) expect(["Start for $1", "Read", "Show me", "Show me live"]).toContain(t.replace(/\s*→$/, "").trim());
   const text = await page.locator("main").innerText();
   expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
   expect(text).not.toMatch(/guaranteed|risk-free/i);
@@ -47,12 +47,12 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
   expect(await (await page.request.get("/sitemaps/companies.xml")).text()).toContain("/insider-trading/");
 });
 
-test("home: the nav's Start for $1 is recorded and opens /start; the trackers page (by URL) lists every tracker with its record or the record being built", async ({ page }) => {
+test("home: the nav's Start for $1 is recorded and opens /go; the trackers page (by URL) lists every tracker with its record or the record being built", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
   await page.goto("/");
   await page.getByTestId("op-header").locator('a[data-unlock="nav"]').click();
-  await expect(page).toHaveURL(/\/start(\?|$)/);
+  await expect(page).toHaveURL(/\/go(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
   await page.goto("/trackers");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();

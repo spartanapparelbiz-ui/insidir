@@ -21,8 +21,9 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   await q("delete from terminal.login_attempts");
 
   await page.goto("/pricing");
-  await page.locator('[data-checkout="pricing"]').first().click();
-  await expect(page).toHaveURL(/\/start$/);
+  // Every Start for $1 goes to the /go funnel; /start is the checkout on its own, for direct links.
+  await expect(page.locator('[data-checkout="pricing"]').first()).toHaveAttribute("href", "/go");
+  await page.goto("/start");
   // Signed out: 18+ first (the checkout doesn't open until it's ticked), then the embedded checkout straight away
   // (pay first): no sign-in step, no password.
   const form = page.locator("[data-mock-checkout]");
