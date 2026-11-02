@@ -54,7 +54,20 @@ export async function tonightFor(db: Db, betOn: readonly string[], now: number):
   return out;
 }
 
-export interface YourMarket { key: string; latest: StoredRead; moved: { from: number | null; to: number | null } | null }
+export interface YourMarket {
+  key: string; latest: StoredRead; moved: { from: number | null; to: number | null } | null;
+  /** Proven money's dollar change on each side since their last visit, and when that was; null on a first visit or
+   *  for a market seen before dollars were recorded. */
+  since: { yes: number; no: number; at: number } | null;
+  /** YES now (the better venue's price), and at the first Read of today (ET); null when unknown. */
+  price: number | null; dayOpen: number | null;
+}
+
+/** A Read's YES price: the better venue's, else whichever there is. */
+export const yesPriceOf = (d: ReadData): number | null => {
+  const y = d.prices.yes;
+  return (y.best ? y[y.best] : null) ?? y.polymarket ?? y.kalshi ?? null;
+};
 
 /** The member's markets, newest first: each with its latest Read (anyone's or the refresh), and whether proven money
  *  moved since they last saw it here. Seeing them now records this view as their last. */
@@ -65,26 +78,32 @@ export async function yourMarkets(db: Db, userId: string, now: number, limit = 1
   const list = sql.join(keys.map(k => sql`${k}`), sql`, `);
   const [latest, seen] = await Promise.all([
     db.execute(sql`select distinct on (market_key) * from terminal.reads where market_key in (${list}) order by market_key, created_at desc`),
-    db.execute(sql`select market_key, yes_share, wallets from terminal.read_seen where user_id = ${userId} and market_key in (${list})`),
+    db.execute(sql`select market_key, yes_share, wallets, yes_dollars, no_dollars, seen_at from terminal.read_seen where user_id = ${userId} and market_key in (${list})`),
   ]);
+  const opens = await db.execute(sql`select distinct on (market_key) market_key, data from terminal.reads where market_key in (${list}) and created_at >= ${new Date(startOfEtDay(now))}
+    order by market_key, created_at asc`);
+  const openBy = new Map((opens.rows as Array<{ market_key: string; data: ReadData }>).map(r => [r.market_key, yesPriceOf(r.data)]));
   const byKey = new Map((latest.rows as Array<Record<string, unknown>>).map(r => [String(r.market_key), {
     id: String(r.id), userId: (r.user_id as string | null) ?? null, visitorId: (r.visitor_id as string | null) ?? null, input: String(r.input),
     data: r.data as ReadData, ms: (r.ms as number | null) ?? null, createdAt: new Date(r.created_at as string).getTime(),
   } satisfies StoredRead]));
-  const seenBy = new Map((seen.rows as Array<{ market_key: string; yes_share: number | null; wallets: number }>).map(r => [r.market_key, r]));
+  const seenBy = new Map((seen.rows as Array<{ market_key: string; yes_share: number | null; wallets: number; yes_dollars: number | null; no_dollars: number | null; seen_at: string | Date }>).map(r => [r.market_key, r]));
   const out: YourMarket[] = [];
   for (const k of keys) {
     const l = byKey.get(k);
     if (!l) continue;
     const s = seenBy.get(k), p = l.data.proven;
     const moved = s && (Math.abs((p.yesShare ?? 0) - (s.yes_share ?? 0)) >= 0.05 || p.wallets !== s.wallets) ? { from: s.yes_share, to: p.yesShare } : null;
-    out.push({ key: k, latest: l, moved });
+    const since = s && s.yes_dollars !== null && s.no_dollars !== null
+      ? { yes: p.yes.dollars - Number(s.yes_dollars), no: p.no.dollars - Number(s.no_dollars), at: new Date(s.seen_at).getTime() } : null;
+    const price = yesPriceOf(l.data), open = openBy.get(k) ?? null;
+    out.push({ key: k, latest: l, moved, since, price, dayOpen: open !== null && price !== null ? open : null });
   }
   // This visit is now their last: what they saw is what the next visit compares to.
   for (const m of out) {
     const p = m.latest.data.proven;
-    await db.insert(readSeen).values({ userId, marketKey: m.key, yesShare: p.yesShare, wallets: p.wallets, seenAt: new Date(now) })
-      .onConflictDoUpdate({ target: [readSeen.userId, readSeen.marketKey], set: { yesShare: p.yesShare, wallets: p.wallets, seenAt: new Date(now) } });
+    const v = { yesShare: p.yesShare, wallets: p.wallets, yesDollars: p.yes.dollars, noDollars: p.no.dollars, seenAt: new Date(now) };
+    await db.insert(readSeen).values({ userId, marketKey: m.key, ...v }).onConflictDoUpdate({ target: [readSeen.userId, readSeen.marketKey], set: v });
   }
   return out;
 }

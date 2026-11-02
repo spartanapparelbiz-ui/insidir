@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { IBM_Plex_Mono, Outfit } from "next/font/google";
 import { Suspense, type ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
 import { Motion } from "@/components/motion/Motion";
@@ -24,6 +25,7 @@ import "./v2.css";
 import "./light.css";
 import "./polish.css";
 import "./motion.css";
+import "./sky.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
@@ -41,6 +43,11 @@ export const metadata: Metadata = {
 /** Schibsted Grotesk for everything, self-hosted by next/font: no third-party request at runtime. It is the variable font (400–900) with one change
  * (app/fonts, SIL OFL): its tabular figures apply to digits only, so "$160,000" keeps a normal comma. */
 const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap" });
+/** The new pages (app/sky.css): Outfit for all text (700 headlines, 600 titles, 400 body), IBM Plex Mono for numbers in
+ *  data rows. next/font/google downloads them at build time and serves them from this site: no request to Google at
+ *  runtime. */
+const outfit = Outfit({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--font-outfit", display: "swap" });
+const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-plex", display: "swap" });
 
 export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
@@ -51,7 +58,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const jar = await cookies();
   const visitor = !jar.get(SESSION_COOKIE)?.value;
   return (
-    <html lang="en" className={schibsted.variable} suppressHydrationWarning>
+    <html lang="en" className={`${schibsted.variable} ${outfit.variable} ${plexMono.variable}`} suppressHydrationWarning>
       <head>
         {/* Every photo comes from Unsplash's image CDN (lib/unsplash.ts): open the connection before the first one is asked for. */}
         <link rel="preconnect" href="https://images.unsplash.com" />

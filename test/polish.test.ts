@@ -39,8 +39,9 @@ describe("polish", () => {
     expect(cumulative([], 4)).toEqual([]);
   });
 
-  it("no stylesheet sets a weight above 600", () => {
-    const files = [...readdirSync("app").filter(f => f.endsWith(".css")).map(f => join("app", f)), "components/app/terminal.css"];
+  it("no stylesheet sets a weight above 600 (the skyline pages, app/sky.css: Outfit 700 for headlines)", () => {
+    const files = [...readdirSync("app").filter(f => f.endsWith(".css") && f !== "sky.css").map(f => join("app", f)), "components/app/terminal.css"];
+    expect(readFileSync("app/sky.css", "utf8")).not.toMatch(/font-weight:\s*(800|900|bold)/);
     for (const f of files) {
       const css = readFileSync(f, "utf8");
       expect(css, f).not.toMatch(/font-weight:\s*(700|800|900|bold)/);

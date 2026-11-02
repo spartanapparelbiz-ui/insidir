@@ -11,13 +11,10 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { startOfEtDay } from "@/lib/discover";
-import { MIN_SETTLED } from "@/lib/follow/math";
-import { isWinner, traderFollowAll } from "@/lib/follow/records";
 import { memo } from "@/lib/memo";
 import { notComboSql } from "@/lib/moves/combos";
-import { isLive, TRACKERS, trackerWhere } from "@/lib/trackers";
-import { pairOf, winningTrackers } from "./build";
-import { PROVEN_CLOSED_MIN } from "./math";
+import { pairOf } from "./build";
+import { provenPredicate } from "./proven-sql";
 import { fullTeamNames } from "@/lib/sports/team-names";
 import type { Venue } from "./types";
 
@@ -26,15 +23,7 @@ export interface TonightRead { venue: Venue; id: string; title: string; event: s
 const HOUR = 3_600_000;
 
 export async function tonightReads(db: Db, now: number, n = 3): Promise<TonightRead[]> {
-  const [trackers, follows] = await Promise.all([winningTrackers(db, now), traderFollowAll(db, now).catch(() => new Map())]);
-  const tagged = TRACKERS.filter(t => trackers.has(t.slug) && !isLive(t)).map(t => t.slug);
-  const live = TRACKERS.filter(t => trackers.has(t.slug) && isLive(t));
-  const winners = [...follows.values()].filter(f => f.all.n >= MIN_SETTLED && isWinner(f.all)).map(f => f.wallet as string);
-  const arr = (xs: readonly string[]) => (xs.length ? sql`array[${sql.join(xs.map(x => sql`${x}`), sql`, `)}]::text[]` : sql`array[]::text[]`);
-  const proven = sql`(coalesce(terminal.moves.trackers, '{}') && ${arr(tagged)}
-    ${live.length ? sql`or ${sql.join(live.map(t => sql`(${trackerWhere(t)})`), sql` or `)}` : sql``}
-    or (terminal.moves.wallet is not null and (terminal.moves.wallet = any(${arr(winners)})
-      or exists (select 1 from terminal.wallet_pnl r where r.wallet = terminal.moves.wallet and r.closed >= ${PROVEN_CLOSED_MIN} and r.pnl > 0))))`;
+  const proven = await provenPredicate(db, now);
   const from = new Date(now - 3 * HOUR), to = new Date(startOfEtDay(now) + 30 * HOUR);
   const r = await db.execute(sql`select p.*, coalesce((mk.data->>'volume24h')::float, 0) as volume, i.start_at from (
       select terminal.moves.source, terminal.moves.market_id, max(market_title) as title, max(event_title) as event, max(league) as league, sum(amount)::float as money,

@@ -130,8 +130,8 @@ export const BANNED_WORDS = [
   // compliance
   /\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\bsure thing\b/i, /\block(s|ed)? in\b/i, /\binsider info\b/i,
   /\bbuy this\b/i, /\bcopy this bet\b/i, /\bsharps?\b/i,
-  // jargon we still don't use
-  /\barb(itrage)?\b/i, /\border ?book\b/i, /\bliquidity\b/i, /\bspread\b/i, /\bbids?\b/i, /\basks?\b/i, /\bodds\b/i, /\bcontracts?\b/i,
+  // jargon we still don't use ("ask" only as bid/ask: asking about a market is the product)
+  /\barb(itrage)?\b/i, /\border ?book\b/i, /\bliquidity\b/i, /\bspread\b/i, /\bbids?\b/i, /\bbid\s*\/\s*ask\b/i, /\bask (price|side)s?\b/i, /\bodds\b/i, /\bcontracts?\b/i,
   // the old wording, so it can't come back
   /\bjust put\b/i, /\bbig moves?\b/i, /\bsomeone\b/i, /\bchance\b/i,
 ];
