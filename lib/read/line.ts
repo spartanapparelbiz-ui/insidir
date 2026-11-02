@@ -35,6 +35,7 @@ export async function writeLine(facts: Facts, o: { allowModel: boolean; f?: type
     const r = await chat(messages, { maxTokens: 90, f: o.f, timeoutMs: 2_000 });
     cost += r.costUsd;
     if (!r.ok) return template(r.error === "no_key" ? "template-nokey" : "template-error", cost);
+    if (r.empty) return template("template-empty", cost);
     const text = r.text.replace(/^["“]|["”]$/g, "").replace(/\s+/g, " ").trim();
     const v = validateLine(text, facts);
     if (v.ok) return { text, origin: "model", model: r.model, costUsd: cost };

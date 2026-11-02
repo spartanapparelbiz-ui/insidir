@@ -314,8 +314,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       // On start it backfills (every open position, the last 7 days of settled ones), then keeps up live.
       every("analyst:notes", 60_000, async () => {
         const r = await notesOnce(getDb(), Date.now());
-        log(`analyst: ${r.written} notes, $${r.costUsd.toFixed(4)} (${r.model} model, ${r.template} template, ${r.failures} failed the validator; ${r.left} to go${r.capped ? "; spend cap reached" : ""}${r.lastError ? `; last error: ${r.lastError.slice(0, 120)}` : ""})`);
-        await heartbeat(getDb(), "analyst:notes", true, r.lastError, { written: r.written, model: r.model, template: r.template, failures: r.failures, costUsd: Number(r.costUsd.toFixed(5)), left: r.left, capped: r.capped ? 1 : 0, at: new Date().toISOString() }).catch(() => undefined);
+        log(`analyst: ${r.written} notes, $${r.costUsd.toFixed(4)} (${r.model} model, ${r.template} template, ${r.failures} failed the validator, ${r.empty} empty ${r.empty === 1 ? "reply" : "replies"}; ${r.left} to go${r.capped ? "; spend cap reached" : ""}${r.lastError ? `; last error: ${r.lastError.slice(0, 120)}` : ""})`);
+        await heartbeat(getDb(), "analyst:notes", true, r.lastError, { written: r.written, model: r.model, template: r.template, failures: r.failures, empty: r.empty, costUsd: Number(r.costUsd.toFixed(5)), left: r.left, capped: r.capped ? 1 : 0, at: new Date().toISOString() }).catch(() => undefined);
       }),
       every("follow:report", 60 * 60_000, async () => {
         for (const line of (await followableCsv(getDb(), Date.now())).trimEnd().split("\n")) log(`FOLLOWABLE-CSV ${line}`);

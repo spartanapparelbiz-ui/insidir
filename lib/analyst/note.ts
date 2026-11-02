@@ -54,20 +54,23 @@ export interface NoteDeps { f?: typeof fetch }
 export async function writeNote(facts: Facts, deps: NoteDeps = {}): Promise<Note> {
   const base = { moveId: facts.moveId, facts, version: NOTE_VERSION };
   const messages: ChatMessage[] = [{ role: "system", content: SYSTEM }, { role: "user", content: factsPrompt(facts) }];
-  let cost = 0, error: string | undefined, failed = false;
+  let cost = 0, error: string | undefined, failed = false, empties = 0, emptyOut = false;
   for (let attempt = 0; attempt < 2; attempt++) {
     const r = await chat(messages, { maxTokens: 160, f: deps.f });
-    cost += r.costUsd;
+    cost += r.costUsd; empties += r.empties;
     if (!r.ok) { error = r.error; break; }
+    // Empty twice (chat retried once): not a validator failure; the note is retried on a later run.
+    if (r.empty) { error = "empty reply"; emptyOut = true; break; }
     const text = r.text.replace(/^["“]|["”]$/g, "").replace(/\s+/g, " ").trim();
     const v = validateNote(text, facts);
-    if (v.ok) return { ...base, text, model: r.model, costUsd: cost, origin: "model" };
+    if (v.ok) return { ...base, text, model: r.model, costUsd: cost, origin: "model", empties };
     failed = true;
     error = `validator: ${v.problems.slice(0, 3).join("; ")}`;
     messages.push({ role: "assistant", content: r.text }, { role: "user", content: `That note failed: ${v.problems.join("; ")}. Write it again following every rule.` });
   }
   // "template" after the model failed the validator twice; "template-nokey" when there was no model to ask (the worker
   // rewrites those once OPENROUTER_API_KEY is set); "template-error" when the call itself failed (retried later).
-  const model = failed ? "template" : error === "no_key" ? "template-nokey" : "template-error";
-  return { ...base, text: templateNote(facts), model, costUsd: cost, origin: "template", ...(error && error !== "no_key" ? { error } : {}) };
+  // An empty reply counts as a failed call ("template-error": retried), not a validator failure.
+  const model = failed && !emptyOut ? "template" : error === "no_key" ? "template-nokey" : "template-error";
+  return { ...base, text: templateNote(facts), model, costUsd: cost, origin: "template", empties, ...(error && error !== "no_key" ? { error } : {}) };
 }

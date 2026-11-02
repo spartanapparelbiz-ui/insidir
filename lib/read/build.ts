@@ -48,12 +48,12 @@ export async function pairOf(db: Db, venue: Venue, id: string): Promise<{ polyma
   return { polymarket: venue === "polymarket" ? id : side("polymarket"), kalshi: venue === "kalshi" ? id : side("kalshi"), inverted: Boolean(d?.inverted) };
 }
 
-interface Stored { title: string; eventTitle: string | null; yesLabel: string; noLabel: string; url: string | null; yesPrice: number | null; volume24h: number | null; closeTime: number | null }
+interface Stored { /** Read from the venue just now (it answered within VENUE_MS), not from what we hold. */ fresh?: boolean; title: string; eventTitle: string | null; yesLabel: string; noLabel: string; url: string | null; yesPrice: number | null; volume24h: number | null; closeTime: number | null }
 
 /** Fresh from the venue, else the matcher's copy, else what our moves call it. */
 async function listing(db: Db, clients: Clients, venue: Venue, id: string): Promise<Stored | null> {
   const fresh: VMarket | undefined = (await within(clients[venue].getMarketsById([id]), new Map<string, VMarket>())).get(id);
-  if (fresh) return { title: fresh.title, eventTitle: fresh.eventTitle, yesLabel: fresh.yesLabel, noLabel: fresh.noLabel, url: fresh.url, yesPrice: fresh.yesPrice ?? null, volume24h: fresh.volume24h, closeTime: fresh.closeTime };
+  if (fresh) return { fresh: true, title: fresh.title, eventTitle: fresh.eventTitle, yesLabel: fresh.yesLabel, noLabel: fresh.noLabel, url: fresh.url, yesPrice: fresh.yesPrice ?? null, volume24h: fresh.volume24h, closeTime: fresh.closeTime };
   const [m, info] = await Promise.all([
     db.execute(sql`select data from terminal.markets where venue = ${venue} and id = ${id} limit 1`),
     infoFor(db, venue, [id]),
@@ -100,7 +100,7 @@ async function openPositions(db: Db, ids: Ids): Promise<OpenPosition[]> {
 }
 
 /** Proven money (winning trackers and proven wallets), and the big-money split over every open tracked position. */
-async function provenAndBig(db: Db, ids: Ids, now: number, clients: Clients | null, started: number): Promise<{ proven: ProvenMoney; big: BigSplit }> {
+async function provenAndBig(db: Db, ids: Ids, now: number, clients: Clients | null, started: number, polyAnswered: boolean): Promise<{ proven: ProvenMoney; big: BigSplit }> {
   const [positions, trackers, follows, open] = await Promise.all([
     openPositions(db, ids),
     winningTrackers(db, now),
@@ -115,7 +115,9 @@ async function provenAndBig(db: Db, ids: Ids, now: number, clients: Clients | nu
   // time budget allows (what's left of READ_BUDGET_MS, at most INLINE_MS).
   const missing = wallets.filter(w => !recs.has(w));
   if (missing.length && clients) {
-    const left = Math.min(INLINE_MS, READ_BUDGET_MS - (Date.now() - started));
+    // Polymarket didn't answer this Read's own market in time: it is slow or out now, so don't wait on it again; the
+    // wallets are only queued.
+    const left = polyAnswered ? Math.min(INLINE_MS, READ_BUDGET_MS - (Date.now() - started)) : 0;
     const done = await onDemand(db, clients.polymarket, missing, left, now).catch(() => [] as string[]);
     if (done.length) recs = await walletPnlFor(db, wallets);
   }
@@ -154,7 +156,7 @@ export async function buildRead(db: Db, clients: Clients, venue: Venue, id: stri
   const main = poly ?? kal;
   if (!main) throw new ReadNotFound("not found");
   const [{ proven, big }, bets] = await Promise.all([
-    provenAndBig(db, { polymarket: poly ? ids.polymarket : null, kalshi: kal ? ids.kalshi : null, inverted: ids.inverted }, now, clients, started),
+    provenAndBig(db, { polymarket: poly ? ids.polymarket : null, kalshi: kal ? ids.kalshi : null, inverted: ids.inverted }, now, clients, started, Boolean(poly?.fresh)),
     bigBets(db, ids, { polymarket: poly?.volume24h ?? null, kalshi: kal?.volume24h ?? null }, now),
   ]);
   const kYes = kal?.yesPrice ?? null;

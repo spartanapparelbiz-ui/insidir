@@ -12,6 +12,7 @@ import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { readSeen } from "@/lib/db/schema";
 import { startOfEtDay } from "@/lib/discover";
+import { fullTeamNames } from "@/lib/sports/team-names";
 import { trackerBySlug, trackerWhere } from "@/lib/trackers";
 import { buildRead, type Clients } from "./build";
 import { saveRead, type StoredRead } from "./store";
@@ -47,7 +48,7 @@ export async function tonightFor(db: Db, betOn: readonly string[], now: number):
             and i.start_at >= ${new Date(now - 3 * 3_600_000)} and i.start_at < ${new Date(end)}
           group by terminal.moves.source, terminal.moves.market_id order by max(i.start_at) asc, total desc limit 4`);
     for (const r of rows.rows as Array<{ source: Venue; market_id: string; title: string; event: string; total: number; start_at: string | null }>) {
-      out.push({ key, label, venue: r.source, marketId: r.market_id, title: r.title, event: r.event, total: Number(r.total), startAt: r.start_at ? new Date(r.start_at).getTime() : null });
+      out.push({ key, label, venue: r.source, marketId: r.market_id, title: fullTeamNames(r.title, label), event: r.event, total: Number(r.total), startAt: r.start_at ? new Date(r.start_at).getTime() : null });
     }
   }
   return out;

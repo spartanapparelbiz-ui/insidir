@@ -4,6 +4,8 @@ import { NOTE_VERSION } from "@/lib/analyst/types";
 import { describe, expect, it } from "vitest";
 import { buildBetFacts, buildInsiderFacts, type BetRaw } from "@/lib/analyst/facts";
 import { templateNote, writeNote } from "@/lib/analyst/note";
+import { REASONING_HEADROOM, usageCost } from "@/lib/analyst/llm";
+import { writeLine } from "@/lib/read/line";
 import { numbersIn, validateNote } from "@/lib/analyst/validate";
 import type { Move } from "@/lib/moves/types";
 
@@ -111,6 +113,52 @@ describe("writing a note", () => {
   it("no key: the template", async () => {
     delete process.env.OPENROUTER_API_KEY;
     expect((await writeNote(buildBetFacts(raw(), NOW))).origin).toBe("template");
+    process.env.OPENROUTER_API_KEY = prev;
+  });
+});
+
+describe("OpenRouter: reasoning models, empty replies, cost", () => {
+  const prev = process.env.OPENROUTER_API_KEY;
+  const NOTE = "googleplay's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6.";
+  it("asks for low-effort reasoning left out of the reply, with headroom on top of the answer's tokens, and the usage", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const { f, sent } = fake([NOTE]);
+    await writeNote(buildBetFacts(raw(), NOW), { f });
+    const body = JSON.parse(sent[0]!);
+    expect(body.reasoning).toEqual({ effort: "low", exclude: true });
+    expect(body.max_tokens).toBe(160 + REASONING_HEADROOM);
+    expect(body.usage).toEqual({ include: true });
+    process.env.OPENROUTER_API_KEY = prev;
+  });
+  it("an empty reply is asked again once; the second answer is used and the empty one counted", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const { f, sent } = fake(["", NOTE]);
+    const n = await writeNote(buildBetFacts(raw(), NOW), { f });
+    expect(sent).toHaveLength(2);
+    expect(n).toMatchObject({ origin: "model", text: NOTE, empties: 1 });
+    expect(n.costUsd).toBeCloseTo(0.0008); // both calls' cost, from usage.cost
+    process.env.OPENROUTER_API_KEY = prev;
+  });
+  it("empty twice: not a validator failure; the template, marked to be retried, with both empties counted", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const { f, sent } = fake(["", ""]);
+    const facts = buildBetFacts(raw(), NOW);
+    const n = await writeNote(facts, { f });
+    expect(sent).toHaveLength(2);
+    expect(n).toMatchObject({ origin: "template", model: "template-error", error: "empty reply", empties: 2, text: templateNote(facts) });
+    process.env.OPENROUTER_API_KEY = prev;
+  });
+  it("the cost is OpenRouter's usage.cost, as a number or a string; else estimated from tokens", () => {
+    expect(usageCost({ cost: 0.00031 })).toBe(0.00031);
+    expect(usageCost({ cost: "0.00042" })).toBe(0.00042);
+    expect(usageCost({ prompt_tokens: 1000, completion_tokens: 200 })).toBeCloseTo((1000 * 3 + 200 * 15) / 1e6, 9);
+  });
+  it("the Read's one line: empty twice falls back to the template, marked template-empty", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const { f } = fake(["", ""]);
+    const facts = { moveId: "p:x", kind: "bet" as const, names: ["Yes", "No"], facts: [{ key: "proven_none", label: "Proven money", text: "no proven money holds a position" }], at: NOW };
+    const line = await writeLine(facts, { allowModel: true, f });
+    expect(line).toMatchObject({ origin: "template", model: "template-empty" });
     process.env.OPENROUTER_API_KEY = prev;
   });
 });

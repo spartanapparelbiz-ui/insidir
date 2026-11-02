@@ -117,6 +117,13 @@ export function readKalshiSeries(raw: unknown): KalshiSeries | null {
   };
 }
 
+/** A /milestones answer → the earliest scheduled start (milestones[].start_date, RFC3339), ms; null without one. */
+export function readMilestoneStart(raw: unknown): number | null {
+  const ms = isObject(raw) ? objList(raw.milestones) : [];
+  const starts = ms.map(m => epochMs(m.start_date)).filter((t): t is number => t !== null);
+  return starts.length ? Math.min(...starts) : null;
+}
+
 /* ---------- Events and markets ---------- */
 
 export interface KalshiEventInfo {
@@ -353,6 +360,12 @@ export class KalshiClient implements VenueClient {
       cursor = next;
     }
     return out;
+  }
+
+  /** When a game is scheduled to start: the start_date of the milestone Kalshi links to this event
+   *  (GET /milestones?related_event_ticker=<event>). Null when there is none. */
+  async getEventStart(eventTicker: string, priority: Priority = "normal"): Promise<number | null> {
+    return readMilestoneStart(await this.http.json(`${this.base}/milestones${qs({ related_event_ticker: eventTicker, limit: 5 })}`, { priority }));
   }
 
   /** One page of public trades across all markets since `minTs` (GET /markets/trades; anonymous: size, price,

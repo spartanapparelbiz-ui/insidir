@@ -20,7 +20,7 @@ export const notesDailyCapUsd = (): number => Number(process.env.ANALYST_DAILY_U
 /** Notes per run (the worker runs it every minute): a steady backfill without bursts. */
 export const notesPerRun = (): number => Number(process.env.ANALYST_NOTES_PER_RUN ?? 20);
 
-export interface NotesRun { written: number; model: number; template: number; failures: number; costUsd: number; left: number; lastError: string | null; capped: boolean }
+export interface NotesRun { written: number; model: number; template: number; failures: number; /** Replies that came back empty (each is retried once). */ empty: number; costUsd: number; left: number; lastError: string | null; capped: boolean }
 
 /** Writes notes for positions that need one, newest first: every large position from the last 2 days, every open one
  *  from the last 60, and every one settled in the last 7 (the backfill); positions with a note from older rules; and,
@@ -35,7 +35,7 @@ export async function notesOnce(db: Db, now: number, o: { limit?: number; f?: ty
         and not (${modelOn} and n.model in ('template-nokey', 'template-error') and n.created_at < ${new Date(now - 10 * 60_000)}))`;
   const rows = await db.select().from(movesT).where(need).orderBy(desc(movesT.at)).limit(o.limit ?? notesPerRun());
   const usage = dbUsageStore(db);
-  const out: NotesRun = { written: 0, model: 0, template: 0, failures: 0, costUsd: 0, left: 0, lastError: null, capped: false };
+  const out: NotesRun = { written: 0, model: 0, template: 0, failures: 0, empty: 0, costUsd: 0, left: 0, lastError: null, capped: false };
   for (const r of rows) {
     const m = fromRow(r);
     const facts = await factsFor(db, m, now);
@@ -50,6 +50,7 @@ export async function notesOnce(db: Db, now: number, o: { limit?: number; f?: ty
       .onConflictDoUpdate({ target: analystNotes.moveId, set: { note: note.text, facts, model, origin: note.origin, version: note.version, costUsd: note.costUsd, createdAt: new Date() } });
     out.written++; out[note.origin]++; out.costUsd += note.costUsd;
     if (note.model === "template") out.failures++;
+    out.empty += note.empties ?? 0;
     if (note.error) out.lastError = note.error;
   }
   out.left = Number(((await db.execute(sql`select count(*)::int as n from ${T} where ${need}`)).rows[0] as { n: number }).n) ;
