@@ -3,6 +3,7 @@
  * Only the known fields are read; anything else (a "bankroll", say) is ignored and reported back, never stored.
  * Venues are always cut to the user's region: US users can only keep Kalshi and Polymarket US. ROI fields arrive
  * as percentages ("1.5" = 1.5%) and are stored as fractions. */
+import { PING_CATS } from "@/lib/millionaire/pings-pure";
 import { LEAGUES } from "@/lib/moves/types";
 import type { UserSettings } from "@/lib/db/schema";
 import { minutesOf, validTimeZone } from "@/lib/alerts/quiet";
@@ -26,7 +27,7 @@ export const MAX_MOVE_RULES = 10;
 export const MAX_SIZE_USD = 10_000_000;
 
 const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
-  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize",
+  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize", "pingCats", "pingsForm",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
@@ -91,6 +92,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     ...(current.alertSplits === false ? { alertSplits: false } : {}),
     ...(current.copySize ? { copySize: current.copySize } : {}),
     ...(current.betOn ? { betOn: [...current.betOn] } : {}),
+    ...(current.pingCats ? { pingCats: [...current.pingCats] } : {}),
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -126,6 +128,9 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     const v = number(input.minSizeUsd, 0, MAX_SIZE_USD);
     if (v === null) errors.push(SIZE_ERROR); else s.minSizeUsd = v;
   }
+  // Millionaire pings by category (lib/millionaire/pings.ts): the Account form sends every ticked category; none ticked
+  // turns them all off.
+  if (has("pingsForm") || has("pingCats")) s.pingCats = [...new Set(list(input.pingCats).filter(c => (PING_CATS as readonly string[]).includes(c)))];
   if (has("copySize")) {
     const v = Number(input.copySize);
     if ((COPY_SIZES as readonly number[]).includes(v)) s.copySize = v as CopySize; else errors.push("Pick $10, $50 or $100 per move.");

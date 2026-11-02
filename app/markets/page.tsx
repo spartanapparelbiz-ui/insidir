@@ -3,7 +3,7 @@
  * Members see it in the member frame; visitors in the site frame. */
 import type { Metadata, Viewport } from "next";
 import { MarketCard } from "@/components/sky/Card";
-import { VisitorFrame } from "@/components/sky/Landing";
+import { OpenFrame as VisitorFrame } from "@/components/open/Frame";
 import { Shell } from "@/components/sky/Shell";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";

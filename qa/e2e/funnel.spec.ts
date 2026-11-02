@@ -152,7 +152,7 @@ test("the nav's 36px Start for $1 on public pages, home included, but not /start
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
   await page.goto("/");
-  await expect(page.locator('.skl-nav a[data-unlock="nav"]')).toHaveText("Start for $1");
+  await expect(page.getByTestId("op-header").locator('a[data-unlock="nav"]')).toHaveText("Start for $1");
   await page.goto("/pricing");
   if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
   await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");

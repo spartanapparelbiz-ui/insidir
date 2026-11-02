@@ -51,6 +51,7 @@ import { recordsFor } from "@/lib/moves/store";
 import { isTopTrader } from "@/lib/moves/records";
 import { isReady } from "@/lib/features";
 import { sendPush } from "@/lib/alerts/send";
+import { pingsOnce } from "@/lib/millionaire/pings";
 import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
 import { ACCURACY_MS, runAccuracyCheck } from "@/lib/accuracy/check";
@@ -266,6 +267,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const n = await recordsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         if (n) log(`moves: ${n} trader records refreshed`);
       }),
+      // Millionaire pings: a $1M+ wallet's $25K+ bet, to members with pings on for its category (lib/millionaire).
+      every("millionaire:pings", 60_000, async () => { if (isReady("alerts_push")) await pingsOnce(getDb(), Date.now()); }),
       every("moves:proven-backfill", 60_000, async () => {
         const r = await provenBackfillOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
         await heartbeat(getDb(), "moves:proven-backfill", r.rateLimited === 0, r.rateLimited ? `${r.rateLimited} rate-limited (429); budget halved` : null, { ...r });

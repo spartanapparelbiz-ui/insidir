@@ -31,34 +31,45 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("the skyline landing, in order: the bar, nav, hero, live markets, the Read, ticker, record, how it works, pricing, FAQ, final CTA, footer", () => {
-    const src = read("components/sky/Landing.tsx");
-    const body = src.slice(src.indexOf("export function Landing("));
-    const markers = ['data-testid="announcement"', "<Nav ", "<Hero ", "<LiveMarkets ", "<Answer ", "<Ticker ", "<Record ", "<How />", "<Pricing ", "<Faq />", "<FinalCta ", "<Footer />"];
+  it("the millionaires landing, in order: header, hero, the board, live numbers, a real Read, the bento, record, pricing, FAQ, final call, footer", () => {
+    const src = read("components/open/Landing.tsx");
+    const body = src.slice(src.indexOf("export function OpenLandingPage("));
+    const markers = ["<Header ", "<Hero ", "<Board ", "<Numbers ", "<TheRead ", "<Bento ", "<Record ", "<Pricing ", "<Faq />", "<FinalCta ", "<Footer />"];
     const at = markers.map(m => body.indexOf(m));
     for (const [i, m] of markers.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
-    expect(literals(src)).toContain("Where's the smart money?");
-    expect(src).toContain("Midterms are Tuesday. See where the smart money is before polls close →");
-    // Visitors get the landing; members the dashboard home: greeting, Moved, This week, Your markets, Your week.
+    expect(src).toContain('const HEAD = "See what Polymarket\'s millionaires are betting.";');
+    expect(src).toContain("Insidir tracks every big bet on Polymarket and Kalshi and shows you where wallets that have made $1M+ are putting their money.");
+    // Magic UI for motion only: the number ticker, the marquee, the animated list, the bento grid. No 3D.
+    for (const m of ["<NumberTicker ", "<Marquee ", "<BentoGrid ", "<BoardPreview "]) expect(src).toContain(m);
+    expect(read("components/open/BoardPreview.tsx")).toContain("<AnimatedList ");
+    expect(existsSync(join(ROOT, "components/sky/SkylineScene.ts"))).toBe(false);
+    expect(read("package.json")).not.toMatch(/"three"/);
+    // Visitors get the landing; members the dashboard home: greeting, the live board, Moved, This week, Your markets, Your week.
     const page = read("app/page.tsx");
-    expect(page).toContain("<Landing d={d}");
+    expect(page).toContain("<OpenLandingPage d={d}");
     expect(page).toContain("<MemberHome ");
     const home = read("components/sky/MemberHome.tsx");
-    const order = ["<Top ", "<Moved ", "<ThisWeek ", "<Yours ", "<Week "].map(m => home.lastIndexOf(m));
+    const order = ["<Top ", "<Millionaires ", "<Moved ", "<ThisWeek ", "<Yours ", "<Week "].map(m => home.lastIndexOf(m));
     for (const i of order) expect(i).toBeGreaterThan(-1);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
+  it("Magic UI and Cruip are credited in the code under their licenses", () => {
+    expect(read("components/magicui/LICENSE.md")).toMatch(/^MIT License/);
+    for (const f of ["number-ticker", "marquee", "animated-list", "bento-grid"]) expect(read(`components/magicui/${f}.tsx`)).toMatch(/Magic UI.*MIT License/);
+    expect(read("app/open.css")).toMatch(/cruip\/open-react-template, GPL/);
+  });
+
   it("one CTA, Start for $1; no stocks, crypto or Congress in the pitch", async () => {
-    const landing = read("components/sky/Landing.tsx");
+    const landing = read("components/open/Landing.tsx"), frame = read("components/open/Frame.tsx");
     expect(landing).toContain("Start for ${TRIAL.fee}");
-    expect(landing).toContain("Information, not financial or betting advice.");
-    expect(landing).toContain("Operated by {COMPANY.name}.");
+    expect(frame).toContain("Operated by {COMPANY.name}.");
+    expect(read("lib/copy.ts")).toContain('ADVICE = "Information, not financial or betting advice."');
     expect((await import("@/lib/copy")).COMPANY.name).toBe("Aethric LLC");
     const nav = read("components/SiteHeader.tsx");
     expect(nav).toContain('[link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>]');
-    for (const f of ["app/page.tsx", "components/sky/Landing.tsx", "components/sky/MemberHome.tsx", "components/sky/Shell.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
+    for (const f of ["app/page.tsx", "components/open/Landing.tsx", "components/open/Frame.tsx", "app/board/page.tsx", "components/sky/MemberHome.tsx", "components/sky/Shell.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Faq.tsx", "components/paywall/LateBar.tsx", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx"]) {
       expect(literals(read(f)), f).not.toMatch(/\b(stocks?|Stocks?|crypto|Crypto|SEC|insider stock|CEO|Congress)\b/);
     }
     const copy = await import("@/lib/copy");
@@ -66,7 +77,7 @@ describe("V2 landing page", () => {
     for (const f of ["components/home/Story.tsx", "components/PageBand.tsx", "components/home/MarketTabs.tsx"]) expect(existsSync(join(process.cwd(), f)), f).toBe(false);
     expect(GET_CTA).toBe("Try 3 days for $1");
     expect(read("lib/copy.ts")).toContain('THEN_LINE = "then $39/mo, cancel anytime"');
-    for (const f of ["components/sky/Landing.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
+    for (const f of ["components/open/Landing.tsx", "app/pricing/page.tsx", "app/start/page.tsx", "components/v2/Pricing.tsx", "components/lock/Lock.tsx", "components/SiteHeader.tsx", "components/v2/Faq.tsx", "components/auth/StartCheckout.tsx", "lib/copy.ts"]) {
       expect(read(f), f).not.toMatch(/Get Insidir · \$39|\$39\/month · Cancel|Try it for|7 days|first week|Pro\b/);
     }
   });

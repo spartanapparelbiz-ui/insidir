@@ -50,6 +50,9 @@ export interface UserSettings {
   betOn?: string[];
   /** Dollars per copied move (lib/copies): 10, 50 or 100; DEFAULT_COPY_SIZE when unset. */
   copySize?: 10 | 50 | 100;
+  /** Millionaire pings (lib/millionaire/pings.ts) are on for these categories (lib/nx/data.ts CATS keys); unset: the
+   *  categories from onboarding (betOn), or every category when there are none. */
+  pingCats?: string[];
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -852,3 +855,13 @@ export const readSeen = terminal.table("read_seen", {
   noDollars: doublePrecision("no_dollars"),
   seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.userId, t.marketKey] })]);
+
+/** Millionaire pings sent (lib/millionaire/pings.ts): one row per member and bet, its Eastern day for the daily cap.
+ *  The receipt: the bet's own result (terminal.moves.result) once its market settles, so /results can show how the
+ *  pinged bets did, losses included. */
+export const millionairePings = terminal.table("millionaire_pings", {
+  userId: text("user_id").notNull(),
+  moveId: text("move_id").notNull(),
+  day: text("day").notNull(),
+  sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
+}, t => [primaryKey({ columns: [t.userId, t.moveId] }), index("millionaire_pings_day_idx").on(t.userId, t.day), index("millionaire_pings_move_idx").on(t.moveId)]);

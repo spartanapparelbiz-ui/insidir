@@ -2,6 +2,8 @@
  * the amount, when, and the public record behind it. Public, no log-in: our proof page, complete and honest, losses
  * included (the live feed stays for members). The totals at the top are the home trust block's (lib/trust.ts, one
  * query, one cache), so the two always match. */
+import { pingReceipts } from "@/lib/millionaire/pings";
+import { receiptLine } from "@/lib/millionaire/pings-pure";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SourceA } from "@/components/v2/MoveCard";
@@ -48,12 +50,14 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   let total: Awaited<ReturnType<typeof trustFacts>>["settled"] = null;
   let recs = new Map<string, Parameters<typeof isTopTrader>[0] & object>();
   let avatars = new Map<string, string>();
+  let pings: { won: number; lost: number; open: number } | null = null;
   if (hasDatabase()) {
     const db = getDb();
     const [page1, facts] = await Promise.all([
       listMoves(db, { settled: true, tab, min, limit: PER_PAGE + 1, offset: (page - 1) * PER_PAGE }).catch(() => []),
       memo("trust", 60_000, () => trustFacts(db)).catch(() => null),
     ]);
+    pings = await memo("open:receipts", 5 * 60_000, () => pingReceipts(db)).catch(() => null);
     more = page1.length > PER_PAGE;
     rows = page1.slice(0, PER_PAGE);
     total = facts?.settled ?? null;
@@ -72,6 +76,12 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       <main className="wrap app2 results dark">
         <header className="phead"><h1 className="phead__h">Track record</h1></header>
         <p className="results__label">Real past positions. Not a promise.</p>
+        {pings && receiptLine(pings) ? (
+          <section className="results__total" aria-label="Millionaire pings" data-testid="results-pings">
+            <p><b>{receiptLine(pings)}</b>{pings.open ? ` · ${pings.open} still open` : ""}.</p>
+            <p className="trust__fine">Every bet a millionaire ping went out for, counted once however many members got it: a $1M+ wallet&apos;s $25K+ bet, and how its side did when the market settled. Losses included.</p>
+          </section>
+        ) : null}
         {total ? (
           <section className="results__total rv" aria-label="Every settled position" data-testid="results-total">
             <RecordCount r={total} />

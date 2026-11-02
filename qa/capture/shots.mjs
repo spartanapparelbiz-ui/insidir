@@ -1,24 +1,23 @@
-// Captures the landing (visitor) and the member dashboard at 390 and 1440 px, with WebGL through SwiftShader so the
-// 3D skyline renders headless. Needs the capture server (qa/capture/seed.ts on top of qa/e2e/serve.ts) on :3100.
+// Captures the landing (visitor), the member dashboard and the Millionaires' board (visitor and member) at 390 and
+// 1440 px. Needs the capture server (qa/capture/seed.ts on top of qa/e2e/serve.ts) on :3100.
 // Run: node qa/capture/shots.mjs [outDir]
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
 const BASE = process.env.CAPTURE_URL ?? "http://localhost:3100";
-const OUT = process.argv[2] ?? "qa/screenshots/skyline";
+const OUT = process.argv[2] ?? "qa/screenshots/millionaires";
 const MEMBER = "e2e-pro-session-token-0000000000000000";
 mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const problems = [];
-for (const [name, cookie] of [["landing", null], ["dashboard", MEMBER]]) {
+for (const [name, path, cookie] of [["landing", "/", null], ["dashboard", "/", MEMBER], ["board", "/board", null], ["board-member", "/board", MEMBER]]) {
   for (const width of [390, 1440]) {
     const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, deviceScaleFactor: width < 600 ? 2 : 1 });
     if (cookie) await ctx.addCookies([{ name: "insidir_session", value: cookie, url: BASE }]);
     const page = await ctx.newPage();
     page.on("console", m => { if (m.type() === "error") problems.push(`${name}@${width} console: ${m.text()}`); });
-    await page.goto(BASE + "/", { waitUntil: "networkidle" });
-    await page.waitForSelector('[data-testid$="skyline"][data-three="on"]', { timeout: 30_000 }).catch(() => problems.push(`${name}@${width}: 3D skyline did not start`));
+    await page.goto(BASE + path, { waitUntil: "networkidle" });
     await page.waitForTimeout(2_500);
     // Scroll through so every reveal and lazy image has run, then back to the top.
     const h = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -41,9 +40,9 @@ for (const [name, cookie] of [["landing", null], ["dashboard", MEMBER]]) {
     const big = await browser.newContext({ viewport: { width, height: full }, deviceScaleFactor: Math.min(width < 600 ? 2 : 1, 8000 / full) });
     if (cookie) await big.addCookies([{ name: "insidir_session", value: cookie, url: BASE }]);
     const whole = await big.newPage();
-    await whole.goto(BASE + "/", { waitUntil: "networkidle" });
-    await whole.waitForSelector('[data-testid$="skyline"][data-three="on"]', { timeout: 30_000 }).catch(() => problems.push(`${name}@${width} full: 3D skyline did not start`));
-    await whole.waitForTimeout(3_000);
+    await whole.goto(BASE + path, { waitUntil: "networkidle" });
+    // Let the animated list and number tickers finish (they hold real values).
+    await whole.waitForTimeout(14_000);
     await whole.screenshot({ path: `${OUT}/${name}-${width}.png` });
     await big.close();
     await ctx.close();

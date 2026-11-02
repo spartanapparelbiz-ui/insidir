@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { artFor, sideFirst } from "@/lib/sky/art";
 import { matchPeople, peopleIn, type Legislator, type PersonRow } from "@/lib/sky/people-match";
-import { ago, barHeight, betLine, initials, skyLayout } from "@/lib/sky/sky-pure";
+import { ago, betLine, initials } from "@/lib/sky/sky-pure";
 import { dedupeChips } from "@/lib/sky/landing";
 import { hello, memberCats } from "@/lib/nx/member";
 import { chipText, shortQuestion, type MarketCard } from "@/lib/nx/data";
@@ -72,20 +72,7 @@ describe("people", () => {
   });
 });
 
-describe("the skyline", () => {
-  it("lays bars out on a spiral, the biggest in the middle, all within the floor", () => {
-    const pos = skyLayout(40, 10);
-    expect(pos[0]).toEqual({ x: 0, z: 0 });
-    for (const p of pos) expect(Math.hypot(p.x, p.z)).toBeLessThanOrEqual(10.0001);
-    expect(new Set(pos.map(p => `${p.x.toFixed(3)},${p.z.toFixed(3)}`)).size).toBe(40);
-  });
-  it("bar height grows with log(dollars) between the bounds", () => {
-    expect(barHeight(26_832, 26_832, 139_771)).toBe(1);
-    expect(barHeight(139_771, 26_832, 139_771)).toBe(9);
-    const mid = barHeight(65_000, 26_832, 139_771);
-    expect(mid).toBeGreaterThan(1); expect(mid).toBeLessThan(9);
-    expect(barHeight(50_000, 50_000, 50_000)).toBe(5);
-  });
+describe("big bets", () => {
   it("describes a bet in one line, as the tooltip shows it", () => {
     expect(betLine({ amount: 139_771, side: "Rams", price: 0.69, title: "Chargers vs. Rams", at: NOW - 4 * 60_000 }, NOW)).toBe("$139,771 · Rams · 69¢ · Chargers vs. Rams · 4m ago");
     expect(betLine({ amount: 65_000, side: "Titans", price: 0.65, title: "Titans", at: NOW - 20_000 }, NOW)).toBe("$65,000 · Titans · 65¢ · just now");

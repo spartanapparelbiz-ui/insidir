@@ -1,13 +1,14 @@
-/* The home page (the insidir system, app/sky.css).
- *   Visitors  the landing (components/sky/Landing.tsx, data from lib/sky/landing.ts): the ask box beside the 3D money
- *             skyline, live markets, the Read as an answer, the ticker, the record, pricing. One free Read.
- *   Members   the dashboard home (components/sky/Shell.tsx, MemberHome.tsx, lib/nx/member.ts).
+/* The home page.
+ *   Visitors  the landing on Cruip's "Open" layout (components/open/Landing.tsx, data from lib/open/landing.ts): the
+ *             millionaires' hero and ask box, the board 60 minutes late, live numbers, a real Read, the features,
+ *             the record, pricing. One free Read.
+ *   Members   the dashboard home (components/sky/Shell.tsx, MemberHome.tsx, lib/nx/member.ts), with the live board.
  * Every number is live from the database. */
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { unlockHref } from "@/components/app/links";
-import { FAQ, Landing } from "@/components/sky/Landing";
+import { OPEN_FAQ, OpenLandingPage } from "@/components/open/Landing";
 import { MemberHome } from "@/components/sky/MemberHome";
 import { Shell } from "@/components/sky/Shell";
 import { AB_COOKIE, readUtm, recordEvent, UTM_COOKIE } from "@/lib/analytics";
@@ -17,17 +18,17 @@ import { WHAT_IS } from "@/lib/copy";
 import { getDb, hasDatabase } from "@/lib/db";
 import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { cleanRef, REF_COOKIE } from "@/lib/home/ref";
-import { electionMode } from "@/lib/nx/data";
 import { greeting, hello, memberCats, memberHomeData, type MemberHomeData } from "@/lib/nx/member";
 import { isPaid } from "@/lib/plans";
-import { dedupeChips, landingData, type LandingData } from "@/lib/sky/landing";
-import { skyBets } from "@/lib/sky/skyline";
+import { dedupeChips } from "@/lib/sky/landing";
+import { emptyLanding, openLanding } from "@/lib/open/landing";
+import { boardRows } from "@/lib/millionaire/board";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: { absolute: "insidir: where's the smart money?" }, description: WHAT_IS };
+export const metadata: Metadata = { title: { absolute: "insidir: see what Polymarket's millionaires are betting" }, description: WHAT_IS };
 export const viewport: Viewport = { themeColor: "#070B14" };
 
-const faqLd = () => JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
+const faqLd = () => JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: OPEN_FAQ.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
 
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const now = Date.now();
@@ -35,13 +36,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const clients = { polymarket: new PolymarketClient(), kalshi: new KalshiClient() };
   if (isPaid(viewer.plan) && viewer.user) {
     const u = viewer.user, cats = memberCats(u.settings.betOn ?? []);
-    const [d, sky] = hasDatabase() ? await Promise.all([
+    const [d, board] = hasDatabase() ? await Promise.all([
       memberHomeData(getDb(), clients, u.id, u.settings.betOn ?? [], now),
-      skyBets(getDb(), now, { cats: cats.length ? cats : null }).catch(() => []),
+      // Members see the board live, in their categories.
+      boardRows(getDb(), now, { limit: 6, cats: cats.length ? cats : null }).catch(() => []),
     ]) : [{ tabs: [], chips: [], mine: [], week: { right: 0, of: 0, lines: [] } } as MemberHomeData, []];
     return (
       <Shell current="home">
-        <MemberHome d={{ ...d, chips: dedupeChips(d.chips) }} hello={hello(greeting(now), u.name)} sky={sky} cats={cats} now={now} focus={sp.ask === "1"} />
+        <MemberHome d={{ ...d, chips: dedupeChips(d.chips) }} hello={hello(greeting(now), u.name)} board={board} now={now} focus={sp.ask === "1"} />
       </Shell>
     );
   }
@@ -54,12 +56,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const props = { ...(ref ? { ref } : {}), ...tags };
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null, props: Object.keys(props).length ? props : undefined }).catch(() => undefined));
   const us = viewer.region !== "non_us";
-  const d: LandingData = hasDatabase() ? await landingData(getDb(), clients, now, us)
-    : { now, election: electionMode(now), us, sky: [], chips: [], proof: null, cards: {}, featured: null, ticker: [], record: { "1w": [], "1m": [], "3m": [], all: [] } };
+  const d = hasDatabase() ? await openLanding(getDb(), clients, now, us).catch(() => emptyLanding(now, us)) : emptyLanding(now, us);
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd() }} />
-      <Landing d={d} startHref={unlockHref()} />
+      <OpenLandingPage d={d} startHref={unlockHref()} />
     </>
   );
 }

@@ -7,7 +7,7 @@ import { q, signIn } from "./helpers";
 /** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
 const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
 
-test("members open the app on the greeting and the box, over their skyline; the frame holds everything else", async ({ page, context }) => {
+test("members open the app on the greeting and the box, with the live Millionaires' board; the frame holds everything else", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
   await expect(page.getByTestId("member-home")).toBeVisible();
@@ -17,7 +17,7 @@ test("members open the app on the greeting and the box, over their skyline; the 
   await expect(page.getByTestId("read-input")).toBeFocused();
   const nav = page.viewportSize()!.width < 960 ? page.locator(".skm-tabs a") : page.locator(".skm-side__nav a");
   const labels = (await nav.allInnerTexts()).map(t => t.trim());
-  for (const l of ["Home", "Markets", "Your markets", "Account"]) expect(labels).toContain(l);
+  for (const l of ["Home", "Millionaires", "Your markets", "Account"]) expect(labels).toContain(l);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 test("a tracker page: holding now first, then following it, the traders' own return, stats, breakdowns, top traders, latest positions; nothing invented under 30 settled", async ({ page, context }) => {

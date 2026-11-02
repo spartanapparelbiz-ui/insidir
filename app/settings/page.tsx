@@ -25,6 +25,8 @@ import { vapidPublicKey } from "@/lib/alerts/vapid";
 import { BET_ON } from "@/lib/read/member";
 import type { SessionUser } from "@/lib/auth/session";
 import type { UserSettings } from "@/lib/db/schema";
+import { PING_CATS, pingCatsOf } from "@/lib/millionaire/pings-pure";
+import { CATS } from "@/lib/nx/data";
 import "../app.css";
 import "../account.css";
 
@@ -193,6 +195,7 @@ function MemberAccount({ user, m, memError, notice, cancelNote, confirmDelete }:
   const cats = BET_ON.filter(([k]) => (user.settings.betOn ?? []).includes(k)).map(([, label]) => label);
   const price = `$${PLANS.insidir.price}`;
   const s = user.settings as UserSettings;
+  const pingOn = pingCatsOf(s);
   return (
     <Shell current="account" refresh={false}>
       <div className="skm-sec ska" data-testid="account">
@@ -228,6 +231,18 @@ function MemberAccount({ user, m, memError, notice, cancelNote, confirmDelete }:
           <h2 id="a-alerts">Alerts on this device</h2>
           <p className="sk-muted">A push alert when proven money moves on a market you&apos;ve read.</p>
           <PushButton vapidKey={vapidPublicKey()} />
+        </section>
+
+        <section className="sk-panel ska-box" aria-labelledby="a-pings" id="pings">
+          <h2 id="a-pings">Millionaire pings</h2>
+          <p className="sk-muted">A push when a wallet with $1M+ all-time profit bets $25K+ in a category you pick. At most 5 a day.</p>
+          <form method="post" action="/api/settings" className="ska-form" data-testid="pings-form">
+            <input type="hidden" name="pingsForm" value="1" />
+            <div className="sk-chips" role="group" aria-label="Categories">
+              {PING_CATS.map(c => <label key={c} className="ska-opt"><input type="checkbox" name="pingCats" value={c} defaultChecked={pingOn.has(c)} /> {CATS.find(x => x.key === c)?.label ?? c}</label>)}
+            </div>
+            <button type="submit" className="sk-pill">Save pings</button>
+          </form>
         </section>
 
         <section className="sk-panel ska-box" aria-labelledby="a-cats">

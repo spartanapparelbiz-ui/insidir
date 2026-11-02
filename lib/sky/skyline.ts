@@ -32,4 +32,4 @@ export async function skyBets(db: Db, now: number, o: { cats?: readonly Cat[] | 
   });
 }
 
-export { barHeight, betLine, skyLayout } from "./sky-pure";
+export { betLine } from "./sky-pure";

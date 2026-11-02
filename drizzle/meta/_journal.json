@@ -239,6 +239,13 @@
       "when": 1793598282118,
       "tag": "0033_nx_read_question",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793638250344,
+      "tag": "0034_millionaire_pings",
+      "breakpoints": true
     }
   ]
 }

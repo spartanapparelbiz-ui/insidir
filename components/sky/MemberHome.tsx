@@ -1,6 +1,7 @@
 /* The member home in the dashboard frame (components/sky/Shell.tsx):
  *   Top           "Good evening, {first name}." (no name: "Good evening.") with the glass ask box and chips from their
- *                 categories, over a short money skyline (220px) of their categories' biggest bets.
+ *                 categories.
+ *   Millionaires  the board, live: the newest $10K+ bets from $1M+ wallets in their categories (lib/millionaire).
  *   Moved         their markets where proven money moved since their last visit, in dollars (hidden when none did).
  *   This week     their categories as tabs over the same market cards as the home page.
  *   Your markets  rows: logo or portrait, title, the side proven money favors, a mini split, price, change today, a
@@ -12,10 +13,10 @@ import { chipText, type MarketCard as CardT } from "@/lib/nx/data";
 import { movedLine, type MemberHomeData } from "@/lib/nx/member";
 import type { YourMarket } from "@/lib/read/member";
 import { artFor } from "@/lib/sky/art";
-import type { SkyBet } from "@/lib/sky/sky-pure";
+import type { BoardRow } from "@/lib/millionaire/board";
+import { BoardList } from "@/components/millionaire/BoardList";
 import { Art } from "./Art";
 import { MarketCard, SplitBar } from "./Card";
-import { Skyline } from "./Skyline";
 import { Tabs } from "./Tabs";
 import { Tick } from "./Tick";
 
@@ -29,15 +30,24 @@ function Chips({ chips, testid }: { chips: CardT[]; testid: string }) {
   return <div className="sk-chips" data-testid={testid}>{chips.map(c => <ReadPick key={c.key} venue={c.venue} id={c.id} className="sk-chip">{chipText(c)}</ReadPick>)}</div>;
 }
 
-function Top({ hello, chips, sky, cats, focus }: { hello: string; chips: CardT[]; sky: SkyBet[]; cats: string[]; focus: boolean }) {
+function Top({ hello, chips, focus }: { hello: string; chips: CardT[]; focus: boolean }) {
   return (
     <section className="skm-top-band" aria-labelledby="hi-h">
-      {sky.length ? <div className="skm-top-band__sky" aria-hidden="true"><Skyline bets={sky} height={220} phoneHeight={220} cats={cats} compact testid="member-skyline" /></div> : null}
       <div className="skm-top-band__in">
         <h1 id="hi-h" className="skm-hello" data-testid="hello">{hello}</h1>
         <ReadBox glass autoFocus={focus} label="Read" placeholder="Paste a Polymarket or Kalshi link, or ask about any market" />
         <Chips chips={chips} testid="member-chips" />
       </div>
+    </section>
+  );
+}
+
+function Millionaires({ rows, now }: { rows: BoardRow[]; now: number }) {
+  if (!rows.length) return null;
+  return (
+    <section className="skm-sec" aria-labelledby="mb-h" data-testid="member-board">
+      <div className="sk-sec__head"><h2 id="mb-h" className="sk-h2 skm-h">Millionaires now</h2><a className="sk-pill sk-sm" href="/board">The board</a></div>
+      <BoardList rows={rows} now={now} testid="member-board-rows" />
     </section>
   );
 }
@@ -129,11 +139,12 @@ function Week({ w, following }: { w: MemberHomeData["week"]; following: number }
   );
 }
 
-export function MemberHome({ d, hello, sky, cats, now, focus }: { d: MemberHomeData; hello: string; sky: SkyBet[]; cats: string[]; now: number; focus: boolean }) {
+export function MemberHome({ d, hello, board, now, focus }: { d: MemberHomeData; hello: string; board: BoardRow[]; now: number; focus: boolean }) {
   const byKey = new Map(d.tabs.flatMap(t => t.cards).map(c => [c.key, c]));
   return (
     <div data-testid="member-home">
-      <Top hello={hello} chips={d.chips} sky={sky} cats={cats} focus={focus} />
+      <Top hello={hello} chips={d.chips} focus={focus} />
+      <Millionaires rows={board} now={now} />
       <Moved mine={d.mine} now={now} cats={byKey} />
       <ThisWeek tabs={d.tabs} />
       <Yours mine={d.mine} chips={d.chips} cats={byKey} />
