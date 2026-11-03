@@ -226,12 +226,11 @@ describe("Data API", () => {
     expect(new URL(calls[1]!.url).searchParams.get("cursor")).toBe("abc");
   });
 
-  it("falls back from /v2/activity to /activity", async () => {
-    const { http, calls } = testHttp(url => (url.includes("/v2/activity") ? { status: 404 } : { body: [{ proxyWallet: "0xw", timestamp: 1, type: "REDEEM" }] }));
+  it("never falls back to the retired /activity (410 Gone): a /v2/activity failure is reported", async () => {
+    const { http, calls } = testHttp(() => ({ status: 503 }));
     const client = new PolymarketClient({ gamma: http, clob: http, data: http, dataUrl: "https://data.test" });
-    const rows = await client.getActivity("0xw");
-    expect(rows.map(r => r.type)).toEqual(["REDEEM"]);
-    expect(calls.map(c => new URL(c.url).pathname)).toEqual(["/v2/activity", "/activity"]);
+    await expect(client.getActivity("0xw")).rejects.toThrow();
+    expect(new Set(calls.map(c => new URL(c.url).pathname))).toEqual(new Set(["/v2/activity"]));
   });
 });
 

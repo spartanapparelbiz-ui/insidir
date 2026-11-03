@@ -83,7 +83,12 @@ export const CHECKS: Check[] = [
     fields: ["data[].proxy_wallet:string", "data[].side:string", "data[].token_id:string", "data[].condition_id:string", "data[].size:numeric", "data[].price:numeric", "data[].timestamp:numeric", "data[].title:string", "pagination.next_cursor:string"],
   },
   {
-    name: "Polymarket Data GET /v2/leaderboard (millionaire watchlist)", url: () => `${d}/v2/leaderboard?timePeriod=ALL&orderBy=PNL&limit=5`,
+    // A long-standing public wallet with resolved markets (the all-time #1 on the leaderboard).
+    name: "Polymarket Data GET /v2/positions?status=CLOSED (wallet records)", url: () => `${d}/v2/positions?user=0x56687bf447db6ffa42ffe2204a05edaa20f55839&status=CLOSED&limit=5&sortBy=REALIZED_PNL&sortDirection=DESC`,
+    fields: ["data[].proxy_wallet:string", "data[].condition_id:string", "data[].outcome_index:numeric", "data[].avg_price:numeric", "data[].total_size:numeric", "data[].realized_pnl:numeric", "data[].title:string", "pagination.next_cursor:string"],
+  },
+  {
+    name: "Polymarket Data GET /v2/leaderboard (top traders, wallet pnl)", url: () => `${d}/v2/leaderboard?timePeriod=ALL&orderBy=PNL&limit=5`,
     fields: ["data[].user_id:string", "data[].pnl:numeric", "pagination.next_cursor:string"],
   },
   { name: "Polymarket US GET /v1/markets (unverified)", url: () => `${us}${US_ENDPOINTS.markets}?limit=5`, fields: ["markets|data:array"], optional: process.env.POLYMARKET_US_ENABLED !== "1" },

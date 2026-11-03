@@ -7,7 +7,7 @@
  *          GET  /midpoint?token_id=…, GET /price?token_id=…&side=…   price helpers
  *          WSS  /ws/market  {assets_ids, type:"market"}              "book" / "price_change" pushes
  *   Data   GET  /trades?filterType=CASH&filterAmount=…&takerOnly=true   large trades (whales)
- *          GET  /positions?user=…, GET /v2/activity?user=…           a wallet's public positions and history
+ *          GET  /v2/positions?user=…, GET /v2/activity?user=…        a wallet's public positions and history
  *
  * Every Polymarket market is binary at the CLOB level: two outcome tokens. The YES book comes from the first
  * outcome's token, the NO book from the second's (the NO token's asks are NO asks). Raw responses are read
@@ -733,23 +733,32 @@ export class PolymarketClient implements VenueClient {
     return { data: rows(raw).map(v1Trade), pagination: isObject(raw) ? raw.pagination ?? null : null };
   }
 
-  /** One page of a wallet's closed (resolved) positions, with realized profit (GET /closed-positions). */
-  async getClosedPositionsPage(user: string, opts: { limit?: number; offset?: number; market?: string; priority?: Priority } = {}): Promise<unknown> {
-    const params = { user, market: opts.market, limit: opts.limit ?? 50, offset: opts.offset ?? 0, sortBy: "REALIZEDPNL", sortDirection: "DESC" };
-    return this.data.json(`${this.dataUrl}/closed-positions${qs(params)}`, { priority: opts.priority });
+  /** One page of a wallet's closed (resolved) positions with realized profit, biggest profit first: GET
+   *  /v2/positions?status=CLOSED (v1 /closed-positions answers 410 Gone). Pages by cursor (pass the previous page's
+   *  next_cursor: tradesCursor); `market` filters to one condition id. Raw { data, pagination }, rows in v1 names
+   *  (v1Position). */
+  async getClosedPositionsPage(user: string, opts: { limit?: number; cursor?: string | null; market?: string; priority?: Priority } = {}): Promise<{ data: JsonObject[]; pagination: unknown }> {
+    return this.positionsV2({ user, status: "CLOSED", condition: opts.market, limit: opts.limit ?? 50, sortBy: "REALIZED_PNL", sortDirection: "DESC" }, opts.cursor ?? null, opts.priority);
   }
 
-  /** A wallet's open positions (public). Paginates up to DATA_MAX_PAGES. */
+  /** A wallet's open positions (public): GET /v2/positions?status=OPEN (v1 /positions answers 410 Gone), by cursor up
+   *  to DATA_MAX_PAGES. */
   async getPositions(user: string, opts: { sizeThreshold?: number; priority?: Priority } = {}): Promise<PolymarketPosition[]> {
     const out: PolymarketPosition[] = [];
+    let cursor: string | null = null;
     for (let page = 0; page < DATA_MAX_PAGES; page++) {
-      const params = { user, limit: DATA_PAGE_LIMIT, offset: page * DATA_PAGE_LIMIT, sizeThreshold: opts.sizeThreshold ?? 0 };
-      const raw = await this.data.json(`${this.dataUrl}/positions${qs(params)}`, { priority: opts.priority });
-      const got = readPositions(raw);
-      out.push(...got);
-      if (rows(raw).length < DATA_PAGE_LIMIT) break;
+      const raw: { data: JsonObject[]; pagination: unknown } = await this.positionsV2({ user, status: "OPEN", limit: DATA_PAGE_LIMIT, sizeThreshold: opts.sizeThreshold ?? 0 }, cursor, opts.priority);
+      out.push(...readPositions(raw));
+      cursor = tradesCursor(raw);
+      if (!cursor) break;
     }
     return out;
+  }
+
+  /** GET /v2/positions: { data, pagination: { has_more, next_cursor } }, rows renamed to the v1 fields (v1Position). */
+  private async positionsV2(params: Record<string, string | number | boolean | undefined>, cursor: string | null, priority?: Priority): Promise<{ data: JsonObject[]; pagination: unknown }> {
+    const raw = await this.data.json(`${this.dataUrl}/v2/positions${qs({ ...params, cursor: cursor ?? undefined })}`, { priority });
+    return { data: rows(raw).map(v1Position), pagination: isObject(raw) ? raw.pagination ?? null : null };
   }
 
   /** A wallet's public profile (Gamma GET /public-profile?address=): name, pseudonym, displayUsernamePublic,
@@ -764,7 +773,7 @@ export class PolymarketClient implements VenueClient {
   }
 
   /** One wallet's all-time row on the public leaderboard (GET /v2/leaderboard?timePeriod=ALL&orderBy=PNL&user=):
-   *  { data: { user_id, pnl, volume, rank_pnl, user_name, ... } } (v1 was retired). Raw; read it with
+   *  { data: { user_id, pnl, volume, rank_pnl, user_name, ... } } (v1 answers 410 Gone). Raw; read it with
    *  lib/moves/sources.ts readUserPnl (pnl only). */
   async getLeaderboardUser(user: string, priority: Priority = "normal"): Promise<unknown> {
     return this.data.json(`${this.dataUrl}/v2/leaderboard${qs({ timePeriod: "ALL", orderBy: "PNL", limit: 1, user: user.toLowerCase() })}`, { priority });
@@ -778,35 +787,23 @@ export class PolymarketClient implements VenueClient {
     return this.data.json(`${this.dataUrl}/v2/leaderboard${qs(params)}`, { priority: opts.priority ?? "normal" });
   }
 
-  /** A wallet's history, newest first. GET /v2/activity pages by cursor ({data, pagination: {has_more, next_cursor}};
-   *  it rejects `offset` with a 400); if /v2 is gone (404) or refuses the request, the classic /activity, paged by
-   *  offset. */
+  /** A wallet's history, newest first: GET /v2/activity, paged by cursor ({ data, pagination: { has_more, next_cursor } };
+   *  it rejects `offset`). The classic /activity answers 410 Gone, so there is no fallback: a failure is reported. */
   async getActivity(user: string, opts: { type?: string; start?: number; end?: number; maxPages?: number; limit?: number; priority?: Priority } = {}): Promise<PolymarketActivity[]> {
     const out: PolymarketActivity[] = [];
     const maxPages = opts.maxPages ?? DATA_MAX_PAGES;
-    const limit = opts.limit ?? DATA_PAGE_LIMIT;
     const base = {
-      user, limit, type: opts.type,
+      user, limit: opts.limit ?? DATA_PAGE_LIMIT, type: opts.type,
       start: opts.start !== undefined ? Math.floor(opts.start / 1000) : undefined,
       end: opts.end !== undefined ? Math.floor(opts.end / 1000) : undefined,
       sortBy: "TIMESTAMP", sortDirection: "DESC",
     };
-    let v2 = true;
     let cursor: string | undefined;
     for (let page = 0; page < maxPages; page++) {
-      let raw: unknown = null;
-      if (v2) {
-        try { raw = await this.data.json(`${this.dataUrl}/v2/activity${qs({ ...base, cursor })}`, { priority: opts.priority }); }
-        catch (e) { if (page > 0) throw e; raw = null; }
-        if (raw === null && page === 0) v2 = false;
-      }
-      if (!v2) raw = await this.data.json(`${this.dataUrl}/activity${qs({ ...base, offset: page * limit })}`, { priority: opts.priority });
+      const raw = await this.data.json(`${this.dataUrl}/v2/activity${qs({ ...base, cursor })}`, { priority: opts.priority });
       out.push(...readActivity(raw));
-      if (v2) {
-        const p = (raw as { pagination?: { has_more?: unknown; next_cursor?: unknown } } | null)?.pagination;
-        cursor = typeof p?.next_cursor === "string" && p.next_cursor ? p.next_cursor : undefined;
-        if (p?.has_more !== true || !cursor) break;
-      } else if (rows(raw).length < limit) break;
+      cursor = tradesCursor(raw) ?? undefined;
+      if (!cursor) break;
     }
     return out;
   }
@@ -1113,6 +1110,18 @@ export function v1Trade(r: JsonObject): JsonObject {
   for (const [k, v] of Object.entries(r)) out[k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())] = v;
   if (out.tokenId !== undefined && out.asset === undefined) out.asset = out.tokenId;
   return out;
+}
+
+/** A v2 position row (GET /v2/positions) in the v1 /positions and /closed-positions field names the parsers read:
+ *  asset (token_id), size (current_size), initialValue (total_cost_usdc), cashPnl (unrealized_pnl), curPrice
+ *  (current_price), totalBought (total_size), timestamp (last_event_at). */
+export function v1Position(r: JsonObject): JsonObject {
+  const o = v1Trade(r);
+  return {
+    ...o,
+    size: o.currentSize ?? o.size, initialValue: o.totalCostUsdc ?? o.initialValue, cashPnl: o.unrealizedPnl ?? o.cashPnl,
+    curPrice: o.currentPrice ?? o.curPrice, totalBought: o.totalSize ?? o.totalBought, timestamp: o.lastEventAt ?? o.timestamp,
+  };
 }
 
 /** The next page's cursor of a v2 trades page; null on the last page (or a v1-style list). */

@@ -1,7 +1,7 @@
 /* Raw API rows → fills (pure). Field names per the public APIs:
  *   Polymarket Data API GET /trades: proxyWallet, side, conditionId, size, price, timestamp (s), title, slug,
  *     eventSlug, outcome, outcomeIndex, name, pseudonym, transactionHash.
- *   Polymarket Data API GET /closed-positions: conditionId, realizedPnl.
+ *   Polymarket Data API GET /v2/positions?status=CLOSED (rows in v1 names, lib/exchanges/polymarket.ts v1Position): conditionId, realizedPnl.
  *   Kalshi GET /markets/trades: trade_id, ticker, count (or count_fp), yes_price / no_price in cents (or
  *     yes_price_dollars / no_price_dollars), taker_side, created_time. Kalshi trades carry no account. */
 import { polymarketUrl } from "@/lib/exchanges/polymarket";

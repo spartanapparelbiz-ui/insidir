@@ -18,6 +18,7 @@ describe("endpoint shape check", () => {
     ["Polymarket Gamma GET /events", "gamma-events.json"],
     ["Polymarket CLOB POST /books", "clob-books.json"],
     ["Polymarket Data GET /v2/trades", "data-trades-v2.json"],
+    ["Polymarket Data GET /v2/positions?status=CLOSED", "data-positions-closed-v2.json"],
     ["Polymarket Data GET /v2/leaderboard", "data-leaderboard-v2.json"],
   ])("%s matches %s", (prefix, file) => {
     expect(shapeErrors(fx(file), fields(prefix))).toEqual([]);

@@ -34,12 +34,14 @@ function fakePoly(o: { closed: (w: string) => number; pnl: (w: string) => number
   const wait = () => new Promise(ok => setTimeout(ok, o.delayMs ?? 0));
   return {
     calls,
-    getClosedPositionsPage: async (w: string, q: { offset?: number }) => {
+    // /v2/positions?status=CLOSED pages by cursor (here the cursor is the next offset); rows in v1 names (v1Position).
+    getClosedPositionsPage: async (w: string, q: { cursor?: string | null } = {}) => {
       calls.push(`closed:${w}`); await wait();
-      const off = q.offset ?? 0, n = Math.max(0, Math.min(50, o.closed(w) - off));
-      return Array.from({ length: n }, (_, i) => ({ conditionId: `0xm${off + i}`, outcomeIndex: 0, title: "M", avgPrice: 0.5, totalBought: 10, realizedPnl: 1, timestamp: NOW / 1000 }));
+      const off = Number(q.cursor ?? 0), n = Math.max(0, Math.min(50, o.closed(w) - off)), more = off + n < o.closed(w);
+      return { data: Array.from({ length: n }, (_, i) => ({ conditionId: `0xm${off + i}`, outcomeIndex: 0, title: "M", avgPrice: 0.5, totalBought: 10, realizedPnl: 1, timestamp: NOW / 1000 })), pagination: { has_more: more, next_cursor: more ? String(off + n) : null } };
     },
-    getLeaderboardUser: async (w: string) => { calls.push(`board:${w}`); await wait(); const p = o.pnl(w); return p === null ? [] : [{ rank: "9", proxyWallet: w, userName: "x", vol: 1, pnl: p }]; },
+    // /v2/leaderboard answers a user lookup with one object.
+    getLeaderboardUser: async (w: string) => { calls.push(`board:${w}`); await wait(); const p = o.pnl(w); return p === null ? { data: null } : { data: { rank_pnl: 9, user_id: w, user_name: "x", volume: 1, pnl: p } }; },
   };
 }
 

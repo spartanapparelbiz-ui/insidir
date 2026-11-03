@@ -8,6 +8,7 @@
  * Each writes a heartbeat (moves:polymarket, moves:kalshi) that the feed's status line reads. */
 import type { Db } from "@/lib/db";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
+import { tradesCursor } from "@/lib/exchanges/polymarket";
 import type { VMarket } from "@/lib/types";
 import type { WalletTrade } from "./detect";
 import { MarketDirectory } from "./directory";
@@ -196,10 +197,12 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
   for (const w of await walletsToRecord(db, now, RECORD_STALE_MS, perRun)) {
     const closed: ClosedPosition[] = [];
     let complete = false;
+    let cursor: string | null = null;
     for (let page = 0; page < RECORD_MAX_PAGES; page++) {
-      const raw = await poly.getClosedPositionsPage(w.wallet, { limit: 50, offset: page * 50 });
+      const raw: unknown = await poly.getClosedPositionsPage(w.wallet, { limit: 50, cursor });
       closed.push(...readClosedRows(raw));
-      if (rows(raw).length < 50) { complete = true; break; }
+      cursor = tradesCursor(raw);
+      if (!cursor) { complete = true; break; }
     }
     if (!complete) continue;
     const open = await poly.getPositions(w.wallet, { sizeThreshold: 0 });
@@ -222,12 +225,11 @@ export async function leaderboardOnce(db: Db, poly: PolymarketClient): Promise<n
   for (const timePeriod of ["ALL", "MONTH", "WEEK"] as const) {
     for (const category of ["OVERALL", "SPORTS"]) {
       let cursor: string | null = null;
-      for (let read = 0; read < LEADERBOARD_WALLETS; read += 50) {
-        const raw = await poly.getLeaderboardPage({ timePeriod, category, limit: 50, cursor });
-        const got = readLeaderboard(raw);
-        for (const r of got) if (!seen.has(r.wallet)) seen.set(r.wallet, r);
+      for (let n = 0; n < LEADERBOARD_WALLETS; n += 50) {
+        const raw: unknown = await poly.getLeaderboardPage({ timePeriod, category, limit: 50, cursor });
+        for (const r of readLeaderboard(raw)) if (!seen.has(r.wallet)) seen.set(r.wallet, r);
         cursor = leaderboardCursor(raw);
-        if (got.length < 50 || !cursor) break;
+        if (!cursor) break;
       }
     }
   }
