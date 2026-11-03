@@ -30,8 +30,8 @@ test("members see live splits biggest gap first, linked to the market, with the 
   await row.click();
   await expect(page).toHaveURL(new RegExp(`/market/${ID}$`));
   await expect(page.getByRole("heading", { level: 1, name: "E2E fixture: Fed cut in December?" })).toBeVisible();
-  const smart = page.locator("#smart-h").locator("xpath=..");
-  await expect(page.getByRole("heading", { level: 2, name: "Proven traders vs. the market" })).toBeVisible();
+  const smart = page.getByTestId("market-smart");
+  await expect(smart.getByRole("heading", { level: 2 })).toHaveText(/^Proven traders are 81% on Yes\. The price says \d+¢\.$/);
   await expect(smart).toContainText("19 points apart");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

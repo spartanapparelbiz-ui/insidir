@@ -6,10 +6,11 @@
  * viewer's browser. Every number links to where it came from. Nothing about who is behind a wallet, ever. */
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { SiteHeader } from "@/components/SiteHeader";
-import { unlockHref } from "@/components/app/links";
-import { TraderProfile } from "@/components/v2/profiles/TraderProfile";
+import { Frame } from "@/components/brand/app/Frame";
+import { ScrollFx } from "@/components/system";
+import { WalletProfile } from "@/components/system/WalletProfile";
 import { getViewer } from "@/lib/auth/viewer";
+import { isPaid } from "@/lib/plans";
 import { getDb, hasDatabase } from "@/lib/db";
 import { walletLabel } from "@/lib/moves/records";
 import { fundHref, insiderHref, parseProfileId } from "@/lib/profiles/name";
@@ -42,16 +43,13 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
   if (ref.kind === "insider") permanentRedirect(insiderHref(ref.cik));
   if (ref.kind === "fund") permanentRedirect(fundHref(ref.cik));
   const viewer = await getViewer();
-  const trial = unlockHref();
   const db = hasDatabase() ? getDb() : null;
-  const body = <TraderProfile db={db} wallet={ref.wallet} viewer={viewer} trial={trial} now={Date.now()} page={page} />;
   return (
-    <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/p" />
-      <main className="wrap app2 trader profile dark">{body}
+    <Frame member={isPaid(viewer.plan)} current="wallets" testid="wallet-page">
+      <WalletProfile db={db} wallet={ref.wallet} viewer={viewer} now={Date.now()} page={page} />
+      <ScrollFx />
         <EntityLd trail={[["Leaderboard", "/top"], [walletLabel(ref.wallet, null), `/p/${ref.wallet}`]]} name={`Polymarket account ${walletLabel(ref.wallet, null)}: verified record`} path={`/p/${ref.wallet}`}
           description="Every large position Insidir has seen from this Polymarket account, settled from the public record." sources={["https://polygonscan.com"]} />
-      </main>
-    </>
+    </Frame>
   );
 }

@@ -35,7 +35,7 @@ test("a trader's profile: every stat from their resolved positions, for members"
   await signIn(context, "insidir");
   await page.goto(`/p/${TOP}`);
   // Stat tiles: a big number with its label (components/stats/Stats.tsx).
-  const tile = (label: string) => page.locator(".tile").filter({ has: page.locator("dt", { hasText: new RegExp(`^${label}$`) }) }).locator("dd");
+  const tile = (label: string) => page.locator(".s-stat").filter({ has: page.locator("dt", { hasText: new RegExp(`^${label}$`) }) }).locator("dd");
   await expect(tile("Record")).toHaveText("41–22");
   await expect(tile("Win rate")).toHaveText("65%");
   await expect(tile("All-time net P&L")).toHaveText("+$1.2M");
@@ -43,9 +43,13 @@ test("a trader's profile: every stat from their resolved positions, for members"
   await expect(tile("Largest gain")).toHaveText("+$310K");
   await expect(tile("Average position size")).toHaveText("$20K");
   await expect(page.getByRole("img", { name: /^Net P&L, every resolved market: \+\$310K to \+\$1\.2M$/ })).toBeVisible();
-  const cats = page.getByRole("table", { name: "By category" });
-  await expect(cats.getByRole("row", { name: /^NFL \d/ })).toBeVisible();
-  await expect(cats.getByRole("row", { name: /^Markets \d/ })).toBeVisible();
+  // The headline is computed from the record; categories are bars, not a table.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("E2E-Top made money on 41 of 63 resolved markets.");
+  const cats = page.getByRole("list", { name: "By category" });
+  await expect(cats.getByRole("listitem").filter({ hasText: /^NFL/ })).toBeVisible();
+  await expect(cats.getByRole("listitem").filter({ hasText: /^Markets/ })).toBeVisible();
+  // Never a face for a wallet.
+  await expect(page.locator("main :not(.b-stage__bg) > img")).toHaveCount(0);
   // A US visitor gets no Polymarket profile link (international Polymarket is never linked for them).
   await expect(page.getByRole("link", { name: "See their Polymarket profile" })).toHaveCount(0);
 });

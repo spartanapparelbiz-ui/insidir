@@ -1,14 +1,24 @@
-/* A market: the question, the price now (or its result once settled) and Follow market; then the venue's price
+/* A market, in the homepage's stages: the market as the subject (its own image when there is one, the question, the price
+ * now or its result, Follow, the venue link by location), then a stage per finding, each opening with a computed
+ * sentence: proven traders vs. the price, the price line with every large position on it, money by side and who holds
+ * each, and the latest large positions. Earlier notes:
+ * A market: the question, the price now (or its result once settled) and Follow market; then the venue's price
  * history with every big move plotted on it (a dot per move, sized by amount, green won, red lost), money by side
  * (all big moves and the last 24 hours), the top traders on each side, and the big money of the last 24 hours. The
  * market link follows the location rules (lib/moves/links.ts). */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/SiteHeader";
+import Image from "next/image";
 import { unlockHref } from "@/components/app/links";
-import { FollowButton } from "@/components/v2/FollowButton";
+import { Frame } from "@/components/brand/app/Frame";
+import { Insight, Lines, Panel, Pill, ScrollFx, Stage } from "@/components/system";
+import { Bars, Rows, SeriesChart, StatTiles } from "@/components/system/Figures";
+import { categoryPhoto, isCategory } from "@/lib/brand/categories";
+import { PHOTOS } from "@/lib/brand/images";
+import { artFor, logosOff } from "@/lib/market/art";
+import { TRIAL } from "@/lib/plans";
+import { FollowLink } from "@/components/desk/Act";
 import { MarketLinkButton } from "@/components/v2/LocationPill";
-import { MoveCard } from "@/components/v2/MoveCard";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
@@ -19,19 +29,14 @@ import { marketLink } from "@/lib/moves/links";
 import { currentPrice } from "@/lib/moves/pages";
 import { followList, kalshiMatches, listMoves, storedMarket } from "@/lib/moves/store";
 import { isPaid } from "@/lib/plans";
-import Link from "next/link";
-import { LineChart, type ChartDot } from "@/components/charts/LineChart";
-import { Section, Table, Tiles } from "@/components/stats/Stats";
 import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 import { infoFor, priceHistory } from "@/lib/markets/info";
 import { memo } from "@/lib/memo";
 import { walletLabel } from "@/lib/moves/records";
 import type { Move } from "@/lib/moves/types";
-import { SplitBars } from "@/components/smart/SplitBars";
 import { marketSmart, splitsFor } from "@/lib/smart/store";
 import { positioningOn } from "@/lib/smart/gate";
 import { SMART_MIN_MONEY, SMART_MIN_WALLETS } from "@/lib/smart/splits";
-import { AsOf, SOURCES } from "@/components/data/AsOf";
 import { EntityLd } from "@/lib/seo/jsonld";
 import { TRACKERS } from "@/lib/trackers";
 
@@ -44,11 +49,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 /** A dot per big move on the YES price line: a NO bet at 30¢ is plotted at YES 70¢. Sized by amount (3–12px). */
-function dotsOf(moves: readonly Move[]): ChartDot[] {
+function dotsOf(moves: readonly Move[]): Array<{ t: number; v: number; r: number; label: string }> {
   const max = Math.max(1, ...moves.map(m => m.amount));
   return moves.filter(m => m.avgPrice > 0 && m.avgPrice < 1).map(m => ({
     t: m.at, v: m.outcomeSide === "yes" ? m.avgPrice : 1 - m.avgPrice, r: 3 + 9 * Math.sqrt(m.amount / max),
-    label: `${dollars(m.amount)} on ${m.outcome} at ${Math.round(m.avgPrice * 100)}%`, tone: m.result === "won" ? "won" as const : m.result === "lost" ? "lost" as const : "open" as const,
+    label: `${dollars(m.amount)} on ${m.outcome} at ${Math.round(m.avgPrice * 100)}¢`,
   }));
 }
 
@@ -114,77 +119,89 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const bigAll = smart?.big ?? null;
   const bigShare = bigAll && bigAll.yes + bigAll.no > 0 ? bigAll.yes / (bigAll.yes + bigAll.no) : null;
   const opposite = tab === "sports" && bigShare !== null && proven?.share != null && (bigShare - 0.5) * (proven.share - 0.5) < 0;
-  const traderRows = (l: ReturnType<typeof side>["top"]) => l.map(x => [
-    paid ? <Link key="n" className="dtable__link" href={`/p/${x.wallet}`}>{walletLabel(x.wallet, x.name)}</Link> : walletLabel(x.wallet, x.name),
-    x.n.toLocaleString("en-US"), dollars(x.amount)]);
+  const art = source === "polymarket" ? await artFor([id]).then(m => m.get(id) ?? null).catch(() => null) : null;
+  const showArt = art?.image && !(logosOff() && tab === "sports") ? art.image : null;
+  const c = (v: number | null | undefined) => (v === null || v === undefined ? "" : `${Math.round(v * 100)}¢`);
+  const lead = settled && resultSide ? `${resultSide === "yes" ? yesLabel : noLabel} won.` : null;
+  const smartLine = proven?.share != null && crowdNow !== null ? `Proven traders are ${Math.round(proven.share * 100)}% on ${yesLabel}. The price says ${c(crowdNow)}.` : null;
+  const p0 = points[0]?.v ?? null, p1 = price ?? points.at(-1)?.v ?? null;
+  const priceLine = p0 !== null && p1 !== null && points.length >= 2 ? `${yesLabel} went from ${c(p0)} to ${c(p1)}.` : null;
+  const sideLine = yes.total + no.total > 0 ? `${dollars(yes.total)} of large money on ${yesLabel}, ${dollars(no.total)} on ${noLabel}.` : null;
+  const traderRows = (l: ReturnType<typeof side>["top"]) => l.map(x => ({
+    key: x.wallet, title: paid ? <a className="s-link" href={`/p/${x.wallet}`}>{walletLabel(x.wallet, x.name)}</a> : walletLabel(x.wallet, x.name),
+    sub: `${x.n.toLocaleString("en-US")} ${x.n === 1 ? "position" : "positions"}`, right: dollars(x.amount) }));
   return (
-    <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} trialHref={trial} current="/market" />
-      <main className="wrap app2 market">
-        <header className="mhead">
-          {event && event !== title ? <p className="mhead__kicker">{event}</p> : null}
-          <h1 className="mhead__h">{title}</h1>
-          {settled && resultSide ? <p className="mhead__result"><span className="rpill rpill--won">Settled</span> {resultSide === "yes" ? yesLabel : noLabel} won.</p>
-            : price !== null ? <p className="mhead__now">{yesLabel} {Math.round(price * 100)}% · {noLabel} {Math.round((1 - price) * 100)}% <span>now</span></p> : null}
-          <div className="mhead__act">
-            <FollowButton kind="market" target={id} label="Follow market" state={!isReady("follows") ? "soon" : !paid ? "locked" : following ? "on" : "off"} trialHref={trial} />
-            {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} /> : null}
-          </div>
-          <p className="mhead__src" data-testid="settlement">Settles by {source === "polymarket" ? "Polymarket" : "Kalshi"}&apos;s resolution of this market; that venue is the source of record.</p>
-          <AsOf at={until} live={paid} sources={[source === "polymarket" ? SOURCES.polymarket : SOURCES.kalshi, SOURCES.methodology]} />
-        </header>
+    <Frame member={paid} current="markets" testid="market-page">
+      <Stage bg={{ kind: "photo", photo: categoryPhoto(isCategory(market?.category) ? market!.category : tab === "sports" ? "football" : "markets"), dark: 0.55, priority: true }} first testid="market-hero" labelledBy="m-h">
+        <div className="b-head">
+          {showArt ? <span className="s-disc s-disc--lg" data-m="lift"><Image src={showArt} alt="" width={88} height={88} sizes="176px" quality={85} /></span> : null}
+          {event && event !== title ? <p className="b-label" data-m="lift">{event}</p> : null}
+          <Lines as="h1" id="m-h" lines={[title]} size={title.length > 48 ? 40 : 56} />
+          {lead ? <p className="b-sub" data-m="lift">Settled: {lead}</p>
+            : price !== null ? <p className="s-ticket__px s-center" data-m="lift"><span className="s-big b-num" data-count={Math.round(price * 100)} data-fmt="cents">{c(price)}</span><span className="b-small">{yesLabel} now · {noLabel} {c(1 - price)}</span></p> : null}
+        </div>
+        <div className="b-center"><div className="b-ctas">
+          {paid ? <FollowLink wallet={id} kind="market" initial={following} labels={["Follow this market", "Following this market"]} /> : <Pill href="/go" data-checkout="market">Start for ${TRIAL.fee} to follow</Pill>}
+          {link || viewer.region === null ? <MarketLinkButton href={link?.href ?? null} label={link?.label ?? "See market"} regionKnown={viewer.region !== null} className="b-btn b-btn-lg b-ghost" /> : null}
+        </div></div>
+        <p className="b-small b-center" data-testid="settlement">Settles by {source === "polymarket" ? "Polymarket" : "Kalshi"}&apos;s resolution of this market; that venue is the source of record. {paid ? "Live." : "Large positions 30 minutes late."} Information, not advice.</p>
+      </Stage>
 
-        {source === "polymarket" && !settled ? (
-          <Section id="smart-h" title="Proven traders vs. the market" note={proven && proven.wallets
-            ? `${proven.wallets.toLocaleString("en-US")} proven ${proven.wallets === 1 ? "trader holds" : "traders hold"} ${dollars(provenMoney)} here. Proven: 20+ settled markets and a win rate above the prices they paid. Data, not a recommendation.`
-            : `No proven trader holds this market right now (proven: 20+ settled markets and a win rate above the prices they paid). It needs ${SMART_MIN_WALLETS}+ of them and ${dollars(SMART_MIN_MONEY)}+ in.`}>
-            <SplitBars side={yesLabel} rows={[
-              { label: "Crowd", note: "the price now", value: crowdNow },
-              { label: "Smart money", note: "proven traders' money", value: proven?.share ?? null, strong: true },
-              ...(tab === "sports" && bigShare !== null ? [{ label: "All large positions", note: "every large position we track", value: bigShare }] : []),
+      {source === "polymarket" && !settled && smartLine ? (
+        <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6 }} testid="market-smart" labelledBy="smart-h">
+          <div className="b-head"><Insight id="smart-h" as="h2" text={smartLine} fallback={["Proven traders", "vs. the market."]} size={52} />
+            <p className="b-sub">{proven && proven.wallets ? `${proven.wallets.toLocaleString("en-US")} proven ${proven.wallets === 1 ? "trader holds" : "traders hold"} ${dollars(provenMoney)} here. Proven: 20+ settled markets and a win rate above the prices they paid.` : `No proven trader holds this market right now. It needs ${SMART_MIN_WALLETS}+ of them and ${dollars(SMART_MIN_MONEY)}+ in.`}</p></div>
+          <Panel className="s-col s-col--wide">
+            <Bars label={`Share on ${yesLabel}`} rows={[
+              { key: "crowd", name: "The price", share: crowdNow ?? 0, text: crowdNow !== null ? c(crowdNow) : "Not available" },
+              { key: "smart", name: "Proven traders", share: proven?.share ?? 0, text: proven?.share != null ? `${Math.round(proven.share * 100)}% of their money` : "Not enough yet" },
+              ...(tab === "sports" && bigShare !== null ? [{ key: "big", name: "All large positions", share: bigShare, text: `${Math.round(bigShare * 100)}% of the money` }] : []),
             ]} />
-            {opposite ? <p className="sflag" data-testid="split-opposite">Large positions and proven traders are on opposite sides of this game.</p> : null}
-            {split?.crowd && (positioningOn() || isPaid(viewer.plan)) ? <p className="dnote dnote--tight">{Math.round(split.crowd.gap)} points apart. <Link href="/splits">See every split</Link> · <Link href="/splits/scorecard">How past splits went</Link></p> : null}
-          </Section>
-        ) : null}
+            {opposite ? <p className="b-small" data-testid="split-opposite">Large positions and proven traders are on opposite sides of this game.</p> : null}
+            {split?.crowd && (positioningOn() || paid) ? <p className="b-small">{Math.round(split.crowd.gap)} points apart. <a className="s-link" href="/splits">Every split</a></p> : null}
+          </Panel>
+        </Stage>
+      ) : null}
 
-        <Section id="chart-h" title="Price" note={`${fromVenue ? `The price of ${yesLabel}` : `The entries of large positions on ${yesLabel} (the venue's full history isn't available right now)`}, with every large position on it: a dot per position, bigger for more money (a ${noLabel} position sits at 100% minus its entry). Green won, red lost, grey open.`}>
-          <LineChart points={points} dots={dots} format="cents" baseline="first" time label={`${yesLabel}, price`}
-            windows={[{ key: "1d", label: "1D", since: now - 86_400_000 }, { key: "1w", label: "1W", since: now - 7 * 86_400_000 }, { key: "1m", label: "1M", since: now - 30 * 86_400_000 }, { key: "all", label: "All", since: null }]}
-            empty="Not enough prices for a chart yet." />
-        </Section>
+      {points.length >= 2 ? (
+        <Stage bg={{ kind: "photo", photo: PHOTOS.tech, dark: 0.6 }} testid="market-price" labelledBy="chart-h">
+          <div className="b-head"><Insight id="chart-h" as="h2" text={priceLine} fallback={["The price."]} size={52} />
+            <p className="b-sub">{fromVenue ? `The price of ${yesLabel}` : `The entries of large positions on ${yesLabel}`}, with every large position on it: a gold dot per position, bigger for more money ({noLabel} positions sit at 100¢ minus their entry).</p></div>
+          <Panel className="s-col s-col--wide"><SeriesChart fmt="cents" points={points} label={`${yesLabel}, price`} testid="price-chart"
+            dots={dots.map(d => ({ t: d.t, v: d.v, r: 4 + d.r, title: d.label }))} /></Panel>
+        </Stage>
+      ) : null}
 
-        <Section id="side-h" title="Money by side" note="Every large position we've seen in this market.">
-          <Tiles cols={4} label="Money by side" tiles={[
-            { label: `On ${yesLabel}, all large positions`, value: dollars(yes.total) },
-            { label: `On ${noLabel}, all large positions`, value: dollars(no.total) },
-            { label: `On ${yesLabel}, last 24 hours`, value: dollars(yes24.total) },
-            { label: `On ${noLabel}, last 24 hours`, value: dollars(no24.total) },
-          ]} />
-        </Section>
-
+      <Stage bg={{ kind: "photo", photo: PHOTOS.golf, dark: 0.6 }} testid="market-sides" labelledBy="side-h">
+        <div className="b-head"><Insight id="side-h" as="h2" text={sideLine} fallback={["Money by side."]} size={52} /><p className="b-sub">Every large position we&apos;ve seen in this market.</p></div>
+        <StatTiles label="Money by side" tiles={[
+          { label: `On ${yesLabel}, all large positions`, value: dollars(yes.total) },
+          { label: `On ${noLabel}, all large positions`, value: dollars(no.total) },
+          { label: `On ${yesLabel}, last 24 hours`, value: dollars(yes24.total) },
+          { label: `On ${noLabel}, last 24 hours`, value: dollars(no24.total) },
+        ]} />
         {yes.top.length || no.top.length ? (
-          <Section id="top-h" title="Top traders on each side" note="By money in, from their large positions here.">
-            <div className="dgrid2">
-              <div><h3 className="dsub__h">{yesLabel}</h3>{yes.top.length ? <Table label={`Top traders on ${yesLabel}`} head={["Trader", "Positions", "Money in"]} numeric={[1, 2]} rows={traderRows(yes.top)} /> : <p className="dnote">No big money on {yesLabel} yet.</p>}</div>
-              <div><h3 className="dsub__h">{noLabel}</h3>{no.top.length ? <Table label={`Top traders on ${noLabel}`} head={["Trader", "Positions", "Money in"]} numeric={[1, 2]} rows={traderRows(no.top)} /> : <p className="dnote">No big money on {noLabel} yet.</p>}</div>
-            </div>
-          </Section>
+          <div className="s-split">
+            {yes.top.length ? <Panel><p className="b-label">Biggest on {yesLabel}</p><Rows label={`Top traders on ${yesLabel}`} rows={traderRows(yes.top)} /></Panel> : null}
+            {no.top.length ? <Panel><p className="b-label">Biggest on {noLabel}</p><Rows label={`Top traders on ${noLabel}`} rows={traderRows(no.top)} /></Panel> : null}
+          </div>
         ) : null}
+      </Stage>
 
-        <Section id="mm-h" title={day.length ? "Large positions in the last 24 hours" : "Large positions in this market"} note={!paid ? "You're seeing positions 30 minutes late." : undefined}>
-          {items.length ? <ol className="feed2__list tmoves">{items.map(m => <li key={m.id}><MoveCard m={m} follow={!isReady("follows") ? "soon" : !paid ? "locked" : "off"} trialHref={trial} /></li>)}</ol>
-            : <p className="dnote">No large positions here{paid ? "" : " more than 30 minutes ago"} yet.</p>}
-        </Section>
-        {trackersHere.length ? (
-          <section className="block" aria-labelledby="mtrk-h">
-            <h2 id="mtrk-h" className="block__h">Trackers holding this market</h2>
-            <ul className="seo__links">{trackersHere.map(t => <li key={t.slug}><Link href={`/trackers/${t.slug}`}>{t.name}</Link></li>)}</ul>
-          </section>
-        ) : null}
-        <EntityLd trail={[[source === "polymarket" ? "Prediction markets" : "Markets", "/markets"], [title, `/market/${encodeURIComponent(id)}`]]} name={`${title}: large positions`} path={`/market/${encodeURIComponent(id)}`}
-          description={`Large positions on "${title}" on ${source === "polymarket" ? "Polymarket" : "Kalshi"}, with who holds each side.`} updated={moves[0]?.at ?? null} sources={[source === "polymarket" ? "https://polygonscan.com" : "https://kalshi.com"]} />
-      </main>
-    </>
+      {items.length ? (
+        <Stage bg={{ kind: "photo", photo: PHOTOS.oil, dark: 0.65 }} testid="market-moves" labelledBy="mm-h">
+          <div className="b-head"><Insight id="mm-h" as="h2" text={null} fallback={day.length ? ["The last 24 hours."] : ["Every large position."]} size={52} />{!paid ? <p className="b-sub">You&apos;re seeing positions 30 minutes late.</p> : null}</div>
+          <Panel className="s-col s-col--wide">
+            <Rows label="Large positions" rows={items.map(m => ({ key: m.id, attrs: { "data-move": m.id }, title: m.sentence,
+              sub: <>{m.who.href && paid ? <a className="s-link" href={m.who.href}>Their record</a> : null}{m.who.href && paid ? " · " : null}{m.ago}{m.analyst ? <><br /><span data-testid="analyst-note">Analyst note: {m.analyst.text}</span></> : null}</>,
+              right: m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : m.result === "void" ? "Void" : undefined }))} />
+          </Panel>
+          {trackersHere.length ? <div className="b-center"><p className="b-small">Trackers holding this market</p><div className="s-filters">{trackersHere.map(t => <Pill key={t.slug} href={`/trackers/${t.slug}`} kind="panel" arrow={false}>{t.name}</Pill>)}</div></div> : null}
+        </Stage>
+      ) : null}
+      <ScrollFx />
+      <EntityLd trail={[[source === "polymarket" ? "Prediction markets" : "Markets", "/markets"], [title, `/market/${encodeURIComponent(id)}`]]} name={`${title}: large positions`} path={`/market/${encodeURIComponent(id)}`}
+        description={`Large positions on "${title}" on ${source === "polymarket" ? "Polymarket" : "Kalshi"}, with who holds each side.`} updated={moves[0]?.at ?? null} sources={[source === "polymarket" ? "https://polygonscan.com" : "https://kalshi.com"]} />
+    </Frame>
   );
 }

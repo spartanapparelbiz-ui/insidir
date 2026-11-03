@@ -993,3 +993,20 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 .s-stream__legend { display: flex; list-style: none; margin: 10px 0 0; padding: 0; flex-wrap: wrap; gap: 6px 14px; }
 .s-stream__key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ink); margin-right: 6px; }
 @media (max-width: 860px) { .s-stream__legend { display: flex; } }
+
+/* Deeper pages (components/system/Figures.tsx): stat tiles, bars, written rows. */
+.s-stats { width: 100%; max-width: calc(1120 * var(--u)); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 16px; }
+.s-stat { margin: 0; padding: 20px; border-radius: var(--r); display: grid; gap: 8px; align-content: start; text-align: left; }
+.s-stat dt, .s-stat dd { margin: 0; }
+.s-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.s-barrow { display: grid; grid-template-columns: 140px minmax(0, 1fr) minmax(0, 220px); align-items: center; gap: 16px; text-align: left; }
+.s-barrow__n { font-size: 15px; font-weight: 600; }
+.s-wrows li { align-items: center; text-align: left; }
+.s-wrows li > span:first-child { min-width: 0; }
+.s-split { width: 100%; max-width: calc(1120 * var(--u)); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+.s-split > * { text-align: left; }
+@media (max-width: 640px) { .s-barrow { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+.s-disc--lg { width: 88px; height: 88px; margin: 0 auto 16px; }
+.s-center { justify-content: center; text-align: center; }
+.s-copyact { display: grid; gap: 12px; }
+.s-copyact__amt { align-items: center; }
