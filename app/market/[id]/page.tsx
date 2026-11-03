@@ -123,6 +123,8 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const art = source === "polymarket" ? await artFor([id]).then(m => m.get(id) ?? null).catch(() => null) : null;
   const showArt = art?.image && !(logosOff() && tab === "sports") ? art.image : null;
   const c = (v: number | null | undefined) => (v === null || v === undefined ? "" : `${Math.round(v * 100)}¢`);
+  // The live quote, else the last price the worker stored for this market.
+  const shown = price ?? (typeof info?.yesPrice === "number" ? info.yesPrice : null);
   const lead = settled && resultSide ? `${resultSide === "yes" ? yesLabel : noLabel} won.` : null;
   const provenShare = proven?.share ?? split?.crowd?.smart ?? null;
   const smartLine = provenShare !== null && crowdNow !== null ? `Proven traders are ${Math.round(provenShare * 100)}% on ${yesLabel}. The price says ${c(crowdNow)}.` : null;
@@ -140,7 +142,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
           {event && event !== title ? <p className="b-label" data-m="lift">{event}</p> : null}
           <Lines as="h1" id="m-h" lines={[title]} size={title.length > 48 ? 40 : 56} />
           {lead ? <p className="b-sub" data-m="lift">Settled: {lead}</p>
-            : price !== null ? <p className="s-ticket__px s-center" data-m="lift"><span className="s-big b-num" data-count={Math.round(price * 100)} data-fmt="cents">{c(price)}</span><span className="b-small">{yesLabel} now · {noLabel} {c(1 - price)}</span></p> : null}
+            : shown !== null ? <p className="s-ticket__px s-center" data-m="lift"><span className="s-big b-num" data-count={Math.round(shown * 100)} data-fmt="cents">{c(shown)}</span><span className="b-small">{yesLabel} now · {noLabel} {c(1 - shown)}</span></p> : null}
         </div>
         <div className="b-center"><div className="b-ctas">
           {paid ? <FollowLink wallet={id} kind="market" initial={following} labels={["Follow this market", "Following this market"]} /> : <Pill href="/go" data-checkout="market">Start for ${TRIAL.fee} to follow</Pill>}

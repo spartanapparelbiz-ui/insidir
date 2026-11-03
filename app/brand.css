@@ -894,3 +894,10 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 @media (prefers-reduced-motion: reduce) { .s-wait .s-grow { animation: none; width: 100%; } }
 .s-split { align-items: start; }
 .s-form .b-ctas, .s-split .b-ctas { justify-content: flex-start; }
+/* Phones: the category chips are one swipeable row, never a wall of pills. */
+@media (max-width: 640px) {
+  .s-filters { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 4px; }
+  .s-filters::-webkit-scrollbar { display: none; }
+  .s-filters > * { flex: none; }
+}
+.b-head .s-ticket__px { margin-top: 20px; align-items: baseline; }
