@@ -224,7 +224,7 @@ export function SpotlightStage({ d }: { d: LandingData }) {
         </ul>
         <p className="b-small">Its closed positions on Polymarket (held to the end or sold), newest first, losses included. {PAST}</p>
       </div>
-      <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" data-testid="spotlight-start" data-checkout="spotlight">Follow wallets like this</Pill></div><p className="b-small" style={{ marginTop: 10 }}>Following is for members: $1 for 3 days.</p></div>
+      <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" kind="ghost" data-testid="spotlight-start" data-checkout="spotlight">Follow wallets like this</Pill></div><p className="b-small" style={{ marginTop: 10 }}>Following is for members: $1 for 3 days.</p></div>
     </Stage>
   );
 }
