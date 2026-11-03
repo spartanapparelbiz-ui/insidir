@@ -131,7 +131,7 @@ describe("design system", () => {
   it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and nothing else)", () => {
     const layout = read("app/layout.tsx");
     expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
-    expect(read("lib/brand/fonts.ts")).toMatch(/Plus_Jakarta_Sans/);
+    expect(read("lib/brand/fonts.ts")).toMatch(/plus-jakarta-sans-latin\.woff2/);
     expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
       const src = read(f);

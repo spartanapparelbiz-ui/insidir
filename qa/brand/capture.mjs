@@ -7,15 +7,15 @@ import { mkdirSync } from "node:fs";
 
 const [base = "http://localhost:3000", out = "qa/screenshots/brand", ...extra] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
-const sizes = [{ w: 1280, h: 800, mobile: false }, { w: 390, h: 844, mobile: true }];
-const stages = ["hero", "pulse", "free", "election", "members", "spotlight", "stake", "gaps", "markets", "proof", "pricing", "faq", "final-cta"];
+const sizes = [{ w: 1440, h: 900, mobile: false, dpr: 2 }, { w: 390, h: 844, mobile: true, dpr: 2 }];
+const stages = ["hero", "election", "lead-board", "pulse", "free", "members", "spotlight", "stake", "gaps", "markets", "proof", "pricing", "faq", "final-cta"];
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium" });
 const shot = (p, path, full = false) => p.screenshot({ path: path.replace(/\.png$/, ".jpg"), type: "jpeg", quality: 72, fullPage: full, caret: "initial" });
 const report = [];
 
 for (const s of sizes) {
   const newCtx = async (cookies = []) => {
-    const c = await browser.newContext({ viewport: { width: s.w, height: s.h }, deviceScaleFactor: s.mobile ? 2 : 1, isMobile: s.mobile, hasTouch: s.mobile });
+    const c = await browser.newContext({ viewport: { width: s.w, height: s.h }, deviceScaleFactor: s.dpr, isMobile: s.mobile, hasTouch: s.mobile });
     if (cookies.length) await c.addCookies(cookies.map(([name, value]) => ({ name, value, url: base })));
     return c;
   };

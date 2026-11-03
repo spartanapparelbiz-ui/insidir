@@ -9,7 +9,6 @@ import { spawn } from "node:child_process";
 import { createECDH, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createRequire } from "node:module";
 import { expect, test } from "@playwright/test";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { settleBets } from "@/lib/millionaires/bets";
@@ -19,8 +18,9 @@ import { pool, q, signIn } from "./helpers";
 import { MW } from "./seed-millionaires";
 import { E2E_USERS } from "./seed";
 
-const require_ = createRequire(import.meta.url);
-const ece = require_("http_ece") as { decrypt(buf: Buffer, p: { version: string; privateKey: ReturnType<typeof createECDH>; authSecret: Buffer }): Buffer };
+// http_ece ships with web-push and has no types.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ece = require("http_ece") as { decrypt(buf: Buffer, p: { version: string; privateKey: ReturnType<typeof createECDH>; authSecret: Buffer }): Buffer };
 const closed = { name: "insidir_pay_closed", value: "1", url: APP_URL };
 const db = drizzle(pool, { schema });
 
