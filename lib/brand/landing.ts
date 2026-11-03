@@ -109,6 +109,11 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   };
 }
 
+/** The visitors' landing, shared for 15 s (every visitor sees the same live numbers; members have their own home). */
+export function landingFor(db: Db, now: number): Promise<LandingData> {
+  return memo("brand:landing", 15_000, () => landingData(db, now, false));
+}
+
 /** No database (local preview): every stage in its empty state. */
 export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, chips: [], top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,

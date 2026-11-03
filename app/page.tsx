@@ -11,11 +11,10 @@ import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isPaid } from "@/lib/plans";
 import { cleanRef, REF_COOKIE } from "@/lib/home/ref";
-import { Landing, LandingStream } from "@/components/brand/landing/Landing";
+import { Landing } from "@/components/brand/landing/Landing";
 import { Dashboard, isTab } from "@/components/brand/app/Dashboard";
 import { dashboardData } from "@/lib/brand/dashboard";
-import { EMPTY_PULSE, emptyLanding, landingData } from "@/lib/brand/landing";
-import { pulse } from "@/lib/millionaires/queries";
+import { emptyLanding, landingFor } from "@/lib/brand/landing";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +36,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const tags = Object.fromEntries((["utm_source", "utm_campaign", "utm_content"] as const).flatMap(k => utm[k] ? [[k, utm[k]!]] : []));
   const props = { ...(ref ? { ref } : {}), ...tags };
   after(() => recordEvent({ name: "landing_view", visitorId, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null, props: Object.keys(props).length ? props : undefined }).catch(() => undefined));
-  if (!hasDatabase()) return <Landing d={emptyLanding(now)} />;
-  // The hero streams first (it needs only the live total); the rest follows as soon as its data is read.
-  const db = getDb(), data = landingData(db, now, false);
-  const head = { pulse: await pulse(db, now).catch(() => EMPTY_PULSE) };
-  return <LandingStream head={head} data={data} />;
+  // The whole landing in one response (complete at load, never revealed later); visitors share it for 15 s, so the
+  // first byte is quick (lib/brand/landing.ts landingFor).
+  const d = hasDatabase() ? await landingFor(getDb(), now) : emptyLanding(now);
+  return <Landing d={d} />;
 }

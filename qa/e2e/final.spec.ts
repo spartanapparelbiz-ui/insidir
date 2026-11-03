@@ -265,9 +265,10 @@ test("keyboard: the stake slider moves by arrow keys (when a record exists); the
   await page.goto("/");
   const range = page.getByTestId("stake-range");
   if (await range.count()) {
-    await range.focus();
+    await range.scrollIntoViewIfNeeded();
     const before = await page.getByTestId("stake-value").textContent();
-    await page.keyboard.press("ArrowRight");
+    await range.press("ArrowRight"); // focuses the slider, then the key
+    await expect(range).toBeFocused();
     await expect(page.getByTestId("stake-value")).not.toHaveText(before!);
   }
   await page.goto("/go");

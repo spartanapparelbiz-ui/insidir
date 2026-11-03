@@ -33,10 +33,10 @@ const V2_UI = [
 describe("V2 landing page", () => {
   it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
-    expect(src).toContain("<LandingStream head={head} data={data} />");
+    expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<Dashboard d={d}");
-    // The hero streams first, everything below it in order (components/brand/landing/Landing.tsx Rest).
-    expect(landing.indexOf("<Hero d={head} />")).toBeLessThan(landing.indexOf("<Suspense fallback={null}><RestLater data={data} /></Suspense>"));
+    // The hero, then everything below it in order (components/brand/landing/Landing.tsx Rest).
+    expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
     const order = ["<ElectionStage d={d} /> : <BoardLeadStage d={d} />", "<PulseStage d={d} />", "<Free d={d} />", "<MembersStage d={d} />", "<SpotlightStage d={d} />", "<StakeStage d={d} />", "<GapsStage d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
