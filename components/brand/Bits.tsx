@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 /* Shared pieces in the hero spec's language: the arrow, the pills (white primary, glass ghost, #181818 panel), masked
  * headline lines, tier badges, a side in colour (or locked), price then → now. Safe in server and client components.
  * Motion hooks: data-m="lift" (B), "settle" (C), "quiet" (D); headline lines are A (components/brand/StageMotion.tsx). */
@@ -32,7 +33,7 @@ export function Lines({ lines, as: Tag = "h2", size, id, className = "", testid 
   const style = { "--k": (longest * 0.56).toFixed(2), ...(size ? { "--hs": size } : {}) } as CSSProperties;
   return (
     <Tag id={id} className={`${Tag === "h1" ? "b-h1" : "b-h2"} ${className}`} style={style} data-testid={testid}>
-      {lines.map((l, i) => <span key={i} className="ln"><span className="ln-i" style={{ "--i": i } as CSSProperties}>{l}</span></span>)}
+      {lines.map((l, i) => <Fragment key={i}>{i ? " " : null}<span className="ln"><span className="ln-i" style={{ "--i": i } as CSSProperties}>{l}</span></span></Fragment>)}
     </Tag>
   );
 }

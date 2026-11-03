@@ -7,10 +7,10 @@ import { q, signIn } from "./helpers";
 /** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
 const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
 
-test("members open the app on the Desk: no Check a bet button; the homepage nav (member mode) holds the rest, no sidebar", async ({ page, context }) => {
+test("members open the app on their home (the homepage, unlocked): no Check a bet button; the homepage nav (member mode) holds the rest, no sidebar", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
-  await expect(page.getByTestId("member-home")).toHaveAttribute("data-home", "desk");
+  await expect(page.locator('[data-home="stages"]')).toBeVisible();
   await expect(page.getByTestId("desk-search").getByRole("textbox")).toHaveAttribute("placeholder", "Search a market or paste a bet link");
   // Checking is a search feature, never a primary button or tab.
   await expect(page.getByRole("link", { name: /check a bet/i })).toHaveCount(0);

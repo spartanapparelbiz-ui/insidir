@@ -959,3 +959,37 @@ html.bm .b-stage.b-pre:not(.is-in) :is(.s-draw) { stroke-dashoffset: 1; stroke-d
   .s-meterrow { grid-template-columns: 1fr 48px; } .s-meterrow .b-label { grid-column: 1 / -1; }
   .s-chart__plot { height: 140px; margin-right: 64px; }
 }
+/* The search (components/desk/CommandBar.tsx): the homepage's field and panel. */
+.s-cmdwrap { position: relative; width: 100%; text-align: left; }
+.s-cmd { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; border-radius: 999px; background: var(--glass-fill); border: 1px solid var(--glass-line); }
+.s-cmd:focus-within { border-color: var(--focus); }
+.s-cmd svg { width: 18px; height: 18px; color: var(--dim); flex: none; }
+.s-cmd input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--ink); font: inherit; font-size: 15px; }
+.s-cmd input::placeholder { color: var(--dim); }
+.s-cmd__spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--glass-line); border-top-color: var(--ink); animation: spin .8s linear infinite; }
+.s-cmd__pop { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; right: 0; padding: 20px; border-radius: var(--r); background: var(--panel); border: 1px solid var(--glass-line); }
+.s-choices { list-style: none; margin: 0; padding: 0; } .s-choices li + li { border-top: 1px solid var(--glass-line); }
+.s-choices button { display: flex; width: 100%; justify-content: space-between; gap: 12px; padding: 12px 0; text-align: left; color: var(--ink); background: none; border: 0; font: inherit; cursor: pointer; }
+.s-cmdres__q { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
+.s-cmdres__v { margin: 0 0 12px; } .s-strong { color: var(--ink); font-weight: 600; }
+.s-cmdres__sides { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--glass-line); }
+.s-cmdres__side { display: grid; gap: 2px; padding: 12px 12px 12px 0; } .s-cmdres__side + .s-cmdres__side { padding-left: 12px; border-left: 1px solid var(--glass-line); }
+.s-cmdres__side b { font-size: 20px; font-weight: 600; }
+.s-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 12px; }
+.b-dim { color: var(--dim); }
+.s-link { font: inherit; font-size: 15px; font-weight: 500; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--glass-line); padding: 0 0 2px; cursor: pointer; }
+.s-link:hover { border-color: var(--ink); } .s-link:disabled { opacity: .5; cursor: default; }
+.s-actwrap { display: inline-grid; gap: 4px; }
+.s-col--wide { max-width: calc(1000 * var(--u)); }
+.s-stream { margin: 0 0 8px; }
+.s-stream__plot { position: relative; height: 200px; }
+.s-stream__plot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.s-stream__band { fill: var(--ink); stroke: var(--panel); stroke-width: .3; transform-origin: bottom; }
+.s-stream__band--1 { opacity: .9; } .s-stream__band--2 { opacity: .66; } .s-stream__band--3 { opacity: .46; } .s-stream__band--4 { opacity: .3; } .s-stream__band--5 { opacity: .18; }
+.s-stream__label { position: absolute; left: calc(100% + 12px); transform: translateY(-50%); font-size: 13px; white-space: nowrap; color: var(--ink-muted); }
+html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--e-reveal) .3s both; }
+@keyframes s-grow-y { from { transform: scaleY(0); } }
+@media (max-width: 860px) { .s-stream__plot { margin-right: 0; height: 160px; } .s-stream__label { display: none; } }
+.s-stream__legend { display: flex; list-style: none; margin: 10px 0 0; padding: 0; flex-wrap: wrap; gap: 6px 14px; }
+.s-stream__key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ink); margin-right: 6px; }
+@media (max-width: 860px) { .s-stream__legend { display: flex; } }

@@ -41,8 +41,8 @@ export async function kpis(db: Db, now: number): Promise<Kpi[]> {
 }
 
 /** Millionaire wallets active today, by dollars bet today. */
-export async function leaders(db: Db, now: number, userId: string | null, limit = 12): Promise<Leader[]> {
-  const mid = new Date(midnightET(now));
+export async function leaders(db: Db, now: number, userId: string | null, limit = 12, since?: number): Promise<Leader[]> {
+  const mid = new Date(since ?? midnightET(now));
   const r = (await db.execute(sql`with today as (
       select wallet, market_id, max(market_title) as title, max(category) as category, sum(amount)::float as dollars, count(*)::int as n
       from terminal.millionaire_bets where tier = 'millionaire' and at >= ${mid} group by wallet, market_id)

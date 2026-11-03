@@ -7,7 +7,7 @@
 import type { Metadata } from "next";
 import { Frame } from "@/components/brand/app/Frame";
 import { PayMoments } from "@/components/brand/PayMoments";
-import { Insight, Lines, Panel, Pill, Refresh, Stage } from "@/components/system";
+import { Insight, Lines, Panel, Pill, Refresh, ScrollFx, Stage } from "@/components/system";
 import { RaceCards } from "@/components/system/Races";
 import { getViewer } from "@/lib/auth/viewer";
 import { PHOTOS } from "@/lib/brand/images";
@@ -50,6 +50,7 @@ export default async function ElectionPage() {
         <p className="b-small b-center">Live prices from Polymarket. Faces come from each market&apos;s own image and show only when the name and the race match. Information, not advice.</p>
       </Stage>
       {member ? null : <PayMoments ctx={{ count: 0, window: "day", biggest: null }} now={now} />}
+      <ScrollFx />
     </Frame>
   );
 }
