@@ -68,9 +68,11 @@ test("a tracker page: holding now first, then following it, the traders' own ret
 test("a market: the price chart with its large positions, money by side and the top traders on each side", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/market/0xe2emarket1");
-  for (const h of ["Price", "Money by side"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
+  // Stages, each opening with a computed sentence: the price line, then money by side.
+  for (const id of ["market-hero", "market-price", "market-sides"]) await expect(page.getByTestId(id)).toBeVisible();
+  await expect(page.getByTestId("market-sides").getByRole("heading", { level: 2 })).toHaveText(/(of large money on|Money by side)/);
   const yes = await q<{ total: number }>("select coalesce(sum(amount), 0)::float as total from terminal.moves where market_id = '0xe2emarket1' and outcome_side = 'yes' and hidden_at is null and at <= now() - interval '0 minutes'");
-  const tile = page.locator(".tile").first();
+  const tile = page.locator(".s-stat").first();
   await expect(tile.locator("dt")).toContainText("all large positions");
   if (yes[0]!.total > 0) await expect(tile.locator("dd")).not.toHaveText("$0");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);

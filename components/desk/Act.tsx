@@ -9,21 +9,22 @@ export async function vapidKey(): Promise<string | null> {
   return j?.publicKey ?? null;
 }
 
-export function FollowLink({ wallet, initial = false, short = false }: { wallet: string | null; initial?: boolean; short?: boolean }) {
+/** Follow a wallet (default) or a market (kind="market", with its own labels). */
+export function FollowLink({ wallet, initial = false, short = false, kind = "trader", labels }: { wallet: string | null; initial?: boolean; short?: boolean; kind?: "trader" | "market"; labels?: readonly [string, string] }) {
   const [on, setOn] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   if (!wallet) return null;
   const tap = async () => {
     setBusy(true); setErr(null);
-    const r = await fetch("/api/follows", { method: on ? "DELETE" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "trader", target: wallet }) }).catch(() => null);
+    const r = await fetch("/api/follows", { method: on ? "DELETE" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind, target: wallet }) }).catch(() => null);
     if (r?.ok) setOn(!on);
     else setErr(((await r?.json().catch(() => null)) as { error?: string } | null)?.error ?? "Couldn't follow. Try again.");
     setBusy(false);
   };
   return (
     <span className="s-actwrap">
-      <button type="button" className="s-link" onClick={tap} disabled={busy} aria-pressed={on} data-testid="desk-follow">{short ? (on ? "Following" : "Follow") : on ? "Following this wallet" : "Follow this wallet"}</button>
+      <button type="button" className="s-link" onClick={tap} disabled={busy} aria-pressed={on} data-testid="desk-follow">{labels ? labels[on ? 1 : 0] : short ? (on ? "Following" : "Follow") : on ? "Following this wallet" : "Follow this wallet"}</button>
       {err ? <span className="b-small" role="status">{err}</span> : null}
     </span>
   );

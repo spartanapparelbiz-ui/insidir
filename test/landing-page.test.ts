@@ -41,7 +41,7 @@ describe("V2 landing page", () => {
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
-    expect(read("components/desk/Desk.tsx")).toContain('data-testid="member-home"');
+    expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
   it("the hero's words, its two CTAs (Check my bet, Start for $1 → /go), and no stocks, crypto or Congress in the pitch", async () => {

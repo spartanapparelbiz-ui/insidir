@@ -35,9 +35,12 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
     <div className="b-feed b-glass b-pad" data-testid="live-feed" {...(settle ? { "data-m": "settle", style: { "--d": ".5s" } as React.CSSProperties } : {})}>
       <div className="b-feed__top">
         <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> {misses >= 2 ? <span data-testid="feed-behind">Catching up</span> : "Live"}</span>
-        {s.pulse.today > 0
-          ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires today</span>
-          : <span className="b-small" data-testid="feed-total">No millionaire bets yet today</span>}
+        {/* Today means since midnight ET (as the hero and the board say); before the first bet of the day, the last 24 hours. */}
+        {s.pulse.sinceMidnight > 0
+          ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(s.pulse.sinceMidnight)}</span> bet by millionaires today</span>
+          : s.pulse.today > 0
+            ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires in the last 24 hours</span>
+            : <span className="b-small" data-testid="feed-total">No millionaire bets in the last 24 hours</span>}
       </div>
       {s.bets.length ? (
         <ul className="b-rows" data-testid="feed-rows" aria-live="polite">
@@ -48,7 +51,7 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
             </li>
           ))}
         </ul>
-      ) : <p className="b-empty" data-testid="feed-empty">No millionaire bets yet today. They show here the moment one lands.</p>}
+      ) : <p className="b-empty" data-testid="feed-empty">No millionaire bets in the last 24 hours. They show here the moment one lands.</p>}
     </div>
   );
 }

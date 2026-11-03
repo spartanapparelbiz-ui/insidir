@@ -1,5 +1,5 @@
 /* The product end to end (fixtures: qa/e2e/seed-millionaires.ts, whose bets are 8–90 minutes old):
- *   /board     visitors 60 minutes late with the live count and Start for $1; members live, each row with Copy.
+ *   /board     visitors 60 minutes late with the live count and Start for $1; members live, Copy on the selected row.
  *   /election  the major races (control first): visitors the top 3 whole, the rest locked; members every race.
  *   Copy       a member opens a bet's ticket from the board: their price vs now, the amount, Open on the venue (US:
  *              Kalshi or view-only, never Polymarket), "I placed it" → Your copies; it settles with the market.
@@ -56,7 +56,10 @@ test("/board: visitors see bets 60 minutes late with the live count and Start fo
   await expect(page.getByTestId("board-delay")).toHaveCount(0);
   const member = await page.getByTestId("bet-row").evaluateAll(rs => rs.map(r => r.getAttribute("data-bet")));
   expect(member[0]).toBe("e2e:mb4"); // newest first, 8 minutes ago
-  await expect(page.getByTestId("bet-copy").first()).toHaveAttribute("href", "/copy/e2e%3Amb4");
+  // A written list, not an odds board: Copy shows only on the row you select.
+  await expect(page.getByTestId("bet-copy")).toHaveCount(0);
+  await page.getByTestId("bet-row").first().locator("button").first().click();
+  await expect(page.getByTestId("bet-copy")).toHaveAttribute("href", "/copy/e2e%3Amb4");
   // Category filter.
   await page.goto("/board?cat=tennis");
   for (const id of await page.getByTestId("bet-row").evaluateAll(rs => rs.map(r => r.getAttribute("data-bet")))) expect(["e2e:mb1", "e2e:mb2", "e2e:mb3"]).toContain(id);
@@ -111,6 +114,7 @@ test("one-tap copy: Copy on the board opens the ticket; Open on the venue; I pla
     await signIn(context, "proIntl");
     await context.addCookies([closed]);
     await page.goto("/board");
+    await page.locator(`[data-bet="${id}"]`).locator("button").first().click();
     await page.locator(`[data-bet="${id}"]`).getByTestId("bet-copy").click();
     await expect(page.getByTestId("copy-title")).toHaveText("Ravens vs. Steelers");
     await expect(page.getByTestId("copy-their")).toHaveText("60¢");

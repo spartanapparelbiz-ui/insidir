@@ -4,6 +4,7 @@
  * in) and shown as a small pill they can change. Links are computed on the server for the chosen region, so the page
  * reloads after a choice: a US viewer's page never contains an international Polymarket link. */
 import { useEffect, useId, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { Region } from "@/lib/types";
 
 async function choose(region: Region): Promise<void> {
@@ -21,7 +22,8 @@ export function RegionSheet({ onClose }: { onClose: () => void }) {
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
-  return (
+  // On the body, so no stage (clipped, transformed while it scrolls) can cover or crop it.
+  return createPortal(
     <div className="sheet" role="presentation" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet__panel" role="dialog" aria-modal="true" aria-labelledby={id}>
         <h2 id={id} className="sheet__h">Where are you?</h2>
@@ -31,7 +33,8 @@ export function RegionSheet({ onClose }: { onClose: () => void }) {
           <button type="button" className="btn btn--secondary btn--block" onClick={() => void choose("non_us")}>Outside US</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

@@ -11,6 +11,7 @@
  *       the Pulse's cards [data-slot] slide into their grid slots while the dashboard sticks (desktop; on phones
  *         they come in as it enters);
  *       the markets row scrolls sideways while its stage sticks (desktop; a swipe on phones), photos parallax;
+ *       the disagreement stage keeps its headline pinned and scrubs through its markets (desktop);
  *     Pinned stages are sticky with their height reserved in CSS from first paint: the layout never moves.
  *       stage backgrounds darken at the boundaries between stages (a cross-fade) and their scenery drifts 0 → −8% while
  *       settling from 1.06 to 1; a thin progress line runs along the top.
@@ -117,6 +118,18 @@ async function start(): Promise<() => void> {
     }
     for (const img of document.querySelectorAll<HTMLElement>(".b-ccard__img img")) {
       gsap.fromTo(img, { yPercent: -6, scale: 1.12 }, { yPercent: 6, scale: 1.12, ease: "none", scrollTrigger: { trigger: img.closest(".b-ccard") ?? img, start: "top bottom", end: "bottom top", scrub: true } });
+    }
+    // "Where they disagree with the price": the headline stays pinned (sticky, its height reserved by the cards in CSS)
+    // while the reader scrubs through the markets: each card comes up to full as it reaches the middle of the screen,
+    // its meter filling with it, and fades back as the next one arrives. Desktop; phones get the plain stagger.
+    if (!phone) {
+      for (const card of document.querySelectorAll<HTMLElement>(".s-pinstage .s-pin__card")) {
+        const bars = card.querySelectorAll<HTMLElement>(".s-grow");
+        const tl = gsap.timeline({ scrollTrigger: { trigger: card, start: "top 85%", end: "bottom 15%", scrub: 0.4 } });
+        tl.fromTo(card, { opacity: 0.25, y: 48, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, ease: "power2.out", duration: 1 })
+          .fromTo(bars, { scaleX: 0 }, { scaleX: 1, ease: "power2.out", duration: 0.8 }, 0.2)
+          .to(card, { opacity: 0.35, ease: "power1.in", duration: 0.6 }, 1.6);
+      }
     }
     // Scenery drifts slowly as its stage passes (0 → −8%) and settles from 1.06 to 1: transform only.
     for (const img of document.querySelectorAll<HTMLElement>(".b-stage__bg img")) {

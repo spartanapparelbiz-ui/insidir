@@ -1,7 +1,6 @@
 /* The home page.
  *   Visitors  the landing: a scroll of stages in the brand's language (components/brand/landing/Landing.tsx).
- *   Members   the Desk (components/desk/Desk.tsx): today's biggest live millionaire bet with its price chart and the
- *             one action, then today's millionaire bets, live.
+ *   Members   their home (components/home/Home.tsx): the homepage's stages, unlocked and live, plus their own layer.
  * Everything else Insidir has stays live by URL. */
 import { cookies } from "next/headers";
 import { after } from "next/server";

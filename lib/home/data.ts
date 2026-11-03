@@ -51,12 +51,45 @@ const c = (v: number) => `${Math.round(v * 100)}¢`;
 
 /** The last 10 closed positions per wallet (Polymarket's resolved positions, lib/moves: trader_positions): how many made
  *  money (profit above 0), how many lost. */
-async function last10(db: Db, wallets: string[]): Promise<Map<string, { made: number; lost: number }>> {
+export async function last10(db: Db, wallets: string[]): Promise<Map<string, { made: number; lost: number }>> {
   if (!wallets.length) return new Map();
   const r = (await db.execute(sql`select wallet, count(*) filter (where pnl > 0)::int as made, count(*) filter (where pnl <= 0)::int as lost from (
       select wallet, pnl, row_number() over (partition by wallet order by resolved_at desc) as n from terminal.trader_positions
       where wallet in (${sql.join(wallets.map(w => sql`${w}`), sql`, `)}) and resolved_at is not null and money_in >= 100) x where n <= 10 group by wallet`)).rows as Array<{ wallet: string; made: number; lost: number }>;
   return new Map(r.map(x => [x.wallet, { made: Number(x.made), lost: Number(x.lost) }]));
+}
+
+/** Money by category, hour by hour, over the last 24 hours (the top 5 categories). Null unless it reads as a stream:
+ *  2+ categories and money in 6+ of the 24 hours (else it is a spike). */
+export async function streamFor(db: Db, now: number, category?: string): Promise<StreamData | null> {
+  const rows = (await db.execute(sql`select category, floor(extract(epoch from (at - ${new Date(now - DAY)})) / 3600)::int as h, sum(amount)::float as d
+      from terminal.millionaire_bets where tier = 'millionaire' and at > ${new Date(now - DAY)} ${category ? sql`and category = ${category}` : sql``} group by 1, 2`)).rows as Array<{ category: string; h: number; d: number }>;
+  const byCat = new Map<string, number[]>();
+  for (const r of rows) { if (!isCategory(r.category)) continue; const a = byCat.get(r.category) ?? Array.from({ length: 24 }, () => 0); a[Math.min(23, Math.max(0, Number(r.h)))]! += Number(r.d); byCat.set(r.category, a); }
+  const bands = [...byCat.entries()].map(([c, series]) => ({ category: c as never, series, total: series.reduce((t, v) => t + v, 0) })).sort((a, b) => b.total - a.total).slice(0, 5);
+  const liveHours = Array.from({ length: 24 }, (_, h) => bands.some(b => (b.series[h] ?? 0) > 0)).filter(Boolean).length;
+  return bands.length >= (category ? 1 : 2) && liveHours >= 6 ? { hours: 24, bands } : null;
+}
+
+/** "One wallet up $11M put $290K on Hawks.": the biggest live (undecided) bet among these. */
+export function boardInsight(bets: readonly BoardBet[]): string | null {
+  const top = [...bets].filter(b => !decision(b)).sort((a, b) => b.amount - a.amount)[0];
+  return top ? `One wallet up ${top.pnl !== null ? dollars(top.pnl) : "$1M+"} put ${dollars(top.amount)} on ${top.outcome}.` : null;
+}
+
+/** "0xf031…c80c made money on 10 of its last 10 closed bets.": the best record among wallets with 5+ closed. */
+export function walletsInsight(wallets: readonly WalletCard[]): string | null {
+  const rate = (w: WalletCard) => w.last10!.made / (w.last10!.made + w.last10!.lost);
+  const best = [...wallets].filter(w => w.last10 && w.last10.made + w.last10.lost >= 5).sort((a, b) => rate(b) - rate(a))[0];
+  return best ? `${best.short} made money on ${best.last10!.made} of its last ${best.last10!.made + best.last10!.lost} closed bets.` : null;
+}
+
+/** Wallets worth following: those that bet today (else in the last 24 hours), with their last 10 closed. */
+export async function walletCards(db: Db, now: number, userId: string | null, limit: number): Promise<{ cards: WalletCard[]; today: boolean }> {
+  let ls = await leaders(db, now, userId, limit), today = true;
+  if (!ls.length) { ls = await leaders(db, now, userId, limit, now - DAY); today = false; }
+  const rec = await last10(db, ls.map(l => l.wallet)).catch(() => new Map<string, { made: number; lost: number }>());
+  return { cards: ls.map(l => ({ ...l, last10: rec.get(l.wallet) ?? null })), today };
 }
 
 export async function homeData(db: Db, userId: string, settings: { alertPush?: boolean }, now: number): Promise<Home> {
@@ -72,9 +105,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     safe(priceGaps(db, (clients ??= { kalshi: new KalshiClient(), polymarket: new PolymarketClient() }), now), [] as PriceGap[]),
     safe(db.execute(sql`select last_ok_at as at from terminal.worker_heartbeats where job = 'moves:polymarket'`).then(r => (r.rows[0] as { at: string | null } | undefined)?.at ?? null), null),
     safe(db.execute(sql`select max(at) as at from terminal.millionaire_bets`).then(r => (r.rows[0] as { at: string | null }).at), null),
-    // Money by category, hour by hour, over the last 24 hours.
-    safe(db.execute(sql`select category, floor(extract(epoch from (at - ${new Date(now - DAY)})) / 3600)::int as h, sum(amount)::float as d
-      from terminal.millionaire_bets where tier = 'millionaire' and at > ${new Date(now - DAY)} group by 1, 2`).then(r => r.rows as Array<{ category: string; h: number; d: number }>), []),
+    safe(streamFor(db, now), null),
   ]);
   const v = (key: string) => k.find(x => x.key === key)?.value ?? 0;
   const today = v("money") > 0 ? { money: v("money"), bets: v("bets"), wallets: v("wallets") } : null;
@@ -94,15 +125,9 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     safe(artFor([top.marketId]).then(m => m.get(top.marketId) ?? null), null),
   ]) : [null, null];
   const dis = disagreements(pool).slice(0, 3);
-  const byCat = new Map<string, number[]>();
-  for (const r of streamRows) { if (!isCategory(r.category)) continue; const a = byCat.get(r.category) ?? Array.from({ length: 24 }, () => 0); a[Math.min(23, Math.max(0, Number(r.h)))]! += Number(r.d); byCat.set(r.category, a); }
-  const bands = [...byCat.entries()].map(([c, series]) => ({ category: c as never, series, total: series.reduce((t, v) => t + v, 0) })).sort((a, b) => b.total - a.total).slice(0, 5);
-  // A stream needs spread to read as one: at least 2 categories and money in 6+ of the 24 hours (else it is a spike).
-  const liveHours = Array.from({ length: 24 }, (_, h) => bands.some(b => (b.series[h] ?? 0) > 0)).filter(Boolean).length;
-  const stream: StreamData | null = bands.length >= 2 && liveHours >= 6 ? { hours: 24, bands } : null;
+  const stream = streamRows;
   const rec = await safe(last10(db, ls.map(l => l.wallet)), new Map());
   const wallets = ls.map(l => ({ ...l, last10: rec.get(l.wallet) ?? null }));
-  const bestWallet = [...wallets].filter(w => w.last10 && w.last10.made + w.last10.lost >= 5).sort((a, b) => b.last10!.made / (b.last10!.made + b.last10!.lost) - a.last10!.made / (a.last10!.made + a.last10!.lost))[0];
   const g = gaps[0];
   const openCopies = copies?.list.filter(x => x.result === null) ?? [];
   return {
@@ -111,8 +136,8 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     insight: {
       hero: today ? `Wallets up $1M+ bet ${dollars(today.money)} today.` : day ? `Wallets up $1M+ bet ${dollars(day.money)} in the last 24 hours.` : null,
       disagree: dis[0] ? `Millionaires are ${pct(dis[0].share)} on ${dis[0].outcome}. The price says ${c(dis[0].price)}.` : null,
-      board: top ? `One wallet up ${top.pnl !== null ? dollars(top.pnl) : "$1M+"} put ${dollars(top.amount)} on ${top.outcome}.` : null,
-      wallets: bestWallet ? `${bestWallet.short} made money on ${bestWallet.last10!.made} of its last ${bestWallet.last10!.made + bestWallet.last10!.lost} closed bets.` : null,
+      board: boardInsight(live),
+      wallets: walletsInsight(wallets),
       gaps: g ? `${g.outcome} costs ${c(g.kalshi)} on Kalshi and ${c(g.polymarket)} on Polymarket.` : null,
       desk: openCopies.length ? `You have ${openCopies.length} open ${openCopies.length === 1 ? "copy" : "copies"}.` : null,
     },
