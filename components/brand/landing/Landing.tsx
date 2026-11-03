@@ -23,6 +23,7 @@ import { BrandFoot, BrandNav } from "../Nav";
 import { PayMoments } from "../PayMoments";
 import { Stage } from "../Stage";
 import { StageMotion } from "../StageMotion";
+import { ViewAs } from "@/components/ViewAs";
 
 function Hero({ d }: { d: LandingData }) {
   return (
@@ -232,6 +233,8 @@ function Final() {
 
 export function Landing({ d }: { d: LandingData }) {
   return (
+    <>
+    <ViewAs />
     <main className="b-root" data-testid="landing">
       <Hero d={d} />
       <Problem />
@@ -245,5 +248,6 @@ export function Landing({ d }: { d: LandingData }) {
       {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
       <StageMotion />
     </main>
+    </>
   );
 }

@@ -41,6 +41,7 @@ describe("outcome names", () => {
     expect(outcomeNames("Will it rain?", "Yes", "No")).toEqual({ yesLabel: "Yes", noLabel: "No" });
     expect(outcomeNames("Who wins the race?", "Yes", "Verstappen")).toEqual({ yesLabel: "Other side", noLabel: "Verstappen" });
     expect(outcomeNames("Chiefs vs. Bills", "Chiefs", "Bills")).toEqual({ yesLabel: "Chiefs", noLabel: "Bills" });
+    expect(outcomeNames("Sport Lisboa e Benfica vs. FC Alverca: O/U 1.5", "Yes", "Under")).toEqual({ yesLabel: "Over", noLabel: "Under" });
   });
 });
 

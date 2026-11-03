@@ -22,8 +22,10 @@ export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "pa
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "follow", "push"];
 const KEY = "insidir_go";
 
-interface Answers { cats: CategorySlug[]; where: Where | null; size: Size | null; remind: boolean }
+interface Answers { cats: CategorySlug[]; where: Where | null; size: Size | null; remind: boolean; /** Where to land at the end (a check they paid from). */ next?: string | null }
 const load = (): Answers => { try { return { cats: [], where: null, size: null, remind: true, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return { cats: [], where: null, size: null, remind: true }; } };
+/** Only our own pages: "/" or "/read/<id>". */
+export const safeNextPath = (v: string | null | undefined): string | null => (v && /^\/(read\/[A-Za-z0-9]{4,40})?$/.test(v) ? v : null);
 const store = (a: Answers) => { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch { /* private mode */ } };
 const st = (d: number, extra: CSSProperties = {}): { "data-m": "settle"; style: CSSProperties } => ({ "data-m": "settle", style: { ...extra, "--d": `${d}s` } as CSSProperties });
 const names = (cats: readonly CategorySlug[]) => { const n = cats.map(c => categoryInfo(c).name); return n.length <= 2 ? n.join(" and ") : `${n.slice(0, -1).join(", ")} and ${n.at(-1)}`; };
@@ -97,7 +99,12 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
   const [msg, setMsg] = useState<string | null>(null);
   const [followed, setFollowed] = useState<Set<string>>(new Set());
 
-  useEffect(() => { const s = load(); setA(s); }, []);
+  useEffect(() => {
+    const s = load();
+    const next = safeNextPath(new URLSearchParams(location.search).get("next"));
+    if (next) { s.next = next; store(s); }
+    setA(s);
+  }, []);
   const put = (p: Partial<Answers>) => setA(prev => { const n = { ...prev, ...p }; store(n); return n; });
   const go = (s: Step) => { setStep(s); window.scrollTo(0, 0); try { history.replaceState(null, "", `/go?step=${s}${location.search.includes("utm_") ? `&${location.search.slice(1).split("&").filter(x => x.startsWith("utm_")).join("&")}` : ""}`); } catch { /* ok */ } beacon("go_step", s); };
   const fetchData = useCallback(async (cats: readonly string[]) => {
@@ -274,8 +281,8 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
           <p className="b-sub" {...m("lift", 0.58)}>A push the moment a wallet you follow bets $5K or more.</p>
           <div className="b-ctas">
             <button type="button" className="b-btn b-btn-lg b-primary" data-testid="go-push-on" {...st(0.9)}
-              onClick={async () => { if (vapidKey) await enablePush(vapidKey).catch(() => null); try { localStorage.removeItem(KEY); } catch { /* ok */ } location.assign("/"); }}>Ping me when they bet<Arrow /></button>
-            <a className="b-btn b-btn-lg b-ghost" href="/" data-testid="go-push-skip" {...st(0.97)}>Not now</a>
+              onClick={async () => { if (vapidKey) await enablePush(vapidKey).catch(() => null); try { localStorage.removeItem(KEY); } catch { /* ok */ } location.assign(a.next ?? "/"); }}>Ping me when they bet<Arrow /></button>
+            <a className="b-btn b-btn-lg b-ghost" href={a.next ?? "/"} onClick={() => { try { localStorage.removeItem(KEY); } catch { /* ok */ } }} data-testid="go-push-skip" {...st(0.97)}>Not now</a>
           </div>
         </GoStage>
       );

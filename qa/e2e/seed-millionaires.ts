@@ -26,6 +26,11 @@ export async function seedMillionaires(db: Db, now: number): Promise<void> {
   await bet("e2e:mb7", 2, "millionaire", MIL_MARKETS.pol, P, "Yes", "yes", 50_000, 0.62, "politics", 15, "Yes", "No");
   await bet("e2e:mb8", 6, "pro", MIL_MARKETS.soc, S, "Arsenal FC", "yes", 9_000, 0.41, "soccer", 40, "Arsenal FC", "Chelsea FC");
   for (let i = 0; i < 30; i++) await bet(`e2e:ms${i}`, 1 + (i % 4), "millionaire", `0xe2emilsettled${i}`, `E2E fixture: settled market ${i}`, "Yes", "yes", 10_000, 0.45, "football", (10 + i) * 24 * 60, "Yes", "No", i < 20 ? "won" : "lost");
+  // The markets themselves, as the sweep stores them (so a check of one resolves).
+  for (const [id, title, yes, no, p] of [[MIL_MARKETS.nfl, N, "Chiefs", "Bills", 0.51], [MIL_MARKETS.pol, P, "Yes", "No", 0.66], [MIL_MARKETS.soc, S, "Arsenal FC", "Chelsea FC", 0.44]] as const) {
+    const data = { venue: "polymarket", id, title, eventTitle: title, yesLabel: yes, noLabel: no, url: `https://polymarket.com/event/${id.slice(2)}`, yesPrice: p, volume24h: 50_000, active: true, result: null, closeTime: now + 7 * DAY, category: "sports" };
+    await db.execute(sql`insert into terminal.markets (venue, id, data) values ('polymarket', ${id}, ${JSON.stringify(data)}::jsonb) on conflict (venue, id) do update set data = excluded.data`);
+  }
   for (const [id, p] of [[MIL_MARKETS.nfl, 0.51], [MIL_MARKETS.pol, 0.66], [MIL_MARKETS.soc, 0.44]] as const) {
     await db.execute(sql`insert into terminal.market_info (source, market_id, yes_price, closed, updated_at) values ('polymarket', ${id}, ${p}, false, ${new Date(now)}) on conflict do nothing`);
   }

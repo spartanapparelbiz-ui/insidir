@@ -447,3 +447,6 @@ html.bm .b-new { animation: b-pillIn .7s var(--e-reveal) both; }
 .b-feat__prev { padding: calc(12 * var(--u)); border-radius: calc(12 * var(--u)); background: rgba(255, 255, 255, .03); border: 1px solid var(--glass-line); min-width: 0; }
 @media (max-width: 1160px) { .b-feats { gap: 10px; max-width: 1040px; } .b-feat { gap: 18px; padding: 18px; } .b-feat__t { font-size: 16px; } .b-feat__prev { padding: 12px; border-radius: 12px; } }
 @media (max-width: 760px) { .b-feat { grid-template-columns: 1fr; gap: 12px; } }
+/* The free-access "View as" bar sits above a brand page's fixed bars. */
+body:has(.viewas) .b-topbar, body:has(.viewas) .b-nav--fixed { top: 48px; }
+.viewas { position: relative; z-index: 70; }

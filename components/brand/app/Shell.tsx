@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Arrow, Logo } from "../Bits";
 import { StageMotion } from "../StageMotion";
 import { BrandFoot } from "../Nav";
+import { ViewAs } from "@/components/ViewAs";
 
 type Tab = "home" | "board" | "markets" | "following" | "library" | "account";
 const I: Record<string, ReactNode> = {
@@ -21,6 +22,8 @@ export const CHECK_HREF = "/#ask"; // the Check tab, its box
 
 export function Shell({ current, children }: { current: Tab; children: ReactNode }) {
   return (
+    <>
+    <ViewAs />
     <main className="b-root b-app" data-testid="app-shell">
       <aside className="b-sidebar">
         <nav className="b-sidebar__in b-glass" aria-label="App">
@@ -38,5 +41,6 @@ export function Shell({ current, children }: { current: Tab; children: ReactNode
       </nav>
       <StageMotion />
     </main>
+    </>
   );
 }

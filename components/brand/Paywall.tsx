@@ -34,7 +34,7 @@ export function Paywall({ headline, bullets = PAY_BULLETS, now, href, testid = "
       <Timeline now={now} />
       <label className="b-toggle"><span>Remind me before I&apos;m charged</span><input type="checkbox" checked={remind} onChange={e => setRemind(e.target.checked)} data-testid="paywall-remind" /></label>
       <p className="b-small" style={{ color: "var(--ink-muted)" }} data-testid="paywall-price">${TRIAL.fee} today, then ${PLANS.insidir.price}/month from {chargeDate(now)}. Cancel anytime. 18+ only.</p>
-      <a className="b-btn b-btn-lg b-primary" style={{ width: "100%" }} href={go} data-testid="paywall-start" data-checkout="paywall" onClick={() => onStart?.(remind)}>Start for ${TRIAL.fee}<Arrow /></a>
+      <a className="b-btn b-btn-lg b-primary" style={{ width: "100%" }} href={go} data-testid="paywall-start" data-checkout="paywall" data-unlock="paywall" onClick={() => onStart?.(remind)}>Start for ${TRIAL.fee}<Arrow /></a>
       <p className="b-small" style={{ textAlign: "center" }}>Apple Pay, Google Pay or card · Secure checkout by Whop</p>
     </div>
   );

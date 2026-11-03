@@ -88,10 +88,12 @@ test("empty: P&L before anything is loaded says what to do first", async ({ page
   await expect(page.locator("main .btn--primary")).toHaveCount(1);
 });
 
-test("one primary action: pricing and legal pages show exactly one; the landing's are all the one CTA, Start for $1 (the hero and the $1 block)", async ({ page }) => {
+test("one primary action: pricing and legal pages show exactly one; the landing's white pills are only Check my bet, Check and Start for $1", async ({ page }) => {
   await page.goto("/");
-  const home = await page.locator("main .btn--primary").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).map(e => (e as HTMLElement).innerText.trim()));
-  expect(home).toEqual(["Read it", "Start for $1"]);
+  const home = await page.locator("main .b-primary").evaluateAll(els => els.map(e => (e as HTMLElement).innerText.trim()));
+  expect(home.length).toBeGreaterThan(2);
+  for (const t of home) expect(["Check my bet", "Check", "Start for $1"]).toContain(t);
+  expect(home[0]).toBe("Check my bet");
   for (const path of ["/pricing", "/terms", "/privacy"]) {
     await page.goto(path);
     // Pictures of the app are inert, and a closed laptop panel isn't shown: neither is an action on this page.

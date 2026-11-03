@@ -17,6 +17,8 @@ export function AskBox({ chips = [], placeholder = "Paste your bet: a Kalshi or 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [choices, setChoices] = useState<Choice[] | null>(null);
+  /** After one of several was picked: the others, still a tap away ("Not this one?"). */
+  const [others, setOthers] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const st = (d: number) => (settle ? { "data-m": "settle" as const, style: { "--d": `${d}s` } as CSSProperties } : {});
 
@@ -28,8 +30,14 @@ export function AskBox({ chips = [], placeholder = "Paste your bet: a Kalshi or 
     try {
       const r = await fetch("/api/read", { method: "POST", body: form });
       const j = await r.json().catch(() => ({}));
-      if (j.id) { if (onResolved) { onResolved(j.id); setChoices(null); setBusy(false); } else window.location.assign(`/read/${j.id}`); return; }
-      if (j.choices?.length) { setChoices(j.choices); setBusy(false); return; }
+      if (j.id) {
+        if (!onResolved) { window.location.assign(`/read/${j.id}`); return; }
+        onResolved(j.id);
+        const rest = body.pick && choices ? choices.filter(c => `${c.venue}:${c.id}` !== body.pick) : [];
+        setChoices(rest.length ? rest : null); setOthers(rest.length > 0); setBusy(false);
+        return;
+      }
+      if (j.choices?.length) { setChoices(j.choices); setOthers(false); setBusy(false); return; }
       if (j.code === "limit") {
         // The free check is used: the paywall pop-up (components/brand/PayMoments.tsx), else /go.
         const e = new CustomEvent("insidir:paywall", { cancelable: true, detail: { kind: "limit" } });
@@ -51,7 +59,7 @@ export function AskBox({ chips = [], placeholder = "Paste your bet: a Kalshi or 
       {msg ? <p className="b-msg" role="alert" data-testid="ask-error">{msg}</p> : null}
       {choices ? (
         <div style={{ display: "grid", gap: 8 }} data-testid="ask-choices">
-          <span className="b-label">Which one?</span>
+          <span className="b-label">{others ? "Not this one? Your other matches" : "Which one?"}</span>
           <ul className="b-choices">{choices.map(c => <li key={c.key}><button type="button" onClick={() => void ask({ pick: `${c.venue}:${c.id}` })}><b style={{ fontWeight: 500 }}>{c.title}</b><span className="b-small">{c.event ?? (c.venue === "kalshi" ? "Kalshi" : "Polymarket")}</span></button></li>)}</ul>
         </div>
       ) : null}

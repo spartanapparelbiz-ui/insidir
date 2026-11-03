@@ -7,18 +7,24 @@ import { q, signIn } from "./helpers";
 /** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
 const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
 
-test("members open the app on the box and their recent Reads; the menu holds everything else", async ({ page, context }) => {
+test("members open the app on their home: Check a bet first; the sidebar (desktop) or pill bar (phone) holds the rest", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
-  await expect(page.getByTestId("member-home")).toBeVisible();
-  await expect(page.getByTestId("read-input")).toBeFocused();
-  for (const h of ["Tonight in your leagues", "Your markets"]) await expect(page.getByRole("heading", { level: 2, name: h, exact: true })).toBeVisible();
+  await expect(page.getByTestId("member-home")).toHaveAttribute("data-tab", "check");
+  await expect(page.getByTestId("member-home").getByTestId("ask-input")).toBeVisible();
   await expect(page.getByTestId("week-recap")).toBeVisible();
-  const bar = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
-  expect(bar).toEqual(["Read", "Account"]);
-  for (const [href, label] of [["/copies", "My copies"], ["/feed", "Activity"], ["/top", "Winners"], ["/trackers", "Trackers"], ["/following", "Following"], ["/check", "Position check"], ["/results", "Track record"]]) {
-    await expect(page.locator(`.nav__sheet a[href="${href}"]`)).toHaveText(label!);
+  if (page.viewportSize()!.width > 860) {
+    const side = page.locator(".b-sidebar");
+    await expect(side.getByTestId("side-check")).toHaveText("Check a bet");
+    for (const [href, label] of [["/", "Home"], ["/board", "Board"], ["/markets", "Markets"], ["/following", "Following"], ["/library", "Library"], ["/settings", "Account"]]) {
+      await expect(side.locator(`a.b-navi[href="${href}"]`)).toHaveText(label!);
+    }
+  } else {
+    await expect(page.getByTestId("tab-check")).toBeVisible();
+    await expect(page.locator(".b-tabbar a[href='/board']")).toBeVisible();
   }
+  // Everything older stays live by URL.
+  for (const path of ["/copies", "/feed", "/top", "/trackers", "/check", "/results"]) expect((await page.request.get(path)).status(), path).toBe(200);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 test("a tracker page: holding now first, then following it, the traders' own return, stats, breakdowns, top traders, latest positions; nothing invented under 30 settled", async ({ page, context }) => {

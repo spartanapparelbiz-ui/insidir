@@ -9,6 +9,7 @@ import { BrandFoot, BrandNav } from "@/components/brand/Nav";
 import { PayMoments } from "@/components/brand/PayMoments";
 import { CheckPage } from "@/components/brand/read/CheckPage";
 import { StageMotion } from "@/components/brand/StageMotion";
+import { ViewAs } from "@/components/ViewAs";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
@@ -47,14 +48,18 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
     pid ? positions(db, pid).catch((): Position[] => []) : Promise.resolve([] as Position[]),
     pulse(db, now).catch(() => null),
   ]);
-  const startHref = `/go?step=paywall&from=read`;
+  const back = encodeURIComponent(`/read/${id}`);
+  const startHref = `/go?step=paywall&from=read&next=${back}`;
   return (
+    <>
+    <ViewAs />
     <main className="b-root" data-testid="check-page">
       <BrandNav fixed member={member} />
       <CheckPage id={id} data={data} money={money} positions={pos} member={member} us={viewer.region !== "non_us"} now={now} startHref={startHref} />
       <BrandFoot inline />
-      {member ? null : <PayMoments ctx={{ count: p?.count ?? 0, window: p?.window ?? "hour", biggest: null }} now={now} />}
+      {member ? null : <PayMoments ctx={{ count: p?.count ?? 0, window: p?.window ?? "hour", biggest: null, today: p?.countToday }} now={now} href={`/go?step=checkout&next=${back}`} />}
       <StageMotion />
     </main>
+    </>
   );
 }

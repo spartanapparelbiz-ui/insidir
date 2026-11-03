@@ -98,10 +98,9 @@ test("the check: pick your side, the verdict and its evidence (remembered), lock
   test.setTimeout(60_000);
   const vid = `e2e-check-${page.viewportSize()!.width}-${Date.now()}`;
   await context.addCookies([{ name: "insidir_vid", value: vid, url: "http://localhost:3100" }]);
-  await page.goto("/");
-  await page.getByTestId("check").getByTestId("ask-input").fill("Tennis match 100");
-  await page.getByTestId("check").getByTestId("ask-go").click();
-  await expect(page).toHaveURL(/\/read\/[A-Za-z0-9]+$/, { timeout: 15_000 });
+  // The free check opens its page from the landing; the side is asked there (nothing picked yet on this one).
+  const made = await page.request.post("/api/read", { multipart: { text: "Tennis match 100" } });
+  await page.goto(`/read/${(await made.json()).id}`);
   const card = page.getByTestId("check-card");
   await expect(page.getByTestId("read-head").getByRole("heading", { level: 1 })).toHaveText("E2E fixture: Tennis match 100");
   await expect(card).toContainText("Which side are you on?");

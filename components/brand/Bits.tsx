@@ -21,7 +21,9 @@ export function Pill({ href, children, kind = "primary", arrow = true, delay, cl
   "data-testid"?: string; "data-checkout"?: string; onClick?: () => void;
 }) {
   const cls = kind === "panel" ? "b-btn b-panel-pill" : `b-btn b-btn-lg b-${kind}`;
-  return <a className={`${cls} ${className}`} href={href} {...(delay !== undefined ? m("settle", delay) : {})} {...rest}>{children}{arrow ? <Arrow /> : null}</a>;
+  // A Start button (data-checkout) also reports unlock_click (components/landing/Beacons.tsx), like every older one.
+  const unlock = rest["data-checkout"] ? { "data-unlock": rest["data-checkout"] } : {};
+  return <a className={`${cls} ${className}`} href={href} {...(delay !== undefined ? m("settle", delay) : {})} {...unlock} {...rest}>{children}{arrow ? <Arrow /> : null}</a>;
 }
 
 /** A headline as masked lines (behaviour A). `k` sizes it on phones from its longest line, so no line ever wraps. */

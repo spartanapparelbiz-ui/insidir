@@ -28,7 +28,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
         <nav className="b-nav-links" aria-label="Primary">{LINKS.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
         <div className="b-nav-actions">
           {member ? <a className="b-btn b-panel-pill" href="/" {...q(motion, "settle", 0.68)}>Home</a> : <a className="b-btn b-panel-pill" href="/login" {...q(motion, "settle", 0.68)}>Log in</a>}
-          {member ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
+          {member ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
           <button ref={burger} {...q(motion, "settle", 0.68)} className="b-burger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="b-menu" onClick={e => { e.stopPropagation(); setOpen(!open); }}><span /></button>
         </div>
       </header>

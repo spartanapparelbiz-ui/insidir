@@ -3,46 +3,34 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: one tool, final on first paint: the headline, the box, what a Read shows, the $1 block, FAQ; the nav is Pricing and Log in; no stocks; no pop-up", async ({ page }) => {
-  const HEAD = "Paste any bet. See where the smart money is.";
+test("landing: final on first paint, the hero's words and its CTAs, the nav, no stocks, no pop-up on arrival, no visitor bar", async ({ page }) => {
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain(HEAD);
-  expect(html).not.toMatch(/data-count/);
+  expect(html).toContain("You&#x27;re betting");
+  expect(html).toContain("against millionaires.");
   await page.goto("/");
-  const h1 = page.getByRole("heading", { level: 1, name: HEAD });
-  await expect(h1).toBeVisible();
-  expect(await h1.evaluate(e => getComputedStyle(e).opacity)).toBe("1");
-  // The box is in the first screen.
-  const input = page.getByTestId("read-input");
-  await expect(input).toBeVisible();
-  expect((await input.boundingBox())!.y + 20).toBeLessThan(page.viewportSize()!.height);
-  await expect(page.getByTestId("read-go")).toHaveText("Read it");
-  await expect(page.getByRole("button", { name: "Or upload a sportsbook slip" })).toBeVisible();
-  const h2s = (await page.locator("main h2:not(.sr-only)").allInnerTexts()).map(t => t.trim());
-  expect(h2s).toEqual(["Tonight, with proven money", "What a Read shows", "$1 for your first 3 days", "Questions"]);
-  await expect(page.locator(".steps__h")).toHaveText(["Proven money", "Big bets, last 24 hours", "Price now", "One analyst line"]);
-  // The nav: Pricing, Log in, Start for $1. Nothing else.
-  const links = (await page.locator("header .nav__links a").allInnerTexts()).map(t => t.trim());
-  expect(links).toEqual(["Pricing", "Log in"]);
-  await expect(page.locator("header .nav__cta")).toHaveText("Start for $1");
-  // The $1 block; every primary button says Start for $1 (the box's own button aside).
-  const plan = page.getByTestId("home-plan");
-  await expect(plan.locator("li")).toHaveCount(4);
-  await expect(plan.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", "/start");
-  for (const t of await page.locator("main .btn--primary:not(.rbox__go), header .btn--primary").allInnerTexts()) expect(t.trim()).toBe("Start for $1");
-  const text = await page.locator("main").innerText();
+  const h1 = page.getByRole("heading", { level: 1 });
+  await expect(h1).toHaveText(/You're betting\s*against millionaires\./);
+  await expect(page.getByTestId("hero-line")).toContainText("Wallets up $1M+ bet");
+  // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
+  const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
+  if (page.viewportSize()!.width > 1160) expect(links).toEqual(["Markets", "Board", "Record", "Pricing", "FAQ"]);
+  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
+  for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
+  // The pitch (the footer's "isn't affiliated with … the SEC" aside).
+  const text = await page.evaluate(() => { const m = document.querySelector("main")!.cloneNode(true) as HTMLElement; m.querySelectorAll("footer").forEach(f => f.remove()); return m.innerText; });
   expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
   expect(text).not.toMatch(/guaranteed|risk-free/i);
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(1500);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByTestId("late-bar")).toHaveCount(0);
-  expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600).length)).toBe(0);
+  // Weights above 600: only the wordmark (the hero spec's 800).
+  expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600 && !e.closest(".b-logo")).length)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; /stocks and /insider-trading pages stay live by URL and in the sitemaps", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Paste any bet. See where the smart money is.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/You're betting\s*against millionaires\./);
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
@@ -51,12 +39,12 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
   expect(await (await page.request.get("/sitemaps/companies.xml")).text()).toContain("/insider-trading/");
 });
 
-test("home: the nav's Start for $1 is recorded and opens /start; the trackers page (by URL) lists every tracker with its record or the record being built", async ({ page }) => {
+test("home: the nav's Start for $1 is recorded and opens /go; the trackers page (by URL) lists every tracker with its record or the record being built", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
   await page.goto("/");
-  await page.locator("header .nav__cta").click();
-  await expect(page).toHaveURL(/\/start(\?|$)/);
+  await page.getByTestId("nav-start").click();
+  await expect(page).toHaveURL(/\/go(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
   await page.goto("/trackers");
   await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
@@ -97,7 +85,8 @@ test("one font: headlines, body text, buttons and cards are all Schibsted Grotes
 });
 
 test("the public preview: home and the product pages show real moves 30 minutes late, records blurred, never sent", async ({ page }) => {
-  const bodies = await captureBodies(page, async () => { await page.goto("/"); await page.goto("/sports"); await page.goto("/markets"); });
+  // /markets is the categories page now; /sports keeps the preview.
+  const bodies = await captureBodies(page, async () => { await page.goto("/"); await page.goto("/markets"); await page.goto("/sports"); });
   await expect(page.locator(".move").first()).toBeVisible();
   const locked = page.getByTestId("locked-record").first();
   await expect(locked).toBeVisible();

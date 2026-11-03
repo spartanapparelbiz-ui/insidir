@@ -224,8 +224,11 @@ export function outcomeNames(title: string, yes: string, no: string): { yesLabel
   const isDefault = (l: string, d: string) => !l || l === d;
   if (!isDefault(yes, "Yes") && !isDefault(no, "No")) return { yesLabel: yes, noLabel: no };
   if (isDefault(yes, "Yes") && isDefault(no, "No")) return { yesLabel: "Yes", noLabel: "No" };
-  const vs = /^(?:[^:]*:\s*)?(.+?)\s+vs\.?\s+(.+?)(?::.*)?$/i.exec(title.trim());
   const known = isDefault(yes, "Yes") ? no : yes;
+  const pair: Record<string, string> = { over: "Under", under: "Over" };
+  const opposite = pair[known.trim().toLowerCase()];
+  if (opposite) return isDefault(yes, "Yes") ? { yesLabel: opposite, noLabel: no } : { yesLabel: yes, noLabel: opposite };
+  const vs = /^(?:[^:]*:\s*)?(.+?)\s+vs\.?\s+(.+?)(?::.*)?$/i.exec(title.trim());
   if (vs) {
     const [a, b] = [vs[1]!.trim(), vs[2]!.trim()];
     const other = known.toLowerCase() === a.toLowerCase() ? b : known.toLowerCase() === b.toLowerCase() ? a : null;
