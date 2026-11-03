@@ -26,8 +26,8 @@ const POS: Record<PhotoFile, string> = {
 const AMBIENT = palette as Record<string, string>;
 
 /** 6K masters (6144×3458): each 1672px original upscaled 4× with Real-ESRGAN (x4plus), then resized to 6144 wide, and
- *  compared with its original at 100%. Racing, baseball and soccer are 60% the upscale and 40% a plain resize of the
- *  original: on its own the model smeared their city lights and stands into paint. */
+ *  compared with its original at 100%. Racing, baseball, soccer, politics and golf are 60% the upscale and 40% a plain resize of the
+ *  original: on its own the model smeared their city lights and stands into paint, speckled the White House trees and clumped the golf trees. */
 const SIZE = { width: 6144, height: 3458 } as const;
 
 const photo = (file: PhotoFile, alt: string, tone: string): Photo => ({ src: `/brand/${file}.jpg`, alt, ...SIZE, tone, pos: POS[file], ambient: AMBIENT[file] ?? tone });
