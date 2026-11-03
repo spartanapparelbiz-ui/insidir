@@ -113,7 +113,8 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
     : [...moves].filter(m => m.avgPrice > 0 && m.avgPrice < 1).sort((a, b) => a.at - b.at).map(m => ({ t: m.at, v: m.outcomeSide === "yes" ? m.avgPrice : 1 - m.avgPrice }));
   const dots = dotsOf(moves);
   // Smart money vs. the crowd: the price now against proven traders' money, both for YES; games also all big bets.
-  const crowdNow = price ?? smart?.cur ?? null;
+  // The split stored by the worker (lib/smart/store.ts) when the live numbers are not in hand.
+  const crowdNow = price ?? smart?.cur ?? split?.crowd?.crowd ?? null;
   const proven = smart?.smart ?? null;
   const provenMoney = proven ? proven.yes + proven.no : 0;
   const bigAll = smart?.big ?? null;
@@ -123,7 +124,8 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const showArt = art?.image && !(logosOff() && tab === "sports") ? art.image : null;
   const c = (v: number | null | undefined) => (v === null || v === undefined ? "" : `${Math.round(v * 100)}¢`);
   const lead = settled && resultSide ? `${resultSide === "yes" ? yesLabel : noLabel} won.` : null;
-  const smartLine = proven?.share != null && crowdNow !== null ? `Proven traders are ${Math.round(proven.share * 100)}% on ${yesLabel}. The price says ${c(crowdNow)}.` : null;
+  const provenShare = proven?.share ?? split?.crowd?.smart ?? null;
+  const smartLine = provenShare !== null && crowdNow !== null ? `Proven traders are ${Math.round(provenShare * 100)}% on ${yesLabel}. The price says ${c(crowdNow)}.` : null;
   const p0 = points[0]?.v ?? null, p1 = price ?? points.at(-1)?.v ?? null;
   const priceLine = p0 !== null && p1 !== null && points.length >= 2 ? `${yesLabel} went from ${c(p0)} to ${c(p1)}.` : null;
   const sideLine = yes.total + no.total > 0 ? `${dollars(yes.total)} of large money on ${yesLabel}, ${dollars(no.total)} on ${noLabel}.` : null;
@@ -154,7 +156,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
           <Panel className="s-col s-col--wide">
             <Bars label={`Share on ${yesLabel}`} rows={[
               { key: "crowd", name: "The price", share: crowdNow ?? 0, text: crowdNow !== null ? c(crowdNow) : "Not available" },
-              { key: "smart", name: "Proven traders", share: proven?.share ?? 0, text: proven?.share != null ? `${Math.round(proven.share * 100)}% of their money` : "Not enough yet" },
+              { key: "smart", name: "Proven traders", share: provenShare ?? 0, text: provenShare !== null ? `${Math.round(provenShare * 100)}% of their money` : "Not enough yet" },
               ...(tab === "sports" && bigShare !== null ? [{ key: "big", name: "All large positions", share: bigShare, text: `${Math.round(bigShare * 100)}% of the money` }] : []),
             ]} />
             {opposite ? <p className="b-small" data-testid="split-opposite">Large positions and proven traders are on opposite sides of this game.</p> : null}
