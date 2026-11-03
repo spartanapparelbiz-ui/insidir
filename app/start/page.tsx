@@ -31,8 +31,6 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   const [viewer, jar, sp] = await Promise.all([getViewer(), cookies(), searchParams]);
   const next = safeNext(sp.next ?? "/");
   if (viewer.user && (isPaid(viewer.plan) || isFreeAccess(viewer.user.email))) redirect(next === "/" ? "/" : next);
-  // Accounts only if you pay: signed out, the one way in is the paywall (18+ → Whop checkout → the account).
-  if (!viewer.user) redirect("/go?step=paywall");
   void recordEvent({ name: "start_view", visitorId: jar.get(VISITOR_COOKIE)?.value ?? null, userId: viewer.user?.id ?? null, variant: jar.get(AB_COOKIE)?.value ?? null }).catch(() => undefined);
   const error = sp.error ? ERRORS[sp.error] ?? ERRORS.failed : null;
   return (
