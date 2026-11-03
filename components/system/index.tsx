@@ -10,6 +10,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { Lines } from "@/components/brand/Bits";
+import { headlineLines } from "@/lib/market/headline";
 
 export { Stage } from "@/components/brand/Stage";
 export { Arrow, Lines, Pill } from "@/components/brand/Bits";
@@ -18,27 +19,15 @@ export { ScrollFx } from "@/components/brand/landing/ScrollFx";
 export { BrandFoot, BrandNav } from "@/components/brand/Nav";
 export { Refresh } from "./Refresh";
 
-export function Panel({ children, className = "", testid }: { children: ReactNode; className?: string; testid?: string }) {
-  return <div className={`b-glass b-pad ${className}`} data-testid={testid}>{children}</div>;
+export function Panel({ children, className = "", testid, ...data }: { children: ReactNode; className?: string; testid?: string } & { [k: `data-${string}`]: string | undefined }) {
+  return <div className={`b-glass b-pad ${className}`} data-testid={testid} {...data}>{children}</div>;
 }
 
-/** Lines of about 24 characters at word boundaries: the homepage sizes a headline so no line ever wraps, so short
- *  lines keep it big on phones. */
-function wrap(sentence: string, max = 24): string[] {
-  const out: string[] = [];
-  let line = "";
-  for (const w of sentence.split(/\s+/)) {
-    if (line && (line + " " + w).length > max) { out.push(line); line = w; } else line = line ? `${line} ${w}` : w;
-  }
-  if (line) out.push(line);
-  // Never leave one short word alone on the last line.
-  if (out.length > 1 && out.at(-1)!.length < 8) { const last = out.pop()!; out[out.length - 1] += ` ${last}`; }
-  return out;
-}
-
-/** A computed sentence as masked lines. */
+/** A computed sentence as masked lines of about 24 characters at word boundaries (lib/market/races.ts headlineLines,
+ *  the same wrap the headline writers count with): the homepage sizes a headline so no line ever wraps, so short lines
+ *  keep it big on phones, and never a short word alone on the last line. */
 export function Insight({ text, fallback, as = "h1", size = 60, testid = "insight", id }: { text: string | null; fallback: readonly string[]; as?: "h1" | "h2"; size?: number; testid?: string; id?: string }) {
-  const lines = text ? text.split(/(?<=\.)\s+/).filter(Boolean).flatMap(s => wrap(s)) : fallback;
+  const lines = text ? headlineLines(text) : fallback;
   return <Lines as={as} lines={lines} size={size} testid={testid} id={id} />;
 }
 

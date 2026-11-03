@@ -80,6 +80,20 @@ test("/election: control of the Senate and House first; visitors get the top 3 w
     await page.goto("/election");
     // The headline is computed from the money; the stage is the homepage's (a dusk scene, the masked headline).
     await expect(page.getByTestId("insight")).toBeVisible();
+    // The headline and its race card can never disagree: the headline's amount and side ("bet $400K on …") are what
+    // the card shows for that candidate in that race.
+    // (Candidates come from Polymarket's events; without them, as offline here, there is no candidate claim at all.)
+    const lead = page.getByTestId("election-lead");
+    const headline = (await page.getByTestId("insight").textContent())!.replace(/\s+/g, " ").trim();
+    if (await lead.count()) {
+      const [raceKey, candidate, side] = await Promise.all(["data-race", "data-candidate", "data-side"].map(a => lead.getAttribute(a)));
+      const amount = headline.match(/\$[\d.,]+[KM]?/)![0];
+      expect(headline).toMatch(new RegExp(`^Millionaires bet \\${amount} ${side} `));
+      await expect(page.locator(`[data-testid="race-card"][data-race="${raceKey}"] [data-market="${candidate}"] [data-testid="candidate-money"]`)).toContainText(`${amount} ${side}`);
+    } else {
+      expect(headline).toBe("Tonight. Every race.");
+      await expect(page.getByTestId("candidate-money")).toHaveCount(0);
+    }
     const free = page.getByTestId("race-card");
     await expect(free).toHaveCount(3);
     await expect(free.nth(0)).toContainText("control the Senate"); // control first, then by money

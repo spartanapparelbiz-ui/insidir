@@ -13,7 +13,7 @@ import { getViewer } from "@/lib/auth/viewer";
 import { PHOTOS } from "@/lib/brand/images";
 import { electionDay as isElectionDay } from "@/lib/brand/pulse";
 import { getDb, hasDatabase } from "@/lib/db";
-import { electionDay, raceInsight, type ElectionDay } from "@/lib/market/races";
+import { electionDay, raceLead, type ElectionDay } from "@/lib/market/races";
 import { dollars } from "@/lib/money";
 import { isPaid, TRIAL } from "@/lib/plans";
 
@@ -25,14 +25,16 @@ export default async function ElectionPage() {
   const member = isPaid(viewer.plan), now = Date.now();
   const empty: ElectionDay = { races: [], locked: [], at: now };
   const d = hasDatabase() ? await electionDay(getDb(), now, member).catch(e => { console.error("election", e instanceof Error ? e.message : e); return empty; }) : empty;
-  const insight = raceInsight(d);
+  // The headline is what wallets did in one candidate's own market; the card below shows the same numbers.
+  const lead = raceLead(d);
   const today = isElectionDay(now);
   return (
     <Frame member={member} current="election" testid="election-page">
       <Refresh everyMs={60_000} />
       <Stage bg={{ kind: "photo", photo: PHOTOS.politics, dark: 0.45, priority: true }} first testid="election-band" labelledBy="election-h">
         <div className="b-head">
-          <Insight id="election-h" text={insight} fallback={["Tonight.", "Every race."]} size={60} />
+          <Insight id="election-h" text={lead?.headline ?? null} fallback={["Tonight.", "Every race."]} size={60} />
+          {lead ? <p className="b-sub" data-m="lift" data-testid="election-lead" data-race={lead.race.key} data-candidate={lead.candidate.marketId} data-side={lead.side}>{lead.sub}</p> : null}
           <p className="b-sub" data-m="lift">{today ? "Every major race tonight: the candidates, the live price, and where the money of wallets up $1M+ sits. Live, every minute." : "The major races: the candidates, the price, and where the money of wallets up $1M+ sits."}</p>
         </div>
         {member ? null : <div className="b-center"><div className="b-ctas"><Pill href="/go" data-testid="election-start" data-checkout="election">Start for ${TRIAL.fee}</Pill></div></div>}

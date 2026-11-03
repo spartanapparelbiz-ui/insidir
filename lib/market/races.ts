@@ -7,6 +7,8 @@ import type { Db } from "@/lib/db";
 import { electionBoard, type Race } from "@/lib/brand/pulse";
 import { marketMoney, type MarketMoney } from "@/lib/millionaires/queries";
 import { artFor, eventMarkets, verifiedHeadshot, type MarketArt } from "./art";
+import { headlineLines } from "./headline";
+import { dollars } from "@/lib/money";
 
 export interface Candidate { marketId: string; name: string; party: "D" | "R" | "I" | null; image: string | null; price: number | null; mil: { yes: number; no: number }; result: "won" | "lost" | null }
 export interface RaceCard { key: string; title: string; kind: "control" | "race"; candidates: Candidate[]; total: number; fallback: Race | null }
@@ -52,23 +54,63 @@ export async function electionDay(db: Db, now: number, member: boolean): Promise
   return { races: free, locked: [...rest.map(c => ({ title: c.title, total: c.total })), ...board.locked], at: now };
 }
 
-const usd = (v: number) => (v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${Math.round(v / 1e3)}K`);
-const raceName = (r: RaceCard) => r.title.replace(/ Election Winner$/, "").replace(/^Which party will win the (House|Senate) in \d{4}\?$/, "the $1");
+/** A race's short name: "Florida Governor Election Winner" → "Florida governor"; control of a chamber → "the House". */
+export const raceName = (r: RaceCard) => r.title.replace(/ Election Winner$/, "")
+  .replace(/^Which party will (win|control) the (House|Senate)( in \d{4}| after the \d{4} midterms)?\?$/, "the $2")
+  .replace(/ Governor\b/, " governor");
 
-/** The page's headline, computed. Money for a candidate is money on them plus money against their rivals; the race
- *  where millionaires lean hardest (head-to-head races first, then control of a chamber) becomes the sentence:
- *  "Millionaires are 100% on Ken Paxton in Texas Senate. The price says 26¢." Null without millionaire money. */
-export function raceInsight(d: ElectionDay): string | null {
-  const scored = d.races.flatMap(r => r.candidates.map(c => {
-    const rivals = r.candidates.filter(x => x !== c);
-    const forC = c.mil.yes + rivals.reduce((s, x) => s + x.mil.no, 0), against = c.mil.no + rivals.reduce((s, x) => s + x.mil.yes, 0);
-    return { r, c, forC, total: forC + against };
-  })).filter(x => x.forC > 0 && x.total > 0);
-  const pick = (kind: "race" | "control") => scored.filter(x => x.r.kind === kind).sort((a, b) => b.forC - a.forC)[0];
-  const top = pick("race") ?? pick("control");
-  if (!top) return null;
-  const share = Math.round((top.forC / top.total) * 100);
-  const who = top.r.kind === "control" ? `the ${top.c.name.replace(/ Party$/, "s").replace(/^Democratics$/, "Democrats").replace(/^Republicans?$/, "Republicans")}` : top.c.name;
-  const where = top.r.kind === "control" ? raceName(top.r).replace(/^the /, "to win the ") : `in ${raceName(top.r)}`;
-  return `Millionaires are ${share}% on ${who} ${where}.${top.c.price !== null ? ` The price says ${Math.round(top.c.price * 100)}¢.` : ""}`;
+export { headlineLines };
+
+export interface RaceLead {
+  race: RaceCard; candidate: Candidate;
+  /** What wallets did in that candidate's own market: bought Yes ("on") or No ("against"). Never inferred across
+   *  candidates: a No on one candidate is not money on another. */
+  side: "on" | "against";
+  dollars: number;
+  /** "Millionaires bet $5.9K against Byron Donalds." (two lines at most), and the line under it (race, price now). */
+  headline: string; sub: string;
 }
+
+const partyName = (n: string) => n.replace(/^Democratic( Party)?$/, "Democrats").replace(/^Republican( Party)?$/, "Republicans").replace(/ Party$/, "s");
+
+/** The card's own formatter (components/system/Races.tsx), so the headline's figure is the card's figure. */
+const dollarsShort = (v: number) => dollars(v);
+
+/** The page's headline, from what millionaire wallets actually did: the single largest position on or against one
+ *  candidate (head-to-head races first, then control of a chamber), in that candidate's own market. The race card shows
+ *  the same two numbers per candidate (mil.yes as "on", mil.no as "against"), so the headline and the card agree.
+ *  Null without millionaire money. */
+export function raceLead(d: ElectionDay): RaceLead | null {
+  const acts = d.races.flatMap(r => r.candidates.flatMap(c => [
+    { r, c, side: "on" as const, dollars: c.mil.yes },
+    { r, c, side: "against" as const, dollars: c.mil.no },
+  ])).filter(a => a.dollars > 0);
+  const best = (kind: "race" | "control") => acts.filter(a => a.r.kind === kind).sort((x, y) => y.dollars - x.dollars)[0];
+  const a = best("race") ?? best("control");
+  if (!a) return null;
+  const control = a.r.kind === "control";
+  const full = control ? partyName(a.c.name) : a.c.name, last = full.split(/\s+/).at(-1)!;
+  const amount = dollarsShort(a.dollars);
+  const make = (who: string, tail: string) => `Millionaires bet ${amount} ${a.side} ${who}${tail}.`;
+  const tail = control && a.side === "on" ? ` to win ${raceName(a.r)}` : "";
+  // Two lines at most: the full name if it fits, else the last name, else without the chamber.
+  let headline = make(full, tail);
+  if (headlineLines(headline).length > 2) headline = make(last, tail);
+  if (headlineLines(headline).length > 2) headline = make(last, "");
+  const price = a.c.price !== null ? ` · ${control ? full : last} ${Math.round(a.c.price * 100)}¢ now` : "";
+  const where = control ? `Control of ${raceName(a.r)}` : raceName(a.r);
+  return { race: a.r, candidate: a.c, side: a.side, dollars: a.dollars, headline, sub: `${where}${price}.` };
+}
+
+/** A candidate's millionaire money as the race card says it: Yes bought on them is "on", No bought on them is
+ *  "against". The headline (raceLead) reads the same two numbers. */
+export function candidateMoney(c: Candidate): string {
+  const { yes, no } = c.mil;
+  if (yes > 0 && no > 0) return `Millionaires: ${dollars(yes)} on, ${dollars(no)} against`;
+  if (yes > 0) return `Millionaires: ${dollars(yes)} on`;
+  if (no > 0) return `Millionaires: ${dollars(no)} against`;
+  return "No millionaire money yet";
+}
+
+/** The headline alone (the member home's election stage). */
+export function raceInsight(d: ElectionDay): string | null { return raceLead(d)?.headline ?? null; }
