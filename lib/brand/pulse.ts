@@ -13,7 +13,7 @@ import { category as categoryInfo, type CategorySlug } from "@/lib/brand/categor
 import { followRoi, hasRecord, MIN_SETTLED, STAKE } from "@/lib/follow/math";
 import { traderFollowAll } from "@/lib/follow/records";
 import type { VenueClient } from "@/lib/exchanges";
-import { memo } from "@/lib/memo";
+import { memo, memoStale } from "@/lib/memo";
 import type { Book, VMarket } from "@/lib/types";
 import { marketMoney, midnightET, recentBets, type BoardBet, type MarketMoney } from "@/lib/millionaires/queries";
 import { shortWallet } from "@/lib/millionaires/watchlist";
@@ -178,7 +178,7 @@ const bestAsk = (levels: ReadonlyArray<{ price: number }> | undefined): number |
  *  both venues (once a minute at most), and a gap counts when both prices are 3–97¢ and it is 2–15¢ (wider usually
  *  means the pair isn't the same bet). Each price is the best ask: what buying that outcome costs now. */
 export function priceGaps(db: Db, clients: { kalshi: Live; polymarket: Live }, now: number): Promise<PriceGap[]> {
-  return memo("brand:price-gaps", 60_000, async () => {
+  return memoStale("brand:price-gaps", 60_000, async () => {
     const r = await db.execute(sql`select p.data as pair, a.venue as av, a.data as a, b.venue as bv, b.data as b from terminal.pairs p
       join terminal.markets a on a.venue = p.data->'a'->>'venue' and a.id = p.data->'a'->>'id'
       join terminal.markets b on b.venue = p.data->'b'->>'venue' and b.id = p.data->'b'->>'id'

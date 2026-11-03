@@ -6,7 +6,7 @@
  *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
 import { electionDay } from "@/lib/brand/pulse";
-import type { CSSProperties } from "react";
+import { Suspense, type CSSProperties } from "react";
 import Image from "next/image";
 import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
 import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
@@ -28,7 +28,7 @@ import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
 import { BoardLeadStage, ElectionStage, GapsStage, MembersStage, PulseStage, SpotlightStage, StakeStage } from "./Value";
 
-function Hero({ d }: { d: LandingData }) {
+function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
   return (
     <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
       <BrandNav motion election={electionDay(Date.now())} />
@@ -157,12 +157,10 @@ function Final() {
   );
 }
 
-export function Landing({ d }: { d: LandingData }) {
+/** Everything below the hero, from the full landing data. */
+function Rest({ d }: { d: LandingData }) {
   return (
     <>
-    <ViewAs />
-    <main className="b-root" data-testid="landing">
-      <Hero d={d} />
       {/* The lead: the Election Day board until Nov 4 ET, then the board. */}
       {d.election ? <ElectionStage d={d} /> : <BoardLeadStage d={d} />}
       <PulseStage d={d} />
@@ -177,6 +175,39 @@ export function Landing({ d }: { d: LandingData }) {
       <FaqStage />
       <Final />
       {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
+    </>
+  );
+}
+
+async function RestLater({ data }: { data: Promise<LandingData> }) {
+  return <Rest d={await data} />;
+}
+
+/** The landing, all at once (no database, or tests). */
+export function Landing({ d }: { d: LandingData }) {
+  return (
+    <>
+    <ViewAs />
+    <main className="b-root" data-testid="landing">
+      <Hero d={d} />
+      <Rest d={d} />
+      <StageMotion />
+      <ScrollFx />
+    </main>
+    </>
+  );
+}
+
+/** The landing, streamed: the hero goes out the moment the live total is read (the page's first paint and LCP never
+ *  wait on the rest), then every stage below it as soon as the full data is in. The document (and its load event)
+ *  ends only when everything is there, so the page is whole at rest. */
+export function LandingStream({ head, data }: { head: Pick<LandingData, "pulse">; data: Promise<LandingData> }) {
+  return (
+    <>
+    <ViewAs />
+    <main className="b-root" data-testid="landing">
+      <Hero d={head} />
+      <Suspense fallback={null}><RestLater data={data} /></Suspense>
       <StageMotion />
       <ScrollFx />
     </main>

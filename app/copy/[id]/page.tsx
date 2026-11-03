@@ -48,7 +48,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
             </>
           ) : (
             <>
-              <button type="button" className="b-lockrow" data-locked="copy" aria-label="Which side they took and the copy ticket are for members: start for $1"><span className="b-label">Their side</span><span className="b-blur" aria-hidden="true">Xxxxx at 00¢</span><span className="b-lock" aria-hidden="true">Locked</span></button>
+              <button type="button" className="b-lockrow" data-locked="copy"><span className="b-label">Their side<span className="b-sr">: which side they took and the copy ticket are for members. Start for $1.</span></span><span className="b-blur" aria-hidden="true">Xxxxx at 00¢</span><span className="b-lock" aria-hidden="true">Locked</span></button>
               <div className="b-ctas"><Pill href="/go" data-testid="copy-start" data-checkout="copy">Start for $1</Pill></div>
             </>
           )}

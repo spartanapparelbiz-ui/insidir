@@ -14,5 +14,23 @@ export function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promi
   return value;
 }
 
+/** Like memo, but once a value exists it is returned at once even when stale, and refreshed in the background (a
+ *  page never waits on a slow outside API twice). The very first call waits; a failed refresh keeps the old value. */
+const swrStore = new Map<string, { at: number; value: unknown; running: Promise<unknown> | null }>();
+export function memoStale<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const now = Date.now(), hit = swrStore.get(key);
+  const refresh = () => {
+    const e = swrStore.get(key);
+    if (e?.running) return e.running as Promise<T>;
+    const p = fn().then(v => { swrStore.set(key, { at: Date.now(), value: v, running: null }); return v; },
+      err => { const old = swrStore.get(key); if (old) old.running = null; throw err; });
+    if (e) e.running = p; else swrStore.set(key, { at: 0, value: undefined, running: p });
+    return p;
+  };
+  if (!hit || hit.at === 0) return hit?.running ? (hit.running as Promise<T>) : refresh();
+  if (now - hit.at >= ttlMs) void refresh().catch(() => undefined);
+  return Promise.resolve(hit.value as T);
+}
+
 /** Forgets everything (tests). */
-export function clearMemo(): void { store.clear(); }
+export function clearMemo(): void { store.clear(); swrStore.clear(); }

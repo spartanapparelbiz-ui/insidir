@@ -49,9 +49,9 @@ export function ElectionLive({ initial, member }: { initial: ElectionBoard; memb
         })}
         {member ? null : b.locked.map((r, i) => (
           <li key={`l${i}`}>
-            <button type="button" className="b-lockrow" data-locked="race" aria-label={`${r.title}: the split and price are for members. Start for $1 to see them`} data-testid="race-locked">
+            <button type="button" className="b-lockrow" data-locked="race" data-testid="race-locked">
               <span className="b-row__title" style={{ textAlign: "left" }}>{r.title}</span>
-              <span className="b-small b-num">{dollars(r.total)} in</span>
+              <span className="b-small b-num">{dollars(r.total)} in<span className="b-sr">. The split and price are for members: start for $1 to see them.</span></span>
               <span className="b-lock" aria-hidden="true">Locked</span>
             </button>
           </li>

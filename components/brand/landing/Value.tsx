@@ -17,7 +17,7 @@ import { LiveFeed } from "../LiveFeed";
 import { StakeSlider } from "./StakeSlider";
 
 const Lock = ({ children, label }: { children: ReactNode; label: string }) => (
-  <button type="button" className="b-lockrow" data-locked="row" aria-label={`${label}: start for $1 to see it`}>{children}<span className="b-lock" aria-hidden="true">Locked</span></button>
+  <button type="button" className="b-lockrow" data-locked="row">{children}<span className="b-sr">{label}: start for $1 to see it.</span><span className="b-lock" aria-hidden="true">Locked</span></button>
 );
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 

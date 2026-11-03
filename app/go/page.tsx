@@ -18,7 +18,7 @@ import { vapidPublicKey } from "@/lib/alerts/vapid";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Bet with the millionaires", robots: { index: false } };
+export const metadata: Metadata = { title: "Bet with the millionaires", description: "See every bet from Polymarket wallets up $1M+, live, with the side they took. $1 for 3 days, then $39/month.", alternates: { canonical: "/go" } };
 
 const STEPS = new Set<Step>(["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "follow", "push"]);
 const EMPTY = (now: number): GoData => ({ now, paid: false, pulse: { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, hook: null, build: { wallets: 0, perCat: {} }, aha: { cards: [], more: 0 }, proof: null, wallets: [] });
