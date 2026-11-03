@@ -9,8 +9,7 @@
  *              edge, the space between average and now shaded green (up) or red (down). From /api/desk/edge; when the
  *              venue's history can't be read, an entry → now bar instead: no point is ever made up.
  * Also the full-screen board (/board) with its filters (`board`). */
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import type { CategorySlug } from "@/lib/brand/categories";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Edge } from "@/lib/desk/edge";
 import type { BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
@@ -18,6 +17,7 @@ import { TeamMark, WalletOrb } from "./Marks";
 
 const c = (p: number | null | undefined) => (p === null || p === undefined ? "" : `${Math.round(p * 100)}¢`);
 const ET = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+const ETD = new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 export const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 
 /* ---------- EdgeChart ---------- */
@@ -30,7 +30,7 @@ export function EdgeChart({ edge, loading }: { edge: Edge | null; loading?: bool
   const head = <p className="d-edge__head" data-testid="edge-head">Millionaires in at avg <b className="d-num">{c(avg)}</b>{last !== null ? <> · now <b className="d-num">{c(last)}</b> <b className={`d-num ${up ? "d-up" : "d-down"}`}>{up ? "▲" : "▼"}{Math.abs(delta ?? 0)}¢</b></> : null} · <b className="d-num">{dollars(edge.total)}</b> in</p>;
   const foot = (
     <div className="d-edge__foot">
-      {last !== null ? <a className="b-btn b-panel-pill d-white" href={`/copy/${encodeURIComponent(edge.betId)}`} data-testid="edge-copy">Copy at {c(last)}</a> : null}
+      {last !== null && last > 0.01 && last < 0.99 ? <a className="d-pill d-pill--white" href={`/copy/${encodeURIComponent(edge.betId)}`} data-testid="edge-copy">Copy at {c(last)}</a> : last !== null ? <span className="b-small">Priced as decided: nothing left to copy.</span> : null}
       <span className="b-small">Information, not advice.</span>
     </div>
   );
@@ -39,7 +39,7 @@ export function EdgeChart({ edge, loading }: { edge: Edge | null; loading?: bool
     const lo = Math.min(avg, last ?? avg), hi = Math.max(avg, last ?? avg);
     return (
       <div className="d-edge" data-testid="edge-chart" data-mode="bar">
-        <div className="d-edge__title"><TeamMark title={edge.title} category={"markets" as CategorySlug} size={22} /><span title={edge.title}>{edge.title}</span><span className="d-side">{edge.outcome}</span></div>
+        <div className="d-edge__title"><span title={edge.title}>{edge.title}</span><span className="d-side">{edge.outcome}</span></div>
         {head}
         <div className="d-edgebar"><span className={up ? "d-edgebar__up" : "d-edgebar__down"} style={{ left: `${lo * 100}%`, width: `${Math.max(0.5, (hi - lo) * 100)}%` }} /><i style={{ left: `${avg * 100}%` }} title="their average entry" />{last !== null ? <i className="d-edgebar__now" style={{ left: `${last * 100}%` }} title="now" /> : null}</div>
         <p className="b-small">Price history isn&apos;t available right now; their entry and the price now.</p>
@@ -65,8 +65,8 @@ export function EdgeChart({ edge, loading }: { edge: Edge | null; loading?: bool
         <path d={line} className="d-line" />
         {edge.entries.map((e, i) => <circle key={i} cx={x(e.t)} cy={y(e.p)} r={3 + 6 * Math.sqrt(e.dollars / maxD)} className="d-entry"><title>{`${dollars(e.dollars)} at ${c(e.p)}, ${ET.format(new Date(e.t))} ET`}</title></circle>)}
         {last !== null ? <><circle cx={x(pts.at(-1)!.t)} cy={y(last)} r={3.5} className="d-nowdot" /><text x={W - pad.r + 6} y={y(last) + 4} className="d-nowlabel">{c(last)}</text></> : null}
-        <text x={W - pad.r + 6} y={y(avg) + 4} className="d-avglabel">avg {c(avg)}</text>
-        <text x={pad.l} y={H - 6} className="d-axis">{ET.format(new Date(t0))} ET</text>
+        <text x={W - pad.r + 6} y={y(avg) + (last !== null && Math.abs(y(avg) - y(last)) < 14 ? (y(avg) >= y(last) ? 16 : -8) : 4)} className="d-avglabel">avg {c(avg)}</text>
+        <text x={pad.l} y={H - 6} className="d-axis">{ETD.format(new Date(t0))} ET</text>
         <text x={W - pad.r} y={H - 6} className="d-axis" textAnchor="end">now</text>
       </svg>
       {foot}
@@ -90,7 +90,7 @@ function FlowRow({ b, now, sel, onPick, fresh, moved, copy }: { b: BoardBet; now
       <td className="d-num d-r">{c(b.priceThen)}</td>
       <td className={`d-num d-r${moved > 0 ? " d-flash-up" : moved < 0 ? " d-flash-down" : ""}`}>{c(b.priceNow)}</td>
       <td className={`d-num d-r ${d === null ? "" : d > 0 ? "d-up" : d < 0 ? "d-down" : "d-dim"}`}>{d === null ? "" : d === 0 ? "0¢" : `${d > 0 ? "▲" : "▼"}${Math.abs(d)}¢`}</td>
-      <td className="d-r">{copy ? <a className="b-btn b-panel-pill d-white d-copy" href={`/copy/${encodeURIComponent(b.id)}`} onClick={e => e.stopPropagation()} data-testid="bet-copy" aria-label={`Copy: ${b.outcome ?? ""} in ${b.title}`}>Copy</a> : null}</td>
+      <td className="d-r">{copy ? <a className="d-pill d-pill--white d-copy" href={`/copy/${encodeURIComponent(b.id)}`} onClick={e => e.stopPropagation()} data-testid="bet-copy" aria-label={`Copy: ${b.outcome ?? ""} in ${b.title}`}>Copy</a> : null}</td>
     </tr>
   );
 }
@@ -100,8 +100,8 @@ function ago(ms: number, now: number): string {
   return s < 60 ? `${s}s` : s < 3600 ? `${Math.round(s / 60)}m` : s < 86400 ? `${Math.round(s / 3600)}h` : `${Math.round(s / 86400)}d`;
 }
 
-export function LiveFlow({ initial, now: now0, cats = [], board = false, copy = true, initialEdge, chart = true, n = 30 }: {
-  initial: BoardBet[]; now: number; cats?: readonly string[]; board?: boolean; copy?: boolean; initialEdge: Edge | null; chart?: boolean; n?: number;
+export function LiveFlow({ initial, now: now0, cats = [], board = false, copy = true, initialEdge, chart = true, n = 30, aside }: {
+  initial: BoardBet[]; now: number; cats?: readonly string[]; board?: boolean; copy?: boolean; initialEdge: Edge | null; chart?: boolean; n?: number; aside?: ReactNode;
 }) {
   const [bets, setBets] = useState(initial);
   const [now, setNow] = useState(now0);
@@ -159,9 +159,9 @@ export function LiveFlow({ initial, now: now0, cats = [], board = false, copy = 
       <div className="d-col8">{table}</div>
       <div className="d-col4 d-stack">
         <div className="d-panel" data-testid="edge-panel"><div className="d-panel__h"><span>Edge</span><span className="b-small">{sel ? "Selected bet" : "Today's biggest"}</span></div><EdgeChart edge={edge} loading={loading} /></div>
+        {aside}
       </div>
     </div>
   );
 }
 
-export const flowCss = {} as CSSProperties;

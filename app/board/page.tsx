@@ -1,11 +1,12 @@
 /* /board: every millionaire bet, newest first: tier and profit, market, side, size, price then → now, time; category
- * filters. Members: live, each with Copy (the copy ticket). Visitors: 60 minutes late (sides locked) with the live count
+ * filters. Members: live, in the Desk's flow table (components/desk/Flow.tsx), each with Copy (the copy ticket). Visitors: 60 minutes late (sides locked) with the live count
  * and Start for $1. */
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { Frame } from "@/components/brand/app/Frame";
 import { Lines, Pill } from "@/components/brand/Bits";
 import { LiveFeed } from "@/components/brand/LiveFeed";
+import { LiveFlow } from "@/components/desk/Flow";
 import { PayMoments } from "@/components/brand/PayMoments";
 import { Stage } from "@/components/brand/Stage";
 import { getViewer } from "@/lib/auth/viewer";
@@ -23,7 +24,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   const member = isPaid(viewer.plan), now = Date.now();
   const cat = isCategory(sp.cat) ? sp.cat : null;
   const db = hasDatabase() ? getDb() : null;
-  const [p, bets] = db ? await Promise.all([pulse(db, now), recentBets(db, { now, limit: 30, member, categories: cat ? [cat] : undefined, delayMs: member ? 0 : BOARD_DELAY_MS })]).catch(() => [null, []] as const) : [null, []] as const;
+  const [p, bets] = db ? await Promise.all([pulse(db, now), recentBets(db, { now, limit: member ? 40 : 30, member, categories: cat ? [cat] : undefined, delayMs: member ? 0 : BOARD_DELAY_MS })]).catch(() => [null, []] as const) : [null, []] as const;
   const initial = { now, pulse: p ?? { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, bets: [...bets] };
   return (
     <Frame member={member} current="board" testid="board">
@@ -48,7 +49,10 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
             <Pill href="/go" data-testid="board-start" data-checkout="board">Start for $1</Pill>
           </div>
         )}
-        <LiveFeed initial={initial} n={30} cats={cat ? [cat] : []} board copy={member} />
+        {/* Members: the Desk's flow table, full width (wallet, market, side, size, entry → now, Δ, Copy). Visitors: the
+            delayed rows without sides. */}
+        {member ? <div className="d-root d-root--board"><LiveFlow initial={initial.bets} now={now} cats={cat ? [cat] : []} initialEdge={null} chart={false} n={40} /></div>
+          : <LiveFeed initial={initial} n={30} cats={cat ? [cat] : []} board copy={false} />}
       </Stage>
       {member ? null : <PayMoments ctx={{ count: initial.pulse.count, window: initial.pulse.window, biggest: null }} now={now} />}
     </Frame>

@@ -1,7 +1,8 @@
-/* One millionaire bet as a glass row: the category photo as a thumbnail, the wallet's profit tier and profit, the
+/* One millionaire bet as a glass row: its team mark (teams' colours, a D/R disc, or a category tile; no scenery photo), the wallet's profit tier and profit, the
  * market, the side (locked for visitors), size and time, price then → now when known. Safe in server and client
  * components. */
-import { ambientOf, CategoryArt } from "./CategoryArt";
+import { ambientOf } from "./CategoryArt";
+import { TeamMark } from "@/components/desk/Marks";
 import type { BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
 import { PriceMove, Side, signedDollars, TierBadge } from "./Bits";
@@ -26,7 +27,7 @@ export function BetRow({ bet, now, href, className = "", settle, copyHref }: { b
   const style = { "--amb": ambientOf(bet.category), ...(settle !== undefined ? { "--d": `${settle}s` } : {}) } as React.CSSProperties;
   return (
     <div className={`b-row b-row--art ${className}`} data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier} style={style} {...(settle !== undefined ? { "data-m": "settle" } : {})}>
-      <span className="b-row__thumb" aria-hidden="true"><CategoryArt slug={bet.category} sizes="(max-width: 552px) 56px, 72px" label={false} /></span>
+      <span className="b-row__thumb b-row__thumb--mark" aria-hidden="true"><TeamMark title={bet.title} category={bet.category} outcome={bet.outcome} size={44} /></span>
       <span className="b-row__main">
         <span className="b-row__title">{title}</span>
         <span className="b-row__meta">

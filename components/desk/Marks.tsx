@@ -9,10 +9,12 @@ import { category as categoryInfo, type CategorySlug } from "@/lib/brand/categor
 import { partyOf, teamsOf } from "@/lib/brand/teams";
 import type { Tier } from "@/lib/millionaires/watchlist";
 
-/** FNV-1a over the address: the same wallet always gets the same orb. */
+/** FNV-1a over the address, then mixed: the same wallet always gets the same orb. */
 export function hashOf(s: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  // Murmur3's finalizer: addresses that differ only near the end still land far apart.
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
   return h >>> 0;
 }
 /** Two hues 70–180° apart, saturation 52–68%, lightness 48–60%. */

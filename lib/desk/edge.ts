@@ -35,7 +35,11 @@ export async function edgeFor(db: Db, poly: Pick<PolymarketClient, "getPriceHist
   if (b.history_key) {
     const span = now - from, fidelity = span > 3 * DAY ? 60 : span > DAY ? 30 : 10;
     const key = `edge:${b.history_key}:${Math.floor(from / (5 * 60_000))}`;
-    const raw = await memo(key, 5 * 60_000, () => poly.getPriceHistoryRange(b.history_key!, from, now, fidelity, "normal")).catch(() => null);
+    // At most 2.5 s for the venue: past that the chart shows entry → now (and the cache fills for the next look).
+    const raw = await Promise.race([
+      memo(key, 5 * 60_000, () => poly.getPriceHistoryRange(b.history_key!, from, now, fidelity, "normal")).catch(() => null),
+      new Promise<null>(r => setTimeout(() => r(null), 2500)),
+    ]);
     points = readPolyHistory(raw).map(x => (side === "yes" ? x : { t: x.t, p: 1 - x.p }));
   }
   const yes = b.yes_price === null ? null : Number(b.yes_price);
