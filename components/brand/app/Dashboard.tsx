@@ -58,7 +58,7 @@ export function Dashboard({ d, firstName, tab }: { d: Data; firstName: string | 
                 return (
                   <li key={x.key}><a className="b-row" href={`/read/${x.latest.id}`} style={{ gridTemplateColumns: "minmax(0,1fr) auto" }} data-testid="your-market">
                     <span className="b-row__main"><span className="b-row__title">{x.latest.data.question}</span><span className="b-row__meta">checked {agoText(x.latest.createdAt, d.now)}</span></span>
-                    <span className="b-row__money"><span className="b-row__size b-num">{total ? dollars(total) : "–"}</span><span className="b-small">millionaire money</span></span>
+                    <span className="b-row__money">{total ? <><span className="b-row__size b-num">{dollars(total)}</span><span className="b-small">millionaire money</span></> : <span className="b-small">No millionaire money yet</span>}</span>
                   </a></li>
                 );
               })}</ul>
@@ -80,7 +80,7 @@ export function Dashboard({ d, firstName, tab }: { d: Data; firstName: string | 
     case "board":
       body = (
         <div className="b-glass b-pad" {...settle(0.5)} data-testid="tab-board">
-          <h2 className="b-panel-h">Every millionaire bet in {cats}<a className="b-small" href="/go?step=cats">Change</a></h2>
+          <h2 className="b-panel-h">Every millionaire bet in {cats}<a className="b-small b-hit" href="/go?step=cats">Change</a></h2>
           <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.feed }} n={20} cats={d.cats} settle={false} />
           <p className="b-small" style={{ marginTop: 10 }}>Pings go out the second one lands in your categories (Account → Alerts).</p>
         </div>
@@ -107,7 +107,7 @@ export function Dashboard({ d, firstName, tab }: { d: Data; firstName: string | 
       body = (
         <div className="b-panels" data-testid="following-panel">
           <div className="b-glass b-pad" {...settle(0.5)}>
-            <h2 className="b-panel-h">Wallets you follow<a className="b-small" href="/board">Find wallets</a></h2>
+            <h2 className="b-panel-h">Wallets you follow<a className="b-small b-hit" href="/board">Find wallets</a></h2>
             {d.following.cards.length ? (
               <ul className="b-rows">{d.following.cards.map(c => <li key={c.wallet} className="b-row" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}><span className="b-row__title">{c.short}</span><span className="b-up b-num" style={{ fontWeight: 600 }}>{c.pnl !== null ? `${signedDollars(c.pnl)} all-time` : ""}</span></li>)}</ul>
             ) : <p className="b-empty">Follow a wallet that&apos;s up millions and every bet it makes lands here.</p>}

@@ -10,13 +10,14 @@ import { RECORD_MIN_RESOLVED } from "@/lib/moves/records";
 import { companyHref, fundHref, insiderHref } from "@/lib/profiles/name";
 import { sitemapSec } from "@/lib/profiles/store";
 import { trackerHref, TRACKERS } from "@/lib/trackers";
+import { CATEGORIES } from "@/lib/brand/categories";
 
 export const SITEMAP_TYPES = ["pages", "trackers", "companies", "insiders", "funds", "traders", "markets"] as const;
 export type SitemapType = (typeof SITEMAP_TYPES)[number];
 export interface Url { loc: string; lastmod?: Date; changefreq?: "hourly" | "daily" | "weekly"; priority?: number }
 
 const HOUR = 3_600_000;
-const PAGES = ["/", "/trackers", "/open", "/top", "/results", "/feed", "/sports", "/markets", "/stocks", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/about", "/help", "/faq", "/changelog", "/credits", "/terms", "/privacy"];
+const PAGES = ["/", "/board", "/trackers", "/open", "/top", "/results", "/feed", "/sports", "/markets", ...CATEGORIES.map(c => `/markets/${c.slug}`), "/stocks", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/about", "/help", "/faq", "/changelog", "/credits", "/terms", "/privacy"];
 
 export async function sitemapUrls(type: SitemapType, now = Date.now()): Promise<Url[]> {
   const base = appUrl();

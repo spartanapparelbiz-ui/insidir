@@ -51,7 +51,8 @@ body:has(.b-root) .foot, body:has(.b-root) .latebar, body:has(.b-root) .tabbar, 
 .b-root *, .b-root *::before, .b-root *::after { box-sizing: border-box; }
 .b-root a { color: inherit; text-decoration: none; }
 .b-root button { font: inherit; color: inherit; }
-.b-root a:focus-visible, .b-root button:focus-visible, .b-root input:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 99px; }
+.b-root :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.b-root :is(a, button, input, select, textarea, summary):focus:not(:focus-visible) { outline: none; }
 .b-root img { max-width: 100%; }
 .b-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -450,3 +451,74 @@ html.bm .b-new { animation: b-pillIn .7s var(--e-reveal) both; }
 /* The free-access "View as" bar sits above a brand page's fixed bars. */
 body:has(.viewas) .b-topbar, body:has(.viewas) .b-nav--fixed { top: 48px; }
 .viewas { position: relative; z-index: 70; }
+
+/* ---- Older member pages (Account, Alerts, Following) inside the brand shell: their own CSS reads these tokens, so
+ * mapping them to the brand's makes them black glass with white type, brand pills and the brand font. ---- */
+.b-legacy {
+  --ink: #ffffff; --paper: #000000; --page: transparent; --night: transparent;
+  --grey-1: rgba(255, 255, 255, .04); --grey-1b: rgba(255, 255, 255, .07); --grey-2: rgba(255, 255, 255, .09); --grey-3: rgba(237, 237, 237, .62); --grey-4: rgba(237, 237, 237, .4);
+  --night-surface: var(--grey-1); --night-inset: var(--grey-1b); --night-line: var(--grey-2); --night-muted: var(--grey-3);
+  --bg: var(--grey-1); --bg-alt: var(--grey-1b); --border: var(--grey-2); --text: #ffffff; --muted: var(--grey-3); --press: #e6e6e6;
+  --money: var(--up); --money-text: var(--up); --night-money: var(--up); --loss: var(--down); --loss-text: var(--down); --night-loss: var(--down);
+  --sans: var(--b-font), -apple-system, BlinkMacSystemFont, sans-serif; --serif: var(--sans);
+  --r-card: var(--r); --r-input: 14px;
+  background: transparent; color: #fff; font-family: var(--sans); max-width: 860px; margin: 0; padding: 0;
+}
+.b-legacy .phead__h { font-weight: 600; letter-spacing: -0.04em; font-size: clamp(36px, 4.4vw, 56px); line-height: 1; margin: 0 0 8px; }
+.b-legacy .agroup, .b-legacy section.upsell { background: var(--glass-fill); border: 1px solid var(--glass-line); border-radius: var(--r); padding: max(16px, calc(20 * var(--u))); margin: 0 0 14px; }
+.b-legacy .agroup__h, .b-legacy h2 { font-weight: 500; letter-spacing: -0.02em; }
+.b-legacy .btn { min-height: 44px; border-radius: 999px; font-weight: 500; }
+.b-legacy .btn--primary { background: var(--white-btn); color: var(--btn-ink); }
+.b-legacy .btn--primary:hover { background: #e6e6e6; }
+.b-legacy .btn--secondary, .b-legacy .btn--ghost { background: var(--panel); color: #ededed; border: 1px solid var(--glass-line); padding: 0 18px; }
+.b-legacy .btn--secondary:hover, .b-legacy .btn--ghost:hover { background: #222; color: #fff; }
+.b-legacy .input, .b-legacy input[type=text], .b-legacy input:not([type]), .b-legacy textarea, .b-legacy select { background: rgba(255, 255, 255, .04); color: #fff; border: 1px solid var(--glass-line); border-radius: 14px; min-height: 44px; }
+.b-legacy a:not(.btn) { color: #fff; }
+.b-legacy .acancel summary, .b-legacy label { min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.b-legacy table { color: #ededed; }
+
+/* ---- Tap targets: 44×44 on touch screens. Pills and buttons grow; small inline controls (the locked-side chip,
+ * "Change", a row's title) keep their look and get an invisible 44px hit area. ---- */
+@media (max-width: 768px), (pointer: coarse) {
+  .b-root .b-panel-pill, .b-root .b-nav-start, .b-root .b-side-pill, .b-root .b-btn { min-height: 44px; }
+  .b-root .b-burger { width: 46px; height: 44px; }
+  .b-root .b-logo { min-height: 44px; }
+  .b-root .b-foot a { display: inline-flex; align-items: center; min-height: 44px; padding: 0; }
+  .b-root .b-foot nav { gap: 0 18px; }
+  .b-root .b-lock, .b-root .b-hit { position: relative; }
+  .b-root .b-lock::after, .b-root .b-hit::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: 44px; transform: translate(-50%, -50%); }
+}
+/* A row whose title is its link: the whole row opens it (the locked-side chip stays on top and opens the paywall). */
+.b-row:has(.b-row__link) { position: relative; }
+.b-row__link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
+.b-row:has(.b-row__link) .b-lock { z-index: 2; }
+.b-row:has(.b-row__link):hover { border-color: rgba(255, 255, 255, .2); }
+.b-row__link:focus-visible { outline: none; }
+.b-row:has(.b-row__link:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.b-none { color: var(--dim); font-weight: 500; }
+/* /go's Back: a round glass button, top left, under the progress bar. */
+.b-go-back { position: fixed; top: calc(14px + env(safe-area-inset-top)); left: max(12px, calc(var(--gut) - 10px)); z-index: 61; width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--glass-fill); border: 1px solid var(--glass-line); color: #ededed; cursor: pointer; -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); transition: background .18s ease, color .18s ease; }
+.b-go-back:hover { background: #1c1c1c; color: #fff; }
+.b-go-back:active { background: #262626; }
+.b-go-back:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* ---- States, everywhere: hover lifts the fill, pressed darkens it, disabled fades and stops the pointer. ---- */
+.b-btn { transition: background .18s ease, color .18s ease, border-color .18s ease, opacity .18s ease; }
+.b-primary:active, .b-nav-start:active { background: #d4d4d4; }
+.b-panel-pill:active, .b-ghost:active { background: #2c2c2c; }
+.b-btn:disabled, .b-btn[aria-disabled="true"], .b-root button:disabled { opacity: .45; cursor: not-allowed; }
+.b-btn:disabled:hover, .b-btn[aria-disabled="true"]:hover { background: inherit; }
+.b-primary:disabled:hover, .b-primary[aria-disabled="true"]:hover { background: var(--white-btn); }
+.b-panel-pill[aria-pressed="true"], .b-panel-pill[data-on="true"], .b-panel-pill[aria-current="page"] { background: var(--white-btn); color: var(--btn-ink) !important; }
+.b-lock { transition: background .18s ease, color .18s ease; } .b-lock:hover { background: #232323; color: #fff; } .b-lock:active { background: #2c2c2c; }
+.b-tile { transition: border-color .18s ease; } .b-tile:hover { border-color: rgba(255, 255, 255, .22); } .b-tile:active { border-color: rgba(255, 255, 255, .32); }
+.b-choices button { transition: background .18s ease, border-color .18s ease; } .b-choices button:hover { border-color: rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .05); } .b-choices button:active { background: rgba(255, 255, 255, .08); }
+.b-faq__q:hover { background: rgba(255, 255, 255, .03); } .b-faq__q:active { background: rgba(255, 255, 255, .06); }
+.b-row:has(.b-row__link):active { background: rgba(255, 255, 255, .06); }
+a.b-row { transition: border-color .18s ease, background .18s ease; } a.b-row:hover { border-color: rgba(255, 255, 255, .2); } a.b-row:active { background: rgba(255, 255, 255, .06); }
+.b-ccard:active { border-color: rgba(255, 255, 255, .32); }
+.b-toggle input:disabled { opacity: .45; cursor: not-allowed; }
+/* Skeletons: the loading content's shape in quiet grey, static (no shimmer: motion stays the four behaviours). */
+.b-skel { display: grid; gap: 12px; min-height: 180px; }
+.b-skel__line { display: block; height: 14px; width: 100%; border-radius: 8px; background: rgba(255, 255, 255, .07); }

@@ -20,6 +20,9 @@ import { BrandFoot } from "../Nav";
 
 export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "follow" | "push";
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "follow", "push"];
+/** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
+ * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
+export const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "size", paywall: "aha", checkout: "paywall" };
 const KEY = "insidir_go";
 
 interface Answers { cats: CategorySlug[]; where: Where | null; size: Size | null; remind: boolean; /** Where to land at the end (a check they paid from). */ next?: string | null }
@@ -62,7 +65,7 @@ function Checkout({ elementsUrl, ageConfirmed }: { elementsUrl: string; ageConfi
       <label className="b-toggle b-glass b-pad"  data-testid="age-18" {...st(0.5, { justifyContent: "flex-start", gap: 12 })}>
         <input type="checkbox" checked={age} disabled={age && state !== "age"} onChange={e => setAge(e.target.checked)} /><span>I&apos;m 18 or older.</span>
       </label>
-      {state === "opening" ? <p className="b-small" role="status">Opening secure checkout…</p> : null}
+      {state === "opening" ? <div className="b-glass b-pad b-skel" aria-busy="true" style={{ minHeight: 320 }}><p className="b-small" role="status">Opening secure checkout…</p><span className="b-skel__line" style={{ height: 44 }} /><span className="b-skel__line" style={{ height: 44 }} /><span className="b-skel__line" style={{ height: 44, width: "60%" }} /></div> : null}
       {state === "error" ? <p className="b-msg" role="alert">The checkout didn&apos;t open. <button type="button" className="b-btn b-panel-pill" onClick={() => void open()}>Try again</button></p> : null}
       {state === "unconfigured" ? <p className="b-msg" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
       <div ref={box} className="b-glass" style={{ overflow: "hidden", padding: 8, background: "#fff", color: "#000", minHeight: state === "ready" ? 320 : 0 }} hidden={state !== "ready"} data-testid="go-checkout-frame" />
@@ -70,6 +73,8 @@ function Checkout({ elementsUrl, ageConfirmed }: { elementsUrl: string; ageConfi
     </div>
   );
 }
+
+const BackArrow = () => <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 4 6 9l5 5" /></svg>;
 
 function AhaCards({ cards, more }: { cards: AhaCard[]; more: number }) {
   return (
@@ -106,7 +111,20 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     setA(s);
   }, []);
   const put = (p: Partial<Answers>) => setA(prev => { const n = { ...prev, ...p }; store(n); return n; });
-  const go = (s: Step) => { setStep(s); window.scrollTo(0, 0); try { history.replaceState(null, "", `/go?step=${s}${location.search.includes("utm_") ? `&${location.search.slice(1).split("&").filter(x => x.startsWith("utm_")).join("&")}` : ""}`); } catch { /* ok */ } beacon("go_step", s); };
+  /** Each step is its own history entry (the browser's Back works too), carrying the UTM tags along. */
+  const go = (s: Step, how: "push" | "replace" = "push") => {
+    setStep(s); window.scrollTo(0, 0);
+    try {
+      const utm = location.search.slice(1).split("&").filter(x => x.startsWith("utm_")).join("&");
+      history[how === "push" ? "pushState" : "replaceState"]({ step: s }, "", `/go?step=${s}${utm ? `&${utm}` : ""}`);
+    } catch { /* ok */ }
+    beacon("go_step", s);
+  };
+  useEffect(() => {
+    const on = (e: PopStateEvent) => { const s = (e.state as { step?: Step } | null)?.step ?? (new URLSearchParams(location.search).get("step") as Step | null); if (s && ORDER.includes(s)) { setStep(s); window.scrollTo(0, 0); } };
+    window.addEventListener("popstate", on);
+    return () => window.removeEventListener("popstate", on);
+  }, []);
   const fetchData = useCallback(async (cats: readonly string[]) => {
     const r = await fetch(`/api/go?cats=${cats.join(",")}`, { cache: "no-store" }).catch(() => null);
     if (r?.ok) { const j = (await r.json()) as GoData; setD(j); return j; }
@@ -118,7 +136,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     if (step !== "building") return;
     setTicks(0);
     void fetchData(a.cats);
-    const ts = [700, 1500, 2300, 3200].map((t, i) => setTimeout(() => (i < 3 ? setTicks(i + 1) : go("aha")), t));
+    const ts = [700, 1500, 2300, 3200].map((t, i) => setTimeout(() => (i < 3 ? setTicks(i + 1) : go("aha", "replace")), t));
     return () => ts.forEach(clearTimeout);
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   // Unlocked: wait for Whop to tell us they paid (the webhook links the membership to this visitor).
@@ -134,7 +152,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     if (step !== "save") return;
     const s = load();
     void fetch("/api/go/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) })
-      .then(r => { if (r.ok) { void fetchData(s.cats); go("follow"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
+      .then(r => { if (r.ok) { void fetchData(s.cats); go("follow", "replace"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const progress = (ORDER.indexOf(step) + 1) / ORDER.length;
@@ -291,7 +309,10 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
   return (
     <main className="b-root" data-testid="go" data-step={step}>
       {bg}
-      <div className="b-go-bar" aria-hidden="true"><span style={{ transform: `scaleX(${progress})` }} /></div>
+      <div className="b-go-bar" role="progressbar" aria-label="Your progress" aria-valuemin={1} aria-valuemax={ORDER.length} aria-valuenow={ORDER.indexOf(step) + 1}
+        aria-valuetext={`Step ${ORDER.indexOf(step) + 1} of ${ORDER.length}`} data-testid="go-progress"><span style={{ transform: `scaleX(${progress})` }} /></div>
+      {step === "hook" ? <a className="b-go-back" href="/" aria-label="Back to the home page" data-testid="go-back"><BackArrow /></a>
+        : BACK[step] ? <button type="button" className="b-go-back" aria-label="Back" data-testid="go-back" onClick={() => go(BACK[step]!)}><BackArrow /></button> : null}
       <div key={step} style={{ position: "relative", zIndex: 2 }}>{body}</div>
       <div style={{ position: "relative", zIndex: 2 }}><BrandFoot inline /></div>
     </main>

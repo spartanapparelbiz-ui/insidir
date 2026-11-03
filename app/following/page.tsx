@@ -5,7 +5,7 @@
 import { GET_CTA } from "@/lib/copy";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteHeader";
+import { Frame } from "@/components/brand/app/Frame";
 import { unlockHref } from "@/components/app/links";
 import { ComingSoon } from "@/components/v2/ComingSoon";
 import { FollowButton } from "@/components/v2/FollowButton";
@@ -67,8 +67,7 @@ export default async function FollowingPage() {
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   return (
     <>
-      <SiteHeader signedIn={Boolean(viewer.user)} plan={viewer.plan} current="/following" trialHref={trial} />
-      <main className="wrap app2 following dark">
+      <Frame member={Boolean(viewer.user)} current="following" testid="legacy-page"><div className="b-legacy wrap app2 following">
         <header className="phead"><h1 className="phead__h">Following</h1></header>
         {!paid ? (
           <section className="upsell upsell--big">
@@ -203,7 +202,7 @@ export default async function FollowingPage() {
             ) : null}
           </>
         )}
-      </main>
+      </div></Frame>
     </>
   );
 }

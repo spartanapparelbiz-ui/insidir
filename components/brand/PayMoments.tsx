@@ -85,7 +85,16 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
 
   useEffect(() => {
     if (!open) return;
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    // Esc closes; Tab and Shift+Tab stay inside the panel (focus returns to where it was on close).
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { close(); return; }
+      if (e.key !== "Tab" || !panel.current) return;
+      const f = [...panel.current.querySelectorAll<HTMLElement>("a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex='-1'])")].filter(x => x.offsetParent !== null);
+      if (!f.length) { e.preventDefault(); return; }
+      const first = f[0]!, last = f[f.length - 1]!, at = document.activeElement;
+      if (e.shiftKey && (at === first || at === panel.current)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (at === last || !panel.current.contains(at))) { e.preventDefault(); first.focus(); }
+    };
     document.addEventListener("keydown", esc);
     panel.current?.focus();
     return () => document.removeEventListener("keydown", esc);

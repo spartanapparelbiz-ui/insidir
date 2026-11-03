@@ -17,7 +17,7 @@ export function agoShort(ms: number, now: number): string {
 
 export function BetRow({ bet, now, href, className = "", settle }: { bet: BoardBet; now: number; href?: string; className?: string; settle?: number }) {
   const photo = categoryPhoto(bet.category);
-  const title = href ? <a href={href}>{bet.title}</a> : bet.title;
+  const title = href ? <a className="b-row__link" href={href}>{bet.title}</a> : bet.title;
   return (
     <div className={`b-row ${className}`} data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier} {...(settle !== undefined ? { "data-m": "settle", style: { "--d": `${settle}s` } as React.CSSProperties } : {})}>
       <span className="b-row__thumb" aria-hidden="true"><Image src={photo.src} alt="" fill sizes="48px" quality={55} /></span>

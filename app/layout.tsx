@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
   // Added to an iPhone's home screen, Insidir opens full screen like an app: what iOS needs for web push alerts.
-  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
 };
 
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
  * (app/fonts, SIL OFL): its tabular figures apply to digits only, so "$160,000" keeps a normal comma. */
 const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap" });
 
-export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Whether Positioning has earned its place in the nav (cached for 10 minutes).

@@ -9,7 +9,9 @@ import { dollars } from "@/lib/money";
 import { cents, Side, TierBadge } from "./Bits";
 
 type TierMoney = MarketMoney["millionaire"];
-const w = (n: number) => `${n} ${n === 1 ? "wallet" : "wallets"}`;
+const w = (n: number) => (n ? `${n} ${n === 1 ? "wallet" : "wallets"}` : "No wallets");
+/** One side's dollars; a side with none says so instead of "$0". */
+const Amount = ({ v }: { v: number }) => (v > 0 ? <span className="b-big b-num">{dollars(v)}</span> : <span className="b-big b-none">None</span>);
 const st = (on: boolean, d: number) => (on ? { "data-m": "settle" as const, style: { "--d": `${d}s` } as CSSProperties } : {});
 
 function TierBlock({ name, t, yes, no, locked, testid, build, d }: { name: string; t: TierMoney; yes: string; no: string; locked: boolean; testid: string; build: boolean; d: number }) {
@@ -28,8 +30,8 @@ function TierBlock({ name, t, yes, no, locked, testid, build, d }: { name: strin
         <>
           <div className="b-bar" role="img" aria-label={`${Math.round(share * 100)}% of it on ${yes}`}><span style={{ transform: `scaleX(${share})` }} /></div>
           <div className="b-split">
-            <div><span className="b-label b-up">{yes}</span><span className="b-big b-num">{dollars(t.yes.dollars)}</span><span className="b-small">{w(t.yes.wallets)}</span></div>
-            <div><span className="b-label b-down">{no}</span><span className="b-big b-num">{dollars(t.no.dollars)}</span><span className="b-small">{w(t.no.wallets)}</span></div>
+            <div><span className="b-label b-up">{yes}</span><Amount v={t.yes.dollars} /><span className="b-small">{w(t.yes.wallets)}</span></div>
+            <div><span className="b-label b-down">{no}</span><Amount v={t.no.dollars} /><span className="b-small">{w(t.no.wallets)}</span></div>
           </div>
         </>
       )}

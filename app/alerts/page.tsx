@@ -10,7 +10,7 @@ import { LockButton } from "@/components/lock/Lock";
 import { AlertsForm } from "@/components/account/AlertsForm";
 import { unlockHref } from "@/components/app/links";
 import { vapidPublicKey } from "@/lib/alerts/vapid";
-import { SiteHeader } from "@/components/SiteHeader";
+import { Frame } from "@/components/brand/app/Frame";
 import { alertHistory } from "@/lib/alerts/history";
 import { requireMember } from "@/lib/auth/viewer";
 import { movePlan } from "@/lib/moves/gate";
@@ -21,7 +21,7 @@ import { BAND } from "@/lib/photos";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Alerts", robots: { index: false } };
 
-const WHEN = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+const WHEN = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 
 export default async function AlertsPage() {
   const viewer = await requireMember("/alerts");
@@ -35,8 +35,7 @@ export default async function AlertsPage() {
   if (!movePlan(viewer.plan).alerts) {
     return (
       <>
-        <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
-        <main className="wrap app acct dark">
+        <Frame member={true} current="account" testid="legacy-page"><div className="b-legacy wrap app acct">
           <header className="phead"><h1 className="phead__h">Alerts</h1></header>
           <section className="agroup">
             <div className="agroup__body">
@@ -49,7 +48,7 @@ export default async function AlertsPage() {
               <div className="row-gap"><LockButton where="alerts" className="btn btn--primary">Turn on alerts</LockButton></div>
             </div>
           </section>
-        </main>
+        </div></Frame>
       </>
     );
   }
@@ -57,8 +56,7 @@ export default async function AlertsPage() {
   const history = await alertHistory(user.id);
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn current="/alerts" />
-      <main className="wrap app acct dark">
+      <Frame member={true} current="account" testid="legacy-page"><div className="b-legacy wrap app acct">
         <header className="phead"><h1 className="phead__h">Alerts</h1></header>
         <p className="asum asum--lead">An alert follows when a trader or market you follow opens a large position.</p>
         <AlertsForm settings={user.settings} vapidKey={vapidPublicKey()} email={user.email} pro={viewer.plan === "insidir"} proHref={unlockHref()} ready={ready} />
@@ -74,7 +72,7 @@ export default async function AlertsPage() {
                     <tbody>
                       {history.map(h => (
                         <tr key={h.key}>
-                          <td className="tnum">{WHEN.format(new Date(h.sentAt))}</td>
+                          <td className="tnum">{WHEN.format(new Date(h.sentAt))} ET</td>
                           <td><Link href={h.href}>{h.title ?? "A move we no longer have"}</Link></td>
                           <td>{h.channel === "push" ? "Push" : "Email"}{h.opened ? " · opened" : ""}</td>
                         </tr>
@@ -90,7 +88,7 @@ export default async function AlertsPage() {
               )}
           </div>
         </section>
-      </main>
+      </div></Frame>
     </>
   );
 }

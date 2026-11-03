@@ -11,6 +11,7 @@ export interface FeedState { now: number; pulse: Pulse; bets: BoardBet[] }
 
 export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean }) {
   const [s, set] = useState(initial);
+  const [misses, setMisses] = useState(0);
   const first = useRef(new Set(initial.bets.map(b => b.id)));
   useEffect(() => {
     let stop = false;
@@ -18,8 +19,9 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
       if (document.visibilityState !== "visible") return;
       try {
         const r = await fetch(`/api/millionaires/live?n=${n}${cats.length ? `&cats=${cats.join(",")}` : ""}`, { cache: "no-store" });
-        if (r.ok && !stop) { const j = await r.json(); set({ now: j.now, pulse: j.pulse, bets: j.bets }); }
-      } catch { /* keep what we have */ }
+        if (stop) return;
+        if (r.ok) { const j = await r.json(); set({ now: j.now, pulse: j.pulse, bets: j.bets }); setMisses(0); } else setMisses(x => x + 1);
+      } catch { if (!stop) setMisses(x => x + 1); /* keep what we have */ }
     };
     const id = setInterval(tick, 15_000);
     return () => { stop = true; clearInterval(id); };
@@ -27,8 +29,10 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
   return (
     <div className="b-feed b-glass b-pad" data-testid="live-feed" {...(settle ? { "data-m": "settle", style: { "--d": ".5s" } as React.CSSProperties } : {})}>
       <div className="b-feed__top">
-        <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> Live</span>
-        <span className="b-small"><span className="b-feed__total b-num" style={{ color: "var(--ink)" }} data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires today</span>
+        <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> {misses >= 2 ? <span data-testid="feed-behind">Catching up</span> : "Live"}</span>
+        {s.pulse.today > 0
+          ? <span className="b-small"><span className="b-feed__total b-num" style={{ color: "var(--ink)" }} data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires today</span>
+          : <span className="b-small" data-testid="feed-total">No millionaire bets yet today</span>}
       </div>
       {s.bets.length ? (
         <ul className="b-rows" data-testid="feed-rows" aria-live="polite">
