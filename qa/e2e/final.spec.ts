@@ -87,7 +87,8 @@ test("the /go paywall panel and every stage of a member's home are visible", asy
   for (const id of ["home-hero", "home-ticket", "desk-search", "home-board", "live-board", "home-desk"]) {
     const el = page.getByTestId(id).first();
     await expect(el, id).toBeVisible();
-    expect(await el.evaluate(e => { let o = 1; for (let x: Element | null = e; x; x = x.parentElement) o *= Number(getComputedStyle(x).opacity); return o; }), id).toBeGreaterThan(0.99);
+    // At rest: once its reveal has played (settle/lift take under a second), nothing stays faded.
+    await expect.poll(() => el.evaluate(e => { let o = 1; for (let x: Element | null = e; x; x = x.parentElement) o *= Number(getComputedStyle(x).opacity); return o; }), { message: id, timeout: 4000 }).toBeGreaterThan(0.99);
   }
 });
 

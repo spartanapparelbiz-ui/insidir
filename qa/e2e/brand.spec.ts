@@ -25,7 +25,7 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
-  await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("You're bettingagainst millionaires.");
+  await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("You're betting against millionaires.");
   // Today's real total since midnight ET: the fixtures' six Millionaire bets of the last 90 minutes ($299K) once they all
   // fall after midnight. Within 95 minutes of midnight ET only part of them do: then today's part, or the last 24 hours
   // while today is still under $100K.
@@ -52,7 +52,7 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   // Free right now: today's #1 millionaire market whole (Chiefs vs. Bills: the split, the wallets, the price, the line).
   const free = page.getByTestId("free");
   await free.scrollIntoViewIfNeeded();
-  await expect(free.getByRole("heading", { level: 2 })).toHaveText("Free right now.No account.");
+  await expect(free.getByRole("heading", { level: 2 })).toHaveText("Free right now. No account.");
   const top = page.getByTestId("free-top");
   await expect(top).toContainText("E2E fixture: Chiefs vs. Bills");
   await expect(top).toContainText("Chiefs 51¢ · Bills 49¢");
@@ -93,8 +93,8 @@ test("landing: value first (free tiles), then what members get; sides locked onl
 
   await expect(page.getByTestId("proof-net")).toHaveText("+$1,348");
   await expect(page.getByTestId("proof")).toContainText("$100 on every millionaire bet · 30 settled");
-  await expect(page.getByTestId("pricing")).toContainText("Less thanone bad bet.");
-  await expect(page.getByTestId("final-cta").getByRole("heading")).toHaveText("Bet with themillionaires.");
+  await expect(page.getByTestId("pricing")).toContainText("Less than one bad bet.");
+  await expect(page.getByTestId("final-cta").getByRole("heading")).toHaveText("Bet with the millionaires.");
   await expect(page.getByTestId("brand-foot")).toContainText("Gambling problem? Call 1-800-GAMBLER.");
   await noHorizontalScroll(page);
 });
