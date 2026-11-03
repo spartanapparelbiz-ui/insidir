@@ -8,6 +8,7 @@
  * market link follows the location rules (lib/moves/links.ts). */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { humanLine } from "@/lib/markets/title";
 import Image from "next/image";
 import { unlockHref } from "@/components/app/links";
 import { Frame } from "@/components/brand/app/Frame";
@@ -86,7 +87,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const anySplit = split?.crowd ?? split?.bigmoney ?? null;
   if (!moves.length && !market && !anySplit) notFound();
   const info = infos.get(id) ?? null;
-  const title = market?.title ?? moves[0]?.marketTitle ?? anySplit!.title;
+  const title = humanLine({ title: market?.title ?? moves[0]?.marketTitle ?? anySplit!.title });
   const trackersHere = TRACKERS.filter(t => moves.some(m => (m.trackers ?? []).includes(t.slug))).slice(0, 8);
   const event = market?.eventTitle ?? moves[0]?.eventTitle ?? anySplit?.subtitle ?? null;
   const yesLabel = market?.yesLabel ?? moves.find(m => m.outcomeSide === "yes")?.outcome ?? (anySplit?.detail.yesLabel as string | undefined) ?? smart?.outcomes[0] ?? "Yes";

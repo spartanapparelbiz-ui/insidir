@@ -85,7 +85,7 @@ export function CheckPage({ id, data: raw, money, positions, member, us, now, st
               <span className="b-label">Pro money · wallets with $100K+ all-time profit</span>
               {proSum ? (
                 <div className="b-kv"><span>{([[pro.yes.dollars, data.yesLabel], [pro.no.dollars, data.noLabel]] as const).filter(([v]) => v > 0).map(([v, l]) => `${dollars(v)} on ${l}`).join(" · ")}</span><span className="b-small">{pro.yes.wallets + pro.no.wallets} wallets</span></div>
-              ) : <span className="b-small">None yet</span>}
+              ) : <span className="b-small">No millionaire money yet</span>}
             </div>
             {member ? (
               <div style={row} data-testid="read-wallets">

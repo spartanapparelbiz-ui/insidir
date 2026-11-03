@@ -11,7 +11,7 @@ const LEAGUE_WORDS: ReadonlyArray<readonly [League, readonly string[]]> = [
   ["college", ["ncaa", "ncaaf", "ncaab", "cfb", "cbb", "college", "march madness", "kxncaa"]],
   ["UFC", ["ufc", "mma", "kxufc"]],
   ["tennis", ["tennis", "atp", "wta", "wimbledon", "us open tennis", "roland garros", "australian open"]],
-  ["golf", ["golf", "pga", "masters", "ryder cup", "lpga"]],
+  ["golf", ["golf", "pga", "masters tournament", "ryder cup", "lpga", "augusta"]],
   ["soccer", ["soccer", "fc", "premier league", "epl", "la liga", "serie a", "bundesliga", "ligue 1", "champions league", "uefa", "mls", "fifa", "world cup"]],
 ];
 

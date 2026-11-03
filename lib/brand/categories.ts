@@ -7,7 +7,7 @@ import type { League } from "@/lib/moves/types";
 import { FALLBACK, FALLBACKS, PHOTOS, type Photo, type PhotoFile } from "./images";
 
 export const CATEGORY_SLUGS = [
-  "elections", "politics", "football", "basketball", "soccer", "baseball", "tennis", "hockey", "golf", "racing",
+  "elections", "politics", "football", "basketball", "soccer", "baseball", "tennis", "hockey", "golf", "racing", "esports",
   "weather", "hurricane", "space", "tech", "markets", "world", "culture", "oil",
 ] as const;
 export type CategorySlug = typeof CATEGORY_SLUGS[number];
@@ -26,6 +26,7 @@ export const CATEGORIES: readonly Category[] = [
   c("tennis", "Tennis", "ATP, WTA, the Slams", true),
   c("golf", "Golf", "PGA, the majors", true),
   c("racing", "Racing", "F1, NASCAR, IndyCar", true),
+  c("esports", "Esports", "Dota 2, CS2, League of Legends, Valorant", true),
   c("markets", "Markets", "The economy and the Fed"),
   c("tech", "Tech & AI", "AI, chips, big tech"),
   c("world", "World", "Wars, leaders, treaties"),
@@ -60,6 +61,10 @@ export function categoryPhotos(slugs: readonly CategorySlug[]): Photo[] {
 
 const LEAGUE_CATEGORY: Partial<Record<League, CategorySlug>> = { NFL: "football", NBA: "basketball", MLB: "baseball", NHL: "hockey", soccer: "soccer", tennis: "tennis", golf: "golf" };
 
+/** Esports, by name: games and their circuits. Checked before any sport, so a "Masters" or "Major" in an esports event
+ *  is never golf or tennis. */
+export const ESPORTS_RE = /\b(esports?|e-sports|dota ?2|counter-strike|cs2|cs:go|csgo|league of legends|lol:|lck|lpl|lec|valorant|vct|rocket league|call of duty|overwatch|rainbow six|r6|starcraft|pubg|apex legends|fortnite|epl masters|esl pro league|blast premier|iem|pgl|the international|bo[1-5])\b/i;
+
 const RULES: ReadonlyArray<readonly [CategorySlug, RegExp]> = [
   ["hurricane", /\b(hurricane|tropical storm|cyclone|typhoon|landfall|named storms?)\b/i],
   ["racing", /\b(f1|formula 1|formula one|grand prix|nascar|indycar|indy 500|motogp|daytona 500|le mans|verstappen|hamilton|norris|leclerc)\b/i],
@@ -67,8 +72,10 @@ const RULES: ReadonlyArray<readonly [CategorySlug, RegExp]> = [
   ["basketball", /\b(nba|wnba|ncaab|march madness|final four|nba finals)\b/i],
   ["baseball", /\b(mlb|world series|home runs?|al mvp|nl mvp|cy young)\b/i],
   ["hockey", /\b(nhl|stanley cup)\b/i],
-  ["tennis", /\b(tennis|atp|wta|wimbledon|roland garros|french open|australian open|us open tennis|paris masters|rolex paris|masters 1000)\b/i],
-  ["golf", /\b(golf|pga|lpga|masters tournament|the masters|ryder cup|open championship)\b/i],
+  ["tennis", /\b(tennis|atp|wta|wimbledon|roland garros|french open|australian open|us open tennis|paris masters|rolex paris|masters 1000|masters cup|atp finals)\b/i],
+  // "The Masters" is golf only as the tournament itself ("Will Scheffler win the Masters?"); a Masters Cup, Masters 1000
+  // or an esports "EPL Masters" never is.
+  ["golf", /\b(golf|pga|lpga|masters tournament|ryder cup|open championship|augusta)\b|(?:^|\n)\s*(?:will .{1,60}? win )?the masters\b(?!\s+(?:cup|1000|series|playoffs?|finals?))/i],
   ["soccer", /\b(soccer|premier league|epl|la liga|serie a|bundesliga|ligue 1|champions league|uefa|mls|fifa|world cup|fc)\b/i],
   ["elections", /\b(elections?|electoral|primary|primaries|nominee|nomination|midterms?|ballot|runoff|caucus|popular vote|win the seat|mayoral|mayor of|governor race|senate race|house race|wins? the (?:presidency|senate|house))\b/i],
   ["oil", /\b(oil|crude|wti|brent|opec|natural gas|gasoline|gas prices?|gold|silver|copper|commodit(?:y|ies))\b/i],
@@ -112,7 +119,12 @@ const SLUG: Readonly<Record<string, CategorySlug>> = {
   fl1: "soccer", fl2: "soccer", por: "soccer", ere: "soccer", mls: "soccer", lmx: "soccer", bra: "soccer", arg: "soccer", tur: "soccer", efl: "soccer",
   elc: "soccer", spl: "soccer", jpn: "soccer", kor: "soccer", fifa: "soccer", wc: "soccer",
   ufc: "culture", boxing: "culture",
+  // Esports series (Polymarket names the game first in the event slug).
+  dota2: "esports", cs2: "esports", csgo: "esports", lol: "esports", val: "esports", valorant: "esports", rl: "esports", cod: "esports", ow: "esports", r6: "esports", esports: "esports",
 };
+
+/** Kalshi's series tickers name the game too ("KXDOTA2GAME-…", "KXCS2MAP-…", "KXLOLGAME-…", "KXVALORANT…"). */
+const KALSHI_ESPORTS = /\bkx(dota|cs2|csgo|lol|valorant|val|r6|cod|ow)\w*/i;
 
 /** The category a Polymarket link's event slug names, if any. */
 export function slugCategory(url: string | null | undefined): CategorySlug | null {
@@ -130,6 +142,8 @@ export function categoryOf(m: CategoryInput): CategorySlug {
   if (m.venueCategory === "weather") return "weather";
   const bySlug = slugCategory(m.url);
   if (bySlug) return bySlug;
+  // The exchange's own series for esports (Kalshi ticker), then the game's name: never golf or tennis.
+  if (KALSHI_ESPORTS.test(m.url ?? "") || ESPORTS_RE.test(text)) return "esports";
   // Sports first, from the classifier's league when it has one (it knows club names and Kalshi series tickers).
   const isSport = m.tab === "sports" || m.venueCategory === "sports";
   const league = (m.league as League | null | undefined) ?? (isSport ? sportsLeagueOf(words) : null);

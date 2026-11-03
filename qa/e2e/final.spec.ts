@@ -293,3 +293,16 @@ test("no wallet's username or identity reaches any page", async ({ page, context
     }
   }
 });
+
+test("human copy: no raw exchange dates and no bare None on the main pages, for visitors and members", async ({ page, context }, info) => {
+  test.skip(info.project.name !== "desktop-1440", "the HTML is the same at every width");
+  for (const member of [false, true]) {
+    if (member) await signIn(context, "insidir");
+    for (const path of ["/", "/board", "/election", "/markets"]) {
+      const html = await (await page.request.get(path)).text();
+      const text = html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+      expect(text, `${path}${member ? " (member)" : ""}`).not.toMatch(/>[^<]*\b\d{4}-\d{2}-\d{2}\b[^<]*</);
+      expect(text, `${path}${member ? " (member)" : ""}`).not.toMatch(/>\s*None\b/);
+    }
+  }
+});

@@ -9,6 +9,7 @@
  *   gaps       the same bet on Kalshi and Polymarket, and what the gap means per $100 (lib/brand/pulse.ts priceGaps)
  *   desk       their open copies with the result so far, the wallets they follow, pings
  * Server only. */
+import { humanLine } from "@/lib/markets/title";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { disagreements, electionDay as isElectionDay, priceGaps, type Disagreement, type PriceGap } from "@/lib/brand/pulse";
@@ -173,7 +174,7 @@ export async function constellation(db: Db, since: number, limit = 40): Promise<
   const byMarket = new Map<string, { title: string; sides: Array<{ wallet: string; side: string }> }>();
   for (const r of rows) {
     if (!keep.has(r.wallet)) continue;
-    const m = byMarket.get(r.market_id) ?? { title: r.title, sides: [] };
+    const m = byMarket.get(r.market_id) ?? { title: humanLine({ title: r.title }), sides: [] };
     if (!m.sides.some(s => s.wallet === r.wallet && s.side === r.side)) m.sides.push({ wallet: r.wallet, side: r.side });
     byMarket.set(r.market_id, m);
   }

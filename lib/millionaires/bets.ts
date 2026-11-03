@@ -6,7 +6,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { betCopies, millionaireBets } from "@/lib/db/schema";
-import { categoryOf } from "@/lib/brand/categories";
+import { categoryOf, ESPORTS_RE } from "@/lib/brand/categories";
 import type { Move } from "@/lib/moves/types";
 import { BET_MIN } from "@/lib/moves/poll";
 import type { Tier } from "./watchlist";
@@ -38,6 +38,8 @@ export async function saveBets(db: Db, rows: readonly BetRow[]): Promise<number>
   await db.insert(millionaireBets).values([...rows]).onConflictDoUpdate({
     target: millionaireBets.id,
     set: { amount: sql`excluded.amount`, price: sql`excluded.price`, lastAt: sql`excluded.last_at`, url: sql`coalesce(excluded.url, ${millionaireBets.url})`,
+      // The category is re-read on every run, so a better rule (esports, the Masters) corrects live bets too.
+      category: sql`excluded.category`,
       yesLabel: sql`coalesce(excluded.yes_label, ${millionaireBets.yesLabel})`, noLabel: sql`coalesce(excluded.no_label, ${millionaireBets.noLabel})` },
   });
   return rows.length;
@@ -61,4 +63,17 @@ export async function settleCopies(db: Db, marketId: string, result: "yes" | "no
     pnl: sql`case when ${betCopies.outcomeSide} = ${result} then round((${betCopies.amount} / nullif(${betCopies.price}, 0) - ${betCopies.amount})::numeric, 2)::float else -${betCopies.amount} end`,
     settledAt: at,
   }).where(w);
+}
+
+/** Re-reads the category of stored bets from their own titles and links (the exchange's series first, lib/brand/
+ *  categories.ts), for bets of the last `days`: esports filed under Golf or Tennis by keyword luck move to Esports.
+ *  Idempotent; returns how many rows changed. */
+export async function recategorizeBets(db: Db, now: number, days = 30): Promise<number> {
+  const rows = (await db.execute(sql`select id, market_title, event_title, url, category from terminal.millionaire_bets where at > ${new Date(now - days * 86_400_000)}`)).rows as Array<{ id: string; market_title: string; event_title: string; url: string | null; category: string }>;
+  let changed = 0;
+  for (const r of rows) {
+    const esports = /polymarket\.com\/event\/(dota2|cs2|csgo|lol|val|valorant|rl|cod|ow|r6|esports)-/i.test(r.url ?? "") || ESPORTS_RE.test(`${r.event_title} \n ${r.market_title}`);
+    if (esports && r.category !== "esports") { await db.execute(sql`update terminal.millionaire_bets set category = 'esports' where id = ${r.id}`); changed++; }
+  }
+  return changed;
 }

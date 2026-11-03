@@ -6,11 +6,14 @@ import { decision } from "@/lib/millionaires/decided";
 import { useEffect, useRef, useState } from "react";
 import type { BoardBet, Pulse } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
+import { groupBets } from "@/lib/millionaires/group";
 import { BetRow } from "./BetRow";
 
 export interface FeedState { now: number; pulse: Pulse; bets: BoardBet[] }
 
-export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true, board = false, copy = false }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean;
+export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true, board = false, copy = false, tier = "millionaire" }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean;
+  /** Wallets up $1M+ (the default) or Pro ($100K–$1M): never mixed. */
+  tier?: "millionaire" | "pro";
   /** /board: visitors get bets 60 minutes late (the API applies it). */
   board?: boolean;
   /** Members: a Copy pill on each row (the copy ticket). */
@@ -23,14 +26,15 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
     const tick = async () => {
       if (document.visibilityState !== "visible") return;
       try {
-        const r = await fetch(`/api/millionaires/live?n=${n}${cats.length ? `&cats=${cats.join(",")}` : ""}${board ? "&board=1" : ""}`, { cache: "no-store" });
+        const r = await fetch(`/api/millionaires/live?n=${n}${cats.length ? `&cats=${cats.join(",")}` : ""}${board ? "&board=1" : ""}&tier=${tier}`, { cache: "no-store" });
         if (stop) return;
         if (r.ok) { const j = await r.json(); set({ now: j.now, pulse: j.pulse, bets: j.bets }); setMisses(0); } else setMisses(x => x + 1);
       } catch { if (!stop) setMisses(x => x + 1); /* keep what we have */ }
     };
     const id = setInterval(tick, 15_000);
     return () => { stop = true; clearInterval(id); };
-  }, [n, cats.join(","), board]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [n, cats.join(","), board, tier]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = groupBets(s.bets.filter(b => b.tier === tier));
   return (
     <div className="b-feed b-glass b-pad" data-testid="live-feed" {...(settle ? { "data-m": "settle", style: { "--d": ".5s" } as React.CSSProperties } : {})}>
       <div className="b-feed__top">
@@ -42,9 +46,9 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
             ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires in the last 24 hours</span>
             : <span className="b-small" data-testid="feed-total">No millionaire bets in the last 24 hours</span>}
       </div>
-      {s.bets.length ? (
+      {rows.length ? (
         <ul className="b-rows" data-testid="feed-rows" aria-live="polite">
-          {s.bets.map((b, i) => (
+          {rows.map((b, i) => (
             <li key={b.id}>
               <BetRow bet={b} now={s.now} href={links ? `/read/open?pick=polymarket:${b.marketId}` : undefined} copyHref={copy && !decision(b) ? `/copy/${encodeURIComponent(b.id)}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
                 settle={settle && first.current.has(b.id) ? 0.6 + i * 0.07 : undefined} />

@@ -16,7 +16,7 @@ const st = (on: boolean, d: number) => (on ? { "data-m": "settle" as const, styl
 
 function TierBlock({ name, t, yes, no, locked, testid, build, d }: { name: string; t: TierMoney; yes: string; no: string; locked: boolean; testid: string; build: boolean; d: number }) {
   const sum = t.yes.dollars + t.no.dollars, n = t.yes.wallets + t.no.wallets;
-  if (!sum) return <div className="b-kv" data-testid={testid} data-wallet-split="none" {...st(build, d)}><span className="b-label">{name}</span><span className="b-small">None yet</span></div>;
+  if (!sum) return <div className="b-kv" data-testid={testid} data-wallet-split="none" {...st(build, d)}><span className="b-label">{name}</span><span className="b-small">No money yet</span></div>;
   const share = t.yes.dollars / sum;
   return (
     <div className="b-tierblock" data-testid={testid} data-wallet-split="true" {...st(build, d)}>

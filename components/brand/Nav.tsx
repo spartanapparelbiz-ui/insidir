@@ -21,6 +21,17 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
   const links: Array<[string, string]> = election ? (member ? [base[0]!, ["Election Day", "/election"], ...base.slice(1)] : [["Election Day", "/election"], ...base]) : base;
   const [open, setOpen] = useState(false);
   const burger = useRef<HTMLButtonElement>(null), menu = useRef<HTMLElement>(null);
+  // Past the first stage the nav turns solid black with a hairline, so nothing scrolls under the links.
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    if (!fixed) return;
+    const first = document.querySelector<HTMLElement>(".b-stage[data-first], .b-stage");
+    const read = () => setSolid(first ? first.getBoundingClientRect().bottom <= 72 : window.scrollY > 40);
+    read();
+    window.addEventListener("scroll", read, { passive: true });
+    window.addEventListener("resize", read);
+    return () => { window.removeEventListener("scroll", read); window.removeEventListener("resize", read); };
+  }, [fixed]);
   useEffect(() => {
     if (!open) return;
     const out = (e: MouseEvent) => { if (!menu.current?.contains(e.target as Node) && !burger.current?.contains(e.target as Node)) setOpen(false); };
@@ -30,7 +41,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
   }, [open]);
   return (
     <>
-      <header className={`b-nav${fixed ? " b-nav--fixed" : ""}`} data-testid="brand-nav">
+      <header className={`b-nav${fixed ? " b-nav--fixed" : ""}${solid ? " is-solid" : ""}`} data-testid="brand-nav">
         <span {...q(motion, "quiet", 0.46)}><Logo /></span>
         <nav className="b-nav-links" aria-label="Primary">{links.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
         <div className="b-nav-actions">
