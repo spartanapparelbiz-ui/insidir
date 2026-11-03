@@ -39,13 +39,13 @@ function within<T>(p: Promise<T>, fallback: T, ms = VENUE_MS): Promise<T> {
 
 export class ReadNotFound extends Error {}
 
-/** The market's pair: its Polymarket and Kalshi ids, and whether Kalshi's YES pays like Polymarket's NO. */
+/** The market's pair: its Polymarket and its Kalshi twin. Only twins a person approved in /admin/twins (lib/twins),
+ *  which pay YES for YES, so never inverted. */
 export async function pairOf(db: Db, venue: Venue, id: string): Promise<{ polymarket: string | null; kalshi: string | null; inverted: boolean }> {
-  const r = await db.execute(sql`select data from terminal.pairs where not blocked and (
-      (data->'a'->>'venue' = ${venue} and data->'a'->>'id' = ${id}) or (data->'b'->>'venue' = ${venue} and data->'b'->>'id' = ${id})) limit 1`);
-  const d = (r.rows[0] as { data: { a: { venue: string; id: string }; b: { venue: string; id: string }; inverted?: boolean } } | undefined)?.data;
-  const side = (v: Venue) => (d?.a.venue === v ? d.a.id : d?.b.venue === v ? d.b.id : null);
-  return { polymarket: venue === "polymarket" ? id : side("polymarket"), kalshi: venue === "kalshi" ? id : side("kalshi"), inverted: Boolean(d?.inverted) };
+  const r = await db.execute(sql`select polymarket_id as poly, kalshi_id as kalshi from terminal.market_twins
+    where status = 'approved' and ${venue === "polymarket" ? sql`polymarket_id = ${id}` : sql`kalshi_id = ${id}`} limit 1`);
+  const t = r.rows[0] as { poly: string; kalshi: string } | undefined;
+  return { polymarket: venue === "polymarket" ? id : t?.poly ?? null, kalshi: venue === "kalshi" ? id : t?.kalshi ?? null, inverted: false };
 }
 
 interface Stored { /** Read from the venue just now (it answered within VENUE_MS), not from what we hold. */ fresh?: boolean; title: string; eventTitle: string | null; yesLabel: string; noLabel: string; url: string | null; yesPrice: number | null; volume24h: number | null; closeTime: number | null }

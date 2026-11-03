@@ -7,14 +7,20 @@ import { KalshiClient, PolymarketClient, PolymarketUsClient } from "@/lib/exchan
 import { activityFloorFromEnv } from "@/lib/exchanges/venue";
 import { gapsEnabled } from "@/lib/flags";
 import { runMatcher } from "@/lib/gaps/matcher";
+import { buildTwins } from "@/lib/twins/store";
 import { createLayeredCache, createOpenRouterConfirm, llmEnv, matchConfigFromEnv } from "@/lib/matching";
 import { dbMatchCache, dbUsageStore, loadOverrides } from "@/lib/worker/store";
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 
 async function main(): Promise<void> {
-  if (!gapsEnabled()) { log("GAPS_ENABLED is not 1: Price gaps is off, nothing to match"); return; }
   const db = getDb();
+  if (!gapsEnabled()) {
+    log("GAPS_ENABLED is not 1: Price gaps is off; twins from the stored markets only");
+    const t = await buildTwins(db, Date.now());
+    log(`twins: ${t.candidate} exact candidates, ${t.review} for review (all wait for /admin/twins)`);
+    return;
+  }
   const env = llmEnv(process.env);
   const us = process.env.POLYMARKET_US_ENABLED === "0" ? null : new PolymarketUsClient();
   const stats = await runMatcher({
@@ -26,6 +32,9 @@ async function main(): Promise<void> {
   });
   log(`match run ${stats.runId}: ${(stats.ms / 1000).toFixed(1)}s, peak ${stats.peakRssMb} MB, ${stats.rescored} re-scored, ${stats.candidates} candidates, ` +
     `${stats.llmAsked} LLM questions ($${stats.llmCostUsd.toFixed(4)}), ${stats.pairs} pairs + ${stats.multi} multi-outcome sets = ${stats.targets} targets`);
+  // Market twins (lib/twins) from the markets this run just swept: strict, and nothing is used until approved.
+  const t = await buildTwins(db, Date.now());
+  log(`twins: ${t.candidate} exact candidates, ${t.review} for review (all wait for /admin/twins)`);
 }
 
 main().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => closeDb());

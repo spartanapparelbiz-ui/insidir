@@ -70,7 +70,7 @@ test("a visitor's free check (US rule), wallets, bets and line never sent, Share
   const card = page.getByTestId("check-card");
   await expect(card).toHaveAttribute("data-verdict", "agree");
   await expect(card.getByTestId("verdict-evidence")).toHaveText("2 wallets with $1M+ all-time profit have $114K on Player A");
-  // The US rule: Kalshi only. Player A is Kalshi's NO (the pair is inverted): 60¢; the other side 40¢.
+  // The US rule: Kalshi only, through the approved twin (YES for YES): Player A 60¢; the other side 40¢.
   await expect(page.getByTestId("price-kalshi")).toHaveText(["60¢", "40¢"]);
   await expect(page.getByTestId("price-polymarket")).toHaveCount(0);
   await expect(page.getByTestId("read-open")).toHaveText("Open on Kalshi");

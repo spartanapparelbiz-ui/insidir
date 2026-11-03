@@ -260,6 +260,13 @@
       "when": 1793710000000,
       "tag": "0036_bet_copies",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793750000000,
+      "tag": "0037_market_twins",
+      "breakpoints": true
     }
   ]
 }

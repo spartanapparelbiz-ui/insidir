@@ -180,10 +180,11 @@ const bestAsk = (levels: ReadonlyArray<{ price: number }> | undefined): number |
  *  means the pair isn't the same bet). Each price is the best ask: what buying that outcome costs now. */
 export function priceGaps(db: Db, clients: { kalshi: Live; polymarket: Live }, now: number): Promise<PriceGap[]> {
   return memoStale("brand:price-gaps", 60_000, async () => {
-    const r = await db.execute(sql`select p.data as pair, a.venue as av, a.data as a, b.venue as bv, b.data as b from terminal.pairs p
-      join terminal.markets a on a.venue = p.data->'a'->>'venue' and a.id = p.data->'a'->>'id'
-      join terminal.markets b on b.venue = p.data->'b'->>'venue' and b.id = p.data->'b'->>'id'
-      where not p.blocked and (p.safety = 'green' or (p.safety = 'yellow' and (p.data->>'confidence')::float >= 0.9 and coalesce(jsonb_array_length(p.data->'ruleMismatch'), 0) = 0)) and (a.data->>'active')::boolean is not false and (b.data->>'active')::boolean is not false
+    // Approved twins only (lib/twins): the same event, outcome, line, source and close date, YES for YES.
+    const r = await db.execute(sql`select json_build_object('inverted', false) as pair, 'polymarket' as av, a.data as a, 'kalshi' as bv, b.data as b from terminal.market_twins t
+      join terminal.markets a on a.venue = 'polymarket' and a.id = t.polymarket_id
+      join terminal.markets b on b.venue = 'kalshi' and b.id = t.kalshi_id
+      where t.status = 'approved' and (a.data->>'active')::boolean is not false and (b.data->>'active')::boolean is not false
         and a.data->>'yesPrice' is not null and b.data->>'yesPrice' is not null
         and coalesce((a.data->>'closeTime')::bigint, 0) > ${now + 2 * 3_600_000} and coalesce((b.data->>'closeTime')::bigint, 0) > ${now + 2 * 3_600_000}
       limit 5000`);

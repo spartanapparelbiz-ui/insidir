@@ -95,20 +95,14 @@ export interface CopyMove {
 }
 
 interface Match { kalshiId: string; url: string; inverted: boolean }
-/** Polymarket market → its matched Kalshi market (lib/matching pairs, not blocked). */
+/** Polymarket market → its Kalshi twin. Only twins a person approved in /admin/twins (lib/twins): the same event,
+ *  outcome, line, resolution source and close date, YES for YES (so never inverted). */
 export async function kalshiMatchesFull(db: Db, polyIds: readonly string[]): Promise<Map<string, Match>> {
   const ids = [...new Set(polyIds)];
   if (!ids.length) return new Map();
-  const list = sql.join(ids.map(i => sql`${i}`), sql`, `);
-  const r = await db.execute(sql`select case when p.data->'a'->>'venue' = 'polymarket' then p.data->'a'->>'id' else p.data->'b'->>'id' end as poly,
-      k.id as kalshi, k.data->>'url' as url, coalesce((p.data->>'inverted')::boolean, false) as inverted
-    from terminal.pairs p
-    join terminal.markets k on k.venue = 'kalshi' and k.id = case when p.data->'a'->>'venue' = 'kalshi' then p.data->'a'->>'id' else p.data->'b'->>'id' end
-    where not p.blocked and ((p.data->'a'->>'venue' = 'polymarket' and p.data->'a'->>'id' in (${list}))
-      or (p.data->'b'->>'venue' = 'polymarket' and p.data->'b'->>'id' in (${list})))`);
-  const out = new Map<string, Match>();
-  for (const x of r.rows as Array<{ poly: string; kalshi: string; url: string | null; inverted: boolean }>) if (x.url) out.set(x.poly, { kalshiId: x.kalshi, url: x.url, inverted: Boolean(x.inverted) });
-  return out;
+  const r = await db.execute(sql`select polymarket_id as poly, kalshi_id as kalshi, kalshi_url as url from terminal.market_twins
+    where status = 'approved' and polymarket_id in (${sql.join(ids.map(i => sql`${i}`), sql`, `)})`);
+  return new Map((r.rows as Array<{ poly: string; kalshi: string; url: string }>).map(x => [x.poly, { kalshiId: x.kalshi, url: x.url, inverted: false }]));
 }
 
 /** YES prices: market_info first (kept fresh for markets with moves), else the matcher's market snapshot. */
