@@ -753,6 +753,8 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 .b-ccard__img { background: var(--panel); }
 /* Pages made of stages run full bleed under the members' nav, exactly like the homepage. */
 .b-app .b-main:has(> div > .b-stage), .b-app .b-main:has(> div > div > .b-stage) { max-width: none; padding: 0; }
+/* Member screens are homepage stages too: full height, clipped, black behind the scenery, content centred. */
+.b-app .b-main:has(> div > .b-stage) .b-stage, .b-app .b-main:has(> div > div > .b-stage) .b-stage { min-height: 100dvh; display: flex; overflow: clip; background: #000; }
 
 /* The member home's stages (components/home/Home.tsx): system tokens only. */
 .s-up { color: var(--up); } .s-down { color: var(--down); }
