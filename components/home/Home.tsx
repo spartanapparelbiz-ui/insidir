@@ -10,7 +10,7 @@
  *   7 Your desk   open copies, the wallets they follow, pings */
 import { Frame } from "@/components/brand/app/Frame";
 import { CommandBar } from "@/components/desk/CommandBar";
-import { FollowLink, PingsLink } from "@/components/desk/Act";
+import { PingsLink } from "@/components/desk/Act";
 import { categoryPhoto } from "@/lib/brand/categories";
 import { PHOTOS } from "@/lib/brand/images";
 import type { Home } from "@/lib/home/data";
@@ -21,6 +21,7 @@ import { Meter } from "@/components/system/Meter";
 import { Stream } from "@/components/system/Stream";
 import { RaceCards } from "@/components/system/Races";
 import { Ticket } from "@/components/system/Ticket";
+import { WalletCards } from "@/components/system/WalletCards";
 
 const cents = (p: number) => `${Math.round(p * 100)}¢`;
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
@@ -77,23 +78,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
         {d.wallets.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55 }} testid="home-wallets" labelledBy="wal-h">
             <div className="b-head"><Insight id="wal-h" as="h2" text={d.insight.wallets} fallback={["Wallets worth following."]} size={52} /></div>
-            <div className="s-cards" data-stagger="">
-              {d.wallets.map(w => (
-                <Panel key={w.wallet} className="s-wcard" testid="wallet-card">
-                  <p className="s-wcard__id b-num">{w.short}</p>
-                  {w.pnl !== null ? <p className="s-big b-num">{signed(w.pnl)}</p> : null}
-                  <p className="b-small">all-time profit</p>
-                  {w.last10 ? (
-                    <p className="s-record" aria-label={`Last ${w.last10.made + w.last10.lost} closed: ${w.last10.made} made money, ${w.last10.lost} lost`}>
-                      {Array.from({ length: w.last10.made }, (_, i) => <i key={`m${i}`} className="s-dot s-dot--on" />)}{Array.from({ length: w.last10.lost }, (_, i) => <i key={`l${i}`} className="s-dot" />)}
-                      <span className="b-small">Last {w.last10.made + w.last10.lost} closed: {w.last10.made} made money, {w.last10.lost} lost</span>
-                    </p>
-                  ) : null}
-                  <p className="b-small">{d.today ? "Today" : "Last 24 hours"}: {dollars(w.todayDollars)} across {w.todayBets} {w.todayBets === 1 ? "bet" : "bets"}</p>
-                  <FollowLink wallet={w.wallet} initial={w.followed} />
-                </Panel>
-              ))}
-            </div>
+            <WalletCards wallets={d.wallets} today={Boolean(d.today)} />
           </Stage>
         ) : null}
 
