@@ -1,5 +1,6 @@
 /* The member home: black; a greeting in masked lines, then the five things they bought, as tabs (lib/brand/copy.ts
- * MEMBERS, the same five rows the landing promises): Check (check a bet; their checked markets; their week) · Board
+ * MEMBERS, the same five rows the landing promises): Check (the lead: the Election Day board until Nov 4 ET, then the
+ * board, each row with Copy; their checked markets; their week; the paste box is a small search up top) · Board
  * (every millionaire bet, live, in their categories) · Brief (today's top 3 by millionaire money, how yesterday's went)
  * · Following (the wallets they follow and their bets) · Live (the races and games with the most millionaire money
  * now). Every number live (lib/brand/dashboard.ts). */
@@ -15,6 +16,7 @@ import { BetRow } from "../BetRow";
 import { Lines, signedDollars } from "../Bits";
 import { LiveFeed } from "../LiveFeed";
 import { Shell } from "./Shell";
+import { ElectionLive } from "../landing/ElectionLive";
 
 export type HomeTab = "check" | "board" | "brief" | "following" | "live";
 export const TABS: Array<[HomeTab, string]> = MEMBERS.map(m => [m.tab.toLowerCase() as HomeTab, m.tab]);
@@ -46,10 +48,17 @@ export function Dashboard({ d, firstName, tab }: { d: Data; firstName: string | 
     case "check":
       body = (
         <div className="b-panels">
-          <div className="b-glass b-pad b-wide" id="ask" {...settle(0.5)}>
-            <h2 className="b-panel-h">Check a bet</h2>
-            <AskBox id="home-ask" settle={false} />
-          </div>
+          {d.election ? (
+            <div className="b-wide" data-testid="home-lead" data-lead="election" {...settle(0.5)}>
+              <h2 className="b-panel-h">Election Day: every race, live<a className="b-small b-hit" href="/election">Full board</a></h2>
+              <ElectionLive initial={d.election} member />
+            </div>
+          ) : (
+            <div className="b-glass b-pad b-wide" data-testid="home-lead" data-lead="board" {...settle(0.5)}>
+              <h2 className="b-panel-h">Every millionaire bet{d.cats.length ? ` in ${cats}` : ""}<a className="b-small b-hit" href="/board">The board</a></h2>
+              <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.feed }} n={8} cats={d.cats} settle={false} copy />
+            </div>
+          )}
           <div className="b-glass b-pad" data-testid="your-markets" {...settle(0.6)}>
             <h2 className="b-panel-h">Your checks</h2>
             {d.markets.length ? (
@@ -81,7 +90,7 @@ export function Dashboard({ d, firstName, tab }: { d: Data; firstName: string | 
       body = (
         <div className="b-glass b-pad" {...settle(0.5)} data-testid="tab-board">
           <h2 className="b-panel-h">Every millionaire bet in {cats}<a className="b-small b-hit" href="/go?step=cats">Change</a></h2>
-          <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.feed }} n={20} cats={d.cats} settle={false} />
+          <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.feed }} n={20} cats={d.cats} settle={false} copy />
           <p className="b-small" style={{ marginTop: 10 }}>Pings go out the second one lands in your categories (Account → Alerts).</p>
         </div>
       );
@@ -139,7 +148,11 @@ export function Dashboard({ d, firstName, tab }: { d: Data; firstName: string | 
     <Shell current="home">
       <section className="b-stage" data-testid="member-home" data-tab={tab}>
         <div style={{ display: "grid", gap: 16, marginBottom: 18 }}>
-          <Lines as="h1" lines={[`${greeting(d.now)}${firstName ? `, ${firstName}` : ""}.`]} size={52} />
+          <div className="b-homehead">
+            <Lines as="h1" lines={[`${greeting(d.now)}${firstName ? `, ${firstName}` : ""}.`]} size={52} />
+            {/* The paste box, as a small search: check any bet from any tab. */}
+            <div className="b-search" id="ask"><AskBox id="home-ask" settle={false} placeholder="Check a bet: paste a link or type it" /></div>
+          </div>
           <nav className="b-chips" style={{ justifyContent: "flex-start" }} aria-label="Your home" data-testid="home-tabs">
             {TABS.map(([k, label], i) => <a key={k} className="b-btn b-panel-pill" aria-current={tab === k ? "page" : undefined} data-on={tab === k ? "true" : "false"} href={k === "check" ? "/" : `/?tab=${k}`} {...settle(0.3 + i * 0.04)}>{label}</a>)}
           </nav>

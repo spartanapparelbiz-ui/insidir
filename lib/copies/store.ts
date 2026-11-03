@@ -112,7 +112,7 @@ export async function kalshiMatchesFull(db: Db, polyIds: readonly string[]): Pro
 }
 
 /** YES prices: market_info first (kept fresh for markets with moves), else the matcher's market snapshot. */
-async function yesPrices(db: Db, venue: "polymarket" | "kalshi", ids: readonly string[]): Promise<Map<string, number>> {
+export async function yesPrices(db: Db, venue: "polymarket" | "kalshi", ids: readonly string[]): Promise<Map<string, number>> {
   const out = new Map<string, number>();
   if (!ids.length) return out;
   for (const [id, i] of await infoFor(db, venue, ids)) if (i.yesPrice !== null && i.yesPrice !== undefined && !i.closed) out.set(id, i.yesPrice);

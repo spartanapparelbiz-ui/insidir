@@ -106,6 +106,9 @@ export interface Pulse {
   countToday: number;
 }
 
+/** /board for visitors: bets 60 minutes late (the live count stays live); members see them as they land. */
+export const BOARD_DELAY_MS = 60 * 60_000;
+
 /** Midnight US Eastern of the day `now` falls on, as epoch ms. */
 export function midnightET(now: number): number {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })

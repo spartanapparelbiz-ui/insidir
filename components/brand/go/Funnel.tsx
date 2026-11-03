@@ -19,7 +19,7 @@ import { PAY_BULLETS, Paywall } from "../Paywall";
 import { BrandFoot } from "../Nav";
 
 export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "follow" | "push";
-const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "follow", "push"];
+const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
  * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
 export const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "size", paywall: "aha", checkout: "paywall" };
@@ -82,7 +82,7 @@ function AhaCards({ cards, more }: { cards: AhaCard[]; more: number }) {
       <div className="b-cards3" data-testid="aha-cards">
         {cards.map((c, i) => (
           <div key={c.m.marketId}  {...st(0.5 + i * 0.1, { display: "grid", gap: 8 })}>
-            <div className="b-cardimg"><Image src={categoryPhoto(c.m.category).src} alt="" fill sizes="(max-width: 860px) 100vw, 33vw" quality={60} /></div>
+            <div className="b-cardimg"><Image src={categoryPhoto(c.m.category).src} alt="" fill sizes="(max-width: 860px) 100vw, 33vw" quality={90} /></div>
             <MoneyCard m={c.m} positions={c.positions} locked={c.locked} testid={c.locked ? "aha-locked" : "aha-open"} />
           </div>
         ))}
@@ -152,7 +152,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     if (step !== "save") return;
     const s = load();
     void fetch("/api/go/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) })
-      .then(r => { if (r.ok) { void fetchData(s.cats); go("follow", "replace"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
+      .then(r => { if (r.ok) { void fetchData(s.cats); go("push", "replace"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const progress = (ORDER.indexOf(step) + 1) / ORDER.length;
@@ -189,7 +189,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               return (
                 <button key={c.slug} type="button" className="b-tile" aria-pressed={on} data-testid="go-tile" data-cat={c.slug} {...st(0.4 + i * 0.03)}
                   onClick={() => put({ cats: on ? a.cats.filter(x => x !== c.slug) : [...a.cats, c.slug] })}>
-                  <span className="b-tile__img"><Image src={categoryPhoto(c.slug).src} alt="" fill sizes="(max-width: 552px) 33vw, 160px" quality={55} /></span>
+                  <span className="b-tile__img"><Image src={categoryPhoto(c.slug).src} alt="" fill sizes="(max-width: 552px) 33vw, (max-width: 1160px) 25vw, 220px" quality={90} /></span>
                   <span className="b-tile__check" aria-hidden="true"><svg viewBox="0 0 11 9" fill="none"><path d="M1 4.5 4 7.5 10 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                   <span className="b-tile__name">{c.name}</span>
                 </button>
@@ -288,7 +288,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               </div>
             )) : <p className="b-empty">No millionaire wallet has bet in your categories this month yet. You&apos;ll see them on your board.</p>}
           </div>
-          <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => go("push")} data-testid="go-next" {...st(1)}>Continue<Arrow /></button></div>
+          <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => { try { localStorage.removeItem(KEY); } catch { /* ok */ } location.assign(a.next ?? "/"); }} data-testid="go-next" {...st(1)}>Continue<Arrow /></button></div>
         </GoStage>
       );
       break;
@@ -296,11 +296,11 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       body = (
         <GoStage testid="go-push">
           <Lines as="h1" lines={["Ping me when", "they bet."]} size={64} />
-          <p className="b-sub" {...m("lift", 0.58)}>A push the moment a wallet you follow bets $5K or more.</p>
+          <p className="b-sub" {...m("lift", 0.58)}>A push the moment a $1M+ wallet bets $25K+ in your categories (Elections on this week), with one tap to copy. At most 8 a day, never 11pm–8am.</p>
           <div className="b-ctas">
             <button type="button" className="b-btn b-btn-lg b-primary" data-testid="go-push-on" {...st(0.9)}
-              onClick={async () => { if (vapidKey) await enablePush(vapidKey).catch(() => null); try { localStorage.removeItem(KEY); } catch { /* ok */ } location.assign(a.next ?? "/"); }}>Ping me when they bet<Arrow /></button>
-            <a className="b-btn b-btn-lg b-ghost" href={a.next ?? "/"} onClick={() => { try { localStorage.removeItem(KEY); } catch { /* ok */ } }} data-testid="go-push-skip" {...st(0.97)}>Not now</a>
+              onClick={async () => { if (vapidKey) await enablePush(vapidKey).catch(() => null); go("follow"); }}>Ping me when they bet<Arrow /></button>
+            <button type="button" className="b-btn b-btn-lg b-ghost" onClick={() => go("follow")} data-testid="go-push-skip" {...st(0.97)}>Not now</button>
           </div>
         </GoStage>
       );

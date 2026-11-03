@@ -5,8 +5,9 @@ import { Arrow, Logo } from "../Bits";
 import { StageMotion } from "../StageMotion";
 import { BrandFoot } from "../Nav";
 import { ViewAs } from "@/components/ViewAs";
+import { electionDay } from "@/lib/brand/pulse";
 
-type Tab = "home" | "board" | "markets" | "following" | "library" | "account";
+type Tab = "home" | "election" | "board" | "markets" | "following" | "copies" | "library" | "account";
 const I: Record<string, ReactNode> = {
   home: <path d="M3 10.5 10 4l7 6.5V17a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z" />,
   board: <path d="M4 5h12M4 10h12M4 15h8" />,
@@ -15,12 +16,17 @@ const I: Record<string, ReactNode> = {
   library: <path d="M5 3.5h8.5L16 6v10.5H5zM8 9h5M8 12h5" />,
   account: <><circle cx="10" cy="10" r="6.5" /><circle cx="10" cy="8.5" r="2.2" /><path d="M6 14.6c1-1.4 2.4-2.1 4-2.1s3 .7 4 2.1" /></>,
   check: <><circle cx="9" cy="9" r="5" /><path d="m13 13 3.5 3.5" /></>,
+  copies: <><rect x="6.5" y="6.5" width="10" height="10" rx="2" /><path d="M13.5 6.5V4.5a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2" /></>,
+  election: <><path d="M4 16.5h12M5.5 16.5V9h9v7.5M8 9V5.5h4V9" /><path d="m8.5 12.5 1.2 1.2 2.3-2.4" /></>,
 };
 const Icon = ({ name }: { name: string }) => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{I[name]}</svg>;
-const NAV: Array<[Tab, string, string]> = [["home", "Home", "/"], ["board", "Board", "/board"], ["markets", "Markets", "/markets"], ["following", "Following", "/following"], ["library", "Library", "/library"], ["account", "Account", "/settings"]];
+const NAV_ALL: Array<[Tab, string, string]> = [["election", "Election Day", "/election"], ["home", "Home", "/"], ["board", "Board", "/board"], ["markets", "Markets", "/markets"], ["following", "Following", "/following"], ["copies", "Your copies", "/copies/yours"], ["library", "Library", "/library"], ["account", "Account", "/settings"]];
+/** Election Day leads the nav until the board closes (Nov 4 ET, lib/brand/pulse.ts electionDay). */
+const navNow = () => NAV_ALL.filter(([k]) => k !== "election" || electionDay(Date.now()));
 export const CHECK_HREF = "/#ask"; // the Check tab, its box
 
 export function Shell({ current, children }: { current: Tab; children: ReactNode }) {
+  const NAV = navNow();
   return (
     <>
     <ViewAs />

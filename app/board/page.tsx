@@ -1,15 +1,17 @@
-/* /board: every millionaire bet, live (sides for members; locked for visitors), filterable by category. */
+/* /board: every millionaire bet, newest first: tier and profit, market, side, size, price then → now, time; category
+ * filters. Members: live, each with Copy (the copy ticket). Visitors: 60 minutes late (sides locked) with the live count
+ * and Start for $1. */
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { Frame } from "@/components/brand/app/Frame";
-import { Lines } from "@/components/brand/Bits";
+import { Lines, Pill } from "@/components/brand/Bits";
 import { LiveFeed } from "@/components/brand/LiveFeed";
 import { PayMoments } from "@/components/brand/PayMoments";
 import { Stage } from "@/components/brand/Stage";
 import { getViewer } from "@/lib/auth/viewer";
 import { CATEGORIES, isCategory } from "@/lib/brand/categories";
 import { getDb, hasDatabase } from "@/lib/db";
-import { pulse, recentBets } from "@/lib/millionaires/queries";
+import { BOARD_DELAY_MS, pulse, recentBets } from "@/lib/millionaires/queries";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +22,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   const member = isPaid(viewer.plan), now = Date.now();
   const cat = isCategory(sp.cat) ? sp.cat : null;
   const db = hasDatabase() ? getDb() : null;
-  const [p, bets] = db ? await Promise.all([pulse(db, now), recentBets(db, { now, limit: 30, member, categories: cat ? [cat] : undefined })]).catch(() => [null, []] as const) : [null, []] as const;
+  const [p, bets] = db ? await Promise.all([pulse(db, now), recentBets(db, { now, limit: 30, member, categories: cat ? [cat] : undefined, delayMs: member ? 0 : BOARD_DELAY_MS })]).catch(() => [null, []] as const) : [null, []] as const;
   const initial = { now, pulse: p ?? { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, bets: [...bets] };
   return (
     <Frame member={member} current="board" testid="board">
@@ -30,7 +32,14 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
           <a className="b-btn b-panel-pill" aria-pressed={!cat} href="/board" data-m="settle" style={{ "--d": ".5s" } as CSSProperties}>All</a>
           {CATEGORIES.map((c, i) => <a key={c.slug} className="b-btn b-panel-pill" aria-pressed={cat === c.slug} href={`/board?cat=${c.slug}`} data-m="settle" style={{ "--d": `${0.5 + i * 0.02}s` } as CSSProperties}>{c.name}</a>)}
         </div>
-        <LiveFeed initial={initial} n={30} cats={cat ? [cat] : []} />
+        {member ? null : (
+          <div className="b-glass b-pad b-delay" data-testid="board-delay" style={{ marginBottom: 14 }}>
+            <p style={{ margin: 0, fontWeight: 500 }}><span className="b-dot" aria-hidden="true" /> Live now: <span className="b-num" data-testid="board-live-count">{initial.pulse.countToday}</span> millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today{initial.pulse.window === "hour" ? <>, <span className="b-num">{initial.pulse.count}</span> in the last hour</> : null}.</p>
+            <p className="b-small" style={{ margin: 0 }}>You&apos;re seeing them 60 minutes late. Members see every one the second it lands, with its side.</p>
+            <Pill href="/go" data-testid="board-start" data-checkout="board">Start for $1</Pill>
+          </div>
+        )}
+        <LiveFeed initial={initial} n={30} cats={cat ? [cat] : []} board copy={member} />
       </Stage>
       {member ? null : <PayMoments ctx={{ count: initial.pulse.count, window: initial.pulse.window, biggest: null }} now={now} />}
     </Frame>

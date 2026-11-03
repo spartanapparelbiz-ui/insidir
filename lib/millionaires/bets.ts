@@ -5,7 +5,7 @@
  * the market (lib/moves/store.ts settleMarket). Kalshi trades are anonymous, so millionaire bets are Polymarket's. */
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { millionaireBets } from "@/lib/db/schema";
+import { betCopies, millionaireBets } from "@/lib/db/schema";
 import { categoryOf } from "@/lib/brand/categories";
 import type { Move } from "@/lib/moves/types";
 import { BET_MIN } from "@/lib/moves/poll";
@@ -46,6 +46,19 @@ export async function saveBets(db: Db, rows: readonly BetRow[]): Promise<number>
 /** Marks a settled market's bets won / lost (void when refunded). */
 export async function settleBets(db: Db, marketId: string, result: "yes" | "no" | "void", at: Date): Promise<void> {
   const w = and(eq(millionaireBets.marketId, marketId), isNull(millionaireBets.result));
-  if (result === "void") { await db.update(millionaireBets).set({ result: "void", settledAt: at }).where(w); return; }
-  await db.update(millionaireBets).set({ result: sql`case when ${millionaireBets.outcomeSide} = ${result} then 'won' else 'lost' end`, settledAt: at }).where(w);
+  if (result === "void") await db.update(millionaireBets).set({ result: "void", settledAt: at }).where(w);
+  else await db.update(millionaireBets).set({ result: sql`case when ${millionaireBets.outcomeSide} = ${result} then 'won' else 'lost' end`, settledAt: at }).where(w);
+  await settleCopies(db, marketId, result, at);
+}
+
+/** Members' logged copies (one-tap copy) settle with the market: a win pays amount ÷ price at the member's own price,
+ *  a loss is the whole amount, a void returns it. */
+export async function settleCopies(db: Db, marketId: string, result: "yes" | "no" | "void", at: Date): Promise<void> {
+  const w = and(eq(betCopies.marketId, marketId), isNull(betCopies.result));
+  if (result === "void") { await db.update(betCopies).set({ result: "void", pnl: 0, settledAt: at }).where(w); return; }
+  await db.update(betCopies).set({
+    result: sql`case when ${betCopies.outcomeSide} = ${result} then 'won' else 'lost' end`,
+    pnl: sql`case when ${betCopies.outcomeSide} = ${result} then round((${betCopies.amount} / nullif(${betCopies.price}, 0) - ${betCopies.amount})::numeric, 2)::float else -${betCopies.amount} end`,
+    settledAt: at,
+  }).where(w);
 }

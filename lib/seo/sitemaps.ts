@@ -17,7 +17,7 @@ export type SitemapType = (typeof SITEMAP_TYPES)[number];
 export interface Url { loc: string; lastmod?: Date; changefreq?: "hourly" | "daily" | "weekly"; priority?: number }
 
 const HOUR = 3_600_000;
-const PAGES = ["/", "/board", "/trackers", "/open", "/top", "/results", "/feed", "/sports", "/markets", ...CATEGORIES.map(c => `/markets/${c.slug}`), "/stocks", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/about", "/help", "/faq", "/changelog", "/credits", "/terms", "/privacy"];
+const PAGES = ["/", "/election", "/board", "/trackers", "/open", "/top", "/results", "/feed", "/sports", "/markets", ...CATEGORIES.map(c => `/markets/${c.slug}`), "/stocks", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/about", "/help", "/faq", "/changelog", "/credits", "/terms", "/privacy"];
 
 export async function sitemapUrls(type: SitemapType, now = Date.now()): Promise<Url[]> {
   const base = appUrl();

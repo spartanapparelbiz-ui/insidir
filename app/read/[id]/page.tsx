@@ -2,6 +2,7 @@
  * side are you on, the verdict for that side, then the details; then the box for the next one. A member opening one
  * saved without its analyst line gets it written now. Anyone with the link sees it; only members see the wallets,
  * the big bets and the line. Visitors: the pop-ups after their free check. */
+import { electionDay } from "@/lib/brand/pulse";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -54,7 +55,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
     <>
     <ViewAs />
     <main className="b-root" data-testid="check-page">
-      <BrandNav fixed member={member} />
+      <BrandNav fixed member={member} election={electionDay(Date.now())} />
       <CheckPage id={id} data={data} money={money} positions={pos} member={member} us={viewer.region !== "non_us"} now={now} startHref={startHref} />
       <BrandFoot inline />
       {member ? null : <PayMoments ctx={{ count: p?.count ?? 0, window: p?.window ?? "hour", biggest: null, today: p?.countToday }} now={now} href={`/go?step=checkout&next=${back}`} />}

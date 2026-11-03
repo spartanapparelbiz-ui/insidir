@@ -253,6 +253,13 @@
       "when": 1793700000000,
       "tag": "0035_trader_position_price",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793710000000,
+      "tag": "0036_bet_copies",
+      "breakpoints": true
     }
   ]
 }

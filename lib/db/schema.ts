@@ -897,3 +897,25 @@ export const millionaireBets = terminal.table("millionaire_bets", {
   index("millionaire_bets_market_idx").on(t.marketId),
   index("millionaire_bets_wallet_idx").on(t.wallet),
 ]);
+
+/** One-tap copy v1 (lib/copies/tickets.ts): a member's log of a millionaire bet they placed themselves ("I placed it").
+ *  Insidir never places trades or holds funds. Settles with the market: P&L at the member's own price, losses included. */
+export const betCopies = terminal.table("bet_copies", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  betId: text("bet_id").notNull(),
+  marketId: text("market_id").notNull(),
+  title: text("title").notNull(),
+  outcome: text("outcome").notNull(),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  tier: text("tier").notNull(),
+  /** The wallet's price, and the member's (the price on the venue they opened when they copied). */
+  theirPrice: doublePrecision("their_price").notNull(),
+  price: doublePrecision("price").notNull(),
+  amount: doublePrecision("amount").notNull(),
+  venue: text("venue").$type<"kalshi" | "polymarket">().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  result: text("result").$type<"won" | "lost" | "void">(),
+  pnl: doublePrecision("pnl"),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+}, t => [uniqueIndex("bet_copies_user_bet").on(t.userId, t.betId)]);

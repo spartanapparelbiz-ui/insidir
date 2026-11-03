@@ -13,6 +13,7 @@ import { dollars } from "@/lib/money";
 import { cents, Lines, Pill, Side, signedDollars, TierBadge } from "../Bits";
 import { Stage } from "../Stage";
 import { ElectionLive } from "./ElectionLive";
+import { LiveFeed } from "../LiveFeed";
 import { StakeSlider } from "./StakeSlider";
 
 const Lock = ({ children, label }: { children: ReactNode; label: string }) => (
@@ -100,6 +101,19 @@ export function ElectionStage({ d }: { d: LandingData }) {
       <div className="b-head"><Lines id="election-h" lines={STAGES.election} size={64} /></div>
       <ElectionLive initial={d.election} member={d.member} />
       {d.member ? null : <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" data-testid="election-start" data-checkout="election">Start for $1</Pill></div></div>}
+    </Stage>
+  );
+}
+
+/* ---------- The home's lead after Election Day: the board ---------- */
+
+export function BoardLeadStage({ d }: { d: LandingData }) {
+  return (
+    <Stage testid="lead-board" labelledBy="lead-h">
+      <div className="b-head"><Lines id="lead-h" lines={["Every millionaire bet."]} size={60} />
+        {d.member ? null : <p className="b-sub">Live now: <b className="b-num">{d.pulse.countToday}</b> today. Here 60 minutes late; members see each one the second it lands.</p>}</div>
+      <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.lead }} n={8} board copy={d.member} />
+      <div className="b-center" style={{ marginTop: 18 }}><div className="b-ctas">{d.member ? <Pill href="/board" kind="ghost">The whole board</Pill> : <Pill href="/go" data-testid="lead-start" data-checkout="lead">Start for $1</Pill>}</div></div>
     </Stage>
   );
 }

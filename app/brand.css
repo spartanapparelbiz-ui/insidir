@@ -633,3 +633,16 @@ a.b-row { transition: border-color .18s ease, background .18s ease; } a.b-row:ho
 }
 @media (min-width: 861px) and (max-width: 1160px) { html.bm .b-stage--hrow { --dist: max(0px, calc(var(--n, 0) * (max(220px, 270 * var(--u)) + 12px) - 100vw + 2 * var(--gut))); } }
 .b-foot a { min-width: 44px; justify-content: center; }
+/* The copy ticket's amount field. */
+.b-amount { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 14px; border-radius: 14px; background: rgba(255, 255, 255, .04); border: 1px solid var(--glass-line); font-weight: 600; }
+.b-amount input { width: 7ch; background: transparent; border: 0; color: #fff; font: inherit; text-align: right; outline: none; }
+.b-amount:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.b-row .b-copy { position: relative; z-index: 2; min-height: 32px; height: 32px; padding: 0 12px; font-size: 12.5px; }
+@media (max-width: 768px), (pointer: coarse) { .b-row .b-copy { min-height: 36px; height: 36px; } .b-row .b-copy::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: 44px; transform: translate(-50%, -50%); } }
+.b-delay { display: grid; gap: 10px; justify-items: start; }
+/* The member home's header: the greeting and the paste box as a small search. */
+.b-homehead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; }
+.b-search { width: min(100%, 420px); }
+.b-search .b-col { max-width: none; margin: 0; }
+.b-search .b-ask { height: 48px; padding-left: 16px; }
+.b-search .b-ask input { font-size: 15px; }

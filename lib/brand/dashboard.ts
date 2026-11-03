@@ -8,6 +8,7 @@ import { marketMoney, midnightET, pulse, recentBets, settledBetween, walletPnls,
 import { shortWallet } from "@/lib/millionaires/watchlist";
 import { followList } from "@/lib/moves/store";
 import { yourMarkets, type YourMarket } from "@/lib/read/member";
+import { electionBoard, electionDay, type ElectionBoard } from "@/lib/brand/pulse";
 
 const DAY = 86_400_000;
 
@@ -25,6 +26,8 @@ export interface Dashboard {
   brief: { top: MarketMoney[]; yesterday: Settled[] };
   /** Big nights: the races and games with the most millionaire money now, and the bets in them. */
   live: { markets: MarketMoney[]; bets: BoardBet[] };
+  /** The home's lead: the Election Day board until Nov 4 ET (every race), then the board. */
+  election: ElectionBoard | null;
 }
 
 const NIGHT = ["elections", "politics", "football", "basketball", "baseball", "hockey", "soccer", "tennis", "golf", "racing"] as const;
@@ -79,8 +82,9 @@ export async function dashboardData(db: Db, userId: string, settings: { go?: { c
   ]);
   let top = today.filter(m => mil(m) > 0).sort((a, b) => mil(b) - mil(a)).slice(0, 3);
   if (!top.length) top = (await safe(marketMoney(db, { since: now - DAY, limit: 20, now }), [] as MarketMoney[])).filter(m => mil(m) > 0).sort((a, b) => mil(b) - mil(a)).slice(0, 3);
+  const election = electionDay(now) ? await safe(electionBoard(db, now, true), null) : null;
   return {
-    now, cats, pulse: p, feed, week,
+    now, cats, pulse: p, feed, week, election,
     markets: mine.map(x => ({ ...x, money: byId.get(x.latest.data.polymarket?.id ?? "") ?? null })),
     following: { wallets: wallets.length, bets: fbets, cards: wallets.map(w => ({ wallet: w, short: shortWallet(w), pnl: pnls.get(w) ?? null })) },
     brief: { top, yesterday },

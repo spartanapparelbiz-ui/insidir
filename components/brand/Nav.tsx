@@ -11,7 +11,10 @@ const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m"
 
 const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["Record", "/results"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
 
-export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean }) {
+export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
+  /** Election Day leads the links until the board closes (decided on the server: lib/brand/pulse.ts electionDay). */
+  election?: boolean }) {
+  const links: Array<[string, string]> = election ? [["Election Day", "/election"], ...LINKS] : LINKS;
   const [open, setOpen] = useState(false);
   const burger = useRef<HTMLButtonElement>(null), menu = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -25,7 +28,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
     <>
       <header className={`b-nav${fixed ? " b-nav--fixed" : ""}`} data-testid="brand-nav">
         <span {...q(motion, "quiet", 0.46)}><Logo /></span>
-        <nav className="b-nav-links" aria-label="Primary">{LINKS.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
+        <nav className="b-nav-links" aria-label="Primary">{links.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
         <div className="b-nav-actions">
           {member ? <a className="b-btn b-panel-pill" href="/" {...q(motion, "settle", 0.68)}>Home</a> : <a className="b-btn b-panel-pill" href="/login" {...q(motion, "settle", 0.68)}>Log in</a>}
           {member ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
@@ -33,7 +36,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
         </div>
       </header>
       <nav ref={menu} id="b-menu" className={`b-menu${open ? " open" : ""}`} aria-label="Mobile" onClick={e => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
-        {LINKS.map(([t, h]) => <a key={t} href={h}>{t}</a>)}
+        {links.map(([t, h]) => <a key={t} href={h}>{t}</a>)}
         <div className="b-divider" />
         {member ? <a href="/">Home</a> : <a href="/login">Log in</a>}
         {member ? null : <a className="b-m-start" href={startHref}>Start for $1<Arrow /></a>}

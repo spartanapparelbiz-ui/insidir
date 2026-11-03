@@ -182,7 +182,11 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("aha-open")).toHaveCount(2);
   await page.screenshot({ path: shotName("go-9-unlocked", page), fullPage: true });
   await page.getByTestId("go-signin").click();
-  await expect(go).toHaveAttribute("data-step", "follow", { timeout: 25_000 });
+  // Right after paying and signing in: the ping opt-in, then follow a millionaire.
+  await expect(go).toHaveAttribute("data-step", "push", { timeout: 25_000 });
+  await page.screenshot({ path: shotName("go-10-push", page) });
+  await page.getByTestId("go-push-skip").click();
+  await expect(go).toHaveAttribute("data-step", "follow");
   const saved = (await q<{ settings: { go: { categories: string[]; where: string; size: string }; betOn: string[]; remindBeforeCharge: boolean }; utm: Record<string, string> | null }>("select settings, utm from terminal.users where email = $1", [email]))[0]!;
   expect(saved.settings.go).toEqual({ categories: ["football", "politics"], where: "kalshi", size: "25-100" });
   expect(saved.settings.betOn).toEqual(["nfl", "cfb", "other"]);
@@ -191,11 +195,8 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("go-wallet").first()).toContainText("Millionaire");
   await page.getByTestId("go-follow-btn").first().click();
   await expect(page.getByTestId("go-follow-btn").first()).toHaveText("Following");
-  await page.screenshot({ path: shotName("go-10-follow", page) });
+  await page.screenshot({ path: shotName("go-11-follow", page) });
   await page.getByTestId("go-next").click();
-  await expect(go).toHaveAttribute("data-step", "push");
-  await page.screenshot({ path: shotName("go-11-push", page) });
-  await page.getByTestId("go-push-skip").click();
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
 });
 

@@ -189,6 +189,7 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   test.setTimeout(90_000);
   await page.clock.install();
   await page.goto("/");
+  await page.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true); // hydrated: the pop-up listens
   const sheet = page.getByTestId("pay-sheet");
   // The free check's verdict fires the automatic pop-up 2.5 s later, but not inside the first 15 s on the page.
   await page.evaluate(() => window.dispatchEvent(new Event("insidir:free-used")));
@@ -223,6 +224,7 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   const p2 = await context.newPage();
   await p2.clock.install();
   await p2.goto("/");
+  await p2.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true);
   await p2.clock.runFor(16_000);
   await p2.evaluate(() => window.dispatchEvent(new Event("insidir:free-used")));
   await p2.clock.runFor(3_000);

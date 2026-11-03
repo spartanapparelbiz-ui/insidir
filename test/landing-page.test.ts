@@ -31,11 +31,11 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("is a scroll of stages: hero, the pulse, free right now, election day, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home", () => {
+  it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<Dashboard d={d}");
-    const order = ["<Hero d={d} />", "<PulseStage d={d} />", "<Free d={d} />", "<ElectionStage d={d} />", "<MembersStage d={d} />", "<SpotlightStage d={d} />", "<StakeStage d={d} />", "<GapsStage d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
+    const order = ["<Hero d={d} />", "<ElectionStage d={d} /> : <BoardLeadStage d={d} />", "<PulseStage d={d} />", "<Free d={d} />", "<MembersStage d={d} />", "<SpotlightStage d={d} />", "<StakeStage d={d} />", "<GapsStage d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);

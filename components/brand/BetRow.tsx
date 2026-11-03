@@ -15,12 +15,14 @@ export function agoShort(ms: number, now: number): string {
   return `${Math.round(s / 86400)}d ago`;
 }
 
-export function BetRow({ bet, now, href, className = "", settle }: { bet: BoardBet; now: number; href?: string; className?: string; settle?: number }) {
+export function BetRow({ bet, now, href, className = "", settle, copyHref }: { bet: BoardBet; now: number; href?: string; className?: string; settle?: number;
+  /** Members: the copy ticket for this bet. */
+  copyHref?: string }) {
   const photo = categoryPhoto(bet.category);
   const title = href ? <a className="b-row__link" href={href}>{bet.title}</a> : bet.title;
   return (
     <div className={`b-row ${className}`} data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier} {...(settle !== undefined ? { "data-m": "settle", style: { "--d": `${settle}s` } as React.CSSProperties } : {})}>
-      <span className="b-row__thumb" aria-hidden="true"><Image src={photo.src} alt="" fill sizes="48px" quality={55} /></span>
+      <span className="b-row__thumb" aria-hidden="true"><Image src={photo.src} alt="" fill sizes="48px" quality={90} /></span>
       <span className="b-row__main">
         <span className="b-row__title">{title}</span>
         <span className="b-row__meta">
@@ -33,6 +35,7 @@ export function BetRow({ bet, now, href, className = "", settle }: { bet: BoardB
       <span className="b-row__money">
         <span className="b-row__size b-num">{dollars(bet.amount)}</span>
         <span className="b-small">{agoShort(bet.at, now)}</span>
+        {copyHref ? <a className="b-btn b-panel-pill b-copy" href={copyHref} data-testid="bet-copy" aria-label={`Copy this bet: ${bet.title}`}>Copy</a> : null}
       </span>
     </div>
   );

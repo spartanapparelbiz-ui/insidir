@@ -5,6 +5,7 @@
  *   phone showing real screens) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
  *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
+import { electionDay } from "@/lib/brand/pulse";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
@@ -25,12 +26,12 @@ import { Stage } from "../Stage";
 import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
-import { ElectionStage, GapsStage, MembersStage, PulseStage, SpotlightStage, StakeStage } from "./Value";
+import { BoardLeadStage, ElectionStage, GapsStage, MembersStage, PulseStage, SpotlightStage, StakeStage } from "./Value";
 
 function Hero({ d }: { d: LandingData }) {
   return (
     <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
-      <BrandNav motion />
+      <BrandNav motion election={electionDay(Date.now())} />
       <div className="b-hero-inner">
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <HeroLine initial={d.pulse} />
@@ -92,7 +93,7 @@ function Markets({ d }: { d: LandingData }) {
           <div className="b-htrack" data-htrack="">
           {list.map((c, i) => (
             <a key={c.slug} className="b-ccard" href={`/markets/${c.slug}`} data-testid="category-card" data-m="settle" style={{ "--d": `${0.5 + i * 0.06}s` } as CSSProperties}>
-              <span className="b-ccard__img"><Image src={photos[i]!.src} alt="" fill sizes="(max-width: 552px) 50vw, (max-width: 1160px) 33vw, 300px" quality={60} /></span>
+              <span className="b-ccard__img"><Image src={photos[i]!.src} alt="" fill sizes="(max-width: 552px) 62vw, (max-width: 1160px) 270px, 300px" quality={90} /></span>
               <span className="b-ccard__txt">
                 <h3 className="b-ccard__name">{categoryInfo(c.slug).name}</h3>
                 <span className="b-small" style={{ color: "var(--ink-muted)" }}>{c.millionaire ? `${dollars(c.millionaire)} millionaire money ${when}` : `${dollars(c.pro)} Pro money ${when}`}</span>
@@ -162,9 +163,10 @@ export function Landing({ d }: { d: LandingData }) {
     <ViewAs />
     <main className="b-root" data-testid="landing">
       <Hero d={d} />
+      {/* The lead: the Election Day board until Nov 4 ET, then the board. */}
+      {d.election ? <ElectionStage d={d} /> : <BoardLeadStage d={d} />}
       <PulseStage d={d} />
       <Free d={d} />
-      <ElectionStage d={d} />
       <MembersStage d={d} />
       <SpotlightStage d={d} />
       <StakeStage d={d} />

@@ -19,13 +19,13 @@ function Bg({ bg }: { bg: StageBg }) {
   if (bg.kind === "none") return null;
   const style = { "--dark": bg.dark ?? 0.35 } as CSSProperties;
   if (bg.kind === "photo") {
-    return <div className="b-stage__bg" style={style}><Image src={bg.photo.src} alt="" fill sizes="100vw" priority={bg.priority} fetchPriority={bg.priority ? "high" : undefined} quality={bg.priority ? 60 : 66} /></div>;
+    return <div className="b-stage__bg" style={style}><Image src={bg.photo.src} alt="" fill sizes="100vw" priority={bg.priority} fetchPriority={bg.priority ? "high" : undefined} quality={90} /></div>;
   }
   const clip = globeReady(), poster = has(POSTER) ? POSTER : null;
   return (
     <div className={`b-stage__bg${bg.faint ? " b-stage__bg--faint" : ""}`} style={style}>
       {clip && !bg.poster ? <Globe src={GLOBE} poster={poster ?? PHOTOS.hero.src} />
-        : <div className="b-globe"><Image src={poster ?? PHOTOS.hero.src} alt="" fill sizes="100vw" priority={!bg.faint} quality={60} /></div>}
+        : <div className="b-globe"><Image src={poster ?? PHOTOS.hero.src} alt="" fill sizes="100vw" priority={!bg.faint} quality={90} /></div>}
     </div>
   );
 }

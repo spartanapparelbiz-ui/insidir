@@ -1,7 +1,7 @@
 /* The landing's live value rules (lib/brand/pulse.ts): when millionaire money "disagrees with the price", the Election
  * Day window in ET, and outcome names that never put a bare Yes/No beside a named side. */
 import { describe, expect, it } from "vitest";
-import { disagreements, electionDay } from "@/lib/brand/pulse";
+import { disagreements, electionDay, majorRace } from "@/lib/brand/pulse";
 import type { MarketMoney } from "@/lib/millionaires/queries";
 import { outcomeNames } from "@/lib/millionaires/queries";
 
@@ -58,5 +58,17 @@ describe("outcome names on the check", () => {
     // A multi-outcome market's group title is not an outcome: a "Will …?" question is Yes or No.
     expect(outcomeNames("Will Republicans win Iowa and Kansas, and lose Alaska?", "IA, KS", "No")).toEqual({ yesLabel: "Yes", noLabel: "No" });
     expect(outcomeNames("Will Republicans lose the Texas Senate seat?", "None", "No")).toEqual({ yesLabel: "Yes", noLabel: "No" });
+  });
+});
+
+describe("major races on the Election Day board", () => {
+  it("control of the Senate and House, single Senate and governor races; never combination bets", () => {
+    expect(majorRace("Which party will control the Senate after the 2026 midterms?")).toBe("control");
+    expect(majorRace("2026 Balance of Power: D Senate, D House")).toBe("control");
+    expect(majorRace("Will the Republicans win the Texas Senate race in 2026?")).toBe("race");
+    expect(majorRace("Will the Democrats win the Georgia governor race?")).toBe("race");
+    expect(majorRace("Will Republicans win Iowa and Kansas, and lose Alaska, Maine, Michigan, Ohio, and Texas?")).toBeNull();
+    expect(majorRace("Will Republicans lose the Alaska, Iowa, Kansas, Maine, Michigan, Ohio, and Texas Senate seats?")).toBeNull();
+    expect(majorRace("Will Trump meet Lula by November 30?")).toBeNull();
   });
 });

@@ -6,7 +6,7 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import type { CategorySlug } from "@/lib/brand/categories";
-import { lastResults, liveCategories, marketMoney, midnightET, positions, proof, pulse, recentBets, topWallets,
+import { BOARD_DELAY_MS, lastResults, liveCategories, marketMoney, midnightET, positions, proof, pulse, recentBets, topWallets,
   type BoardBet, type CategoryLive, type MarketMoney, type Position, type Proof, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
 import { memo } from "@/lib/memo";
 import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
@@ -46,6 +46,8 @@ export interface LandingData {
   /** Election Day board, Nov 3–4 ET only (else null). */
   election: ElectionBoard | null;
   spotlight: Spotlight | null;
+  /** The home's lead after Election Day: the board (60 minutes late for visitors, like /board). */
+  lead: BoardBet[];
   stake: StakeRecord | null;
   gaps: PriceGap[];
 }
@@ -88,15 +90,16 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   const wallet = w ? { ...w, results: await safe(lastResults(db, w.wallet, 5), []) } : null;
   const b = [...recent].sort((x, y) => y.amount - x.amount)[0];
   const pool = todayTop.length ? todayTop : dayTop;
-  const [pulse2, election, spotlight, stake, gaps] = await Promise.all([
+  const [pulse2, election, spotlight, stake, gaps, lead] = await Promise.all([
     safe(pulseData(db, now, p.sinceMidnight, pool), { today: p.sinceMidnight, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
     electionDay(now) ? safe(electionBoard(db, now, member), null) : Promise.resolve(null),
     safe(walletSpotlight(db), null),
     safe(bestRecord(db, now), null),
     safe(priceGaps(db, gapClients(), now), [] as PriceGap[]),
+    electionDay(now) ? Promise.resolve([] as BoardBet[]) : safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
   ]);
   return {
-    pulse2, election, spotlight, stake, gaps,
+    pulse2, election, spotlight, stake, gaps, lead,
     now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, proof: pr, bestPrice: best,
     chips: day.slice(0, 5).map(m => ({ pick: `polymarket:${m.marketId}`, label: m.title })),
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
@@ -110,5 +113,5 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
 export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, chips: [], top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, proof: null, bestPrice: null,
-  pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [],
+  pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
 });
