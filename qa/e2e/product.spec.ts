@@ -177,8 +177,9 @@ test("pings: the worker pushes a $1M+ wallet's $25K+ bet in the member's categor
   await cleanup();
   try {
     await q("insert into terminal.push_subscriptions (endpoint, user_id, p256dh, auth) values ($1, $2, $3, $4)", [endpoint, ins.id, Buffer.from(ecdh.getPublicKey()).toString("base64url"), auth.toString("base64url")]);
-    // Their categories: Football and Politics (/go); quiet hours off for the test.
-    await q(`update terminal.users set settings = settings || '{"alertPush": true, "quietStart": null, "quietEnd": null, "go": {"categories": ["football", "politics"], "where": null, "size": null}}'::jsonb where id = $1`, [ins.id]);
+    // Their categories: Football and Politics (/go); quiet hours off for the test (equal start and end: none; null
+    // would mean the 11pm–8am default, so this test would fail at night).
+    await q(`update terminal.users set settings = settings || '{"alertPush": true, "quietStart": "00:00", "quietEnd": "00:00", "go": {"categories": ["football", "politics"], "where": null, "size": null}}'::jsonb where id = $1`, [ins.id]);
     await bet(id, { market, title: "Ravens vs. Steelers", outcome: "Ravens", amount: 120_000, price: 0.6, category: "football", minsAgo: 1, yes: "Ravens", no: "Steelers" });
     await bet(small, { market, title: "Ravens vs. Steelers", outcome: "Ravens", amount: 20_000, price: 0.6, category: "football", minsAgo: 1, yes: "Ravens", no: "Steelers" });
     await q("insert into terminal.market_info (source, market_id, yes_price, updated_at) values ('polymarket', $1, 0.61, now())", [market]);
