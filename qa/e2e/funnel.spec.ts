@@ -131,7 +131,7 @@ test("no free account: signing in without paying makes none and lands on the pay
   await expect(page).toHaveURL(/\/go\?step=paywall$/, { timeout: 15_000 });
   expect(await q("select 1 from terminal.users where email = $1", [email])).toHaveLength(0);
   await expect.poll(async () => (await q<{ name: string }>("select distinct name from terminal.events where name in ('start_view', 'account_created', 'checkout_start')")).map(r => r.name).sort())
-    .toEqual(["start_view"]);
+    .toEqual(["checkout_start", "start_view"]); // the pay-first checkout opened; no account was ever created
 });
 
 

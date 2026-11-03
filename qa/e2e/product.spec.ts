@@ -42,9 +42,10 @@ test("/board: visitors see bets 60 minutes late with the live count and Start fo
   if (etMinutes > 95) expect(Number(await page.getByTestId("board-live-count").textContent())).toBeGreaterThanOrEqual(6);
   await expect(page.getByTestId("board-start")).toHaveAttribute("href", "/go");
   const visitor = await page.getByTestId("bet-row").evaluateAll(rs => rs.map(r => r.getAttribute("data-bet")));
-  // Only the fixtures older than an hour (70 and 90 minutes); never the newer ones, and no Copy, no side.
+  // Only the fixtures older than an hour (read from the database: a long run ages them); never a newer one, no Copy, no side.
+  const ages = await q<{ id: string; old: boolean }>("select id, at < now() - interval '60 minutes' as old from terminal.millionaire_bets where id like 'e2e:mb%'");
+  for (const { id, old } of ages) { if (old) continue; expect(visitor, id).not.toContain(id); }
   expect(visitor).toEqual(expect.arrayContaining(["e2e:mb3", "e2e:mb6"]));
-  for (const id of ["e2e:mb4", "e2e:mb7", "e2e:mb1", "e2e:mb5", "e2e:mb2"]) expect(visitor, id).not.toContain(id);
   await expect(page.getByTestId("bet-copy")).toHaveCount(0);
   const live = await page.request.get("/api/millionaires/live?n=20&board=1");
   const bodyV = await live.json() as { bets: Array<{ id: string; side: string | null }> };
