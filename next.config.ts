@@ -15,7 +15,7 @@ const config: NextConfig = {
     // 96/192 for avatars; the rest for full-bleed photos (the masters are 1672px wide, never upscaled).
     deviceSizes: [96, 192, 390, 640, 828, 1080, 1280, 1672, 1920, 2560, 2880, 3840],
     imageSizes: [40, 80, 160, 320],
-    qualities: [55, 60, 66, 75, 90],
+    qualities: [55, 60, 66, 75, 85, 90],
     minimumCacheTTL: 86_400,
     dangerouslyAllowSVG: false,
   },

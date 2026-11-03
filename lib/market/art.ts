@@ -6,7 +6,7 @@
 import { memo } from "@/lib/memo";
 
 const GAMMA = "https://gamma-api.polymarket.com";
-export interface MarketArt { marketId: string; image: string | null; name: string | null; party: "D" | "R" | "I" | null; event: string | null; eventSlug: string | null; price: number | null; question: string }
+export interface MarketArt { marketId: string; image: string | null; name: string | null; party: "D" | "R" | "I" | null; event: string | null; eventSlug: string | null; price: number | null; question: string; closed: boolean }
 
 export const logosOff = (): boolean => (process.env.LOGOS ?? "").toLowerCase() === "off";
 const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -36,12 +36,12 @@ export function verifiedHeadshot(image: string | null | undefined, candidate: st
   return Boolean(race) && file.includes(slug(candidate)) && file.includes(race!.join("-"));
 }
 
-interface GammaMarket { conditionId?: string; question?: string; image?: string; icon?: string; groupItemTitle?: string; outcomePrices?: string; events?: Array<{ title?: string; slug?: string; image?: string }> }
+interface GammaMarket { closed?: boolean; conditionId?: string; question?: string; image?: string; icon?: string; groupItemTitle?: string; outcomePrices?: string; events?: Array<{ title?: string; slug?: string; image?: string }> }
 const readPrice = (m: GammaMarket): number | null => { try { const p = JSON.parse(m.outcomePrices ?? "[]") as string[]; const v = Number(p[0]); return Number.isFinite(v) ? v : null; } catch { return null; } };
 export const toArt = (m: GammaMarket): MarketArt => {
   const c = candidateOf(m.groupItemTitle);
   return { marketId: String(m.conditionId ?? ""), image: m.image || m.icon || m.events?.[0]?.image || null, name: c?.name ?? null, party: c?.party ?? null,
-    event: m.events?.[0]?.title ?? null, eventSlug: m.events?.[0]?.slug ?? null, price: readPrice(m), question: String(m.question ?? "") };
+    event: m.events?.[0]?.title ?? null, eventSlug: m.events?.[0]?.slug ?? null, price: readPrice(m), question: String(m.question ?? ""), closed: Boolean(m.closed) };
 };
 
 async function getJson<T>(url: string): Promise<T | null> {
@@ -63,5 +63,6 @@ export async function eventMarkets(eventSlug: string): Promise<MarketArt[]> {
   const ev = await memo(`gamma:event:${eventSlug}`, 2 * 60_000, () => getJson<Array<{ title?: string; slug?: string; image?: string; markets?: GammaMarket[] }>>(`${GAMMA}/events?slug=${encodeURIComponent(eventSlug)}`)).catch(() => null);
   const e = ev?.[0];
   if (!e?.markets) return [];
-  return e.markets.filter(m => !(m as { closed?: boolean }).closed).map(m => toArt({ ...m, events: [{ title: e.title, slug: e.slug, image: e.image }] }));
+  // Closed markets stay: a settled race shows its result.
+  return e.markets.map(m => toArt({ ...m, events: [{ title: e.title, slug: e.slug, image: e.image }] }));
 }

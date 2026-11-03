@@ -74,16 +74,16 @@ test("/election: control of the Senate and House first; visitors get the top 3 w
     }
     await context.addCookies([closed]);
     await page.goto("/election");
-    const board = page.getByTestId("election-board");
-    await expect(board).toContainText("Live");
-    const free = board.getByTestId("race-free");
+    // The headline is computed from the money; the stage is the homepage's (a dusk scene, the masked headline).
+    await expect(page.getByTestId("insight")).toBeVisible();
+    const free = page.getByTestId("race-card");
     await expect(free).toHaveCount(3);
     await expect(free.nth(0)).toContainText("control the Senate"); // control first, then by money
     await expect(free.nth(1)).toContainText("control the House");
     await expect(free.nth(2)).toContainText("Texas Senate race");
     await expect(free.nth(0)).toContainText("58¢");
-    await expect(board.getByTestId("race-locked")).toHaveCount(2);
-    await expect(board).not.toContainText("Iowa and Kansas"); // a combination bet isn't a race
+    await expect(page.getByTestId("election-locked").locator("li")).toHaveCount(2);
+    await expect(page.locator("main")).not.toContainText("Iowa and Kansas"); // a combination bet isn't a race
     await expect(page.getByTestId("election-start")).toBeVisible();
     // The locked rows never carry their split or price.
     const api = await (await page.request.get("/api/millionaires/election")).json() as { free: unknown[]; locked: Array<Record<string, unknown>> };
@@ -91,8 +91,9 @@ test("/election: control of the Senate and House first; visitors get the top 3 w
     expect(Object.keys(api.locked[0]!).sort()).toEqual(["title", "total"]);
     await signIn(context, "insidir");
     await page.goto("/election");
-    await expect(page.getByTestId("race-free")).toHaveCount(5);
-    await expect(page.getByTestId("race-locked")).toHaveCount(0);
+    await expect(page.getByTestId("race-card")).toHaveCount(5);
+    await expect(page.getByTestId("election-locked")).toHaveCount(0);
+    await expect(page.locator(".b-sidebar")).toHaveCount(0);
   } finally {
     for (const [id] of races) { await q("delete from terminal.millionaire_bets where id = $1", [`e2e:${id}`]); await q("delete from terminal.market_info where market_id = $1", [id]); }
   }

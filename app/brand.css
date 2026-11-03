@@ -869,3 +869,24 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 /* The members' pages under the homepage nav (no sidebar). */
 .b-app .b-main { max-width: 1240px; margin: 0 auto; padding: calc(96px + 8px) 24px 60px; }
 @media (max-width: 860px) { .b-app .b-main { padding: 84px 16px 40px; } }
+
+/* ---------- The system's shared pieces (components/system): homepage tokens only (lib/system/tokens.ts) ---------- */
+.s-face { flex: none; display: inline-grid; place-items: center; border-radius: 50%; overflow: hidden; background: var(--panel); box-shadow: 0 0 0 1px var(--glass-line); }
+.s-face img { width: 100% !important; height: 100% !important; object-fit: cover; object-position: 50% 30%; }
+.s-face--initials { color: var(--dim); font-size: 15px; font-weight: 600; }
+.s-races { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; width: 100%; max-width: calc(1120 * var(--u)); margin: 0 auto; }
+.s-race__t { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+.s-cands { list-style: none; margin: 0; padding: 0; display: grid; }
+.s-cands li { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid var(--glass-line); }
+.s-cands li:first-child { border-top: 0; }
+.s-cands .b-party { width: 48px; height: 48px; font-size: 17px; flex: none; }
+.s-cand__n { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.s-cand__p { font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+.s-meter { height: 4px; background: var(--glass-line); }
+.s-meter span { background: var(--ink); }
+.s-result { margin-left: 10px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--glass-line); font-size: 12px; color: var(--ink-muted); }
+.s-locked { width: 100%; max-width: calc(1120 * var(--u)); margin: 16px auto 0; }
+.s-lockrows { list-style: none; margin: 8px 0 16px; padding: 0; }
+.s-lockrows li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--glass-line); }
+/* A category tile always has its picture behind it (never an empty black box), loaded eagerly. */
+.b-ccard__img { background: var(--panel); }
