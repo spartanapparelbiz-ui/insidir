@@ -64,11 +64,20 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
   expect(subs.map(s => s.endpoint)).toEqual([endpoint]);
 
   try {
+    // Deals alert only within 10 minutes of being found (lib/alerts/fanout.ts ALERT_MAX_AGE_MS): however long the suite
+    // has run, the seeded deals were just found.
+    // The Hawks deal and the international Fed cut deal were just found (the others aged out of the window, as in a real
+    // run): exactly one alert is due for a US member, never the international one.
+    await q("update terminal.opportunities set first_seen_at = now() - interval '1 minute' where id = any($1)", [[await dealId("Hawks"), await dealId("Fed cut")]]);
     const log = await runWorker(12_000);
     const pushes = JSON.parse(readFileSync(join(OUT, "pushes.json"), "utf8")) as Array<{ path: string; headers: Record<string, string>; body: string }>;
     const mine = pushes.slice(before).filter(p => endpoint.endsWith(p.path));
-    expect(mine.length, log).toBe(1);
-    const got = mine[0]!;
+    // A deal alert, and possibly a millionaire ping (a seeded $25K+ bet from a $1M+ wallet, all categories): one deal.
+    const open = (p: { body: string }) => JSON.parse(ece.decrypt(Buffer.from(p.body, "base64"), { version: "aes128gcm", privateKey: ecdh, authSecret: auth }).toString("utf8")) as { url: string };
+    const deals = mine.filter(p => open(p).url.includes("/api/alerts/opened"));
+    expect(deals.length, log).toBe(1);
+    expect(mine.filter(p => !deals.includes(p)).every(p => open(p).url.includes("/copy/"))).toBe(true);
+    const got = deals[0]!;
     expect(got.headers.authorization).toMatch(/^vapid t=.+, k=/);
     expect(got.headers["content-encoding"]).toBe("aes128gcm");
     expect(got.headers.urgency).toBe("high");
