@@ -12,8 +12,8 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { isPaid } from "@/lib/plans";
 import { cleanRef, REF_COOKIE } from "@/lib/home/ref";
 import { Landing } from "@/components/brand/landing/Landing";
-import { Desk } from "@/components/desk/Desk";
-import { deskDesign } from "@/lib/desk/featured";
+import { HomePage } from "@/components/home/Home";
+import { homeData } from "@/lib/home/data";
 import { emptyLanding, landingFor } from "@/lib/brand/landing";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +25,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   if (member) {
     const db = hasDatabase() ? getDb() : null, u = viewer.user;
     if (!db || !u) return <Landing d={emptyLanding(now)} />;
-    const d = await deskDesign(db, u.id, u.settings, now);
-    return <Desk d={d} search={sp.search === "1"} />;
+    const d = await homeData(db, u.id, u.settings, now);
+    return <HomePage d={d} search={sp.search === "1"} />;
   }
   const ref = cleanRef(typeof sp.ref === "string" ? sp.ref : null) ?? cleanRef(jar.get(REF_COOKIE)?.value);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;

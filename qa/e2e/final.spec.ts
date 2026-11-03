@@ -73,7 +73,7 @@ test("content is visible at rest: a full-page screenshot with no scrolling shows
   }
 });
 
-test("the /go paywall panel and every block of a member's Desk are visible", async ({ page, context }) => {
+test("the /go paywall panel and every stage of a member's home are visible", async ({ page, context }) => {
   await context.addCookies([closed]);
   await page.goto("/go?step=paywall");
   const panel = page.getByTestId("paywall");
@@ -81,10 +81,10 @@ test("the /go paywall panel and every block of a member's Desk are visible", asy
   await expect(panel.getByTestId("paywall-price")).toContainText("$1 today");
   expect(await panel.evaluate(e => { let o = 1; for (let x: Element | null = e; x; x = x.parentElement) o *= Number(getComputedStyle(x).opacity); return o; })).toBeGreaterThan(0.99);
   await signIn(context, "insidir");
-  // The Desk: every block visible at rest (no reveal left hidden).
+  // The member home: every stage visible at rest (no reveal left hidden).
   await page.goto("/");
-  await expect(page.getByTestId("member-home")).toHaveAttribute("data-home", "desk");
-  for (const id of ["desk-featured", "edge-chart", "desk-search", "live-flow"]) {
+  await expect(page.locator('[data-home="stages"]')).toBeVisible();
+  for (const id of ["home-hero", "home-ticket", "desk-search", "home-board", "live-board", "home-desk"]) {
     const el = page.getByTestId(id).first();
     await expect(el, id).toBeVisible();
     expect(await el.evaluate(e => { let o = 1; for (let x: Element | null = e; x; x = x.parentElement) o *= Number(getComputedStyle(x).opacity); return o; }), id).toBeGreaterThan(0.99);

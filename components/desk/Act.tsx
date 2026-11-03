@@ -22,9 +22,9 @@ export function FollowLink({ wallet, initial = false, short = false }: { wallet:
     setBusy(false);
   };
   return (
-    <span className="dk-actwrap">
-      <button type="button" className="dk-link" onClick={tap} disabled={busy} aria-pressed={on} data-testid="desk-follow">{short ? (on ? "Following" : "Follow") : on ? "Following this wallet" : "Follow this wallet"}</button>
-      {err ? <span className="dk-dim dk-small" role="status">{err}</span> : null}
+    <span className="s-actwrap">
+      <button type="button" className="s-link" onClick={tap} disabled={busy} aria-pressed={on} data-testid="desk-follow">{short ? (on ? "Following" : "Follow") : on ? "Following this wallet" : "Follow this wallet"}</button>
+      {err ? <span className="b-small" role="status">{err}</span> : null}
     </span>
   );
 }
@@ -38,7 +38,7 @@ export function PingsLink() {
     return () => window.removeEventListener("insidir:push", read);
   }, []);
   if (st === null || st === "unsupported") return null;
-  if (st === "on") return <span className="dk-dim" data-testid="desk-pings">Pings on</span>;
+  if (st === "on") return <span className="b-dim" data-testid="desk-pings">Pings on</span>;
   const tap = async () => {
     if (st === "ios_needs_install" || st === "denied") { location.href = "/settings#alerts"; return; }
     setBusy(true);
@@ -46,5 +46,5 @@ export function PingsLink() {
     setSt(k ? await enablePush(k).catch(() => "error" as const) : "error");
     setBusy(false); window.dispatchEvent(new Event("insidir:push"));
   };
-  return <button type="button" className="dk-link" onClick={tap} disabled={busy} data-testid="desk-pings">{st === "error" ? "Try pings again" : "Turn on pings"}</button>;
+  return <button type="button" className="s-link" onClick={tap} disabled={busy} data-testid="desk-pings">{st === "error" ? "Try pings again" : "Turn on pings"}</button>;
 }

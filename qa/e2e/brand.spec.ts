@@ -7,7 +7,7 @@
  *   /go       hook → categories → where → size → building → aha (one market whole, two with the side never sent) →
  *             paywall → the mock Whop checkout → the same markets whole → sign in with Whop → answers saved →
  *             follow a millionaire → push (not now) → their home.
- *   Home      a member's Desk: tape, flow with sides, EdgeChart, their desk, search inline. */
+ *   Home      a member's home: the homepage's stages, unlocked and live, with their desk; search inline. */
 import { expect, test } from "@playwright/test";
 import { WHOP_PORT } from "./env";
 import { noHorizontalScroll, q, shotName, signIn } from "./helpers";
@@ -216,37 +216,45 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
 });
 
-test("a member's Desk: today's biggest live bet with its chart and one white pill, then today's millionaire bets with sides, search inline", async ({ page, context }) => {
+test("a member's home is the homepage, unlocked: stages with computed headlines, today's #1 position as a ticket, the live board with Copy on the selected row only, their desk; search inline", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
-  const home = page.getByTestId("member-home");
-  await expect(home.getByRole("heading", { level: 1 })).toHaveText("Desk");
-  // Featured: today's biggest live bet, $85K on the Chiefs (now 51¢); every millionaire entry on that side, $85K + $20K,
-  // at an average 47¢.
-  const feat = page.getByTestId("desk-featured");
-  await expect(feat).toHaveAttribute("data-bet", "e2e:mb4");
-  await expect(page.getByTestId("edge-head")).toContainText("51¢");
-  await expect(page.getByTestId("edge-head")).toContainText("since their average entry of 47¢");
-  await expect(feat).toContainText("$105K");
-  await expect(page.getByTestId("edge-chart").first()).toBeVisible();
-  // One white pill on the view: Copy at the price now.
-  await expect(page.locator(".dk-pill:visible")).toHaveCount(1);
-  await expect(page.locator(".dk-pill:visible")).toHaveText("Copy at 51¢");
-  await expect(page.locator(".dk-pill:visible")).toHaveAttribute("href", "/copy/e2e%3Amb4");
-  // The rows: newest first with sides (members): Chiefs (8 min), the funding bill (15), Player A (25).
-  const flow = page.getByTestId("live-flow");
-  await expect(flow.getByTestId("bet-row").first()).toHaveAttribute("data-bet", "e2e:mb4");
-  await expect(flow.getByTestId("bet-row").first()).toContainText("Chiefs");
-  await expect(flow.getByTestId("bet-copy").first()).toHaveAttribute("href", "/copy/e2e%3Amb4");
-  // Identity is text: no photos, no avatars, no logos in the rows; no monospace anywhere.
-  await expect(flow.locator("img, svg")).toHaveCount(0);
-  expect(await page.evaluate(() => [...document.querySelectorAll(".dk-page *")].some(e => /mono/i.test(getComputedStyle(e).fontFamily)))).toBe(false);
+  await expect(page.locator('[data-home="stages"]')).toBeVisible();
+  // The hero: a computed headline about today's (or the last 24 hours') millionaire money, on the homepage's stage.
+  await expect(page.getByTestId("home-hero").getByRole("heading", { level: 1 })).toHaveText(/^Wallets up \$1M\+ bet \$[\d.]+[KM] (today|in the last 24 hours)\.$/);
+  // Today's #1 open position: $85K on the Chiefs (now 51¢); every millionaire entry on that side, $85K + $20K, at an
+  // average 47¢; then Copy at the price now and Follow.
+  const t = page.getByTestId("home-ticket");
+  await expect(t).toContainText("E2E fixture: Chiefs vs. Bills");
+  await expect(t).toContainText("$105K from wallets up $1M+");
+  await expect(t).toContainText("in at 47¢ · now 51¢");
+  await expect(t.getByTestId("ticket-copy")).toHaveAttribute("href", "/copy/e2e%3Amb4");
+  await expect(t.getByTestId("ticket-copy")).toHaveText("Copy at 51¢");
+  await expect(t.getByTestId("desk-follow")).toBeVisible();
+  // Never a wallet's face: the ticket names a short address and its profit only.
+  await expect(t).toContainText(/0xe2e0…0001 · \+\$3\.1M all-time/);
+  // The live board: written rows, no logos; Copy appears only on the selected row.
+  const board = page.getByTestId("live-board");
+  await board.scrollIntoViewIfNeeded();
+  await expect(board.getByTestId("bet-row").first()).toHaveAttribute("data-bet", "e2e:mb4");
+  await expect(board.locator("img")).toHaveCount(0);
+  await expect(board.getByTestId("bet-copy")).toHaveCount(0);
+  await board.getByTestId("bet-row").first().locator("button").first().click();
+  await expect(board.getByTestId("bet-copy")).toHaveCount(1);
+  await expect(board.getByTestId("bet-copy")).toHaveAttribute("href", "/copy/e2e%3Amb4");
+  // Their desk: copies, follows, pings; never a stat that reads 0.
+  const desk = page.getByTestId("home-desk");
+  await expect(desk.getByTestId("desk-follows")).not.toContainText(/^0$/m);
+  // No monospace anywhere, no sidebar.
+  expect(await page.evaluate(() => [...document.querySelectorAll("main *")].some(e => /mono/i.test(getComputedStyle(e).fontFamily)))).toBe(false);
+  await expect(page.locator(".b-sidebar")).toHaveCount(0);
   // Search: a market in plain words comes back inline with its millionaire side.
   // (Tennis match 100 has millionaire money: $74K + $40K on Player A.)
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByTestId("desk-search").getByRole("textbox").fill("Tennis match 100");
   await page.getByTestId("desk-search").getByRole("textbox").press("Enter");
   await expect(page.getByTestId("desk-search-result")).toContainText("Millionaires are on Player A", { timeout: 10_000 });
   await expect(page.getByTestId("desk-search-result")).not.toContainText("$0");
-  await page.screenshot({ path: shotName("brand-desk", page) });
+  await page.screenshot({ path: shotName("brand-home", page) });
   await noHorizontalScroll(page);
 });

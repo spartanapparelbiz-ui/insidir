@@ -12,7 +12,8 @@
  *         they come in as it enters);
  *       the markets row scrolls sideways while its stage sticks (desktop; a swipe on phones), photos parallax;
  *     Pinned stages are sticky with their height reserved in CSS from first paint: the layout never moves.
- *       stage backgrounds darken at the boundaries between stages; a thin progress line runs along the top.
+ *       stage backgrounds darken at the boundaries between stages (a cross-fade) and their scenery drifts 0 → −8% while
+ *       settling from 1.06 to 1; a thin progress line runs along the top.
  *     Transform and opacity only. Anything that entered and isn't finished within 1.2 s snaps to its final state.
  *   Reduced motion: none of the motion is loaded. */
 import { useEffect } from "react";
@@ -72,7 +73,7 @@ async function start(): Promise<() => void> {
       if (!below(el)) continue;
       const to = Number(el.dataset.count), final = el.textContent ?? "";
       if (!Number.isFinite(to) || to <= 0) continue;
-      const fmt = (v: number) => el.dataset.fmt === "usd" ? usd(v) : Math.round(v).toLocaleString("en-US");
+      const fmt = (v: number) => el.dataset.fmt === "usd" ? usd(v) : el.dataset.fmt === "cents" ? `${Math.round(v)}¢` : Math.round(v).toLocaleString("en-US");
       const o = { v: 0 };
       el.textContent = fmt(0);
       ScrollTrigger.create({ trigger: el, start: "top 92%", once: true, onEnter: () => {
@@ -116,6 +117,12 @@ async function start(): Promise<() => void> {
     }
     for (const img of document.querySelectorAll<HTMLElement>(".b-ccard__img img")) {
       gsap.fromTo(img, { yPercent: -6, scale: 1.12 }, { yPercent: 6, scale: 1.12, ease: "none", scrollTrigger: { trigger: img.closest(".b-ccard") ?? img, start: "top bottom", end: "bottom top", scrub: true } });
+    }
+    // Scenery drifts slowly as its stage passes (0 → −8%) and settles from 1.06 to 1: transform only.
+    for (const img of document.querySelectorAll<HTMLElement>(".b-stage__bg img")) {
+      const stage = img.closest(".b-stage");
+      if (!stage) continue;
+      gsap.fromTo(img, { yPercent: 0, scale: 1.06 }, { yPercent: -8, scale: 1, ease: "none", scrollTrigger: { trigger: stage, start: "top bottom", end: "bottom top", scrub: true } });
     }
     // Stage backgrounds darken toward the boundaries, so stages hand over to each other.
     for (const bg of document.querySelectorAll<HTMLElement>(".b-stage__bg")) {
