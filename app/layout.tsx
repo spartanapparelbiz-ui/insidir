@@ -24,6 +24,8 @@ import "./v2.css";
 import "./light.css";
 import "./polish.css";
 import "./motion.css";
+import "./brand.css";
+import { brandFontClasses } from "@/lib/brand/fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://insidir.com"),
@@ -34,15 +36,16 @@ export const metadata: Metadata = {
   icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
   // Added to an iPhone's home screen, Insidir opens full screen like an app: what iOS needs for web push alerts.
-  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
 };
 
 /** Schibsted Grotesk for everything, self-hosted by next/font: no third-party request at runtime. It is the variable font (400–900) with one change
  * (app/fonts, SIL OFL): its tabular figures apply to digits only, so "$160,000" keeps a normal comma. */
-const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap" });
+// Not preloaded: the brand pages (home, /go, the check) use Plus Jakarta Sans; only the older pages need this one.
+const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap", preload: false });
 
-export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Whether Positioning has earned its place in the nav (cached for 10 minutes).
@@ -51,13 +54,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const jar = await cookies();
   const visitor = !jar.get(SESSION_COOKIE)?.value;
   return (
-    <html lang="en" className={schibsted.variable} suppressHydrationWarning>
+    <html lang="en" className={`${schibsted.variable} ${brandFontClasses}`} suppressHydrationWarning>
       <head>
         {/* Every photo comes from Unsplash's image CDN (lib/unsplash.ts): open the connection before the first one is asked for. */}
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        {/* Before first paint: lets scroll reveals start hidden only when JS will show them (components/motion/Motion.tsx). */}
-        <script dangerouslySetInnerHTML={{ __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('js')" }} />
+        {/* Before first paint: motion is allowed (bm) and the landing hero plays its entrance from first paint (hero-in). Nothing is hidden here: components/brand/StageMotion.tsx hides only stages below the fold. */}
+        <script dangerouslySetInnerHTML={{ __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches){var h=document.documentElement;h.classList.add('js');if('IntersectionObserver' in window){h.classList.add('bm');h.classList.add('hero-in');setTimeout(function(){if(!window.__bmOK)h.classList.remove('bm')},6000)}}" }} />
       </head>
       <body>
         <ToastProvider>

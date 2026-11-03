@@ -16,6 +16,7 @@ import { walletPnlQueue } from "@/lib/db/schema";
 import { rows } from "@/lib/exchanges/parse";
 import { bucketConfig, venueHttp, type Priority } from "@/lib/exchanges/http";
 import type { PolymarketClient } from "@/lib/exchanges";
+import { tradesCursor } from "@/lib/exchanges/polymarket";
 import { readClosedRows } from "@/lib/profiles/trader";
 import { RECORD_MAX_PAGES } from "./jobs";
 import { readUserPnl } from "./sources";
@@ -36,12 +37,14 @@ type Poly = Pick<PolymarketClient, "getClosedPositionsPage" | "getLeaderboardUse
 export async function readWalletPnl(poly: Poly, wallet: string, o: { priority?: Priority; deadline?: number } = {}): Promise<{ v: WalletPnl; requests: number } | null> {
   const markets = new Set<string>();
   let complete = false, requests = 0;
+  let cursor: string | null = null;
   for (let page = 0; page < RECORD_MAX_PAGES; page++) {
     if (o.deadline !== undefined && Date.now() > o.deadline) return null;
-    const raw = await poly.getClosedPositionsPage(wallet, { limit: 50, offset: page * 50, priority: o.priority });
+    const raw: unknown = await poly.getClosedPositionsPage(wallet, { limit: 50, cursor, priority: o.priority });
     requests++;
     for (const p of readClosedRows(raw)) markets.add(p.marketId);
-    if (rows(raw).length < 50) { complete = true; break; }
+    cursor = tradesCursor(raw);
+    if (!cursor) { complete = true; break; }
   }
   if (o.deadline !== undefined && Date.now() > o.deadline) return null;
   const pnl = readUserPnl(await poly.getLeaderboardUser(wallet, o.priority), wallet);

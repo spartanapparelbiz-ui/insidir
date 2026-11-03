@@ -8,12 +8,15 @@
  * Each writes a heartbeat (moves:polymarket, moves:kalshi) that the feed's status line reads. */
 import type { Db } from "@/lib/db";
 import type { KalshiClient, PolymarketClient } from "@/lib/exchanges";
+import { tradesCursor } from "@/lib/exchanges/polymarket";
 import type { VMarket } from "@/lib/types";
 import type { WalletTrade } from "./detect";
 import { MarketDirectory } from "./directory";
 import { MovesPoller } from "./poll";
 import { recordFrom } from "./records";
-import { readLeaderboard } from "./sources";
+import { leaderboardCursor, readLeaderboard } from "./sources";
+import { betsFrom, saveBets } from "@/lib/millionaires/bets";
+import type { WatchCache } from "@/lib/millionaires/watchlist";
 import { profileAvatar, profileBlocked } from "./avatar";
 import { saveAvatar, walletsDueForAvatar } from "./avatar-store";
 import { collapsePosition, duplicatePositions, movesToRealize, saveRealized, saveRecord, settleMarket, unsettledMarkets, upsertMoves, walletsToRecord } from "./store";
@@ -36,8 +39,9 @@ export const RECORD_STALE_MS = 12 * 3_600_000;
  *  a partial one. */
 export const RECORD_MAX_PAGES = 100;
 
-export function movesPoller(poly: PolymarketClient, kalshi: KalshiClient): MovesPoller {
+export function movesPoller(poly: PolymarketClient, kalshi: KalshiClient, watch?: WatchCache): MovesPoller {
   return new MovesPoller({
+    watched: watch ? (wallet: string) => watch.has(wallet) : undefined,
     polyTradesPage: (_page, cursor) => poly.getTradesPage({ filterAmount: Number(process.env.WHALE_FILL_MIN ?? 500), cursor, priority: "hot" }),
     polyWalletTrades: async (wallet, sinceMs): Promise<WalletTrade[]> =>
       (await poly.getActivity(wallet, { type: "TRADE", start: sinceMs, maxPages: 1, priority: "normal" }))
@@ -52,11 +56,23 @@ export function movesPoller(poly: PolymarketClient, kalshi: KalshiClient): Moves
 /** One poll of both venues. Market details come from the directory (database first, then the venue), so the worker
  *  never holds the full market list. */
 export async function movesOnce(db: Db, poller: MovesPoller, directory: MarketDirectory, now: number,
-  beat: (job: string, ok: boolean, err?: string) => Promise<void>): Promise<string[]> {
+  beat: (job: string, ok: boolean, err?: string) => Promise<void>, watch?: WatchCache): Promise<string[]> {
   const fresh: string[] = [];
   try {
+    if (watch) await watch.load(db, now);
     fresh.push(...await upsertMoves(db, await poller.pollPolymarket(now, ids => directory.lookup("polymarket", ids, now))));
     await beat("moves:polymarket", true);
+    if (watch) {
+      // Every bet of $5K+ by a watchlist wallet (lib/millionaires/bets.ts).
+      try {
+        const watched = poller.lastWatchedBets();
+        // The outcome names, from the directory (already in memory: the poll just looked these markets up).
+        const labels = watched.length ? await directory.lookup("polymarket", [...new Set(watched.map(m => m.marketId))], now).catch(() => new Map()) : new Map();
+        await saveBets(db, betsFrom(watched, w => watch.tier(w), labels));
+        await beat("millionaires:bets", true);
+      }
+      catch (e) { await beat("millionaires:bets", false, e instanceof Error ? e.message : String(e)); }
+    }
   } catch (e) { await beat("moves:polymarket", false, e instanceof Error ? e.message : String(e)); }
   try {
     fresh.push(...await upsertMoves(db, await poller.pollKalshi(now, ids => directory.lookup("kalshi", ids, now))));
@@ -181,10 +197,12 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
   for (const w of await walletsToRecord(db, now, RECORD_STALE_MS, perRun)) {
     const closed: ClosedPosition[] = [];
     let complete = false;
+    let cursor: string | null = null;
     for (let page = 0; page < RECORD_MAX_PAGES; page++) {
-      const raw = await poly.getClosedPositionsPage(w.wallet, { limit: 50, offset: page * 50 });
+      const raw: unknown = await poly.getClosedPositionsPage(w.wallet, { limit: 50, cursor });
       closed.push(...readClosedRows(raw));
-      if (rows(raw).length < 50) { complete = true; break; }
+      cursor = tradesCursor(raw);
+      if (!cursor) { complete = true; break; }
     }
     if (!complete) continue;
     const open = await poly.getPositions(w.wallet, { sizeThreshold: 0 });
@@ -206,11 +224,12 @@ export async function leaderboardOnce(db: Db, poly: PolymarketClient): Promise<n
   const seen = new Map<string, ReturnType<typeof readLeaderboard>[number]>();
   for (const timePeriod of ["ALL", "MONTH", "WEEK"] as const) {
     for (const category of ["OVERALL", "SPORTS"]) {
-      for (let offset = 0; offset < LEADERBOARD_WALLETS; offset += 50) {
-        const raw = await poly.getLeaderboardPage({ timePeriod, category, limit: 50, offset });
-        const got = readLeaderboard(raw);
-        for (const r of got) if (!seen.has(r.wallet)) seen.set(r.wallet, r);
-        if (got.length < 50) break;
+      let cursor: string | null = null;
+      for (let n = 0; n < LEADERBOARD_WALLETS; n += 50) {
+        const raw: unknown = await poly.getLeaderboardPage({ timePeriod, category, limit: 50, cursor });
+        for (const r of readLeaderboard(raw)) if (!seen.has(r.wallet)) seen.set(r.wallet, r);
+        cursor = leaderboardCursor(raw);
+        if (!cursor) break;
       }
     }
   }

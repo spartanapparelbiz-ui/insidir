@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import { TrustPage } from "@/components/TrustPage";
 import { PHOTOS } from "@/lib/photos";
+import { PEOPLE } from "@/lib/brand/people";
 
 export const metadata: Metadata = { title: "Credits", description: "Every photo, logo and typeface on Insidir, with its source and license." };
 
@@ -37,6 +38,13 @@ export default function CreditsPage() {
         ))}
       </ul>
 
+      <h2>Portraits</h2>
+      {PEOPLE.length ? (
+        <ul className="credits" data-testid="credits-people">
+          {PEOPLE.map(p => <li key={p.file}>{p.name} ({p.office}): <a href={p.source} target="_blank" rel="noopener noreferrer">source</a>, {p.author}, {p.license}</li>)}
+        </ul>
+      ) : <p data-testid="credits-people">We show a portrait only next to a market about that person, from official public-domain congressional portraits or Wikimedia Commons (public domain, CC BY or CC BY-SA). None is in use right now.</p>}
+
       <h2>Logos</h2>
       <p>League, team, company and coin logos are the trademarks of their owners, shown only to say which one a position is about. No endorsement is implied. They come from these open-source packages:</p>
       <ul className="credits" data-testid="credits-logos">
@@ -46,7 +54,7 @@ export default function CreditsPage() {
       </ul>
 
       <h2>Typeface</h2>
-      <p><a href="https://fonts.google.com/specimen/Schibsted+Grotesk" target="_blank" rel="noopener noreferrer">Schibsted Grotesk</a> by Schibsted Media, under the <a href="https://openfontlicense.org" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>.</p>
+      <p><a href="https://fonts.google.com/specimen/Plus+Jakarta+Sans" target="_blank" rel="noopener noreferrer">Plus Jakarta Sans</a> by Tokotype, and <a href="https://fonts.google.com/specimen/Schibsted+Grotesk" target="_blank" rel="noopener noreferrer">Schibsted Grotesk</a> by Schibsted Media, under the <a href="https://openfontlicense.org" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>.</p>
 
       <h2>Screens</h2>
       <p>The recordings of Insidir itself are ours.</p>

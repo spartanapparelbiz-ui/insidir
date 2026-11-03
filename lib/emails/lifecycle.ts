@@ -39,14 +39,16 @@ const mondayMorningET = (now: number) => {
 };
 
 /** Which emails are due for one member right now. `paidAt` is their first payment (the trial's start). */
-export function dueKinds(u: { plan: Plan; email: string | null; paidAt: number | null; cancelAtPeriodEnd: boolean; optedOut: boolean; follows: number },
+export function dueKinds(u: { plan: Plan; email: string | null; paidAt: number | null; cancelAtPeriodEnd: boolean; optedOut: boolean; follows: number; remind?: boolean },
   sent: ReadonlySet<string>, now: number): Array<{ kind: LifecycleKind; period: string }> {
   if (!isPaid(u.plan) || !u.email || u.optedOut || u.paidAt === null) return [];
   const out: Array<{ kind: LifecycleKind; period: string }> = [];
   const age = now - u.paidAt;
   // Day 0 only (not to everyone already a member when this shipped).
   if (!sent.has("welcome:once") && age < DAY) out.push({ kind: "welcome", period: "once" });
-  // There is no trial any more (one plan, $39/month), so the "trial ends tomorrow" email is never due.
+  // "Remind me before I'm charged" (/go's paywall, on by default there): on day 2 of the trial, once, unless they already
+  // cancelled. Accounts that never answered it aren't sent it.
+  if (u.remind && !u.cancelAtPeriodEnd && age >= DAY && age < TRIAL.days * DAY && !sent.has("trial_ending:once")) out.push({ kind: "trial_ending", period: "once" });
   const week = isoWeek(now);
   if (u.follows > 0 && mondayMorningET(now) && age >= 5 * DAY && !sent.has(`weekly:${week}`)) out.push({ kind: "weekly", period: week });
   return out;
@@ -121,7 +123,7 @@ export async function lifecycleOnce(db: Db, now: number, appUrl: string,
     const traders = fs.filter(f => f.userId === u.id).map(f => f.target);
     const sent = new Set(sentRows.filter(r => r.userId === u.id).map(r => `${r.kind}:${r.period}`));
     const due = dueKinds({ plan: u.plan, email: u.email, paidAt: Number.isFinite(paidAt) ? paidAt : null, cancelAtPeriodEnd: u.cancelAtPeriodEnd,
-      optedOut: Boolean({ ...DEFAULT_SETTINGS, ...u.settings }.noLifecycle), follows: traders.length }, sent, now);
+      optedOut: Boolean({ ...DEFAULT_SETTINGS, ...u.settings }.noLifecycle), follows: traders.length, remind: u.settings?.remindBeforeCharge === true }, sent, now);
     for (const d of due) {
       let e: LifecycleEmail | null = null;
       if (d.kind === "welcome") e = welcomeEmail(appUrl);

@@ -31,7 +31,12 @@ export interface MoveSources {
   /** True when the wallet has no activity at all before `beforeMs` ("A brand-new wallet"); null when unknown. */
   polyWalletIsNew?(wallet: string, beforeMs: number): Promise<boolean | null>;
   kalshiTradesPage(minTsSec: number, cursor?: string): Promise<unknown>;
+  /** True for a millionaire-watchlist wallet (lib/millionaires/watchlist.ts): its bets count from BET_MIN. */
+  watched?(wallet: string): boolean;
 }
+
+/** A watchlist wallet's bet counts from this much (lib/millionaires/bets.ts). */
+export const BET_MIN = 5_000;
 
 export class MovesPoller {
   private polyFills = new Map<string, Fill>();
@@ -40,6 +45,7 @@ export class MovesPoller {
   private fresh = new Map<string, { isNew: boolean | null; at: number }>();
   private kalshiSeen = new Map<string, number>();
   private kalshiSince: number | null = null;
+  private watchedBets: Move[] = [];
 
   constructor(private readonly src: MoveSources) {}
 
@@ -63,9 +69,13 @@ export class MovesPoller {
     }
     for (const [k, f] of this.polyFills) if (f.at < now - LOOKBACK_MS) this.polyFills.delete(k);
     const fills = [...this.polyFills.values()];
+    const watched = this.src.watched?.bind(this.src);
+    const watchedOf = (i: ReadonlyMap<string, MarketInfo>): Move[] => watched ? polymarketMoves(fills, i, BET_MIN).filter(m => m.wallet && watched(m.wallet)) : [];
     const info = typeof infoOrLookup === "function"
-      ? MovesPoller.infoFrom([...(await infoOrLookup([...new Set(polymarketMoves(fills, new Map()).map(m => m.marketId))])).values()])
+      ? MovesPoller.infoFrom([...(await infoOrLookup([...new Set([...polymarketMoves(fills, new Map()), ...watchedOf(new Map())].map(m => m.marketId))])).values()])
       : infoOrLookup;
+    // The watchlist's bets skip the noise checks: who the wallet is is already known (top all-time profit).
+    this.watchedBets = watchedOf(info);
     const candidates = polymarketMoves(fills, info);
     const out: Move[] = [];
     let checks = 0;
@@ -93,6 +103,9 @@ export class MovesPoller {
     for (const [k, v] of this.fresh) if (now - v.at > 2 * LOOKBACK_MS) this.fresh.delete(k);
     return out;
   }
+
+  /** The watchlist wallets' bets of BET_MIN or more in the last poll's buffer (LOOKBACK_MS), merged like moves. */
+  lastWatchedBets(): readonly Move[] { return this.watchedBets; }
 
   /** `markets` is a map of known markets, or a lookup called with the tickers this poll's trades name. */
   async pollKalshi(now: number, marketsOrLookup: ReadonlyMap<string, VMarket> | MarketLookup, infoIn?: ReadonlyMap<string, MarketInfo>): Promise<Move[]> {

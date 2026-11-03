@@ -10,7 +10,7 @@ import { ComingSoon } from "@/components/v2/ComingSoon";
 import { LocationPill } from "@/components/v2/LocationPill";
 import { isReady } from "@/lib/features";
 import { unlockHref } from "@/components/app/links";
-import { SiteHeader } from "@/components/SiteHeader";
+import { Frame } from "@/components/brand/app/Frame";
 import { getViewer } from "@/lib/auth/viewer";
 import { fetchMemberships, MANAGE_URL, type MembershipLite } from "@/lib/billing/whop";
 import { getDb, hasDatabase } from "@/lib/db";
@@ -25,7 +25,7 @@ import "../account.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Account", robots: { index: false } };
 
-const DAY = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+const DAY = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 const day = (ms: number): string => DAY.format(new Date(ms));
 
 async function membership(whopUserId: string | null, id: string | null): Promise<MembershipLite | null | "error"> {
@@ -55,8 +55,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn current="/settings" />
-      <main className="wrap app acct dark">
+      <Frame member={true} current="account" testid="legacy-page"><div className="b-legacy wrap app acct">
         <header className="phead"><h1 className="phead__h">Account</h1></header>
         {notice ? <p className="banner" role="status">{notice}</p> : null}
         {cancelNote ? <p className="banner banner--err" role="alert">{cancelNote}</p> : null}
@@ -174,7 +173,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             </form>
           </div>
         </section>
-      </main>
+      </div></Frame>
     </>
   );
 }

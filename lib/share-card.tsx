@@ -6,7 +6,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { LOGO } from "@/components/Wordmark";
 
 export interface ShareCardData {
   title: string;
@@ -60,13 +59,15 @@ export function strip(which: "move" | "site" | "site-tall"): Promise<string> {
 /** Where the strip ends: a hairline between the photo and the black body. */
 export const STRIP_H = { move: 400, site: 170, "site-tall": 400 } as const;
 
-/** The logo in white (components/Wordmark.tsx), `height` px tall. */
+/** The logo in white: the brackets mark (components/brand/Bits.tsx Mark) and the wordmark, `height` px tall. */
 export function OgLogo({ height, color = OG.paper }: { height: number; color?: string }) {
   return (
-    <svg width={Math.round(height * LOGO.ratio)} height={height} viewBox={LOGO.viewBox} fill={color}>
-      <path fillRule="evenodd" d={LOGO.mark} />
-      <path fillRule="evenodd" d={LOGO.word} />
-    </svg>
+    <div style={{ display: "flex", alignItems: "center", gap: Math.round(height * 0.32), color, fontFamily: "Sans", fontWeight: 700, fontSize: Math.round(height * 0.8), letterSpacing: -1 }}>
+      <svg width={height} height={height} viewBox="0 0 64 64" fill={color}>
+        <rect x="0" y="0" width="40" height="18" /><rect x="0" y="0" width="18" height="46" /><rect x="46" y="18" width="18" height="46" /><rect x="24" y="46" width="40" height="18" />
+      </svg>
+      <span>insidir</span>
+    </div>
   );
 }
 

@@ -5,6 +5,7 @@
  *                              a heartbeat per venue. Matching itself never runs in the worker.
  *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
  *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
+ *   millionaires:pings every 30 s: a $1M+ wallet's $25K+ bet in a member's categories (max 8 a day, quiet hours)
  *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
  *   emails:lifecycle every 10 min: day 0 welcome, day 2 "your trial ends tomorrow", Monday results (lib/emails/lifecycle.ts)
  *   whales    every WHALE_MS:  Polymarket trades over $10K
@@ -37,6 +38,7 @@ import { gapsEnabled } from "@/lib/flags";
 import { BOOKS_MS, LiveGaps } from "@/lib/gaps/live";
 import { MarketDirectory } from "@/lib/moves/directory";
 import { provenBackfillOnce } from "@/lib/moves/proven-backfill";
+import { refreshWatchlist, WATCHLIST_MS, WatchCache, watchlistAge } from "@/lib/millionaires/watchlist";
 import { avatarsOnce, dedupeOnce, leagueBackfillOnce, repairSwappedOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { historyOnce } from "@/lib/stocks/history";
@@ -47,6 +49,8 @@ import { bigTrades } from "@/lib/engines/whales";
 import { alertText, dueAlerts } from "@/lib/alerts/fanout";
 import { ALERT_MAX_AGE_MS, alertJobs, alertMessage } from "@/lib/moves/alerts";
 import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
+import { pingJobs, pingMessage } from "@/lib/millionaires/pings";
+import { freshBigBets, pingUsers, pricesNow } from "@/lib/millionaires/ping-store";
 import { recordsFor } from "@/lib/moves/store";
 import { isTopTrader } from "@/lib/moves/records";
 import { isReady } from "@/lib/features";
@@ -139,6 +143,25 @@ async function moveAlertsOnce(): Promise<void> {
   }
 }
 
+/** Millionaire pings (lib/millionaires/pings.ts): a $1M+ wallet's $25K+ bet in a member's categories, once per member and
+ *  bet ("mil:<bet>"), at most 8 in 24 hours, never in quiet hours. Tapping it opens the copy ticket. */
+async function millionairePingsOnce(): Promise<void> {
+  if (!isReady("alerts_push")) return;
+  const db = getDb(), now = Date.now();
+  const bets = await freshBigBets(db, now);
+  if (!bets.length) return;
+  const users = await pingUsers(db, now);
+  const jobs = pingJobs(users, bets, now);
+  if (!jobs.length) return;
+  const byId = new Map(bets.map(b => [b.id, b])), prices = await pricesNow(db, [...new Set(jobs.map(j => j.betId))]);
+  for (const j of jobs) {
+    const b = byId.get(j.betId);
+    if (!b || !(await claimAlert(db, j.userId, `mil:${b.id}`, "push"))) continue;
+    const msg = pingMessage(b, prices.get(b.id) ?? null, appUrl());
+    for (const t of await pushTargets(db, j.userId)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
+  }
+}
+
 /** Push alerts for splits flagged in the last half hour ("split:<id>", once per member), to paid members with push on
  *  who haven't turned split alerts off, outside their quiet hours. */
 async function splitAlertsOnce(): Promise<void> {
@@ -225,7 +248,9 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const lastTickAt = new Map<string, number>();
   log(`worker starting (Price gaps ${gaps ? "on" : "off: GAPS_ENABLED is not 1"})`);
   // Big money moves (docs/INSIDIR-V2.md): only with both public clients in place.
-  const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi) : null;
+  // The millionaire watchlist in memory (lib/millionaires/watchlist.ts): the poller counts its wallets' bets from $5K.
+  const watch = new WatchCache();
+  const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi, watch) : null;
   const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
   const sec = SecClient.fromEnv();
   if (!sec) log("stocks: SEC_USER_AGENT not set (name and email), Stocks ingest is off");
@@ -233,12 +258,21 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     ...(gaps ? [every("gaps", BOOKS_MS, () => gapsOnce(gaps, lastTickAt))] : []),
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
     every("moves:alerts", ALERT_MS, moveAlertsOnce),
+    every("millionaires:pings", 30_000, millionairePingsOnce),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [
       every("moves", MOVES_MS, async () => {
-        const fresh = await movesOnce(getDb(), poller, directory, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null));
+        const fresh = await movesOnce(getDb(), poller, directory, Date.now(), (job, ok, err) => heartbeat(getDb(), job, ok, err ?? null), watch);
         if (fresh.length) log(`moves: ${fresh.length} new`);
+      }),
+      // Checked hourly, refreshed when a day old (so a restart doesn't re-read it, and a missed day catches up).
+      every("millionaires:watchlist", 3_600_000, async () => {
+        const db = getDb(), now = Date.now(), age = await watchlistAge(db);
+        if (age !== null && now - age < WATCHLIST_MS) return;
+        const r = await refreshWatchlist(db, clients.polymarket as PolymarketClient, now);
+        await watch.load(db, now + WATCHLIST_MS);
+        log(`millionaires: watchlist ${r.wallets} wallets, ${r.millionaires} millionaires`);
       }),
       every("moves:settle", 10 * 60_000, async () => {
         const n = await settleMovesOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());

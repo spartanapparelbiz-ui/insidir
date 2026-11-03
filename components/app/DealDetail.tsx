@@ -13,7 +13,7 @@ import { Calculator } from "./Calculator";
 import { LockBar, paysOut } from "./DealTable";
 import { Locked } from "./Locked";
 
-const date = (ms: number | null): string => (ms ? new Date(ms).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC" : "Not stated");
+const date = (ms: number | null): string => (ms ? new Date(ms).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" }) + " ET" : "Not stated");
 
 function Num({ k, v, cls }: { k: string; v: string | null; cls?: string }) {
   return (

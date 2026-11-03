@@ -63,7 +63,7 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await page.screenshot({ path: `qa/screenshots/view-as-member-${w}.png` });
   await bar.getByRole("button", { name: "Visitor" }).click();
   await expect(page.getByTestId("view-as").getByRole("button", { name: "Visitor" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator('a[href="/signin"]').first()).toBeAttached();
+  await expect(page.locator('a[href="/login"]').first()).toBeAttached();
   await page.screenshot({ path: `qa/screenshots/view-as-visitor-${w}.png` });
   await page.goto("/following");
   await expect(page).toHaveURL(/\/login\?next=%2Ffollowing/);
@@ -145,15 +145,16 @@ test("signed in without paying: back later, /start opens the checkout already si
 });
 
 
-test("the nav's 36px Start for $1 on public pages, home included, but not /start or /login; no old offer bars", async ({ page }) => {
+test("Start for $1 in the nav on public pages, home included (the brand nav's pill → /go), but not /start or /login; no old offer bars", async ({ page }) => {
   for (const path of ["/", "/trackers", "/sports", "/markets", "/results", "/pricing", "/faq", "/start", "/login"]) {
     await page.goto(path);
     await expect(page.getByTestId("sticky-cta"), path).toHaveCount(0);
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
   await page.goto("/");
-  await expect(page.locator(".nav__cta")).toHaveText("Start for $1");
-  if (page.viewportSize()!.width >= 900) expect(Math.round((await page.locator(".nav__cta").boundingBox())!.height)).toBe(36);
+  await expect(page.getByTestId("nav-start")).toHaveText("Start for $1");
+  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
+  expect(Math.round((await page.getByTestId("nav-start").boundingBox())!.height)).toBeGreaterThanOrEqual(28);
   await page.goto("/pricing");
   await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/start");
   await page.goto("/login");

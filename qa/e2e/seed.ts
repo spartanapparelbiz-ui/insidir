@@ -72,6 +72,8 @@ function history(now: number) {
 const FRESH = new Set(["handcheck", "intl-fresh"]);
 const ageOf = (o: Opportunity): number => (o.legs.some(l => [...FRESH].some(f => l.marketId.endsWith(f))) ? 0 : 45 * MIN);
 
+import { seedMillionaires } from "./seed-millionaires";
+
 export async function seed(): Promise<{ opps: Opportunity[] }> {
   const url = process.env.DATABASE_URL ?? "";
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
@@ -241,6 +243,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     hold("000099999826000002", "037833100", "E2E Fixture Devices", 5_136_364, 1_130_000_080), hold("000099999826000002", "111111111", "E2E Other Co", 500_000, 26_000_000),
     hold("000099999826000002", "333333333", "E2E New Co", 100_000, 30_000_000),
   ]);
+  await seedMillionaires(db, now);
   for (const job of ["moves:polymarket", "moves:kalshi", "stocks:form4"]) {
     await db.insert(workerHeartbeats).values({ job, lastRunAt: new Date(now), ok: true, error: null, stats: {} }).onConflictDoNothing();
   }

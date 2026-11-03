@@ -1,11 +1,11 @@
 /* Raw API rows → fills (pure). Field names per the public APIs:
  *   Polymarket Data API GET /trades: proxyWallet, side, conditionId, size, price, timestamp (s), title, slug,
  *     eventSlug, outcome, outcomeIndex, name, pseudonym, transactionHash.
- *   Polymarket Data API GET /closed-positions: conditionId, realizedPnl.
+ *   Polymarket Data API GET /v2/positions?status=CLOSED (rows in v1 names, lib/exchanges/polymarket.ts v1Position): conditionId, realizedPnl.
  *   Kalshi GET /markets/trades: trade_id, ticker, count (or count_fp), yes_price / no_price in cents (or
  *     yes_price_dollars / no_price_dollars), taker_side, created_time. Kalshi trades carry no account. */
 import { polymarketUrl } from "@/lib/exchanges/polymarket";
-import { epochMs, num, rows, str } from "@/lib/exchanges/parse";
+import { epochMs, isObject, num, rows, str } from "@/lib/exchanges/parse";
 import type { VMarket } from "@/lib/types";
 import type { ResolvedPosition } from "./records";
 import type { Fill } from "./types";
@@ -69,12 +69,22 @@ export function readClosedPositions(raw: unknown): ResolvedPosition[] {
   return out;
 }
 
-/** Polymarket's public leaderboard rows (Data API /v1/leaderboard): proxyWallet, the public username and profile
- *  picture (lib/moves/avatar.ts; null when it has none or the username is blocked). */
+/** A leaderboard row's wallet: v2 user_id, v1 proxyWallet. */
+const boardWallet = (r: Record<string, unknown>): string => (str(r.user_id) ?? str(r.proxyWallet) ?? str(r.wallet) ?? "").toLowerCase();
+
+/** The next page's cursor of a v2 leaderboard page; null on the last page. */
+export function leaderboardCursor(raw: unknown): string | null {
+  const p = isObject(raw) && isObject(raw.pagination) ? raw.pagination : null;
+  return p && p.has_more === true ? str(p.next_cursor) : null;
+}
+
+/** Polymarket's public leaderboard rows (Data API /v2/leaderboard, or v1's shape): the wallet, the public username and
+ *  profile picture (lib/moves/avatar.ts; null when it has none or the username is blocked). */
 export function readLeaderboard(raw: unknown): Array<{ wallet: string; name: string | null; avatar: string | null; blocked: boolean }> {
   const out: Array<{ wallet: string; name: string | null; avatar: string | null; blocked: boolean }> = [];
-  for (const r of rows(raw)) {
-    const w = (str(r.proxyWallet) ?? str(r.wallet) ?? "").toLowerCase();
+  for (const r0 of rows(raw)) {
+    const r = { ...r0, userName: r0.userName ?? r0.user_name, profileImage: r0.profileImage ?? r0.profile_image };
+    const w = boardWallet(r);
     if (!/^0x[0-9a-f]{40}$/.test(w)) continue;
     out.push({ wallet: w, name: publicUsername(r), avatar: profileAvatar(r), blocked: profileBlocked(r) });
   }
@@ -85,8 +95,10 @@ export function readLeaderboard(raw: unknown): Array<{ wallet: string; name: str
  *  null when there is no row for that exact wallet (an answer about another wallet is ignored) or no number. */
 export function readUserPnl(raw: unknown, wallet: string): number | null {
   const w = wallet.toLowerCase();
-  for (const r of rows(raw)) {
-    if ((str(r.proxyWallet) ?? "").toLowerCase() !== w) continue;
+  // v2 answers a user lookup with one object ({ data: {...} }); v1 with a list.
+  const list = isObject(raw) && isObject(raw.data) ? [raw.data] : rows(raw);
+  for (const r of list) {
+    if (boardWallet(r) !== w) continue;
     const pnl = num(r.pnl);
     return pnl === null || !Number.isFinite(pnl) ? null : Math.round(pnl * 100) / 100;
   }
