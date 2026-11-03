@@ -1,7 +1,6 @@
 /* One millionaire bet as a row: the market's name (teams with a chip in their colour; no photo, no logo), the wallet's profit tier and profit, the
  * market, the side (locked for visitors), size and time, price then → now when known. Safe in server and client
  * components. */
-import { MarketName } from "@/components/desk/Parts";
 import { decidedText, decision } from "@/lib/millionaires/decided";
 import type { BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
@@ -21,7 +20,7 @@ export const GOLD_MIN = 50_000;
 export function BetRow({ bet, now, href, className = "", settle, copyHref }: { bet: BoardBet; now: number; href?: string; className?: string; settle?: number;
   /** Members: the copy ticket for this bet. */
   copyHref?: string }) {
-  const name = <MarketName title={bet.title} category={bet.category} />;
+  const name = <>{bet.title}</>;
   const title = href ? <a className="b-row__link" href={href}>{name}</a> : name;
   // A Millionaire's $50K+ bet is gold.
   const gold = bet.tier === "millionaire" && bet.amount >= GOLD_MIN;

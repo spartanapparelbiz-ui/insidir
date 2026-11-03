@@ -45,7 +45,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
           <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6 }} testid="home-disagree" labelledBy="dis-h" className="s-pinstage">
             <div className="s-pin">
               <div className="s-pin__head b-head"><Insight id="dis-h" as="h2" text={d.insight.disagree} fallback={["Where they disagree", "with the price."]} size={52} /><p className="b-sub">The markets where millionaire money and the price disagree most.</p></div>
-              <div className="s-pin__list" data-stagger="">
+              <div className="s-pin__list">
                 {d.disagree.map(x => (
                   <Panel key={x.marketId} className="s-pin__card" testid="disagree-card">
                     <h3 className="s-ticket__mkt">{x.title}</h3>

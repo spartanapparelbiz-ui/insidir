@@ -61,4 +61,15 @@ describe("the homepage is the design system", () => {
     for (const p of ["components/brand/Stage", "components/brand/Bits", "components/brand/StageMotion", "components/brand/landing/ScrollFx", "components/brand/Nav"]) expect(sys).toContain(`@/${p}`);
     expect(readFileSync("app/election/page.tsx", "utf8")).toContain('from "@/components/system"');
   });
+
+  it("no screen keeps the old Desk's one-off styles (dk-*), and the member screens are built from the system", async () => {
+    const { globSync } = await import("node:fs");
+    const files = [...globSync("app/**/*.tsx"), ...globSync("components/**/*.tsx")];
+    const left = files.filter(f => /className="[^"]*\bdk-/.test(readFileSync(f, "utf8")));
+    expect(left).toEqual([]);
+    expect(readFileSync("app/brand.css", "utf8")).not.toMatch(/\.dk-/);
+    for (const page of ["app/board/page.tsx", "app/wallets/page.tsx", "app/market/[id]/page.tsx", "app/copy/[id]/page.tsx", "app/copies/yours/page.tsx", "app/settings/page.tsx", "app/markets/page.tsx", "app/markets/[category]/page.tsx", "app/election/page.tsx"]) {
+      expect(readFileSync(page, "utf8"), page).toContain('from "@/components/system"');
+    }
+  });
 });
