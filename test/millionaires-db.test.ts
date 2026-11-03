@@ -9,7 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { saveBets, type BetRow } from "@/lib/millionaires/bets";
-import { liveCategories, marketMoney, positions, proof, pulse, recentBets, topWallets, VISITOR_DELAY_MS } from "@/lib/millionaires/queries";
+import { liveCategories, marketMoney, midnightET, positions, proof, pulse, recentBets, topWallets, VISITOR_DELAY_MS } from "@/lib/millionaires/queries";
 import { refreshWatchlist } from "@/lib/millionaires/watchlist";
 import { settleMarket, unsettledMarkets } from "@/lib/moves/store";
 import { clearMemo } from "@/lib/memo";
@@ -90,7 +90,12 @@ describe.skipIf(!URL0)("millionaires, in Postgres", () => {
     for (const b of visitor) expect([b.wallet, b.outcome, b.side, b.priceThen, b.priceNow]).toEqual([null, null, null, null, null]);
     expect(visitor[0]).toMatchObject({ amount: 15_000, tier: "millionaire", pnl: 2_400_000, short: "0x0000…0001" });
 
-    expect(await pulse(db, NOW)).toEqual({ count: 1, window: "hour", wallets: 4, millionaires: 3, today: 35_000 + 10_000 });
+    const pl = await pulse(db, NOW);
+    expect(pl).toMatchObject({ count: 1, window: "hour", wallets: 4, millionaires: 3, today: 35_000 + 10_000 });
+    // Since midnight ET: some or all of today's (when midnight was within the last few hours, fewer).
+    expect(pl.sinceMidnight).toBeLessThanOrEqual(pl.today);
+    expect(pl.countToday).toBeLessThanOrEqual(3);
+    if (NOW - midnightET(NOW) > 4 * 3_600_000) expect([pl.sinceMidnight, pl.countToday]).toEqual([45_000, 3]);
     const cats = await liveCategories(db, NOW);
     expect(cats.window).toBe("day");
     expect(cats.list[0]).toMatchObject({ slug: "football", millionaire: 35_000, pro: 8000, markets: 1 });
