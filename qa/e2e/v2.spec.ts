@@ -13,7 +13,8 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
   await expect(page.getByTestId("hero-line")).toContainText("Wallets up $1M+ bet");
   // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
   const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
-  if (page.viewportSize()!.width > 1160) expect(links).toEqual(["Markets", "Board", "Record", "Pricing", "FAQ"]);
+  // Election Day leads the nav on Nov 3–4 ET (lib/brand/pulse.ts electionDay), then drops out.
+  if (page.viewportSize()!.width > 1160) expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "Record", "Pricing", "FAQ"]);
   await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
   // The pitch (the footer's "isn't affiliated with … the SEC" aside).

@@ -35,8 +35,11 @@ test("/board: visitors see bets 60 minutes late with the live count and Start fo
   await context.addCookies([closed]);
   await page.goto("/board");
   await expect(page.getByTestId("board-delay")).toContainText("60 minutes late");
-  await expect(page.getByTestId("board-live-count")).toHaveText(/^\d+$/);
-  expect(Number(await page.getByTestId("board-live-count").textContent())).toBeGreaterThanOrEqual(6);
+  // Today's count since midnight ET: all six fixture Millionaire bets (8–90 minutes old) once they're all after midnight;
+  // just after midnight, the last hour's (never a 0).
+  const etMinutes = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()); return Number(p.find(x => x.type === "hour")!.value) * 60 + Number(p.find(x => x.type === "minute")!.value); })();
+  await expect(page.getByTestId("board-live-count")).toHaveText(/^[1-9]\d*$/);
+  if (etMinutes > 95) expect(Number(await page.getByTestId("board-live-count").textContent())).toBeGreaterThanOrEqual(6);
   await expect(page.getByTestId("board-start")).toHaveAttribute("href", "/go");
   const visitor = await page.getByTestId("bet-row").evaluateAll(rs => rs.map(r => r.getAttribute("data-bet")));
   // Only the fixtures older than an hour (70 and 90 minutes); never the newer ones, and no Copy, no side.

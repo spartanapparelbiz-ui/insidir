@@ -28,11 +28,16 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("You're bettingagainst millionaires.");
   // Today's real total since midnight ET (the fixtures' six Millionaire bets of the last 90 minutes: $299K).
   await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", "299000");
-  await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $1M+ bet $299K today. Which side were you on?", { timeout: 5_000 });
+  // "today" from midnight ET, or "in the last 24 hours" while today is still under $100K (just after midnight).
+  await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$1M\+ bet \$299K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
   await expect(page.getByTestId("hero-check")).toHaveAttribute("href", "#check");
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
   // The Pulse: today's millionaire money, the biggest bet (side free), the hottest market; every card says something real.
-  await expect(page.getByTestId("pulse-total")).toContainText("$299K");
+  // Since midnight ET: $299K once all six fixture bets (8–90 minutes old) fall after midnight; just after midnight,
+  // part or none of it (the card then says there's none yet today).
+  const etMinutes = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()); return Number(p.find(x => x.type === "hour")!.value) * 60 + Number(p.find(x => x.type === "minute")!.value); })();
+  if (etMinutes > 95) await expect(page.getByTestId("pulse-total")).toContainText("$299K");
+  else await expect(page.getByTestId("pulse-total")).toContainText(/\$\d+K|No millionaire money yet today/);
   await expect(page.getByTestId("pulse-biggest")).toContainText("Millionaire");
   await expect(page.getByTestId("pulse-hottest")).toContainText("Chiefs vs. Bills");
   for (const id of ["pulse-total", "pulse-biggest", "pulse-hottest", "pulse-disagree", "pulse-unusual"]) await expect(page.getByTestId(id)).toBeVisible();

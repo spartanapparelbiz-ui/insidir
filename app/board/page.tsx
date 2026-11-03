@@ -47,7 +47,11 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
         </div>
         {member ? null : (
           <div className="b-glass b-pad b-delay" data-testid="board-delay" style={{ marginBottom: 14 }}>
-            <p style={{ margin: 0, fontWeight: 500 }}><span className="b-dot" aria-hidden="true" /> Live now: <span className="b-num" data-testid="board-live-count">{initial.pulse.countToday}</span> millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today{initial.pulse.window === "hour" ? <>, <span className="b-num">{initial.pulse.count}</span> in the last hour</> : null}.</p>
+            <p style={{ margin: 0, fontWeight: 500 }}><span className="b-dot" aria-hidden="true" /> {initial.pulse.countToday > 0
+              ? <>Live now: <span className="b-num" data-testid="board-live-count">{initial.pulse.countToday}</span> millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today{initial.pulse.window === "hour" && initial.pulse.count > 0 ? <>, <span className="b-num">{initial.pulse.count}</span> in the last hour</> : null}.</>
+              : initial.pulse.window === "hour" && initial.pulse.count > 0
+                ? <>Live now: <span className="b-num" data-testid="board-live-count">{initial.pulse.count}</span> millionaire {initial.pulse.count === 1 ? "bet" : "bets"} in the last hour.</>
+                : <>No millionaire bet yet today (since midnight ET).</>}</p>
             <p className="b-small" style={{ margin: 0 }}>You&apos;re seeing them 60 minutes late. Members see every one the second it lands, with its side.</p>
             <Pill href="/go" data-testid="board-start" data-checkout="board">Start for $1</Pill>
           </div>
