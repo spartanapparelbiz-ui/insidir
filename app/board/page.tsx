@@ -4,7 +4,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { Frame } from "@/components/brand/app/Frame";
-import { Lines, Pill } from "@/components/brand/Bits";
+import { Pill } from "@/components/brand/Bits";
 import { LiveFeed } from "@/components/brand/LiveFeed";
 import { LiveRows } from "@/components/desk/LiveRows";
 import { PayMoments } from "@/components/brand/PayMoments";
@@ -29,16 +29,18 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   return (
     <Frame member={member} current="board" testid="board">
       <Stage className="b-stage--top">
-        <div className="b-band" data-testid="board-band">
-          <div className="b-head"><Lines as="h1" lines={["The board."]} size={56} /><p className="b-sub" data-m="lift">Every bet of $5K+ from wallets that made $1M+, live.</p></div>
-          {/* Today's live numbers (read-only, the pulse): the money in gold, the words beside it. */}
-          <div className="b-stats" data-testid="board-stats">
-            {/* Only figures that aren't zero: a stat that reads 0 says nothing. */}
-            {initial.pulse.sinceMidnight > 0 ? <div className="b-stat"><span className="b-stat__n b-num">{dollars(initial.pulse.sinceMidnight)}</span><span className="b-small">bet by millionaires today</span></div> : null}
-            {initial.pulse.countToday > 0 ? <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.countToday}</span><span className="b-small">millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today</span></div> : null}
-            {initial.pulse.millionaires > 0 ? <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.millionaires}</span><span className="b-small">{initial.pulse.millionaires === 1 ? "wallet" : "wallets"} up $1M+ watched</span></div> : null}
+        <header className="dk-page dk-head dk-boardhead" data-testid="board-band">
+          <div>
+            <h1 className="dk-h1">Board</h1>
+            <p className="dk-lede">Every bet of $5K+ from wallets up $1M+ all-time, {member ? "live" : "60 minutes late"}.</p>
           </div>
-        </div>
+          {/* Today's live numbers, only the ones that aren't zero. */}
+          <p className="dk-lede dk-boardstats" data-testid="board-stats">{[
+            initial.pulse.sinceMidnight > 0 ? `${dollars(initial.pulse.sinceMidnight)} bet by millionaires today` : null,
+            initial.pulse.countToday > 0 ? `${initial.pulse.countToday} millionaire ${initial.pulse.countToday === 1 ? "bet" : "bets"} today` : null,
+            initial.pulse.millionaires > 0 ? `${initial.pulse.millionaires} ${initial.pulse.millionaires === 1 ? "wallet" : "wallets"} up $1M+ watched` : null,
+          ].filter(Boolean).join(" · ")}</p>
+        </header>
         <div className="b-chips" style={{ marginBottom: 16 }}>
           <a className="b-btn b-panel-pill" aria-pressed={!cat} href="/board" data-m="settle" style={{ "--d": ".5s" } as CSSProperties}>All</a>
           {CATEGORIES.map((c, i) => <a key={c.slug} className="b-btn b-panel-pill" aria-pressed={cat === c.slug} href={`/board?cat=${c.slug}`} data-m="settle" style={{ "--d": `${0.5 + i * 0.02}s` } as CSSProperties}>{c.name}</a>)}

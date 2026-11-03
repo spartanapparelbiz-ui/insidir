@@ -878,3 +878,5 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 .dk-narrow-only { display: none; }
 @media (max-width: 1100px) { .dk-narrow-only { display: block; } .dk-wide-only { display: none; } }
 .dk-h3 .dk-link { font-size: 14px; font-weight: 500; }
+.dk-boardhead { max-width: none; padding: 0 0 8px; align-items: flex-end; }
+.dk-boardhead .dk-boardstats { margin: 0 0 28px; color: #fff; }
