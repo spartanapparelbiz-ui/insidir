@@ -27,7 +27,7 @@ export default async function YourCopiesPage() {
       <Stage bg={{ kind: "photo", photo: PHOTOS.hero, dark: 0.55, priority: true }} first testid="copies-band" labelledBy="copies-h">
         <div className="b-head">
           <Insight id="copies-h" text={insight} fallback={["Your copies."]} size={56} />
-          {c && c.list.length ? <p className="b-sub" data-m="lift" data-testid="copies-total">{c.settled} settled ({c.won} won, {c.lost} lost) · {c.open} open · net <b className="b-num" data-testid="copies-net">{signedDollars(c.net)}</b> at your own prices.</p> : null}
+          {c && c.list.length ? <p className="b-sub" data-m="lift" data-testid="copies-total">{c.settled ? <>{c.settled} settled ({c.won} won, {c.lost} lost) · net <b className="b-num" data-testid="copies-net">{signedDollars(c.net)}</b> at your own prices{c.open ? ` · ${c.open} open` : ""}.</> : <>{c.open} open; each settles with its market at your own price.</>}</p> : null}
         </div>
         {c && c.list.length ? (
           <Panel className="s-col s-col--wide">

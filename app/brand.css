@@ -1010,3 +1010,24 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 .s-center { justify-content: center; text-align: center; }
 .s-copyact { display: grid; gap: 12px; }
 .s-copyact__amt { align-items: center; }
+
+/* Forms on the stages (Account): stacked fields, radio options as panel pills, inputs on the glass. */
+.s-form { display: grid; gap: 12px; align-content: start; text-align: left; margin: 0; }
+.s-form h2 { margin: 0; }
+.s-opts { display: flex; flex-wrap: wrap; gap: 8px; border: 0; margin: 0; padding: 0; }
+.s-opts legend { width: 100%; margin-bottom: 8px; }
+.s-opt { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--glass-line); font-size: 15px; cursor: pointer; }
+.s-opt:has(input:checked) { border-color: var(--ink); }
+.s-input { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--panel); border: 1px solid var(--glass-line); border-radius: 10px; padding: 12px 14px; }
+.s-input:focus { outline: none; border-color: var(--ink); }
+.s-kv { display: grid; gap: 12px; margin: 0; }
+.s-kv > div { display: grid; gap: 4px; }
+.s-kv dd { margin: 0; }
+.s-details summary { cursor: pointer; display: inline-block; list-style: none; }
+.s-details[open] summary { margin-bottom: 12px; }
+.s-wait { display: block; width: min(100%, 320px); height: 4px; margin: 24px auto; }
+.s-wait .s-grow { width: 40%; animation: s-wait 1.4s ease-in-out infinite; }
+@keyframes s-wait { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .s-wait .s-grow { animation: none; width: 100%; } }
+.s-split { align-items: start; }
+.s-form .b-ctas, .s-split .b-ctas { justify-content: flex-start; }

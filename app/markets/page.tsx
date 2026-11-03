@@ -3,8 +3,7 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { Frame } from "@/components/brand/app/Frame";
-import { Lines } from "@/components/brand/Bits";
-import { Stage } from "@/components/brand/Stage";
+import { Insight, Stage } from "@/components/system";
 import { getViewer } from "@/lib/auth/viewer";
 import { CATEGORIES, categoryPhotos } from "@/lib/brand/categories";
 import { getDb, hasDatabase } from "@/lib/db";
@@ -22,10 +21,12 @@ export default async function Markets() {
   const order = [...CATEGORIES].sort((a, b) => (by.get(b.slug)?.millionaire ?? 0) + (by.get(b.slug)?.pro ?? 0) / 10 - ((by.get(a.slug)?.millionaire ?? 0) + (by.get(a.slug)?.pro ?? 0) / 10));
   const photos = categoryPhotos(order.map(c => c.slug));
   const when = live.window === "day" ? "today" : "this week";
+  const top = order[0] ? by.get(order[0].slug) : undefined;
+  const insight = top?.millionaire ? `${order[0]!.name} drew ${dollars(top.millionaire)} of millionaire money ${when}.` : null;
   return (
     <Frame member={isPaid(viewer.plan)} current="markets" testid="markets-page">
-      <Stage>
-        <div className="b-head"><Lines as="h1" lines={["Every market", "people bet on."]} size={56} /></div>
+      <Stage first testid="markets-band" labelledBy="markets-h">
+        <div className="b-head"><Insight id="markets-h" text={insight} fallback={["Every market", "people bet on."]} size={56} /><p className="b-sub" data-m="lift">Every market people bet on, by the millionaire money in it {when}.</p></div>
         <div className="b-grid">
           {order.map((c, i) => {
             const l = by.get(c.slug);
@@ -34,7 +35,7 @@ export default async function Markets() {
                 <span className="b-ccard__img"><Image src={photos[i]!.src} alt="" fill sizes="(max-width: 552px) 50vw, (max-width: 1160px) 33vw, 300px" quality={90} priority={i < 4} /></span>
                 <span className="b-ccard__txt">
                   <h2 className="b-ccard__name">{c.name}</h2>
-                  <span className="b-small" style={{ color: "var(--ink-muted)" }}>{l ? (l.millionaire ? `${dollars(l.millionaire)} millionaire money ${when}` : `${dollars(l.pro)} Pro money ${when}`) : c.blurb}</span>
+                  <span className="b-small b-dim">{l ? (l.millionaire ? `${dollars(l.millionaire)} millionaire money ${when}` : `${dollars(l.pro)} Pro money ${when}`) : c.blurb}</span>
                 </span>
               </a>
             );

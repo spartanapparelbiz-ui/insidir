@@ -1,20 +1,27 @@
-/* The 404 and 500 pages, in the house style: what happened as the headline, one line on what to do, one black button
- * home and text links to the places people usually want (Trackers, Help, Status). No photo. */
-import Link from "next/link";
-import type { ReactNode } from "react";
+/* The 404 and 500 pages, as a homepage stage: dusk scenery, what happened as the masked headline, one line on what to do,
+ * the white pill home and panel pills to the places people usually want. Client-safe (the 500 page is a client
+ * component), so it writes the stage's markup itself rather than using components/brand/Stage (which reads the disk).
+ * The caller supplies the frame (the nav). */
+import Image from "next/image";
+import type { CSSProperties, ReactNode } from "react";
+import { Lines } from "@/components/brand/Lines";
+import { PHOTOS } from "@/lib/brand/images";
 
 export function WrongTrail({ code, title, text, children }: { code: string; title: string; text: string; children?: ReactNode }) {
   return (
-    <main className="wrap trail2">
-      <p className="trail2__code">{code}</p>
-      <h1 className="trail2__h">{title}</h1>
-      <p className="trail2__p">{text}</p>
-      <div className="trail2__ctas">
-        {children ?? <Link className="btn btn--primary" href="/">Back to home</Link>}
+    <section className="b-stage" data-first="" data-testid="wrong-trail" aria-labelledby="trail-h">
+      <div className="b-stage__bg" style={{ "--dark": 0.6 } as CSSProperties}><Image src={PHOTOS.hero.src} alt="" fill sizes="100vw" priority quality={85} /></div>
+      <div className="b-stage__in">
+        <div className="b-head">
+          <p className="b-label">{code}</p>
+          <Lines as="h1" id="trail-h" lines={[title]} size={64} />
+          <p className="b-sub">{text}</p>
+        </div>
+        <div className="b-center"><div className="b-ctas">{children ?? <a className="b-btn b-btn-lg b-primary" href="/">Back to home</a>}<a className="b-btn b-btn-lg b-ghost" href="/board">The board</a></div></div>
+        <nav className="s-filters" aria-label="Elsewhere">
+          {[["Markets", "/markets"], ["Election Day", "/election"], ["Help", "/help"], ["Status", "/status"]].map(([t, h]) => <a key={h} className="b-btn b-panel-pill" href={h}>{t}</a>)}
+        </nav>
       </div>
-      <nav className="trail2__links" aria-label="Elsewhere">
-        <Link href="/trackers">Trackers</Link><Link href="/open">Open now</Link><Link href="/help">Help</Link><Link href="/status">Status</Link>
-      </nav>
-    </main>
+    </section>
   );
 }

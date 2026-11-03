@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 /* Shared pieces in the hero spec's language: the arrow, the pills (white primary, glass ghost, #181818 panel), masked
  * headline lines, tier badges, a side in colour (or locked), price then → now. Safe in server and client components.
  * Motion hooks: data-m="lift" (B), "settle" (C), "quiet" (D); headline lines are A (components/brand/StageMotion.tsx). */
@@ -27,16 +26,7 @@ export function Pill({ href, children, kind = "primary", arrow = true, delay, cl
   return <a className={`${cls} ${className}`} href={href} {...(delay !== undefined ? m("settle", delay) : {})} {...unlock} {...rest}>{children}{arrow ? <Arrow /> : null}</a>;
 }
 
-/** A headline as masked lines (behaviour A). `k` sizes it on phones from its longest line, so no line ever wraps. */
-export function Lines({ lines, as: Tag = "h2", size, id, className = "", testid }: { lines: readonly string[]; as?: "h1" | "h2" | "p"; size?: number; id?: string; className?: string; testid?: string }) {
-  const longest = Math.max(...lines.map(l => l.length));
-  const style = { "--k": (longest * 0.56).toFixed(2), ...(size ? { "--hs": size } : {}) } as CSSProperties;
-  return (
-    <Tag id={id} className={`${Tag === "h1" ? "b-h1" : "b-h2"} ${className}`} style={style} data-testid={testid}>
-      {lines.map((l, i) => <Fragment key={i}>{i ? " " : null}<span className="ln"><span className="ln-i" style={{ "--i": i } as CSSProperties}>{l}</span></span></Fragment>)}
-    </Tag>
-  );
-}
+export { Lines } from "./Lines";
 
 export const TierBadge = ({ tier }: { tier: Tier }) => <span className={`b-tier b-tier--${tier}`} data-tier={tier}>{TIER_NAME[tier]}</span>;
 

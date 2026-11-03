@@ -4,6 +4,7 @@
  * finishing up" with a refresh button and our email; it keeps asking in the background. Whop sends the buyer back here with ?status=failed|canceled when an off-site step
  * (3-D Secure, a bank page) didn't go through: then nothing was charged and they can try again. */
 import Link from "next/link";
+import { Lines } from "@/components/brand/Lines";
 import { useEffect, useState } from "react";
 import { beacon } from "@/components/app/beacon";
 
@@ -25,18 +26,18 @@ export function Welcome({ status, next = "/" }: { status: string | null; next?: 
     return () => { gone = true; };
   }, [failed]);
   if (failed) return (
-    <div className="astart rise-in">
-      <h1 className="astart__h">Payment didn&apos;t go through.</h1>
-      <p className="aerr" role="alert">Nothing was charged. Try again, or use another card.</p>
-      <div className="astart__cta"><Link className="btn btn--primary btn--big btn--block acta" href="/start">Try again</Link></div>
+    <div className="b-head">
+      <Lines as="h1" lines={["Payment didn’t go through."]} size={56} />
+      <p className="b-sub" role="alert">Nothing was charged. Try again, or use another card.</p>
+      <div className="b-ctas"><Link className="b-btn b-btn-lg b-primary" href="/start">Try again</Link></div>
     </div>
   );
   return (
-    <div className="astart rise-in" aria-live="polite" data-testid="setting-up">
-      <h1 className="astart__h">{slow ? "Payment received, finishing up" : "Setting up your account…"}</h1>
-      {slow ? <p className="astart__sub">Your payment went through. Your account is still being set up; this page keeps checking. Refresh in a moment, or write to <a href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : null}
-      <span className="welcome__bar" aria-hidden="true" />
-      {slow ? <button type="button" className="btn btn--primary btn--block" onClick={() => location.reload()}>Refresh</button> : null}
+    <div className="b-head" aria-live="polite" data-testid="setting-up">
+      <Lines as="h1" lines={[slow ? "Payment received, finishing up" : "Setting up your account…"]} size={56} />
+      {slow ? <p className="b-sub">Your payment went through. Your account is still being set up; this page keeps checking. Refresh in a moment, or write to <a className="s-link" href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : <p className="b-sub">Whop is confirming your payment. This takes a few seconds.</p>}
+      <span className="s-meterbar s-wait" aria-hidden="true"><span className="s-grow" /></span>
+      {slow ? <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => location.reload()}>Refresh</button></div> : null}
     </div>
   );
 }
