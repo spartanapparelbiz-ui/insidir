@@ -32,9 +32,9 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
           <div className="b-head"><Lines as="h1" lines={["The board."]} size={56} /><p className="b-sub" data-m="lift">Every bet of $5K+ from wallets that made $1M+, live.</p></div>
           {/* Today's live numbers (read-only, the pulse): the money in gold, the words beside it. */}
           <div className="b-stats" data-testid="board-stats">
-            <div className="b-stat"><span className="b-stat__n b-num">{initial.pulse.sinceMidnight > 0 ? dollars(initial.pulse.sinceMidnight) : "None yet"}</span><span className="b-small">bet by millionaires today (since midnight ET)</span></div>
+            <div className="b-stat"><span className="b-stat__n b-num">{initial.pulse.sinceMidnight > 0 ? dollars(initial.pulse.sinceMidnight) : "None yet"}</span><span className="b-small">bet by millionaires today</span></div>
             <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.countToday}</span><span className="b-small">millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today</span></div>
-            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.millionaires}</span><span className="b-small">wallets up $1M+ watched, of the top {initial.pulse.wallets.toLocaleString("en-US")} on Polymarket</span></div>
+            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.millionaires}</span><span className="b-small">wallets up $1M+ watched</span></div>
           </div>
         </div>
         <div className="b-chips" style={{ marginBottom: 16 }}>
