@@ -73,3 +73,19 @@ export function partyOf(text: string): "d" | "r" | null {
   const d = /\b(democrats?|democratic|dem)\b|\(d\)|\bd (senate|house)\b/i.test(text), r = /\b(republicans?|gop)\b|\(r\)|\br (senate|house)\b/i.test(text);
   return d && !r ? "d" : r && !d ? "r" : null;
 }
+
+/** The team names a title uses, with their team, in order ("Hawks vs. Pacers" → Hawks, Pacers; "Spread: Hawks (-7.5)"
+ *  → Hawks), for a chip in the team's primary colour beside each name. */
+export function teamsNamed(title: string, category: CategorySlug | null): Array<{ name: string; team: Team }> {
+  const t = title.trim();
+  const vs = /^(?:[^:]*:\s*)?(.+?)\s+vs\.?\s+(.+?)(?::.*)?$/i.exec(t);
+  const names = vs ? [vs[1]!, vs[2]!] : (/^(?:spread|moneyline|total)[^:]*:\s*(.+?)\s*(?:\(|$)/i.exec(t)?.slice(1, 2) ?? []);
+  return names.flatMap(n => { const name = n.trim().replace(/\s*\(.*\)$/, ""); const team = teamByName(name, category); return team ? [{ name, team }] : []; });
+}
+
+/** Where team logos come from. Unset (the default): no logos at all, a chip in the team's colour beside its name.
+ *  Set only once a licensed feed with logo rights is configured (SportsDataIO or Sportradar images). */
+export const LOGO_SOURCE: "sportsdataio" | "sportradar" | null = (() => {
+  const v = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_LOGO_SOURCE : undefined;
+  return v === "sportsdataio" || v === "sportradar" ? v : null;
+})();

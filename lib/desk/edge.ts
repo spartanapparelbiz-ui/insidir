@@ -22,9 +22,9 @@ export interface Edge {
 }
 
 export async function edgeFor(db: Db, poly: Pick<PolymarketClient, "getPriceHistoryRange">, betId: string, now: number): Promise<Edge | null> {
-  const b = (await db.execute(sql`select b.market_id, b.market_title, b.outcome, b.outcome_side, b.result, i.history_key, i.yes_price, coalesce(i.closed, false) as closed
+  const b = (await db.execute(sql`select b.market_id, b.market_title, b.outcome, b.outcome_side, b.result, i.history_key, i.yes_price, i.updated_at as price_at, coalesce(i.closed, false) as closed
     from terminal.millionaire_bets b left join terminal.market_info i on i.source = 'polymarket' and i.market_id = b.market_id where b.id = ${betId}`)).rows[0] as
-    { market_id: string; market_title: string; outcome: string; outcome_side: string; result: string | null; history_key: string | null; yes_price: number | null; closed: boolean } | undefined;
+    { market_id: string; market_title: string; outcome: string; outcome_side: string; result: string | null; history_key: string | null; yes_price: number | null; price_at: string | null; closed: boolean } | undefined;
   if (!b) return null;
   const side = b.outcome_side === "no" ? "no" : "yes";
   const ents = ((await db.execute(sql`select extract(epoch from at) * 1000 as t, price::float as p, amount::float as dollars from terminal.millionaire_bets
@@ -45,6 +45,9 @@ export async function edgeFor(db: Db, poly: Pick<PolymarketClient, "getPriceHist
     points = readPolyHistory(raw).map(x => (side === "yes" ? x : { t: x.t, p: 1 - x.p }));
   }
   const yes = b.yes_price === null ? null : Number(b.yes_price);
+  // The rows show market_info's price; the line stops where that price was read, so the chart's last point and the
+  // table's price are the same reading (never a later point the table hasn't seen, never an invented one).
+  if (yes !== null && b.price_at) { const at = new Date(b.price_at).getTime(); points = points.filter(p => p.t <= at); }
   // The price now is the one the rows show (market_info), so the table and the chart never disagree; the history's
   // last point only when market_info has none.
   const priceNow = yes !== null ? (side === "yes" ? yes : 1 - yes) : points.length ? points[points.length - 1]!.p : null;
