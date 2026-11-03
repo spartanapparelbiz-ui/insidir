@@ -97,7 +97,9 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
   const byCat = new Map<string, number[]>();
   for (const r of streamRows) { if (!isCategory(r.category)) continue; const a = byCat.get(r.category) ?? Array.from({ length: 24 }, () => 0); a[Math.min(23, Math.max(0, Number(r.h)))]! += Number(r.d); byCat.set(r.category, a); }
   const bands = [...byCat.entries()].map(([c, series]) => ({ category: c as never, series, total: series.reduce((t, v) => t + v, 0) })).sort((a, b) => b.total - a.total).slice(0, 5);
-  const stream: StreamData | null = bands.length >= 2 ? { hours: 24, bands } : null;
+  // A stream needs spread to read as one: at least 2 categories and money in 6+ of the 24 hours (else it is a spike).
+  const liveHours = Array.from({ length: 24 }, (_, h) => bands.some(b => (b.series[h] ?? 0) > 0)).filter(Boolean).length;
+  const stream: StreamData | null = bands.length >= 2 && liveHours >= 6 ? { hours: 24, bands } : null;
   const rec = await safe(last10(db, ls.map(l => l.wallet)), new Map());
   const wallets = ls.map(l => ({ ...l, last10: rec.get(l.wallet) ?? null }));
   const bestWallet = [...wallets].filter(w => w.last10 && w.last10.made + w.last10.lost >= 5).sort((a, b) => b.last10!.made / (b.last10!.made + b.last10!.lost) - a.last10!.made / (a.last10!.made + a.last10!.lost))[0];

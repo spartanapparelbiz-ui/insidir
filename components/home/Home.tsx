@@ -88,7 +88,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
                       {Array.from({ length: w.last10.made }, (_, i) => <i key={`m${i}`} className="s-dot s-dot--on" />)}{Array.from({ length: w.last10.lost }, (_, i) => <i key={`l${i}`} className="s-dot" />)}
                       <span className="b-small">Last {w.last10.made + w.last10.lost} closed: {w.last10.made} made money, {w.last10.lost} lost</span>
                     </p>
-                  ) : <p className="b-small">No closed bets on record yet</p>}
+                  ) : null}
                   <p className="b-small">{d.today ? "Today" : "Last 24 hours"}: {dollars(w.todayDollars)} across {w.todayBets} {w.todayBets === 1 ? "bet" : "bets"}</p>
                   <FollowLink wallet={w.wallet} initial={w.followed} />
                 </Panel>
