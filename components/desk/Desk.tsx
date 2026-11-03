@@ -45,7 +45,9 @@ function ElectionNight({ races }: { races: Race[] }) {
               {r.priceNow !== null ? <span className="d-num">{r.yesLabel} {Math.round(r.priceNow * 100)}¢</span> : null}
             </a>
             <SplitBar r={r} />
-            <span className="d-race__m b-small"><span className="d-yes">{r.yesLabel} {dollars(r.millionaire.yes.dollars)}</span><span className="d-no">{r.noLabel} {dollars(r.millionaire.no.dollars)}</span></span>
+            {r.millionaire.yes.dollars + r.millionaire.no.dollars > 0
+              ? <span className="d-race__m b-small"><span className="d-yes">{r.yesLabel} {dollars(r.millionaire.yes.dollars)}</span><span className="d-no">{r.noLabel} {dollars(r.millionaire.no.dollars)}</span></span>
+              : <span className="d-race__m b-small d-dim">{dollars(r.total)} from Pro wallets, no millionaire money yet</span>}
           </li>
         );
       })}</ul>
@@ -57,7 +59,7 @@ export function Desk({ d, edge, search }: { d: Data; edge: Edge | null; search: 
   const races = d.election?.free ?? [];
   return (
     <Shell current="home">
-      <div className="d-root" data-testid="desk">
+      <div className="d-root" data-testid="member-home" data-home="desk">
         <Tape bets={d.tape} />
         <header className="d-top">
           <div className="d-top__id">
@@ -69,7 +71,7 @@ export function Desk({ d, edge, search }: { d: Data; edge: Edge | null; search: 
           <CommandBar open={search} />
         </header>
         {d.flow.length ? (
-          <LiveFlow initial={d.flow} now={d.now} initialEdge={edge} n={40} aside={<YourDesk key="your-desk" desk={d.desk} suggest={d.leaders} />} />
+          <LiveFlow initial={d.flow.slice(0, 16)} now={d.now} initialEdge={edge} n={16} aside={<YourDesk key="your-desk" desk={d.desk} suggest={d.leaders} />} />
         ) : (
           <div className="d-grid"><div className="d-col8"><div className="d-panel"><div className="d-panel__h"><span>Live flow</span></div><p className="b-empty">No millionaire bet in the last day. The second one lands, it shows here.</p></div></div>
             <div className="d-col4"><YourDesk desk={d.desk} suggest={d.leaders} /></div></div>

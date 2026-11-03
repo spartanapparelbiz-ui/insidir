@@ -91,7 +91,7 @@ export function Leaders({ list, full = false }: { list: Leader[]; full?: boolean
               <td className="d-num d-r d-gold">{l.pnl !== null ? signed(l.pnl) : ""}</td>
               <td className="d-num d-r">{dollars(l.todayDollars)}</td>
               <td className="d-num d-r">{l.todayBets}</td>
-              <td className="d-mkt">{l.biggest ? <><TeamMark title={l.biggest.title} category={l.biggest.category} size={22} /><span className="d-mkt__t" title={l.biggest.title}>{l.biggest.title}</span><span className="d-num d-dim">{dollars(l.biggest.dollars)}</span></> : null}</td>
+              <td className="d-mkt">{l.biggest ? <span className="d-mkt__in"><TeamMark title={l.biggest.title} category={l.biggest.category} size={22} /><span className="d-mkt__t" title={l.biggest.title}>{l.biggest.title}</span><span className="d-num d-dim">{dollars(l.biggest.dollars)}</span></span> : null}</td>
               <td className="d-r"><FollowBtn wallet={l.wallet} initial={l.followed} /></td>
             </tr>
           ))}</tbody>

@@ -30,8 +30,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
     const db = hasDatabase() ? getDb() : null, u = viewer.user;
     if (!db || !u) return <Landing d={emptyLanding(now)} />;
     const d = await deskData(db, u.id, u.settings, now, electionDay(now));
-    // EdgeChart opens on today's biggest bet in the flow (else the newest).
-    const big = d.flow.filter(b => b.at >= now - 86_400_000).sort((a, b) => b.amount - a.amount)[0] ?? d.flow[0];
+    // EdgeChart opens on today's biggest bet in the flow that's still live (priced 2–98¢), else today's biggest, else
+    // the newest.
+    const day = d.flow.filter(b => b.at >= now - 86_400_000).sort((a, b) => b.amount - a.amount);
+    const big = day.find(b => b.priceNow !== null && b.priceNow > 0.02 && b.priceNow < 0.98) ?? day[0] ?? d.flow[0];
     const edge = big ? await edgeFor(db, (poly ??= new PolymarketClient()), big.id, now).catch(() => null) : null;
     return <Desk d={d} edge={edge} search={sp.search === "1"} />;
   }

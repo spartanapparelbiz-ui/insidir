@@ -46,11 +46,13 @@ async function freeCheck(page: Page, text: string, side: "yes" | "no" = "yes"): 
   return page.url();
 }
 
-/** A member's check, from the box on their home. */
+/** A member's check, from the Desk's search: the market inline with its millionaire side, then the full check. */
 async function memberCheck(page: Page, text: string) {
   await page.goto("/");
-  await page.getByTestId("member-home").getByTestId("ask-input").fill(text);
-  await page.getByTestId("member-home").getByTestId("ask-go").click();
+  await page.getByTestId("desk-search").getByRole("textbox").fill(text);
+  await page.getByTestId("desk-search").getByRole("textbox").press("Enter");
+  await expect(page.getByTestId("desk-search-result")).toContainText(/Millionaires are on|Millionaire money is split|No millionaire money/, { timeout: 10_000 });
+  await page.getByTestId("desk-search-result").getByRole("link", { name: "Full check" }).click();
   await expect(page).toHaveURL(/\/read\/[A-Za-z0-9]+$/, { timeout: 10_000 });
   await expect(page.getByTestId("check-card")).toBeVisible();
 }
@@ -117,12 +119,12 @@ test("a visitor's free check (US rule), wallets, bets and line never sent, Share
   await expect(page.getByTestId("read-locked")).toHaveCount(0);
   await expect(page.getByTestId("read-advice")).toHaveText("Information, not financial or betting advice. Public data from Polymarket and Kalshi.");
   await page.screenshot({ path: shotName("read-after-pay", page), fullPage: true });
-  // Their home: this check in Your checks.
-  await page.goto("/");
-  await expect(page.getByTestId("your-markets").locator("a").first()).toContainText("E2E fixture: Tennis match 100");
+  // Their library: this check in their checked markets.
+  await page.goto("/library");
+  await expect(page.getByTestId("library").locator("a.b-row").first()).toContainText("E2E fixture: Tennis match 100");
 });
 
-test("a member outside the US: \"tennis\" checks the main market, both venues with the better price marked, Open on it; on their home after", async ({ page, context }) => {
+test("a member outside the US: \"tennis\" checks the main market, both venues with the better price marked, Open on it; in their library after", async ({ page, context }) => {
   await signIn(context, "proIntl");
   // Tennis match 100 is the main tennis market: paired with Kalshi and the most tracked money ($90K against $60K, $45K).
   await memberCheck(page, "tennis");
@@ -136,8 +138,8 @@ test("a member outside the US: \"tennis\" checks the main market, both venues wi
   await expect(page.getByTestId("read-bets")).toBeVisible();
   await expect(page.getByTestId("read-line")).toHaveText(/\S/);
   await page.screenshot({ path: shotName("read-member-intl", page), fullPage: true });
-  await page.goto("/");
-  await expect(page.getByTestId("your-markets").locator("a").first()).toContainText("E2E fixture: Tennis match 100");
+  await page.goto("/library");
+  await expect(page.getByTestId("library").locator("a.b-row").first()).toContainText("E2E fixture: Tennis match 100");
 });
 
 test("the free check: a check with no money doesn't use it up; markets \"Which one?\" offered stay a tap away; a new search after that asks for $1", async ({ page, context }) => {

@@ -31,17 +31,17 @@ const V2_UI = [
 ];
 
 describe("V2 landing page", () => {
-  it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home", () => {
+  it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get the Desk", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
-    expect(src).toContain("<Dashboard d={d}");
+    expect(src).toContain("<Desk d={d}");
     // The hero, then everything below it in order (components/brand/landing/Landing.tsx Rest).
     expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
     const order = ["<ElectionStage d={d} /> : <BoardLeadStage d={d} />", "<PulseStage d={d} />", "<Free d={d} />", "<MembersStage d={d} />", "<SpotlightStage d={d} />", "<StakeStage d={d} />", "<GapsStage d={d} />", "<Markets d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
-    expect(read("components/brand/app/Dashboard.tsx")).toContain('data-testid="member-home"');
+    expect(read("components/desk/Desk.tsx")).toContain('data-testid="member-home"');
   });
 
   it("the hero's words, its two CTAs (Check my bet, Start for $1 → /go), and no stocks, crypto or Congress in the pitch", async () => {
@@ -130,14 +130,16 @@ describe("design system", () => {
     }
   });
 
-  it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and nothing else)", () => {
+  it("fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's, JetBrains Mono for the Desk's figures (and nothing else)", () => {
     const layout = read("app/layout.tsx");
     expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
     expect(read("lib/brand/fonts.ts")).toMatch(/plus-jakarta-sans-latin\.woff2/);
     expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
+    // JetBrains Mono: self-hosted, figures only (the Desk's tabular numbers), as --b-mono.
+    expect(read("lib/brand/fonts.ts")).toMatch(/jetbrains-mono-latin\.woff2[^\n]*--b-mono/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
       const src = read(f);
-      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
+      expect(src, f).not.toMatch(/General Sans|fontshare|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
     }
   });
 

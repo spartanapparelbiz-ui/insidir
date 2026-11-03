@@ -7,24 +7,26 @@ import { q, signIn } from "./helpers";
 /** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
 const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
 
-test("members open the app on their home: Check a bet first; the sidebar (desktop) or pill bar (phone) holds the rest", async ({ page, context }) => {
+test("members open the app on the Desk: no Check a bet button; the sidebar (desktop) or pill bar with search (phone) holds the rest", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
-  await expect(page.getByTestId("member-home")).toHaveAttribute("data-tab", "check");
-  await expect(page.getByTestId("member-home").getByTestId("ask-input")).toBeVisible();
-  await expect(page.getByTestId("week-recap")).toBeVisible();
+  await expect(page.getByTestId("member-home")).toHaveAttribute("data-home", "desk");
+  await expect(page.getByTestId("desk-search").getByRole("textbox")).toHaveAttribute("placeholder", "Search a market or paste a bet link");
+  // Checking is a search feature, never a primary button or tab.
+  await expect(page.getByRole("link", { name: /check a bet/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /check a bet/i })).toHaveCount(0);
+  await expect(page.getByTestId("side-check")).toHaveCount(0);
+  await expect(page.getByTestId("tab-check")).toHaveCount(0);
   if (page.viewportSize()!.width > 860) {
     const side = page.locator(".b-sidebar");
-    await expect(side.getByTestId("side-check")).toHaveText("Check a bet");
-    for (const [href, label] of [["/", "Home"], ["/board", "Board"], ["/markets", "Markets"], ["/following", "Following"], ["/library", "Library"], ["/settings", "Account"]]) {
-      await expect(side.locator(`a.b-navi[href="${href}"]`)).toHaveText(label!);
-    }
+    const nav = (await side.locator("a.b-navi").allInnerTexts()).map(t => t.trim()).filter(t => t !== "Election Day");
+    expect(nav).toEqual(["Desk", "Board", "Wallets", "Markets", "Your copies", "Library", "Account"]);
   } else {
-    await expect(page.getByTestId("tab-check")).toBeVisible();
+    await expect(page.getByTestId("tab-search")).toBeVisible();
     await expect(page.locator(".b-tabbar a[href='/board']")).toBeVisible();
   }
   // Everything older stays live by URL.
-  for (const path of ["/copies", "/feed", "/top", "/trackers", "/check", "/results"]) expect((await page.request.get(path)).status(), path).toBe(200);
+  for (const path of ["/copies", "/feed", "/top", "/trackers", "/check", "/results", "/following", "/wallets"]) expect((await page.request.get(path)).status(), path).toBe(200);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 test("a tracker page: holding now first, then following it, the traders' own return, stats, breakdowns, top traders, latest positions; nothing invented under 30 settled", async ({ page, context }) => {

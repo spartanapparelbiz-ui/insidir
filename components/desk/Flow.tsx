@@ -80,11 +80,11 @@ function FlowRow({ b, now, sel, onPick, fresh, moved, copy }: { b: BoardBet; now
   const d = b.priceNow !== null && b.priceThen !== null ? Math.round((b.priceNow - b.priceThen) * 100) : null;
   const gold = b.tier === "millionaire" && b.amount >= 50_000;
   return (
-    <tr className={`d-row${sel ? " is-sel" : ""}${fresh ? " is-new" : ""}`} data-testid="flow-row" data-bet={b.id} aria-selected={sel} onClick={() => onPick(b)}
+    <tr className={`d-row${sel ? " is-sel" : ""}${fresh ? " is-new" : ""}`} data-testid="bet-row" data-bet={b.id} aria-selected={sel} onClick={() => onPick(b)}
       tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(b); } }}>
       <td className="d-num d-dim">{ago(b.at, now)}</td>
       <td><span className="d-wallet">{b.wallet ? <WalletOrb address={b.wallet} tier={b.tier} size={24} /> : null}<span className="d-wallet__t"><span className="d-num">{b.short}</span>{b.pnl !== null ? <span className={`d-num ${b.tier === "millionaire" ? "d-gold" : "d-steel"}`}>{signed(b.pnl)}</span> : null}</span></span></td>
-      <td className="d-mkt"><TeamMark title={b.title} category={b.category} outcome={b.outcome} size={26} /><span className="d-mkt__t" title={b.title}>{b.title}</span></td>
+      <td className="d-mkt"><span className="d-mkt__in"><TeamMark title={b.title} category={b.category} outcome={b.outcome} size={26} /><span className="d-mkt__t" title={b.title}>{b.title}</span></span></td>
       <td>{b.outcome ? <span className={`d-side d-side--${b.side}`}>{b.outcome}</span> : null}</td>
       <td className={`d-num d-r${gold ? " d-gold" : ""}`}>{dollars(b.amount)}</td>
       <td className="d-num d-r">{c(b.priceThen)}</td>
@@ -142,7 +142,7 @@ export function LiveFlow({ initial, now: now0, cats = [], board = false, copy = 
   const rows = useMemo(() => bets, [bets]);
   const table = (
     <div className="d-panel d-flow" data-testid="live-flow">
-      <div className="d-panel__h"><span>Live flow</span><span className="d-live"><i aria-hidden="true" />Live</span></div>
+      <div className="d-panel__h"><span>Live flow</span><span className="d-live"><i aria-hidden="true" />Live{chart ? <> · <a href="/board">Full board</a></> : null}</span></div>
       {rows.length ? (
         <div className="d-scroll">
           <table className="d-table">
