@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
   const n = Math.min(Math.max(Number(req.nextUrl.searchParams.get("n")) || 5, 1), 50);
   const cats = (req.nextUrl.searchParams.get("cats") ?? "").split(",").filter(isCategory);
   const delayMs = !member && req.nextUrl.searchParams.get("board") === "1" ? BOARD_DELAY_MS : 0;
-  const [p, bets] = await Promise.all([pulse(db, now), recentBets(db, { now, limit: n, member, categories: cats, delayMs })]);
+  // "Wallets up $1M+" means $1M+: Pro ($100K–$1M) wallets only when asked for (tier=pro).
+  const tier = req.nextUrl.searchParams.get("tier") === "pro" ? "pro" as const : "millionaire" as const;
+  const [p, bets] = await Promise.all([pulse(db, now, cats.length === 1 ? cats[0] : null), recentBets(db, { now, limit: n, member, categories: cats, delayMs, tier })]);
   return NextResponse.json({ now, member, pulse: p, bets }, { headers: { "Cache-Control": "no-store" } });
 }

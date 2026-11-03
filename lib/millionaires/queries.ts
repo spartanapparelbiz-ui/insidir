@@ -2,6 +2,7 @@
  * terminal.watchlist, with "now" prices from terminal.market_info. Visitors see bets live with the side removed on the
  * server (redact): when, how much, the wallet's profit tier and the market are real; which side is never sent. Wallets leave here as their tier and a shortened address, plus the
  * full address only where a member can follow it. Server only. */
+import { humanLine } from "@/lib/markets/title";
 import { sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { CATEGORY_SLUGS, isCategory, type CategorySlug } from "@/lib/brand/categories";
@@ -51,7 +52,7 @@ function toBet(r: Row, member: boolean): BoardBet {
   const cat = String(r.category);
   return {
     id: String(r.id), short: shortWallet(String(r.wallet)), wallet: member ? String(r.wallet) : null, tier: r.tier === "millionaire" ? "millionaire" : "pro",
-    category: isCategory(cat) ? cat : "world", marketId: String(r.market_id), title: String(r.market_title), event: String(r.event_title),
+    category: isCategory(cat) ? cat : "world", marketId: String(r.market_id), title: humanLine({ title: String(r.market_title) }), event: String(r.event_title),
     pnl: r.pnl === null || r.pnl === undefined ? null : n(r.pnl),
     outcome: String(r.outcome), side, amount: n(r.amount), priceThen: n(r.price), priceNow: yes === null ? null : side === "no" ? 1 - yes : yes,
     closed: Boolean(r.closed), result: r.result === "won" || r.result === "lost" || r.result === "void" ? r.result : null, at: t(r.at), url: (r.url as string | null) ?? null,
@@ -126,8 +127,9 @@ export function heroTotal(p: Pulse): { amount: number; window: "today" | "24h" }
 }
 
 /** The live counter and the watchlist's size. */
-export function pulse(db: Db, now: number): Promise<Pulse> {
-  return memo(`mil:pulse`, 30_000, async () => {
+/** The live numbers, for every category or one (the board's filter: every number on the page follows it). */
+export function pulse(db: Db, now: number, category?: CategorySlug | null): Promise<Pulse> {
+  return memo(`mil:pulse:${category ?? "all"}`, 30_000, async () => {
     const r = (await db.execute(sql`select
         count(*) filter (where tier = 'millionaire' and at > ${new Date(now - HOUR)})::int as hour,
         count(*) filter (where tier = 'millionaire' and at > ${new Date(now - DAY)})::int as day,
@@ -136,7 +138,7 @@ export function pulse(db: Db, now: number): Promise<Pulse> {
         count(*) filter (where tier = 'millionaire' and at >= ${new Date(midnightET(now))})::int as count_today,
         (select count(*)::int from terminal.watchlist) as wallets,
         (select count(*)::int from terminal.watchlist where tier = 'millionaire') as millionaires
-      from terminal.millionaire_bets where at > ${new Date(now - DAY)}`)).rows[0] as Row;
+      from terminal.millionaire_bets where at > ${new Date(now - DAY)} ${category ? sql`and category = ${category}` : sql``}`)).rows[0] as Row;
     const hour = n(r.hour);
     return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight), countToday: n(r.count_today) };
   });
@@ -208,7 +210,7 @@ export async function marketMoney(db: Db, opts: { marketIds?: readonly string[];
     const id = String(x.market_id), cat = String(x.category);
     let m = by.get(id);
     if (!m) {
-      m = { marketId: id, title: String(x.title), event: String(x.event), category: isCategory(cat) ? cat : "world", millionaire: sides(), pro: sides(),
+      m = { marketId: id, title: humanLine({ title: String(x.title) }), event: String(x.event), category: isCategory(cat) ? cat : "world", millionaire: sides(), pro: sides(),
         yesLabel: "Yes", noLabel: "No", priceNow: x.yes_price === null ? null : n(x.yes_price), last: 0 };
       by.set(id, m);
     }
@@ -322,7 +324,7 @@ export async function betsToday(db: Db, categories: readonly string[], now: numb
 export async function lastResults(db: Db, wallet: string, limit = 5): Promise<Array<{ title: string; outcome: string; result: "won" | "lost" | "void"; amount: number }>> {
   const r = await db.execute(sql`select market_title, outcome, result, amount from terminal.millionaire_bets
     where wallet = ${wallet.toLowerCase()} and result is not null order by settled_at desc nulls last limit ${limit}`);
-  return (r.rows as Row[]).map(x => ({ title: String(x.market_title), outcome: String(x.outcome), result: x.result as "won" | "lost" | "void", amount: n(x.amount) }));
+  return (r.rows as Row[]).map(x => ({ title: humanLine({ title: String(x.market_title) }), outcome: String(x.outcome), result: x.result as "won" | "lost" | "void", amount: n(x.amount) }));
 }
 
 export interface Settled { marketId: string; title: string; heavier: string; won: string | null; right: boolean; dollars: number }
@@ -337,7 +339,7 @@ export async function settledBetween(db: Db, from: number, to: number, limit = 1
   for (const [id, sides] of by) {
     sides.sort((a, b) => n(b.dollars) - n(a.dollars));
     const heavy = sides[0]!, winner = sides.find(x => x.result === "won");
-    out.push({ marketId: id, title: String(heavy.title), heavier: String(heavy.outcome), won: winner ? String(winner.outcome) : null, right: heavy.result === "won", dollars: sides.reduce((t, x) => t + n(x.dollars), 0) });
+    out.push({ marketId: id, title: humanLine({ title: String(heavy.title) }), heavier: String(heavy.outcome), won: winner ? String(winner.outcome) : null, right: heavy.result === "won", dollars: sides.reduce((t, x) => t + n(x.dollars), 0) });
   }
   return out.sort((a, b) => b.dollars - a.dollars).slice(0, limit);
 }

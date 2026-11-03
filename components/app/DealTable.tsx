@@ -98,9 +98,9 @@ export function DealTable({ rows, now, motion = {}, selected = null, compact = f
                   {!lock ? <span className="dt-muted">{r.gapCents ?? 0}¢ gap</span> : r.profit === null ? <LockBar w={64} /> : <span className="dt-profit">{money2(r.profit)}</span>}
                   <span className="dt-sub dt-sub--sm dt-num">{lock ? pct2(r.roi) : "One side only"}</span>
                 </td>
-                <td className="dt-r dt-c-roi dt-num">{lock ? pct2(r.roi) : <span className="dt-muted">None</span>}</td>
-                <td className="dt-r dt-c-size dt-num">{!lock ? <span className="dt-muted">None</span> : size === null ? <LockBar /> : money2(size)}</td>
-                <td className="dt-r dt-c-day dt-num">{!lock ? <span className="dt-muted">None</span> : r.profitPerDay === null ? <LockBar w={48} /> : money2(r.profitPerDay)}</td>
+                <td className="dt-r dt-c-roi dt-num">{lock ? pct2(r.roi) : <span className="dt-muted">Members</span>}</td>
+                <td className="dt-r dt-c-size dt-num">{!lock ? <span className="dt-muted">Members</span> : size === null ? <LockBar /> : money2(size)}</td>
+                <td className="dt-r dt-c-day dt-num">{!lock ? <span className="dt-muted">Members</span> : r.profitPerDay === null ? <LockBar w={48} /> : money2(r.profitPerDay)}</td>
                 <td className="dt-r dt-c-open dt-num dt-time">{open}</td>
               </tr>
             );

@@ -54,7 +54,7 @@ export function PulseStage({ d }: { d: LandingData }) {
               <span className="b-dtitle">{h.title}</span>
               <p className="b-dmid b-num" data-count={Math.round(mil(h))} data-fmt="usd">{dollars(mil(h))}</p>
               <div className="b-bar" role="img" aria-label={`${pct(hShare)} of it on ${h.yesLabel}`}><span data-bar={hShare.toFixed(3)} style={{ transform: `scaleX(${hShare})` }} /></div>
-              <span className="b-kv b-small"><span>{h.yesLabel} {h.millionaire.yes.dollars ? dollars(h.millionaire.yes.dollars) : "none"}</span><span>{h.noLabel} {h.millionaire.no.dollars ? dollars(h.millionaire.no.dollars) : "none"}</span></span>
+              <span className="b-kv b-small"><span>{h.yesLabel} {h.millionaire.yes.dollars ? dollars(h.millionaire.yes.dollars) : "no money yet"}</span><span>{h.noLabel} {h.millionaire.no.dollars ? dollars(h.millionaire.no.dollars) : "no money yet"}</span></span>
             </div>
           ) : <p className="b-empty">No market has millionaire money today yet.</p>}
         </section>
@@ -139,8 +139,8 @@ export function MembersStage({ d }: { d: LandingData }) {
         {v.evidence ? <span className="b-ph__small">{v.evidence}</span> : null}
         {t.m.priceNow !== null ? <><span className="b-ph__label" style={{ marginTop: 6 }}>Price now</span><div className="b-ph__row"><span>{t.m.yesLabel}</span><b className="b-num">{cents(t.m.priceNow)}</b></div><div className="b-ph__row"><span>{t.m.noLabel}</span><b className="b-num">{cents(1 - t.m.priceNow)}</b></div></> : null}
         <span className="b-ph__label" style={{ marginTop: 6 }}>Millionaire money</span>
-        <div className="b-ph__row"><span>{t.m.yesLabel}</span><b className="b-num">{t.m.millionaire.yes.dollars ? dollars(t.m.millionaire.yes.dollars) : "none"}</b></div>
-        <div className="b-ph__row"><span>{t.m.noLabel}</span><b className="b-num">{t.m.millionaire.no.dollars ? dollars(t.m.millionaire.no.dollars) : "none"}</b></div>
+        <div className="b-ph__row"><span>{t.m.yesLabel}</span><b className="b-num">{t.m.millionaire.yes.dollars ? dollars(t.m.millionaire.yes.dollars) : "no money yet"}</b></div>
+        <div className="b-ph__row"><span>{t.m.noLabel}</span><b className="b-num">{t.m.millionaire.no.dollars ? dollars(t.m.millionaire.no.dollars) : "no money yet"}</b></div>
       </div>
     ) : <div className="b-ph"><span className="b-ph__small">The check shows here once a market has millionaire money.</span></div>,
     // The live board, a ping sliding in

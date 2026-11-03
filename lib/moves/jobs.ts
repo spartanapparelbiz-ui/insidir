@@ -15,7 +15,10 @@ import { MarketDirectory } from "./directory";
 import { MovesPoller } from "./poll";
 import { recordFrom } from "./records";
 import { leaderboardCursor, readLeaderboard } from "./sources";
-import { betsFrom, saveBets } from "@/lib/millionaires/bets";
+import { betsFrom, recategorizeBets, saveBets } from "@/lib/millionaires/bets";
+
+/** Stored bets get re-read with the current category rules once per worker process. */
+let recategorized = false;
 import type { WatchCache } from "@/lib/millionaires/watchlist";
 import { profileAvatar, profileBlocked } from "./avatar";
 import { saveAvatar, walletsDueForAvatar } from "./avatar-store";
@@ -69,6 +72,8 @@ export async function movesOnce(db: Db, poller: MovesPoller, directory: MarketDi
         // The outcome names, from the directory (already in memory: the poll just looked these markets up).
         const labels = watched.length ? await directory.lookup("polymarket", [...new Set(watched.map(m => m.marketId))], now).catch(() => new Map()) : new Map();
         await saveBets(db, betsFrom(watched, w => watch.tier(w), labels));
+        // Once per process: stored bets re-read with the current category rules (esports out of Golf).
+        if (!recategorized) { recategorized = true; await recategorizeBets(db, now).catch(e => console.error("recategorize", e instanceof Error ? e.message : e)); }
         await beat("millionaires:bets", true);
       }
       catch (e) { await beat("millionaires:bets", false, e instanceof Error ? e.message : String(e)); }

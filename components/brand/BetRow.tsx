@@ -3,6 +3,7 @@
  * components. */
 import { decidedText, decision } from "@/lib/millionaires/decided";
 import type { BoardBet } from "@/lib/millionaires/queries";
+import type { GroupedBet } from "@/lib/millionaires/group";
 import { dollars } from "@/lib/money";
 import { PriceMove, Side, signedDollars, TierBadge } from "./Bits";
 
@@ -17,27 +18,29 @@ export function agoShort(ms: number, now: number): string {
 /** A Millionaire's bet this size or more is shown in gold. */
 export const GOLD_MIN = 50_000;
 
-export function BetRow({ bet, now, href, className = "", settle, copyHref }: { bet: BoardBet; now: number; href?: string; className?: string; settle?: number;
+export function BetRow({ bet, now, href, className = "", settle, copyHref }: { bet: BoardBet | GroupedBet; now: number; href?: string; className?: string; settle?: number;
   /** Members: the copy ticket for this bet. */
   copyHref?: string }) {
   const name = <>{bet.title}</>;
+  const n = "n" in bet ? bet.n : 1;
   const title = href ? <a className="b-row__link" href={href}>{name}</a> : name;
   // A Millionaire's $50K+ bet is gold.
   const gold = bet.tier === "millionaire" && bet.amount >= GOLD_MIN;
   const style = (settle !== undefined ? { "--d": `${settle}s` } : {}) as React.CSSProperties;
   return (
-    <div className={`b-row b-row--plain ${className}`} data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier} style={style} {...(settle !== undefined ? { "data-m": "settle" } : {})}>
+    <div className={`b-row b-row--plain ${className}`} data-testid="bet-row" data-bet={bet.id} data-n={n} data-ids={"ids" in bet ? bet.ids.join(" ") : bet.id} data-tier={bet.tier} style={style} {...(settle !== undefined ? { "data-m": "settle" } : {})}>
       <span className="b-row__main">
         <span className="b-row__title">{title}</span>
         <span className="b-row__meta">
           <TierBadge tier={bet.tier} />
           {bet.pnl !== null ? <span>{signedDollars(bet.pnl)} wallet</span> : null}
+          {n > 1 ? <span data-testid="bet-count">{n} bets</span> : null}
           <Side outcome={bet.outcome} side={bet.side} pnl={bet.pnl} />
           <PriceMove then={bet.priceThen} now={bet.priceNow} />
         </span>
       </span>
       <span className="b-row__money">
-        <span className={`b-row__size b-num${gold ? " b-gold" : ""}`}>{dollars(bet.amount)}</span>
+        <span className={`b-row__size b-num${gold ? " b-gold" : ""}`}>{dollars(bet.amount)}{n > 1 ? " total" : ""}</span>
         <span className="b-small">{agoShort(bet.at, now)}</span>
         {bet.outcome && decision(bet) ? <span className="b-small" data-testid="bet-decided">{decidedText(decision(bet)!, bet.outcome)}</span> : null}
         {copyHref ? <a className="b-btn b-panel-pill b-copy" href={copyHref} data-testid="bet-copy" aria-label={`Copy this bet: ${bet.title}`}>Copy</a> : null}

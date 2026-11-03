@@ -158,7 +158,7 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await page.screenshot({ path: shotName("go-1-hook", page) });
   await page.getByTestId("go-next").click();
   await expect(go).toHaveAttribute("data-step", "cats");
-  await expect(page.getByTestId("go-tile")).toHaveCount(18);
+  await expect(page.getByTestId("go-tile")).toHaveCount(19);
   await page.locator('[data-testid=go-tile][data-cat=football]').click();
   await page.locator('[data-testid=go-tile][data-cat=politics]').click();
   await expect(page.locator('[data-testid=go-tile][data-cat=football]')).toHaveAttribute("aria-pressed", "true");

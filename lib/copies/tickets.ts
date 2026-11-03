@@ -3,6 +3,7 @@
  * US) and an amount (the member's default from Account). Insidir never places trades, holds funds or keys: the member
  * buys on the venue, then "I placed it" logs it here, and it settles with the market (lib/millionaires/bets.ts
  * settleCopies). Wallets by tier, profit and short address only. Server only. */
+import { humanLine } from "@/lib/markets/title";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { betCopies } from "@/lib/db/schema";
@@ -54,7 +55,7 @@ export async function ticketFor(db: Db, betId: string, region: Region | null): P
   const o = openFor({ source: "polymarket", url: (b.url as string | null) ?? null, marketId, outcomeSide: side }, region, match, poly, kalshi);
   const yes = poly.get(marketId);
   return {
-    betId: String(b.id), marketId, title: String(b.market_title), category: isCategory(b.category) ? b.category : "markets", outcome: side === "yes" ? names.yesLabel : names.noLabel, side,
+    betId: String(b.id), marketId, title: humanLine({ title: String(b.market_title) }), category: isCategory(b.category) ? b.category : "markets", outcome: side === "yes" ? names.yesLabel : names.noLabel, side,
     amount: Number(b.amount), at: new Date(b.at as string).getTime(), tier: b.tier === "millionaire" ? "millionaire" : "pro", short: shortWallet(String(b.wallet)),
     pnl: b.pnl === null || b.pnl === undefined ? null : Number(b.pnl),
     record: b.won === null || b.won === undefined ? null : { won: Number(b.won), lost: Number(b.lost) },

@@ -45,9 +45,7 @@ export function PriceMove({ then, now }: { then: number | null; now: number | nu
 export function Side({ outcome, side, pnl }: { outcome: string | null; side: "yes" | "no" | null; pnl?: number | null }) {
   if (side === null || outcome === null) {
     return (
-      <button type="button" className="b-lock" data-locked="side" data-pnl={pnl ?? undefined} aria-label="Side hidden: start for $1 to see it">
-        <span className="b-blur" aria-hidden="true">YES</span> side <svg width="9" height="11" viewBox="0 0 9 11" aria-hidden="true"><rect x="0.5" y="4.5" width="8" height="6" rx="1.5" fill="currentColor" /><path d="M2 4.5V3a2.5 2.5 0 0 1 5 0v1.5" fill="none" stroke="currentColor" strokeWidth="1.2" /></svg>
-      </button>
+      <button type="button" className="s-lockside" data-locked="side" data-pnl={pnl ?? undefined} aria-label="Side: for members. Start for $1 to see it">Side: members</button>
     );
   }
   const yn = /^(yes|no)$/i.test(outcome.trim());

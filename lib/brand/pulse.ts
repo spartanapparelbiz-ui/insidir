@@ -7,6 +7,7 @@
  *   Wallet spotlight: one $1M+ wallet's last 10 closed positions, what each made or lost (by tier and a short address only).
  *   Your stake: the best real followable record (30+ settled), scaled to the reader's stake.
  *   Price gaps: the 3 biggest live price differences between a matched Kalshi and Polymarket market. */
+import { humanLine } from "@/lib/markets/title";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { category as categoryInfo, type CategorySlug } from "@/lib/brand/categories";
@@ -54,7 +55,7 @@ export async function unusualBet(db: Db, now: number): Promise<Unusual | null> {
       where source = 'polymarket' and new_wallet and hidden_at is null and avg_price > 0.01 and avg_price <= 0.25 and amount >= 5000 and at > ${new Date(since)}
       order by amount desc limit 1`);
     const x = r.rows[0] as Record<string, unknown> | undefined;
-    return x ? { marketId: String(x.market_id), title: String(x.market_title), outcome: String(x.outcome), amount: Number(x.amount), price: Number(x.avg_price), at: new Date(x.at as string).getTime(), category: (x.category as string | null) ?? null } : null;
+    return x ? { marketId: String(x.market_id), title: humanLine({ title: String(x.market_title) }), outcome: String(x.outcome), amount: Number(x.amount), price: Number(x.avg_price), at: new Date(x.at as string).getTime(), category: (x.category as string | null) ?? null } : null;
   };
   return (await pick(midnightET(now))) ?? pick(now - DAY);
 }
@@ -140,7 +141,7 @@ export function walletSpotlight(db: Db): Promise<Spotlight | null> {
     if (!w) return null;
     const rows = (await db.execute(sql`select title, outcome, avg_price, money_in, pnl, resolved_at from terminal.trader_positions
       where wallet = ${w.wallet} and resolved_at is not null and money_in >= 100 order by resolved_at desc limit 10`)).rows as Array<Record<string, unknown>>;
-    const list = rows.map(x => ({ title: String(x.title), outcome: (x.outcome as string | null) ?? null, price: x.avg_price === null ? null : Number(x.avg_price),
+    const list = rows.map(x => ({ title: humanLine({ title: String(x.title) }), outcome: (x.outcome as string | null) ?? null, price: x.avg_price === null ? null : Number(x.avg_price),
       moneyIn: Number(x.money_in), pnl: Number(x.pnl), won: Number(x.pnl) > 0, at: x.resolved_at ? new Date(x.resolved_at as string).getTime() : null }));
     return { short: shortWallet(w.wallet), tier: "millionaire" as const, pnl: Number(w.pnl), rows: list, won: list.filter(x => x.won).length };
   });
