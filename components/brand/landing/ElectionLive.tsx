@@ -7,6 +7,12 @@ import type { ElectionBoard } from "@/lib/brand/pulse";
 import { dollars } from "@/lib/money";
 import { cents } from "../Bits";
 
+/** "d" or "r" when the race's title or outcome clearly names a party; otherwise no chip at all. */
+export function partyOf(text: string): "d" | "r" | null {
+  const d = /\b(democrats?|democratic|dem)\b|\(d\)|\bd (senate|house)\b/i.test(text), r = /\b(republicans?|gop)\b|\(r\)|\br (senate|house)\b/i.test(text);
+  return d && !r ? "d" : r && !d ? "r" : null;
+}
+
 const ET = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 
 export function ElectionLive({ initial, member }: { initial: ElectionBoard; member: boolean }) {
@@ -31,26 +37,27 @@ export function ElectionLive({ initial, member }: { initial: ElectionBoard; memb
       <div className="b-kv"><span className="b-label" style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><span className="b-dot" aria-hidden="true" /> {stale ? "Catching up" : "Live"}</span><span className="b-small">Updated {ET.format(new Date(b.at))} ET · every minute</span></div>
       <ul className="b-rows" data-stagger="">
         {b.free.map(r => {
-          const m = r.millionaire.yes.dollars + r.millionaire.no.dollars, share = m ? r.millionaire.yes.dollars / m : 0;
+          const m = r.millionaire.yes.dollars + r.millionaire.no.dollars, share = m ? r.millionaire.yes.dollars / m : 0, party = partyOf(r.title);
+          const sides = ([[r.millionaire.yes.dollars, r.yesLabel], [r.millionaire.no.dollars, r.noLabel]] as const).filter(([v]) => v > 0);
           return (
-            <li key={r.marketId} className="b-row b-race" data-testid="race-free">
+            <li key={r.marketId} className="b-row b-race" data-testid="race-free" data-party={party ?? undefined}>
               <span className="b-row__main">
-                <span className="b-row__title">{r.title}</span>
+                <span className="b-race__title">{party ? <span className={`b-party b-party--${party}`} aria-label={party === "d" ? "Democrats" : "Republicans"}>{party === "d" ? "D" : "R"}</span> : null}<span className="b-row__title">{r.title}</span></span>
                 {m ? (
                   <>
                     <span className="b-bar" role="img" aria-label={`${Math.round(share * 100)}% of the millionaire money on ${r.yesLabel}`}><span data-bar={share.toFixed(3)} style={{ transform: `scaleX(${share})` }} /></span>
-                    <span className="b-row__meta"><span>{r.yesLabel} {r.millionaire.yes.dollars ? dollars(r.millionaire.yes.dollars) : "none"}</span><span>{r.noLabel} {r.millionaire.no.dollars ? dollars(r.millionaire.no.dollars) : "none"}</span></span>
+                    <span className="b-row__meta">{sides.map(([v, l]) => <span key={l}><b className="b-num" style={{ color: l === r.yesLabel ? "var(--yes)" : "var(--no)" }}>{dollars(v)}</b> on {l}</span>)}<span>from wallets up $1M+</span></span>
                   </>
-                ) : <span className="b-row__meta"><span>Pro money only: {dollars(r.pro.yes.dollars + r.pro.no.dollars)}</span></span>}
+                ) : <span className="b-row__meta"><span>Only Pro wallets ($100K+) so far: <b className="b-num">{dollars(r.pro.yes.dollars + r.pro.no.dollars)}</b> in</span></span>}
               </span>
-              <span className="b-row__money">{r.priceNow !== null ? <><span className="b-row__size b-num">{cents(r.priceNow)}</span><span className="b-small">{r.yesLabel} now</span></> : <span className="b-small">No price now</span>}</span>
+              <span className="b-race__price">{r.priceNow !== null ? <><b className="b-num">{cents(r.priceNow)}</b><span className="b-small">{r.yesLabel} · price now</span></> : <span className="b-small">No price yet</span>}</span>
             </li>
           );
         })}
         {member ? null : b.locked.map((r, i) => (
           <li key={`l${i}`}>
             <button type="button" className="b-lockrow" data-locked="race" data-testid="race-locked">
-              <span className="b-row__title" style={{ textAlign: "left" }}>{r.title}</span>
+              <span className="b-race__title">{partyOf(r.title) ? <span className={`b-party b-party--${partyOf(r.title)}`} aria-label={partyOf(r.title) === "d" ? "Democrats" : "Republicans"}>{partyOf(r.title) === "d" ? "D" : "R"}</span> : null}<span className="b-row__title" style={{ textAlign: "left" }}>{r.title}</span></span>
               <span className="b-small b-num">{dollars(r.total)} in<span className="b-sr">. The split and price are for members: start for $1 to see them.</span></span>
               <span className="b-lock" aria-hidden="true">Locked</span>
             </button>

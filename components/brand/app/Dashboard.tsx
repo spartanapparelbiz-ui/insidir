@@ -16,6 +16,7 @@ import { BetRow } from "../BetRow";
 import { Lines, signedDollars } from "../Bits";
 import { LiveFeed } from "../LiveFeed";
 import { Shell } from "./Shell";
+import { ambientOf, CategoryArt } from "../CategoryArt";
 import { ElectionLive } from "../landing/ElectionLive";
 
 export type HomeTab = "check" | "board" | "brief" | "following" | "live";
@@ -31,10 +32,10 @@ function MarketRows({ list, testid }: { list: MarketMoney[]; testid: string }) {
   return (
     <ol className="b-rows" style={{ paddingLeft: 0 }} data-testid={testid}>
       {list.map((m, i) => (
-        <li key={m.marketId}><a className="b-row" style={{ gridTemplateColumns: "auto minmax(0,1fr) auto" }} href={`/read/open?pick=polymarket:${m.marketId}`}>
-          <span className="b-small">{i + 1}</span>
-          <span className="b-row__main"><span className="b-row__title">{m.title}</span><span className="b-row__meta">{categoryInfo(m.category).name} · {m.millionaire.yes.wallets + m.millionaire.no.wallets} millionaire wallets</span></span>
-          <span className="b-row__money"><span className="b-row__size b-num">{dollars(mil(m))}</span><span className="b-small">millionaire money</span></span>
+        <li key={m.marketId}><a className="b-row b-row--art" style={{ "--amb": ambientOf(m.category) } as CSSProperties} href={`/read/open?pick=polymarket:${m.marketId}`}>
+          <span className="b-row__thumb" aria-hidden="true"><CategoryArt slug={m.category} sizes="72px" label={false} /><span className="b-rank">{i + 1}</span></span>
+          <span className="b-row__main"><span className="b-row__title">{m.title}</span><span className="b-row__meta">{categoryInfo(m.category).name} · {m.millionaire.yes.wallets + m.millionaire.no.wallets} millionaire {m.millionaire.yes.wallets + m.millionaire.no.wallets === 1 ? "wallet" : "wallets"}</span></span>
+          <span className="b-row__money"><span className="b-row__size b-num b-gold">{dollars(mil(m))}</span><span className="b-small">millionaire money</span></span>
         </a></li>
       ))}
     </ol>
@@ -146,12 +147,18 @@ export function Dashboard({ d, firstName, tab }: { d: Data; firstName: string | 
   }
   return (
     <Shell current="home">
-      <section className="b-stage" data-testid="member-home" data-tab={tab}>
-        <div style={{ display: "grid", gap: 16, marginBottom: 18 }}>
+      <section className="b-stage b-stage--top" data-testid="member-home" data-tab={tab}>
+        <div className="b-band" style={{ display: "grid", gap: 16 }} data-testid="home-band">
           <div className="b-homehead">
             <Lines as="h1" lines={[`${greeting(d.now)}${firstName ? `, ${firstName}` : ""}.`]} size={52} />
             {/* The paste box, as a small search: check any bet from any tab. */}
             <div className="b-search" id="ask"><AskBox id="home-ask" settle={false} placeholder="Check a bet: paste a link or type it" /></div>
+          </div>
+          {/* Today's live numbers (read-only, the pulse). */}
+          <div className="b-stats" data-testid="home-stats">
+            <div className="b-stat"><span className="b-stat__n b-num">{d.pulse.sinceMidnight > 0 ? dollars(d.pulse.sinceMidnight) : "None yet"}</span><span className="b-small">bet by millionaires today</span></div>
+            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{d.pulse.countToday}</span><span className="b-small">millionaire {d.pulse.countToday === 1 ? "bet" : "bets"} today</span></div>
+            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{d.following.wallets}</span><span className="b-small">{d.following.wallets === 1 ? "wallet" : "wallets"} you follow</span></div>
           </div>
           <nav className="b-chips" style={{ justifyContent: "flex-start" }} aria-label="Your home" data-testid="home-tabs">
             {TABS.map(([k, label], i) => <a key={k} className="b-btn b-panel-pill" aria-current={tab === k ? "page" : undefined} data-on={tab === k ? "true" : "false"} href={k === "check" ? "/" : `/?tab=${k}`} {...settle(0.3 + i * 0.04)}>{label}</a>)}

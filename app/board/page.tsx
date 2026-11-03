@@ -13,6 +13,7 @@ import { CATEGORIES, isCategory } from "@/lib/brand/categories";
 import { getDb, hasDatabase } from "@/lib/db";
 import { BOARD_DELAY_MS, pulse, recentBets } from "@/lib/millionaires/queries";
 import { isPaid } from "@/lib/plans";
+import { dollars } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "The board: millionaire bets, live", description: "Every bet of $5K+ by Polymarket wallets with $1M+ in all-time profit, as it happens." };
@@ -26,8 +27,16 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   const initial = { now, pulse: p ?? { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, bets: [...bets] };
   return (
     <Frame member={member} current="board" testid="board">
-      <Stage>
-        <div className="b-head"><Lines as="h1" lines={["The board."]} size={56} /><p className="b-sub" data-m="lift">Every bet of $5K+ from wallets that made $1M+, live.</p></div>
+      <Stage className="b-stage--top">
+        <div className="b-band" data-testid="board-band">
+          <div className="b-head"><Lines as="h1" lines={["The board."]} size={56} /><p className="b-sub" data-m="lift">Every bet of $5K+ from wallets that made $1M+, live.</p></div>
+          {/* Today's live numbers (read-only, the pulse): the money in gold, the words beside it. */}
+          <div className="b-stats" data-testid="board-stats">
+            <div className="b-stat"><span className="b-stat__n b-num">{initial.pulse.sinceMidnight > 0 ? dollars(initial.pulse.sinceMidnight) : "None yet"}</span><span className="b-small">bet by millionaires today (since midnight ET)</span></div>
+            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.countToday}</span><span className="b-small">millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today</span></div>
+            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.millionaires}</span><span className="b-small">wallets up $1M+ watched, of the top {initial.pulse.wallets.toLocaleString("en-US")} on Polymarket</span></div>
+          </div>
+        </div>
         <div className="b-chips" style={{ marginBottom: 16 }}>
           <a className="b-btn b-panel-pill" aria-pressed={!cat} href="/board" data-m="settle" style={{ "--d": ".5s" } as CSSProperties}>All</a>
           {CATEGORIES.map((c, i) => <a key={c.slug} className="b-btn b-panel-pill" aria-pressed={cat === c.slug} href={`/board?cat=${c.slug}`} data-m="settle" style={{ "--d": `${0.5 + i * 0.02}s` } as CSSProperties}>{c.name}</a>)}

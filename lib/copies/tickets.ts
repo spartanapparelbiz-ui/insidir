@@ -9,12 +9,14 @@ import { betCopies } from "@/lib/db/schema";
 import { shortWallet } from "@/lib/millionaires/watchlist";
 import { outcomeNames } from "@/lib/millionaires/queries";
 import type { Region } from "@/lib/types";
+import { isCategory, type CategorySlug } from "@/lib/brand/categories";
 import { kalshiMatchesFull, openFor, yesPrices } from "./store";
 
 export interface Ticket {
   betId: string;
   marketId: string;
   title: string;
+  category: CategorySlug;
   outcome: string;
   side: "yes" | "no";
   amount: number;
@@ -35,7 +37,7 @@ export interface Ticket {
 
 export async function ticketFor(db: Db, betId: string, region: Region | null): Promise<Ticket | null> {
   const r = await db.execute(sql`select b.id, b.wallet, b.tier, b.market_id, b.market_title, b.outcome, b.outcome_side, b.amount::float as amount,
-      b.price::float as price, b.at, b.url, b.result, b.yes_label, b.no_label, w.pnl::float as pnl, t.won, t.lost
+      b.price::float as price, b.at, b.url, b.result, b.yes_label, b.no_label, b.category, w.pnl::float as pnl, t.won, t.lost
     from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet left join terminal.trader_records t on t.wallet = b.wallet
     where b.id = ${betId}`);
   const b = r.rows[0] as Record<string, unknown> | undefined;
@@ -48,7 +50,7 @@ export async function ticketFor(db: Db, betId: string, region: Region | null): P
   const o = openFor({ source: "polymarket", url: (b.url as string | null) ?? null, marketId, outcomeSide: side }, region, match, poly, kalshi);
   const yes = poly.get(marketId);
   return {
-    betId: String(b.id), marketId, title: String(b.market_title), outcome: side === "yes" ? names.yesLabel : names.noLabel, side,
+    betId: String(b.id), marketId, title: String(b.market_title), category: isCategory(b.category) ? b.category : "markets", outcome: side === "yes" ? names.yesLabel : names.noLabel, side,
     amount: Number(b.amount), at: new Date(b.at as string).getTime(), tier: b.tier === "millionaire" ? "millionaire" : "pro", short: shortWallet(String(b.wallet)),
     pnl: b.pnl === null || b.pnl === undefined ? null : Number(b.pnl),
     record: b.won === null || b.won === undefined ? null : { won: Number(b.won), lost: Number(b.lost) },

@@ -35,7 +35,7 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
       <div className="b-feed__top">
         <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> {misses >= 2 ? <span data-testid="feed-behind">Catching up</span> : "Live"}</span>
         {s.pulse.today > 0
-          ? <span className="b-small"><span className="b-feed__total b-num" style={{ color: "var(--ink)" }} data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires today</span>
+          ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires today</span>
           : <span className="b-small" data-testid="feed-total">No millionaire bets yet today</span>}
       </div>
       {s.bets.length ? (

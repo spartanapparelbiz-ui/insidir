@@ -6,11 +6,26 @@
  * (a desert concert, Europe at night from orbit, a rocket launch over the sea), so 13 masters are here. Slots without a
  * photo of their own use the nearest related one; FALLBACK lists them so they can be swapped when a photo lands. */
 
+import palette from "./palette.json";
+
 export type PhotoFile = "hero" | "cta" | "markets" | "politics" | "tech" | "oil" | "hurricane" | "racing" | "tennis" | "baseball" | "basketball" | "soccer" | "golf";
 
-export interface Photo { src: `/brand/${PhotoFile}.jpg`; alt: string; width: 1672; height: 941; /** Mean colour, the placeholder while it loads. */ tone: string }
+export interface Photo {
+  src: `/brand/${PhotoFile}.jpg`; alt: string; width: 1672; height: 941; /** Mean colour, the placeholder while it loads. */ tone: string;
+  /** Where its subject is (CSS object-position), so a small crop keeps it in frame. */
+  pos: string;
+  /** Its ambient colour (scripts/brand-palette.ts → lib/brand/palette.json): cards tint themselves with it. */
+  ambient: string;
+}
 
-const photo = (file: PhotoFile, alt: string, tone: string): Photo => ({ src: `/brand/${file}.jpg`, alt, width: 1672, height: 941, tone });
+/** Each photo's subject, by eye: the stadium, the hoop, the hurricane's eye, the rig, the White House, the court… */
+const POS: Record<PhotoFile, string> = {
+  hero: "50% 80%", cta: "50% 78%", markets: "60% 75%", politics: "60% 80%", tech: "70% 75%", oil: "66% 75%", hurricane: "30% 45%",
+  racing: "50% 60%", tennis: "40% 55%", baseball: "55% 75%", basketball: "60% 55%", soccer: "75% 75%", golf: "40% 55%",
+};
+const AMBIENT = palette as Record<string, string>;
+
+const photo = (file: PhotoFile, alt: string, tone: string): Photo => ({ src: `/brand/${file}.jpg`, alt, width: 1672, height: 941, tone, pos: POS[file], ambient: AMBIENT[file] ?? tone });
 
 export const PHOTOS: Record<PhotoFile, Photo> = {
   hero: photo("hero", "A misty valley at dusk, the last orange light on the horizon", "#141a2e"),

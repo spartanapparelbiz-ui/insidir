@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
 import { cents, Lines, Pill, signedDollars, TierBadge } from "@/components/brand/Bits";
 import { CopyAction } from "@/components/brand/CopyTicket";
+import { ambientOf, CategoryArt } from "@/components/brand/CategoryArt";
 import { Stage } from "@/components/brand/Stage";
 import { getViewer } from "@/lib/auth/viewer";
 import { copySizeOf } from "@/lib/copies/size";
@@ -30,7 +31,9 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
     <Frame member={member} current="board" testid="copy-ticket">
       <Stage>
         <div className="b-head"><Lines as="h1" lines={["Copy this bet."]} size={52} /></div>
-        <div className="b-glass b-pad" style={{ maxWidth: "min(100%, 560px)", margin: "0 auto", display: "grid", gap: 16 }}>
+        <div className="b-glass b-ticket" style={{ maxWidth: "min(100%, 560px)", margin: "0 auto", "--amb": ambientOf(t.category) } as React.CSSProperties}>
+          <div className="b-ticket__art"><CategoryArt slug={t.category} sizes="(max-width: 600px) 100vw, 560px" /></div>
+          <div className="b-ticket__body">
           <div style={{ display: "grid", gap: 6 }}>
             <span className="b-row__meta"><TierBadge tier={t.tier} /><span>{t.short}</span>{t.pnl !== null ? <span className="b-up">{signedDollars(t.pnl)} all-time</span> : null}</span>
             <h2 className="b-read__q" data-testid="copy-title">{t.title}</h2>
@@ -41,7 +44,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
               <div className="b-split">
                 <div><span className="b-label">They bought {t.outcome} at</span><span className="b-big b-num" data-testid="copy-their">{cents(t.theirPrice)}</span><span className="b-small">their price</span></div>
                 <div><span className="b-label">Now</span><span className="b-big b-num" data-testid="copy-now">{t.yourPrice !== null ? cents(t.yourPrice) : t.priceNow !== null ? cents(t.priceNow) : "No price"}</span>
-                  <span className="b-small">{t.open?.venue === "kalshi" ? "on Kalshi" : "on Polymarket"}{move !== null && Math.abs(move) >= 0.005 ? ` · ${move > 0 ? "up" : "down"} ${Math.round(Math.abs(move) * 100)}¢ since` : ""}</span></div>
+                  <span className="b-small">{t.open?.venue === "kalshi" ? "on Kalshi" : "on Polymarket"}{move !== null && Math.abs(move) >= 0.005 ? <> · <span className={move > 0 ? "b-move-up" : "b-move-down"}>{move > 0 ? "up" : "down"} {Math.round(Math.abs(move) * 100)}¢ since</span></> : null}</span></div>
               </div>
               {t.settled ? <p className="b-msg" data-testid="copy-settled">This market has settled: {t.settled === "won" ? `${t.outcome} won` : t.settled === "lost" ? `${t.outcome} lost` : "void"}.</p>
                 : <CopyAction betId={t.betId} open={t.open} defaultAmount={copySizeOf(viewer.user?.settings)} logged={logged} />}
@@ -53,6 +56,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
             </>
           )}
           <p className="b-small">Information, not advice. Millionaires lose bets too.</p>
+          </div>
         </div>
       </Stage>
     </Frame>
