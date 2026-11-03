@@ -159,7 +159,8 @@ describe("category map", () => {
     expect(new Set(categoryPhotos(["politics", "elections", "markets"]).map(p => p.src)).size).toBe(2); // elections' fallbacks are both taken
   });
 
-  it("the hero master is small enough to stay under 250KB as delivered", () => {
-    expect(statSync(`public${PHOTOS.hero.src}`).size).toBeLessThan(250_000);
+  // The 6K master is never sent as is: next/image delivers AVIF at the width the screen needs (73KB at 3840 wide).
+  it("the hero master (6K) stays under 1MB", () => {
+    expect(statSync(`public${PHOTOS.hero.src}`).size).toBeLessThan(1_000_000);
   });
 });
