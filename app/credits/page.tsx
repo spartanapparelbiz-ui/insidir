@@ -54,7 +54,7 @@ export default function CreditsPage() {
       </ul>
 
       <h2>Typeface</h2>
-      <p><a href="https://fonts.google.com/specimen/Plus+Jakarta+Sans" target="_blank" rel="noopener noreferrer">Plus Jakarta Sans</a> by Tokotype, <a href="https://fonts.google.com/specimen/JetBrains+Mono" target="_blank" rel="noopener noreferrer">JetBrains Mono</a> by JetBrains, and <a href="https://fonts.google.com/specimen/Schibsted+Grotesk" target="_blank" rel="noopener noreferrer">Schibsted Grotesk</a> by Schibsted Media, under the <a href="https://openfontlicense.org" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>.</p>
+      <p><a href="https://fonts.google.com/specimen/Plus+Jakarta+Sans" target="_blank" rel="noopener noreferrer">Plus Jakarta Sans</a> by Tokotype, and <a href="https://fonts.google.com/specimen/Schibsted+Grotesk" target="_blank" rel="noopener noreferrer">Schibsted Grotesk</a> by Schibsted Media, under the <a href="https://openfontlicense.org" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>.</p>
 
       <h2>Screens</h2>
       <p>The recordings of Insidir itself are ours.</p>

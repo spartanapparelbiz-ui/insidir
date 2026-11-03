@@ -1,12 +1,12 @@
 /* /board: every millionaire bet, newest first: tier and profit, market, side, size, price then → now, time; category
- * filters. Members: live, in the Desk's flow table (components/desk/Flow.tsx), each with Copy (the copy ticket). Visitors: 60 minutes late (sides locked) with the live count
+ * filters. Members: live, in the Desk's rows (components/desk/LiveRows.tsx), each with Copy (the copy ticket). Visitors: 60 minutes late (sides locked) with the live count
  * and Start for $1. */
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { Frame } from "@/components/brand/app/Frame";
 import { Lines, Pill } from "@/components/brand/Bits";
 import { LiveFeed } from "@/components/brand/LiveFeed";
-import { LiveFlow } from "@/components/desk/Flow";
+import { LiveRows } from "@/components/desk/LiveRows";
 import { PayMoments } from "@/components/brand/PayMoments";
 import { Stage } from "@/components/brand/Stage";
 import { getViewer } from "@/lib/auth/viewer";
@@ -50,9 +50,8 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
             <Pill href="/go" data-testid="board-start" data-checkout="board">Start for $1</Pill>
           </div>
         )}
-        {/* Members: the Desk's flow table, full width (wallet, market, side, size, entry → now, Δ, Copy). Visitors: the
-            delayed rows without sides. */}
-        {member ? <div className="d-root d-root--board"><LiveFlow initial={initial.bets} now={now} cats={cat ? [cat] : []} initialEdge={null} chart={false} n={40} /></div>
+        {/* Members: the Desk's rows (components/desk/Parts.tsx BetRows), live. Visitors: the delayed rows without sides. */}
+        {member ? <div className="dk-page dk-page--flush"><LiveRows initial={initial.bets} now={now} cats={cat ? [cat] : []} n={40} /></div>
           : <LiveFeed initial={initial} n={30} cats={cat ? [cat] : []} board copy={false} />}
       </Stage>
       {member ? null : <PayMoments ctx={{ count: initial.pulse.count, window: initial.pulse.window, biggest: null }} now={now} />}

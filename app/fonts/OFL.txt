@@ -95,4 +95,3 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 Plus Jakarta Sans (app/fonts/plus-jakarta-sans-latin.woff2): Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans), licensed under the SIL Open Font License, Version 1.1, as above.
 
-JetBrains Mono (app/fonts/jetbrains-mono-latin.woff2): Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono), licensed under the SIL Open Font License, Version 1.1, as above.

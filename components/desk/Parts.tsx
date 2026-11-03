@@ -1,4 +1,4 @@
-/* The Desk's parts in the redesign language (qa/design/desk-notes.md): black stage, white type, Plus Jakarta Sans on
+/* The Desk's parts (direction A, picked in PR #109) (qa/design/desk-notes.md): black stage, white type, Plus Jakarta Sans on
  * the 12/14/16/20/28/44/72 scale, 1px #1a1a1a dividers instead of cards, colour only with meaning (green up, red down,
  * violet live, one flat gold marker for $1M+), one white pill per view. Identity is text: a short address and
  * all-time profit; teams as their names with a chip in the team's colour (no logos until licensed). Server-safe. */
@@ -9,6 +9,7 @@ import type { Edge } from "@/lib/desk/edge";
 import { decidedText, decision } from "@/lib/millionaires/decided";
 import type { BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
+import { FollowLink, PingsLink } from "./Act";
 
 export const cents = (p: number | null | undefined) => (p === null || p === undefined ? "" : `${Math.round(p * 100)}¢`);
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
@@ -68,7 +69,7 @@ export function PriceChart({ edge, height = 240, compact = false }: { edge: Edge
   const pts = edge.points, now = edge.now, avg = edge.avg;
   if (pts.length < 2) {
     return (
-      <div className="dk-chart dk-chart--none" style={{ minHeight: compact ? 64 : 120 }}>
+      <div className="dk-chart dk-chart--none" style={{ minHeight: compact ? 64 : 120 }} data-testid="edge-chart" data-mode="bar">
         <p className="dk-dim">Price history isn&apos;t available from the venue right now.</p>
         <p>Their average entry <b>{cents(avg)}</b>{now !== null ? <> · now <b>{cents(now)}</b> <Delta from={avg} to={now} /></> : null}</p>
       </div>
@@ -86,7 +87,7 @@ export function PriceChart({ edge, height = 240, compact = false }: { edge: Edge
   const endY = y(now ?? pts.at(-1)!.p), avgY = y(avg), endX = x(pts.at(-1)!.t);
   const close = Math.abs(avgY - endY) < 12;
   return (
-    <figure className={`dk-chart${compact ? " dk-chart--compact" : ""}`} style={{ height }} role="img"
+    <figure className={`dk-chart${compact ? " dk-chart--compact" : ""}`} style={{ height }} role="img" data-testid="edge-chart" data-mode="chart"
       aria-label={`${edge.outcome}: millionaires bought at an average ${cents(avg)}; now ${cents(now)}`}>
       <div className="dk-plot">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
@@ -107,21 +108,21 @@ export function PriceChart({ edge, height = 240, compact = false }: { edge: Edge
 }
 
 /** Today's millionaire bets as rows: one divider between rows, nothing around a row. */
-export function BetRows({ bets, now, copy = true }: { bets: BoardBet[]; now: number; copy?: boolean }) {
+export function BetRows({ bets, now, copy = true, fresh, moved }: { bets: BoardBet[]; now: number; copy?: boolean; fresh?: ReadonlySet<string>; moved?: ReadonlyMap<string, 1 | -1> }) {
   return (
-    <ol className="dk-rows">
+    <ol className="dk-rows" data-testid="live-flow">
       <li className="dk-row dk-row--head" aria-hidden="true"><span>Time</span><span>Market and wallet</span><span>Side</span><span className="dk-r">Size</span><span className="dk-r">In → now</span><span className="dk-r">Move</span><span /></li>
       {bets.map(b => {
         const dec = decision(b);
         return (
-          <li key={b.id} className="dk-row" data-bet={b.id}>
+          <li key={b.id} className={`dk-row${fresh?.has(b.id) ? " is-new" : ""}`} data-bet={b.id} data-testid="bet-row">
             <span className="dk-dim dk-time">{ago(b.at, now)}</span>
             <span className="dk-mkt"><span className="dk-title"><MarketName title={b.title} category={b.category} /></span><Wallet short={b.short} pnl={b.pnl} tier={b.tier} /></span>
-            <span className="dk-pick">{b.outcome}</span>
+            <span className="dk-pick">{b.outcome ?? <span className="dk-dim">Members</span>}</span>
             <span className="dk-r dk-num dk-size">{dollars(b.amount)}</span>
-            <span className="dk-r dk-num dk-px">{cents(b.priceThen)} → {cents(b.priceNow)}</span>
+            <span className={`dk-r dk-num dk-px${moved?.get(b.id) === 1 ? " is-up" : moved?.get(b.id) === -1 ? " is-down" : ""}`}>{cents(b.priceThen)} → {cents(b.priceNow)}</span>
             <span className="dk-r dk-num dk-mv"><Delta from={b.priceThen} to={b.priceNow} /></span>
-            <span className="dk-r dk-act">{dec ? <span className="dk-dim">{decidedText(dec, b.outcome)}</span> : copy ? <a href={`/copy/${encodeURIComponent(b.id)}`} className="dk-link">Copy</a> : null}</span>
+            <span className="dk-r dk-act">{dec ? <span className="dk-dim" data-testid="bet-decided">{decidedText(dec, b.outcome)}</span> : copy && b.outcome ? <a href={`/copy/${encodeURIComponent(b.id)}`} className="dk-link" data-testid="bet-copy" aria-label={`Copy: ${b.outcome} in ${b.title}`}>Copy</a> : null}</span>
           </li>
         );
       })}
@@ -129,30 +130,14 @@ export function BetRows({ bets, now, copy = true }: { bets: BoardBet[]; now: num
   );
 }
 
-/** The plain frame: a text sidebar on black with one divider (no glass), a text bar on phones. */
-export function Frame({ children }: { children: ReactNode }) {
-  const nav = [["Desk", "/"], ["Election Day", "/election"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Your copies", "/copies/yours"], ["Library", "/library"], ["Account", "/settings"]];
-  return (
-    <div className="dk">
-      <nav className="dk-side" aria-label="App">
-        <a className="dk-logo" href="/">insidir</a>
-        {nav.map(([l, h], i) => <a key={h} href={h} aria-current={i === 0 ? "page" : undefined}>{l}</a>)}
-      </nav>
-      <header className="dk-top"><a className="dk-logo" href="/">insidir</a><a href="/settings" className="dk-dim">Account</a></header>
-      <main className="dk-main">{children}</main>
-      <nav className="dk-tabs" aria-label="App">{nav.filter(([l]) => ["Desk", "Board", "Wallets", "Your copies"].includes(l!)).map(([l, h], i) => <a key={h} href={h} aria-current={i === 0 ? "page" : undefined}>{l}</a>)}</nav>
-    </div>
-  );
-}
-
 /** The featured bet's three actions: one white pill (Copy at the price now), two text actions. */
-export function Actions({ bet, now }: { bet: BoardBet; now: number | null }) {
+export function Actions({ bet, now, followed = false }: { bet: BoardBet; now: number | null; followed?: boolean }) {
   const dec = decision({ ...bet, priceNow: now ?? bet.priceNow });
   return (
     <div className="dk-actions">
-      {dec ? <span className="dk-dim">{decidedText(dec, bet.outcome)}</span> : <a className="dk-pill" href={`/copy/${encodeURIComponent(bet.id)}`}>Copy at {cents(now ?? bet.priceNow)}</a>}
-      <a className="dk-link" href="/wallets">Follow this wallet</a>
-      <a className="dk-link" href="/settings#alerts">Turn on pings</a>
+      {dec ? <span className="dk-dim" data-testid="edge-decided">{decidedText(dec, bet.outcome)}</span> : <a className="dk-pill" href={`/copy/${encodeURIComponent(bet.id)}`} data-testid="edge-copy">Copy at {cents(now ?? bet.priceNow)}</a>}
+      <FollowLink wallet={bet.wallet} initial={followed} />
+      <PingsLink />
     </div>
   );
 }

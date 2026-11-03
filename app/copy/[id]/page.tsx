@@ -1,14 +1,15 @@
 /* /copy/<bet id>: the copy ticket (one-tap copy v1). A ping or a board row's "Copy" opens it: the bet, the wallet's
- * tier and record, their price against the price now, the member's amount, Open on Kalshi (US) / Polymarket, and
+ * tier and record, their price against the price now, the Desk's price chart, the member's amount, Open on Kalshi (US) / Polymarket, and
  * "I placed it" to log it. Visitors see the bet without its side and a Start for $1. Insidir never places trades. */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
-import { cents, Lines, Pill, signedDollars, TierBadge } from "@/components/brand/Bits";
+import { Pill } from "@/components/brand/Bits";
+import { cents, MarketName, PriceChart, Wallet } from "@/components/desk/Parts";
+import { edgeFor } from "@/lib/desk/edge";
+import { PolymarketClient } from "@/lib/exchanges";
 import { CopyAction } from "@/components/brand/CopyTicket";
-import { ambientOf, CategoryArt } from "@/components/brand/CategoryArt";
 import { decidedText } from "@/lib/millionaires/decided";
-import { Stage } from "@/components/brand/Stage";
 import { getViewer } from "@/lib/auth/viewer";
 import { copySizeOf } from "@/lib/copies/size";
 import { hasCopied, ticketFor } from "@/lib/copies/tickets";
@@ -19,6 +20,7 @@ import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Copy this bet", robots: { index: false } };
+let poly: PolymarketClient | null = null;
 
 export default async function CopyPage({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, viewer] = await Promise.all([params, getViewer()]);
@@ -28,38 +30,35 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
   if (!t) notFound();
   const logged = member && viewer.user ? await hasCopied(db, viewer.user.id, t.betId).catch(() => false) : false;
   const move = t.priceNow !== null ? t.priceNow - t.theirPrice : null;
+  // The same chart as the Desk: their entries on this side, the price now (lib/desk/edge.ts).
+  const edge = member ? await edgeFor(db, (poly ??= new PolymarketClient()), t.betId, now).catch(() => null) : null;
   return (
     <Frame member={member} current="board" testid="copy-ticket">
-      <Stage>
-        <div className="b-head"><Lines as="h1" lines={["Copy this bet."]} size={52} /></div>
-        <div className="b-glass b-ticket" style={{ maxWidth: "min(100%, 560px)", margin: "0 auto", "--amb": ambientOf(t.category) } as React.CSSProperties}>
-          <div className="b-ticket__art"><CategoryArt slug={t.category} sizes="(max-width: 600px) 100vw, 560px" /></div>
-          <div className="b-ticket__body">
-          <div style={{ display: "grid", gap: 6 }}>
-            <span className="b-row__meta"><TierBadge tier={t.tier} /><span>{t.short}</span>{t.pnl !== null ? <span className="b-up">{signedDollars(t.pnl)} all-time</span> : null}</span>
-            <h2 className="b-read__q" data-testid="copy-title">{t.title}</h2>
-            <span className="b-small">{dollars(t.amount)} · {agoText(t.at, now)}{t.record ? ` · record: ${t.record.won} won, ${t.record.lost} lost` : ""}</span>
-          </div>
-          {member ? (
-            <>
-              <div className="b-split">
-                <div><span className="b-label">They bought {t.outcome} at</span><span className="b-big b-num" data-testid="copy-their">{cents(t.theirPrice)}</span><span className="b-small">their price</span></div>
-                <div><span className="b-label">Now</span><span className="b-big b-num" data-testid="copy-now">{t.yourPrice !== null ? cents(t.yourPrice) : t.priceNow !== null ? cents(t.priceNow) : "No price"}</span>
-                  <span className="b-small">{t.open?.venue === "kalshi" ? "on Kalshi" : "on Polymarket"}{move !== null && Math.abs(move) >= 0.005 ? <> · <span className={move > 0 ? "b-move-up" : "b-move-down"}>{move > 0 ? "up" : "down"} {Math.round(Math.abs(move) * 100)}¢ since</span></> : null}</span></div>
-              </div>
+      <div className="dk-page dk-ticket">
+        <p className="dk-kicker">Copy this bet</p>
+        <h1 className="dk-h2" data-testid="copy-title"><MarketName title={t.title} category={t.category} /></h1>
+        <p className="dk-meta"><Wallet short={t.short} pnl={t.pnl} tier={t.tier} /> · {dollars(t.amount)} · {agoText(t.at, now)}{t.record ? ` · record: ${t.record.won} won, ${t.record.lost} lost` : ""}</p>
+        {member ? (
+          <>
+            <div className="dk-ticket__px">
+              <div><span className="dk-dim">They bought {t.outcome} at</span><span className="dk-h1x dk-num" data-testid="copy-their">{cents(t.theirPrice)}</span></div>
+              <div><span className="dk-dim">Now {t.open?.venue === "kalshi" ? "on Kalshi" : "on Polymarket"}</span><span className="dk-h1x dk-num" data-testid="copy-now">{t.yourPrice !== null ? cents(t.yourPrice) : t.priceNow !== null ? cents(t.priceNow) : "No price"}</span>
+                {move !== null && Math.abs(move) >= 0.005 ? <span className={move > 0 ? "dk-up" : "dk-down"}>{move > 0 ? "up" : "down"} {Math.round(Math.abs(move) * 100)}¢ since</span> : null}</div>
+            </div>
+            {edge ? <PriceChart edge={edge} height={200} /> : null}
+            <div className="dk-ticket__act">
               {t.decided ? <p className="b-msg" data-testid="copy-settled">{decidedText(t.decided, t.outcome)}. Nothing left to copy.</p>
                 : <CopyAction betId={t.betId} open={t.open} defaultAmount={copySizeOf(viewer.user?.settings)} logged={logged} />}
-            </>
-          ) : (
-            <>
-              <button type="button" className="b-lockrow" data-locked="copy"><span className="b-label">Their side<span className="b-sr">: which side they took and the copy ticket are for members. Start for $1.</span></span><span className="b-blur" aria-hidden="true">Xxxxx at 00¢</span><span className="b-lock" aria-hidden="true">Locked</span></button>
-              <div className="b-ctas"><Pill href="/go" data-testid="copy-start" data-checkout="copy">Start for $1</Pill></div>
-            </>
-          )}
-          <p className="b-small">Information, not advice. Millionaires lose bets too.</p>
-          </div>
-        </div>
-      </Stage>
+            </div>
+          </>
+        ) : (
+          <>
+            <button type="button" className="b-lockrow" data-locked="copy"><span className="b-label">Their side<span className="b-sr">: which side they took and the copy ticket are for members. Start for $1.</span></span><span className="b-blur" aria-hidden="true">Xxxxx at 00¢</span><span className="b-lock" aria-hidden="true">Locked</span></button>
+            <div className="b-ctas"><Pill href="/go" data-testid="copy-start" data-checkout="copy">Start for $1</Pill></div>
+          </>
+        )}
+        <p className="dk-fine">Information, not advice. Millionaires lose bets too.</p>
+      </div>
     </Frame>
   );
 }

@@ -24,7 +24,7 @@ export function CopyAction({ betId, open, defaultAmount, logged: was }: { betId:
       <span className="b-small" id="copy-amount-hint">Your default is in Account. Insidir never places a bet or holds money: you buy it on {open?.venue === "kalshi" ? "Kalshi" : "Polymarket"}.</span>
       {open ? <a className="b-btn b-btn-lg b-primary" href={open.href} target="_blank" rel="noopener noreferrer" data-testid="copy-open">Open on {open.venue === "kalshi" ? "Kalshi" : "Polymarket"}<Arrow /></a>
         : <p className="b-msg" data-testid="copy-view-only">Not on Kalshi yet. In the US we link to Kalshi only, so this one is view-only.</p>}
-      <button type="button" className="b-btn b-btn-lg b-ghost" onClick={() => void log()} disabled={state === "saving" || !Number(amount)} data-testid="copy-placed">{state === "saving" ? "Saving…" : "I placed it"}</button>
+      <button type="button" className="dk-link" onClick={() => void log()} disabled={state === "saving" || !Number(amount)} data-testid="copy-placed">{state === "saving" ? "Saving…" : "I placed it"}</button>
       {msg ? <p className="b-msg" role="alert">{msg}</p> : null}
     </div>
   );

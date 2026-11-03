@@ -130,16 +130,14 @@ describe("design system", () => {
     }
   });
 
-  it("fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's, JetBrains Mono for the Desk's figures (and nothing else)", () => {
+  it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and no monospace)", () => {
     const layout = read("app/layout.tsx");
     expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
     expect(read("lib/brand/fonts.ts")).toMatch(/plus-jakarta-sans-latin\.woff2/);
     expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
-    // JetBrains Mono: self-hosted, figures only (the Desk's tabular numbers), as --b-mono.
-    expect(read("lib/brand/fonts.ts")).toMatch(/jetbrains-mono-latin\.woff2[^\n]*--b-mono/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
       const src = read(f);
-      expect(src, f).not.toMatch(/General Sans|fontshare|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
+      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
     }
   });
 

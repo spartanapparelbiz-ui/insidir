@@ -1,8 +1,7 @@
-/* One millionaire bet as a glass row: its team mark (teams' colours, a D/R disc, or a category tile; no scenery photo), the wallet's profit tier and profit, the
+/* One millionaire bet as a row: the market's name (teams with a chip in their colour; no photo, no logo), the wallet's profit tier and profit, the
  * market, the side (locked for visitors), size and time, price then → now when known. Safe in server and client
  * components. */
-import { ambientOf } from "./CategoryArt";
-import { TeamMark } from "@/components/desk/Marks";
+import { MarketName } from "@/components/desk/Parts";
 import { decidedText, decision } from "@/lib/millionaires/decided";
 import type { BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
@@ -22,13 +21,13 @@ export const GOLD_MIN = 50_000;
 export function BetRow({ bet, now, href, className = "", settle, copyHref }: { bet: BoardBet; now: number; href?: string; className?: string; settle?: number;
   /** Members: the copy ticket for this bet. */
   copyHref?: string }) {
-  const title = href ? <a className="b-row__link" href={href}>{bet.title}</a> : bet.title;
-  // Each row picks up its photo's colour; a Millionaire's $50K+ bet is gold.
+  const name = <MarketName title={bet.title} category={bet.category} />;
+  const title = href ? <a className="b-row__link" href={href}>{name}</a> : name;
+  // A Millionaire's $50K+ bet is gold.
   const gold = bet.tier === "millionaire" && bet.amount >= GOLD_MIN;
-  const style = { "--amb": ambientOf(bet.category), ...(settle !== undefined ? { "--d": `${settle}s` } : {}) } as React.CSSProperties;
+  const style = (settle !== undefined ? { "--d": `${settle}s` } : {}) as React.CSSProperties;
   return (
-    <div className={`b-row b-row--art ${className}`} data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier} style={style} {...(settle !== undefined ? { "data-m": "settle" } : {})}>
-      <span className="b-row__thumb b-row__thumb--mark" aria-hidden="true"><TeamMark title={bet.title} category={bet.category} outcome={bet.outcome} size={44} /></span>
+    <div className={`b-row b-row--plain ${className}`} data-testid="bet-row" data-bet={bet.id} data-tier={bet.tier} style={style} {...(settle !== undefined ? { "data-m": "settle" } : {})}>
       <span className="b-row__main">
         <span className="b-row__title">{title}</span>
         <span className="b-row__meta">

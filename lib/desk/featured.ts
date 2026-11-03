@@ -1,6 +1,5 @@
-/* Data for the three Desk directions (/design/desk-a|b|c, dev only): the same real production values the Desk reads
- * (lib/desk/data.ts), plus the featured bet (today's biggest that is still live: not decided) with its price history
- * (lib/desk/edge.ts), and the next two for the secondary stories. Server only. */
+/* The Desk's data (lib/desk/data.ts) plus the featured bet (today's biggest that is still live: not decided) with its price history
+ * (lib/desk/edge.ts). Server only. */
 import type { Db } from "@/lib/db";
 import { deskData, type Desk } from "@/lib/desk/data";
 import { edgeFor, type Edge } from "@/lib/desk/edge";
@@ -14,7 +13,7 @@ export interface DeskDesign extends Desk { featured: Featured[] }
 let poly: PolymarketClient | null = null;
 
 export async function deskDesign(db: Db, userId: string, settings: { alertPush?: boolean }, now: number): Promise<DeskDesign> {
-  const d = await deskData(db, userId, settings, now, true);
+  const d = await deskData(db, userId, settings, now, false);
   // One featured bet per market: the biggest live bet in each, biggest first.
   const seen = new Set<string>(), picks: BoardBet[] = [];
   for (const b of [...d.flow].filter(b => b.at >= now - 86_400_000 && !decision(b) && b.priceNow !== null).sort((a, b) => b.amount - a.amount)) {

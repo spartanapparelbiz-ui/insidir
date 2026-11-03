@@ -1,7 +1,7 @@
 /* The home page.
  *   Visitors  the landing: a scroll of stages in the brand's language (components/brand/landing/Landing.tsx).
- *   Members   the Desk (components/desk/Desk.tsx): the tape, today's KPIs, the live flow of millionaire bets with
- *             EdgeChart, their desk (pings, follows, copies), the wallets active today and, on Election Day, the races.
+ *   Members   the Desk (components/desk/Desk.tsx): today's biggest live millionaire bet with its price chart and the
+ *             one action, then today's millionaire bets, live.
  * Everything else Insidir has stays live by URL. */
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -13,14 +13,10 @@ import { isPaid } from "@/lib/plans";
 import { cleanRef, REF_COOKIE } from "@/lib/home/ref";
 import { Landing } from "@/components/brand/landing/Landing";
 import { Desk } from "@/components/desk/Desk";
-import { deskData } from "@/lib/desk/data";
-import { edgeFor } from "@/lib/desk/edge";
-import { electionDay } from "@/lib/brand/pulse";
-import { PolymarketClient } from "@/lib/exchanges";
+import { deskDesign } from "@/lib/desk/featured";
 import { emptyLanding, landingFor } from "@/lib/brand/landing";
 
 export const dynamic = "force-dynamic";
-let poly: PolymarketClient | null = null;
 
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const now = Date.now();
@@ -29,13 +25,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   if (member) {
     const db = hasDatabase() ? getDb() : null, u = viewer.user;
     if (!db || !u) return <Landing d={emptyLanding(now)} />;
-    const d = await deskData(db, u.id, u.settings, now, electionDay(now));
-    // EdgeChart opens on today's biggest bet in the flow that's still live (priced 2–98¢), else today's biggest, else
-    // the newest.
-    const day = d.flow.filter(b => b.at >= now - 86_400_000).sort((a, b) => b.amount - a.amount);
-    const big = day.find(b => b.priceNow !== null && b.priceNow > 0.02 && b.priceNow < 0.98) ?? day[0] ?? d.flow[0];
-    const edge = big ? await edgeFor(db, (poly ??= new PolymarketClient()), big.id, now).catch(() => null) : null;
-    return <Desk d={d} edge={edge} search={sp.search === "1"} />;
+    const d = await deskDesign(db, u.id, u.settings, now);
+    return <Desk d={d} search={sp.search === "1"} />;
   }
   const ref = cleanRef(typeof sp.ref === "string" ? sp.ref : null) ?? cleanRef(jar.get(REF_COOKIE)?.value);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;

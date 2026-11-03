@@ -200,33 +200,31 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
 });
 
-test("a member's Desk: the tape, the flow with sides, EdgeChart on a click, their desk, the wallets active today, search inline", async ({ page, context }) => {
+test("a member's Desk: today's biggest live bet with its chart and one white pill, then today's millionaire bets with sides, search inline", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
   const home = page.getByTestId("member-home");
   await expect(home.getByRole("heading", { level: 1 })).toHaveText("Desk");
-  await expect(page.getByTestId("desk-tape")).toBeVisible();
-  // The flow: the newest millionaire bets with sides (members), newest first: Chiefs (8 min), the funding bill (15), Player A (25).
+  // Featured: today's biggest live bet, $85K on the Chiefs (now 51¢); every millionaire entry on that side, $85K + $20K,
+  // at an average 47¢.
+  const feat = page.getByTestId("desk-featured");
+  await expect(feat).toHaveAttribute("data-bet", "e2e:mb4");
+  await expect(page.getByTestId("edge-head")).toContainText("51¢");
+  await expect(page.getByTestId("edge-head")).toContainText("since their average entry of 47¢");
+  await expect(feat).toContainText("$105K");
+  await expect(page.getByTestId("edge-chart").first()).toBeVisible();
+  // One white pill on the view: Copy at the price now.
+  await expect(page.locator(".dk-pill:visible")).toHaveCount(1);
+  await expect(page.locator(".dk-pill:visible")).toHaveText("Copy at 51¢");
+  await expect(page.locator(".dk-pill:visible")).toHaveAttribute("href", "/copy/e2e%3Amb4");
+  // The rows: newest first with sides (members): Chiefs (8 min), the funding bill (15), Player A (25).
   const flow = page.getByTestId("live-flow");
   await expect(flow.getByTestId("bet-row").first()).toHaveAttribute("data-bet", "e2e:mb4");
-  await expect(flow.locator(".d-side").first()).toHaveText("Chiefs");
+  await expect(flow.getByTestId("bet-row").first()).toContainText("Chiefs");
   await expect(flow.getByTestId("bet-copy").first()).toHaveAttribute("href", "/copy/e2e%3Amb4");
-  // EdgeChart opens on today's biggest ($85K on the Chiefs): every millionaire entry on that side, $85K + $20K, at an
-  // average 47¢; another row loads on a click.
-  await expect(page.getByTestId("edge-head")).toContainText("avg 47¢");
-  await expect(page.getByTestId("edge-head")).toContainText("$105K in");
-  await flow.locator('[data-bet="e2e:mb7"]').click();
-  await expect(page.getByTestId("edge-head")).toContainText("$50K in");
-  await expect(page.getByTestId("edge-head")).toContainText("62¢");
-  // Your desk: following none, so today's most active millionaire wallets with Follow.
-  await expect(page.getByTestId("your-desk")).toContainText("Following");
-  // No two wallets share an orb.
-  const orbs = await page.locator('[data-testid="live-flow"] .d-orb').evaluateAll(os => os.map(o => [o.closest("[data-bet]")?.querySelector(".d-wallet__t .d-num")?.textContent, o.getAttribute("data-orb")]));
-  const byOrb = new Map<string, Set<string>>();
-  for (const [w, o] of orbs) { if (!byOrb.has(o!)) byOrb.set(o!, new Set()); byOrb.get(o!)!.add(w!); }
-  for (const [o, ws] of byOrb) expect(ws.size, o).toBe(1);
-  // No scenery photo in any row.
-  await expect(flow.locator("img")).toHaveCount(0);
+  // Identity is text: no photos, no avatars, no logos in the rows; no monospace anywhere.
+  await expect(flow.locator("img, svg")).toHaveCount(0);
+  expect(await page.evaluate(() => [...document.querySelectorAll(".dk-page *")].some(e => /mono/i.test(getComputedStyle(e).fontFamily)))).toBe(false);
   // Search: a market in plain words comes back inline with its millionaire side.
   // (Tennis match 100 has millionaire money: $74K + $40K on Player A.)
   await page.getByTestId("desk-search").getByRole("textbox").fill("Tennis match 100");

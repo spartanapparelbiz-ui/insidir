@@ -84,9 +84,7 @@ test("the /go paywall panel and every block of a member's Desk are visible", asy
   // The Desk: every block visible at rest (no reveal left hidden).
   await page.goto("/");
   await expect(page.getByTestId("member-home")).toHaveAttribute("data-home", "desk");
-  // Today's KPIs and the leaderboard need a millionaire bet since midnight ET (the fixtures are 8–90 minutes old).
-  const today = await page.getByTestId("desk-kpis").count() > 0;
-  for (const id of ["desk-tape", "desk-search", "live-flow", "edge-panel", "your-desk", ...(today ? ["desk-kpis", "desk-leaders"] : [])]) {
+  for (const id of ["desk-featured", "edge-chart", "desk-search", "live-flow"]) {
     const el = page.getByTestId(id).first();
     await expect(el, id).toBeVisible();
     expect(await el.evaluate(e => { let o = 1; for (let x: Element | null = e; x; x = x.parentElement) o *= Number(getComputedStyle(x).opacity); return o; }), id).toBeGreaterThan(0.99);

@@ -55,43 +55,43 @@ export function CommandBar({ open: open0 = false }: { open?: boolean }) {
   }
 
   const bar = (
-    <form className="d-cmd" role="search" onSubmit={e => { e.preventDefault(); if (q.trim()) void ask({ text: q.trim() }); }} data-testid="desk-search">
+    <form className="dk-cmd" role="search" onSubmit={e => { e.preventDefault(); if (q.trim()) void ask({ text: q.trim() }); }} data-testid="desk-search">
       <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="9" cy="9" r="5" /><path d="m13 13 3.5 3.5" /></svg>
       <label className="b-sr" htmlFor="desk-q">Search a market or paste a bet link</label>
       <input id="desk-q" ref={input} value={q} onChange={e => setQ(e.target.value)} onFocus={() => setOpen(true)} placeholder="Search a market or paste a bet link" autoComplete="off" enterKeyHint="search" />
-      {busy ? <span className="d-cmd__spin" aria-label="Searching" /> : <kbd aria-hidden="true">⌘K</kbd>}
+      {busy ? <span className="dk-cmd__spin" aria-label="Searching" /> : null}
     </form>
   );
   const show = open && (res || choices || msg);
   return (
-    <div className="d-cmdwrap">
+    <div className="dk-cmdwrap">
       {bar}
       {show ? (
-        <div className="d-cmd__pop" role="dialog" aria-label="Search result" data-testid="desk-search-result">
-          {msg ? <p className="b-small" role="status">{msg}</p> : null}
+        <div className="dk-cmd__pop" role="dialog" aria-label="Search result" data-testid="desk-search-result">
+          {msg ? <p className="dk-dim dk-small" role="status">{msg}</p> : null}
           {choices ? (
-            <><p className="d-panel__h"><span>Which one?</span></p>
-              <ul className="d-choices">{choices.map(c => (
-                <li key={c.key}><button type="button" onClick={() => ask({ pick: `${c.venue}:${c.id}` })}><span>{c.title}</span>{c.yesPrice !== null ? <span className="d-num d-dim">{Math.round(c.yesPrice * 100)}¢</span> : null}</button></li>
+            <><p className="dk-kicker">Which one?</p>
+              <ul className="dk-choices">{choices.map(c => (
+                <li key={c.key}><button type="button" onClick={() => ask({ pick: `${c.venue}:${c.id}` })}><span>{c.title}</span>{c.yesPrice !== null ? <span className="dk-num dk-dim">{Math.round(c.yesPrice * 100)}¢</span> : null}</button></li>
               ))}</ul></>
           ) : null}
           {res ? (() => {
             const y = res.millionaire.yes, n = res.millionaire.no, lead = y.dollars === n.dollars ? null : y.dollars > n.dollars ? "yes" : "no";
             return (
-              <div className="d-cmdres">
-                <p className="d-cmdres__q">{res.question}</p>
-                {lead ? <p className="d-cmdres__v">Millionaires are on <b className={lead === "yes" ? "d-yes" : "d-no"}>{lead === "yes" ? res.yesLabel : res.noLabel}</b></p>
-                  : <p className="d-cmdres__v d-dim">{y.dollars ? "Millionaire money is split evenly." : "No millionaire money on this market yet."}</p>}
-                <div className="d-cmdres__sides">
+              <div className="dk-cmdres">
+                <p className="dk-cmdres__q">{res.question}</p>
+                {lead ? <p className="dk-cmdres__v">Millionaires are on <b className="dk-strong">{lead === "yes" ? res.yesLabel : res.noLabel}</b></p>
+                  : <p className="dk-cmdres__v dk-dim">{y.dollars ? "Millionaire money is split evenly." : "No millionaire money on this market yet."}</p>}
+                <div className="dk-cmdres__sides">
                   {(["yes", "no"] as const).map(s => (
-                    <div key={s} className={`d-cmdres__side${lead === s ? " is-lead" : ""}`}>
-                      <span className={s === "yes" ? "d-yes" : "d-no"}>{s === "yes" ? res.yesLabel : res.noLabel}</span>
-                      {res.millionaire[s].dollars > 0 ? <b className="d-num">{dollars(res.millionaire[s].dollars)}</b> : <b className="d-dim">No millionaire money</b>}
-                      <span className="b-small">{[res.millionaire[s].wallets > 0 ? w(res.millionaire[s].wallets) : null, price(res.prices[s]) ? `now ${price(res.prices[s])}` : null].filter(Boolean).join(" · ")}</span>
+                    <div key={s} className={`dk-cmdres__side${lead === s ? " is-lead" : ""}`}>
+                      <span className="dk-dim">{s === "yes" ? res.yesLabel : res.noLabel}</span>
+                      {res.millionaire[s].dollars > 0 ? <b className="dk-num">{dollars(res.millionaire[s].dollars)}</b> : <b className="dk-dim">No millionaire money</b>}
+                      <span className="dk-dim dk-small">{[res.millionaire[s].wallets > 0 ? w(res.millionaire[s].wallets) : null, price(res.prices[s]) ? `now ${price(res.prices[s])}` : null].filter(Boolean).join(" · ")}</span>
                     </div>
                   ))}
                 </div>
-                <div className="d-edge__foot"><a className="d-pill d-pill--white" href={`/read/${encodeURIComponent(res.id)}`}>Full check</a><span className="b-small">Information, not advice.</span></div>
+                <div className="dk-actions"><a className="dk-link" href={`/read/${encodeURIComponent(res.id)}`}>Full check</a><span className="dk-dim dk-small">Information, not advice.</span></div>
               </div>
             );
           })() : null}

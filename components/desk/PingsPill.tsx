@@ -1,5 +1,5 @@
 "use client";
-/* The sidebar's only white button: "Turn on pings", shown while push isn't on for this device (and the browser can
+/* The sidebar's "Turn on pings" (text, so the page keeps its one white pill), shown while push isn't on for this device (and the browser can
  * do it). Once on, nothing. Renders nothing until the device has been checked, so it never flashes. */
 import { useEffect, useState } from "react";
 import { enablePush, pushState, type PushState } from "@/components/app/push";
@@ -28,7 +28,7 @@ export function PingsPill() {
     window.dispatchEvent(new Event("insidir:push"));
   };
   return (
-    <button type="button" className="b-btn b-btn-lg b-primary d-pings" onClick={tap} disabled={busy} aria-busy={busy} data-testid="side-pings">
+    <button type="button" className="b-pings" onClick={tap} disabled={busy} aria-busy={busy} data-testid="side-pings">
       {st === "error" ? "Try pings again" : "Turn on pings"}
     </button>
   );
