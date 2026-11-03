@@ -6,4 +6,8 @@ import localFont from "next/font/local";
 
 export const jakarta = localFont({ src: "../../app/fonts/plus-jakarta-sans-latin.woff2", weight: "200 800", variable: "--b-font", display: "block" });
 
-export const brandFontClasses = jakarta.variable;
+/** Figures on the Desk (prices, sizes, times): JetBrains Mono (SIL OFL), self-hosted, tabular. Not preloaded: only the
+ *  member pages use it. */
+export const mono = localFont({ src: "../../app/fonts/jetbrains-mono-latin.woff2", weight: "400 700", variable: "--b-mono", display: "swap", preload: false });
+
+export const brandFontClasses = `${jakarta.variable} ${mono.variable}`;
