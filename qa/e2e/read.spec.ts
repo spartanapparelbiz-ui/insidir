@@ -104,9 +104,11 @@ test("a visitor's free check (US rule), wallets, bets and line never sent, Share
   await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
   await expect(page).toHaveURL(/\/go\?step=unlocked/, { timeout: 25_000 });
   await page.getByTestId("go-signin").click();
-  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "follow", { timeout: 25_000 });
-  await page.getByTestId("go-next").click();
+  // Right after paying: the ping opt-in, then follow a millionaire, then back on the same check.
+  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "push", { timeout: 25_000 });
   await page.getByTestId("go-push-skip").click();
+  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "follow");
+  await page.getByTestId("go-next").click();
   await expect(page).toHaveURL(url, { timeout: 15_000 });
   await expect(page.getByTestId("read-bets")).toContainText("$90K on Player A at 52¢");
   await expect(page.getByTestId("read-wallets")).toContainText("0xe2e0…0001");
