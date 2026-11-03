@@ -10,7 +10,9 @@ import { WalletCards } from "@/components/system/WalletCards";
 import { getViewer } from "@/lib/auth/viewer";
 import { PHOTOS } from "@/lib/brand/images";
 import { getDb, hasDatabase } from "@/lib/db";
-import { walletCards, walletsInsight, type WalletCard } from "@/lib/home/data";
+import { constellation, walletCards, walletsInsight, type WalletCard } from "@/lib/home/data";
+import { midnightET } from "@/lib/millionaires/queries";
+import { Constellation } from "@/components/system/Constellation";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +22,12 @@ export default async function Wallets() {
   const viewer = await getViewer();
   if (!isPaid(viewer.plan)) redirect("/go");
   const now = Date.now();
-  const { cards, today } = hasDatabase()
-    ? await walletCards(getDb(), now, viewer.user?.id ?? null, 60).catch(e => { console.error("wallets", e instanceof Error ? e.message : e); return { cards: [] as WalletCard[], today: true }; })
+  const db = hasDatabase() ? getDb() : null;
+  const { cards, today } = db
+    ? await walletCards(db, now, viewer.user?.id ?? null, 60).catch(e => { console.error("wallets", e instanceof Error ? e.message : e); return { cards: [] as WalletCard[], today: true }; })
     : { cards: [] as WalletCard[], today: true };
+  const sky = db ? await constellation(db, today ? midnightET(now) : now - 86_400_000).catch(e => { console.error("constellation", e instanceof Error ? e.message : e); return null; }) : null;
+  const skyLine = sky?.shared ? `${sky.shared.wallets} wallets up $1M+ bet ${sky.shared.title}${sky.shared.same ? ", all on the same side" : ", on both sides"}.` : null;
   return (
     <Frame member current="wallets" testid="wallets-page">
       <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="wallets-band" labelledBy="wallets-h">
@@ -34,6 +39,13 @@ export default async function Wallets() {
           : <div className="b-center"><p className="b-empty">No millionaire wallet has bet in the last 24 hours yet.</p><div className="b-ctas"><Pill href="/board" kind="ghost">The latest bets</Pill></div></div>}
         <p className="b-small b-center">Short addresses only: Insidir never says who is behind a wallet. Information, not advice.</p>
       </Stage>
+      {sky && sky.stars.length >= 3 ? (
+        <Stage bg={{ kind: "photo", photo: PHOTOS.hurricane, dark: 0.7 }} testid="wallets-sky" labelledBy="sky-h">
+          <div className="b-head"><Insight id="sky-h" as="h2" text={skyLine} fallback={["Where the money", "meets."]} size={52} />
+            <p className="b-sub">Every millionaire wallet that bet {today ? "today" : "in the last 24 hours"}, as a constellation. Tap a star for its wallet.</p></div>
+          <Constellation data={sky} />
+        </Stage>
+      ) : null}
       <ScrollFx />
     </Frame>
   );

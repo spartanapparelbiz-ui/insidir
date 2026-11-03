@@ -68,7 +68,7 @@ describe("the homepage is the design system", () => {
     const left = files.filter(f => /className="[^"]*\bdk-/.test(readFileSync(f, "utf8")));
     expect(left).toEqual([]);
     expect(readFileSync("app/brand.css", "utf8")).not.toMatch(/\.dk-/);
-    for (const page of ["app/board/page.tsx", "app/wallets/page.tsx", "app/market/[id]/page.tsx", "app/copy/[id]/page.tsx", "app/copies/yours/page.tsx", "app/settings/page.tsx", "app/markets/page.tsx", "app/markets/[category]/page.tsx", "app/election/page.tsx"]) {
+    for (const page of ["app/board/page.tsx", "app/wallets/page.tsx", "app/market/[id]/page.tsx", "app/copy/[id]/page.tsx", "app/copies/yours/page.tsx", "app/settings/page.tsx", "app/markets/page.tsx", "app/markets/[category]/page.tsx", "app/election/page.tsx", "app/copies/page.tsx", "components/copies/MyCopies.tsx"]) {
       expect(readFileSync(page, "utf8"), page).toContain('from "@/components/system"');
     }
   });

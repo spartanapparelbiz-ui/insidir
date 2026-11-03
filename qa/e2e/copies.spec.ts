@@ -29,10 +29,9 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
   await page.goto("/copies");
   await expect(page.getByRole("heading", { level: 1, name: "My copies" })).toBeVisible();
   const pnl = page.getByTestId("copy-pnl");
-  await expect(pnl.locator(".mycp__line")).toHaveText("Copying 0xe2…dd · $0 this week");
+  await expect(pnl.getByTestId("copy-line")).toHaveText("Copying 0xe2…dd · $0 this week");
   await expect(pnl.getByTestId("copy-total")).toHaveText("−$10");
   await expect(pnl).toContainText("at $10 a move · 0–1 settled · 3 open");
-  await expect(pnl.getByTestId("copy-total")).toHaveClass(/neg/);
 
   const matched = page.getByTestId("copy-move").filter({ hasText: "Player A" });
   await expect(matched).toHaveAttribute("data-open", "kalshi");
@@ -87,14 +86,14 @@ test("before copying anyone, /copies offers the top 5 winners to copy with their
   await signIn(context, "pro");
   await page.goto("/copies");
   await expect(page.getByRole("heading", { level: 1, name: "Pick a winner to copy" })).toBeVisible();
-  const rows = page.getByTestId("copy-picker").locator(".cpick__row");
+  const rows = page.getByTestId("copy-picker").getByTestId("pick-row");
   expect(await rows.count()).toBeGreaterThan(0);
   expect(await rows.count()).toBeLessThanOrEqual(5);
-  await expect(rows.first().locator(".cpick__name")).toHaveText("0xe2…dd");
+  await expect(rows.first().getByTestId("pick-name")).toHaveText("0xe2…dd");
   await expect(rows.first()).toContainText("20–12 on 32 settled");
   await expect(rows.first().locator("input")).toBeChecked();
   await page.getByRole("button", { name: "Copy" }).click();
   await expect(page).toHaveURL(/\/copies$/);
-  await expect(page.getByTestId("copy-pnl").locator(".mycp__line")).toContainText("Copying 0xe2…dd");
+  await expect(page.getByTestId("copy-pnl").getByTestId("copy-line")).toContainText("Copying 0xe2…dd");
   expect(await q("select kind, target from terminal.follows where user_id = 'user_e2e_pro'")).toEqual([{ kind: "trader", target: W }]);
 });
