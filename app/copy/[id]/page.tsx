@@ -7,6 +7,7 @@ import { Frame } from "@/components/brand/app/Frame";
 import { cents, Lines, Pill, signedDollars, TierBadge } from "@/components/brand/Bits";
 import { CopyAction } from "@/components/brand/CopyTicket";
 import { ambientOf, CategoryArt } from "@/components/brand/CategoryArt";
+import { decidedText } from "@/lib/millionaires/decided";
 import { Stage } from "@/components/brand/Stage";
 import { getViewer } from "@/lib/auth/viewer";
 import { copySizeOf } from "@/lib/copies/size";
@@ -46,7 +47,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
                 <div><span className="b-label">Now</span><span className="b-big b-num" data-testid="copy-now">{t.yourPrice !== null ? cents(t.yourPrice) : t.priceNow !== null ? cents(t.priceNow) : "No price"}</span>
                   <span className="b-small">{t.open?.venue === "kalshi" ? "on Kalshi" : "on Polymarket"}{move !== null && Math.abs(move) >= 0.005 ? <> · <span className={move > 0 ? "b-move-up" : "b-move-down"}>{move > 0 ? "up" : "down"} {Math.round(Math.abs(move) * 100)}¢ since</span></> : null}</span></div>
               </div>
-              {t.settled ? <p className="b-msg" data-testid="copy-settled">This market has settled: {t.settled === "won" ? `${t.outcome} won` : t.settled === "lost" ? `${t.outcome} lost` : "void"}.</p>
+              {t.decided ? <p className="b-msg" data-testid="copy-settled">{decidedText(t.decided, t.outcome)}. Nothing left to copy.</p>
                 : <CopyAction betId={t.betId} open={t.open} defaultAmount={copySizeOf(viewer.user?.settings)} logged={logged} />}
             </>
           ) : (

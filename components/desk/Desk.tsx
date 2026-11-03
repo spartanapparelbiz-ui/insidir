@@ -64,7 +64,7 @@ export function Desk({ d, edge, search }: { d: Data; edge: Edge | null; search: 
         <header className="d-top">
           <div className="d-top__id">
             <h1 className="d-title">Desk</h1>
-            <LivePulse updatedAt={d.updatedAt} now={d.now} />
+            <LivePulse updatedAt={d.updatedAt} polledAt={d.polledAt} now={d.now} />
             <EtClock now={d.now} />
           </div>
           <KpiRow kpis={d.kpis} />

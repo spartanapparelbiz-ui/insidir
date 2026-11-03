@@ -33,9 +33,10 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
           <div className="b-head"><Lines as="h1" lines={["The board."]} size={56} /><p className="b-sub" data-m="lift">Every bet of $5K+ from wallets that made $1M+, live.</p></div>
           {/* Today's live numbers (read-only, the pulse): the money in gold, the words beside it. */}
           <div className="b-stats" data-testid="board-stats">
-            <div className="b-stat"><span className="b-stat__n b-num">{initial.pulse.sinceMidnight > 0 ? dollars(initial.pulse.sinceMidnight) : "None yet"}</span><span className="b-small">bet by millionaires today</span></div>
-            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.countToday}</span><span className="b-small">millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today</span></div>
-            <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.millionaires}</span><span className="b-small">wallets up $1M+ watched</span></div>
+            {/* Only figures that aren't zero: a stat that reads 0 says nothing. */}
+            {initial.pulse.sinceMidnight > 0 ? <div className="b-stat"><span className="b-stat__n b-num">{dollars(initial.pulse.sinceMidnight)}</span><span className="b-small">bet by millionaires today</span></div> : null}
+            {initial.pulse.countToday > 0 ? <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.countToday}</span><span className="b-small">millionaire {initial.pulse.countToday === 1 ? "bet" : "bets"} today</span></div> : null}
+            {initial.pulse.millionaires > 0 ? <div className="b-stat b-stat--plain"><span className="b-stat__n b-num">{initial.pulse.millionaires}</span><span className="b-small">{initial.pulse.millionaires === 1 ? "wallet" : "wallets"} up $1M+ watched</span></div> : null}
           </div>
         </div>
         <div className="b-chips" style={{ marginBottom: 16 }}>

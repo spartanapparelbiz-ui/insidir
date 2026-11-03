@@ -17,7 +17,9 @@ const HOUR = 3_600_000;
 export interface Kpi { key: "money" | "bets" | "wallets" | "biggest"; value: number; series: number[]; label: string; detail?: string }
 export interface Leader { wallet: string; short: string; pnl: number | null; todayDollars: number; todayBets: number; biggest: { title: string; dollars: number; category: CategorySlug } | null; followed: boolean }
 export interface YourDesk { pushOn: boolean; devices: number; following: number; copies: { open: number; settled: number; centsSince: number | null } }
-export interface Desk { now: number; kpis: Kpi[]; flow: BoardBet[]; tape: BoardBet[]; leaders: Leader[]; election: ElectionBoard | null; desk: YourDesk; updatedAt: number | null }
+export interface Desk { now: number; kpis: Kpi[]; flow: BoardBet[]; tape: BoardBet[]; leaders: Leader[]; election: ElectionBoard | null; desk: YourDesk; updatedAt: number | null;
+  /** The worker's last good poll of Polymarket (worker_heartbeats moves:polymarket): Live means within 5 minutes. */
+  polledAt: number | null }
 
 /** Today's KPIs with hourly series (hours since midnight ET, the current one last). A KPI with no data is left out. */
 export async function kpis(db: Db, now: number): Promise<Kpi[]> {
@@ -72,13 +74,14 @@ export async function yourDesk(db: Db, userId: string, settings: { alertPush?: b
 
 export async function deskData(db: Db, userId: string, settings: { alertPush?: boolean }, now: number, election: boolean): Promise<Desk> {
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("desk", e instanceof Error ? e.message : e); return d; });
-  const [k, flow, ls, el, desk, last] = await Promise.all([
+  const [k, flow, ls, el, desk, last, polled] = await Promise.all([
     safe(kpis(db, now), [] as Kpi[]),
     safe(recentBets(db, { now, limit: 40, member: true, tier: "millionaire" }), [] as BoardBet[]),
     safe(leaders(db, now, userId), [] as Leader[]),
     election ? safe(electionBoard(db, now, true), null) : Promise.resolve(null),
     safe(yourDesk(db, userId, settings), { pushOn: false, devices: 0, following: 0, copies: { open: 0, settled: 0, centsSince: null } }),
     safe(db.execute(sql`select max(last_at) as at from terminal.millionaire_bets`).then(r => (r.rows[0] as { at: string | null }).at), null),
+    safe(db.execute(sql`select last_ok_at as at from terminal.worker_heartbeats where job = 'moves:polymarket'`).then(r => (r.rows[0] as { at: string | null } | undefined)?.at ?? null), null),
   ]);
-  return { now, kpis: k, flow, tape: flow.slice(0, 20), leaders: ls, election: el, desk, updatedAt: last ? new Date(last).getTime() : null };
+  return { now, kpis: k, flow, tape: flow.slice(0, 20), leaders: ls, election: el, desk, updatedAt: last ? new Date(last).getTime() : null, polledAt: polled ? new Date(polled).getTime() : null };
 }

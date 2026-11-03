@@ -1,4 +1,5 @@
 "use client";
+import { decision } from "@/lib/millionaires/decided";
 /* Real millionaire bets streaming in (/api/millionaires/live every 15 s while the tab is visible); a new one settles in
  * at the top. A counter on top: what millionaire wallets bet today. Visitors get every bet live with the side removed
  * on the server (a lock that opens the paywall). The server renders the first list. */
@@ -42,7 +43,7 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
         <ul className="b-rows" data-testid="feed-rows" aria-live="polite">
           {s.bets.map((b, i) => (
             <li key={b.id}>
-              <BetRow bet={b} now={s.now} href={links ? `/read/open?pick=polymarket:${b.marketId}` : undefined} copyHref={copy ? `/copy/${encodeURIComponent(b.id)}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
+              <BetRow bet={b} now={s.now} href={links ? `/read/open?pick=polymarket:${b.marketId}` : undefined} copyHref={copy && !decision(b) ? `/copy/${encodeURIComponent(b.id)}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
                 settle={settle && first.current.has(b.id) ? 0.6 + i * 0.07 : undefined} />
             </li>
           ))}

@@ -14,6 +14,7 @@ import type { Edge } from "@/lib/desk/edge";
 import type { BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
 import { TeamMark, WalletOrb } from "./Marks";
+import { decidedText, decision } from "@/lib/millionaires/decided";
 
 const c = (p: number | null | undefined) => (p === null || p === undefined ? "" : `${Math.round(p * 100)}¢`);
 const ET = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
@@ -26,11 +27,12 @@ export function EdgeChart({ edge, loading }: { edge: Edge | null; loading?: bool
   if (!edge) return <div className="d-edge d-edge--empty" aria-busy={loading}>{loading ? <span className="b-skel__line" style={{ height: 180 }} /> : null}</div>;
   const W = 460, H = 210, pad = { l: 8, r: 52, t: 14, b: 22 };
   const pts = edge.points, last = edge.now, avg = edge.avg;
+  const dec = decision({ result: edge.result, closed: edge.closed, priceNow: last });
   const up = last !== null && last >= avg, delta = last === null ? null : Math.round((last - avg) * 100);
   const head = <p className="d-edge__head" data-testid="edge-head">Millionaires in at avg <b className="d-num">{c(avg)}</b>{last !== null ? <> · now <b className="d-num">{c(last)}</b> <b className={`d-num ${up ? "d-up" : "d-down"}`}>{up ? "▲" : "▼"}{Math.abs(delta ?? 0)}¢</b></> : null} · <b className="d-num">{dollars(edge.total)}</b> in</p>;
   const foot = (
     <div className="d-edge__foot">
-      {last !== null && last > 0.01 && last < 0.99 ? <a className="d-pill d-pill--white" href={`/copy/${encodeURIComponent(edge.betId)}`} data-testid="edge-copy">Copy at {c(last)}</a> : last !== null ? <span className="b-small">Priced as decided: nothing left to copy.</span> : null}
+      {dec ? <span className="d-decided" data-testid="edge-decided">{decidedText(dec, edge.outcome)}</span> : last !== null ? <a className="d-pill d-pill--white" href={`/copy/${encodeURIComponent(edge.betId)}`} data-testid="edge-copy">Copy at {c(last)}</a> : null}
       <span className="b-small">Information, not advice.</span>
     </div>
   );
@@ -79,6 +81,7 @@ export function EdgeChart({ edge, loading }: { edge: Edge | null; loading?: bool
 function FlowRow({ b, now, sel, onPick, fresh, moved, copy }: { b: BoardBet; now: number; sel: boolean; onPick: (b: BoardBet) => void; fresh: boolean; moved: 1 | -1 | 0; copy: boolean }) {
   const d = b.priceNow !== null && b.priceThen !== null ? Math.round((b.priceNow - b.priceThen) * 100) : null;
   const gold = b.tier === "millionaire" && b.amount >= 50_000;
+  const dec = decision(b);
   return (
     <tr className={`d-row${sel ? " is-sel" : ""}${fresh ? " is-new" : ""}`} data-testid="bet-row" data-bet={b.id} aria-selected={sel} onClick={() => onPick(b)}
       tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(b); } }}>
@@ -90,7 +93,7 @@ function FlowRow({ b, now, sel, onPick, fresh, moved, copy }: { b: BoardBet; now
       <td className="d-num d-r">{c(b.priceThen)}</td>
       <td className={`d-num d-r${moved > 0 ? " d-flash-up" : moved < 0 ? " d-flash-down" : ""}`}>{c(b.priceNow)}</td>
       <td className={`d-num d-r ${d === null ? "" : d > 0 ? "d-up" : d < 0 ? "d-down" : "d-dim"}`}>{d === null ? "" : d === 0 ? "0¢" : `${d > 0 ? "▲" : "▼"}${Math.abs(d)}¢`}</td>
-      <td className="d-r">{copy ? <a className="d-pill d-pill--white d-copy" href={`/copy/${encodeURIComponent(b.id)}`} onClick={e => e.stopPropagation()} data-testid="bet-copy" aria-label={`Copy: ${b.outcome ?? ""} in ${b.title}`}>Copy</a> : null}</td>
+      <td className="d-r">{dec ? <span className="d-decided" data-testid="bet-decided">{decidedText(dec, b.outcome)}</span> : copy ? <a className="d-pill d-pill--white d-copy" href={`/copy/${encodeURIComponent(b.id)}`} onClick={e => e.stopPropagation()} data-testid="bet-copy" aria-label={`Copy: ${b.outcome ?? ""} in ${b.title}`}>Copy</a> : null}</td>
     </tr>
   );
 }

@@ -911,3 +911,6 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 }
 .b-row--art .b-row__thumb--mark { display: flex; align-items: center; justify-content: center; }
 .d-root--board { display: block; }
+.d-decided { font-size: 12.5px; color: var(--dim); white-space: nowrap; }
+.d-pulse { display: grid; gap: 1px; font-size: 12.5px; }
+.d-live--off i { background: var(--dim); animation: none; }

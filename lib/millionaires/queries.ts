@@ -35,6 +35,8 @@ export interface BoardBet {
   priceThen: number | null;
   priceNow: number | null;
   closed: boolean;
+  /** Settled: "won" / "lost" / "void" for their side; null while open (lib/millionaires/decided.ts reads both). */
+  result: "won" | "lost" | "void" | null;
   at: number;
   url: string | null;
 }
@@ -52,7 +54,7 @@ function toBet(r: Row, member: boolean): BoardBet {
     category: isCategory(cat) ? cat : "world", marketId: String(r.market_id), title: String(r.market_title), event: String(r.event_title),
     pnl: r.pnl === null || r.pnl === undefined ? null : n(r.pnl),
     outcome: String(r.outcome), side, amount: n(r.amount), priceThen: n(r.price), priceNow: yes === null ? null : side === "no" ? 1 - yes : yes,
-    closed: Boolean(r.closed), at: t(r.at), url: (r.url as string | null) ?? null,
+    closed: Boolean(r.closed), result: r.result === "won" || r.result === "lost" || r.result === "void" ? r.result : null, at: t(r.at), url: (r.url as string | null) ?? null,
   };
 }
 

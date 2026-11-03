@@ -228,9 +228,11 @@ test("a member's Desk: the tape, the flow with sides, EdgeChart on a click, thei
   // No scenery photo in any row.
   await expect(flow.locator("img")).toHaveCount(0);
   // Search: a market in plain words comes back inline with its millionaire side.
-  await page.getByTestId("desk-search").getByRole("textbox").fill("Chiefs vs. Bills");
+  // (Tennis match 100 has millionaire money: $74K + $40K on Player A.)
+  await page.getByTestId("desk-search").getByRole("textbox").fill("Tennis match 100");
   await page.getByTestId("desk-search").getByRole("textbox").press("Enter");
-  await expect(page.getByTestId("desk-search-result")).toContainText("Millionaires are on", { timeout: 10_000 });
+  await expect(page.getByTestId("desk-search-result")).toContainText("Millionaires are on Player A", { timeout: 10_000 });
+  await expect(page.getByTestId("desk-search-result")).not.toContainText("$0");
   await page.screenshot({ path: shotName("brand-desk", page) });
   await noHorizontalScroll(page);
 });

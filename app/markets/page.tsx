@@ -31,7 +31,7 @@ export default async function Markets() {
             const l = by.get(c.slug);
             return (
               <a key={c.slug} className="b-ccard" href={`/markets/${c.slug}`} data-testid="category-card" data-m="settle" style={{ "--d": `${0.4 + i * 0.04}s` } as CSSProperties}>
-                <span className="b-ccard__img"><Image src={photos[i]!.src} alt="" fill sizes="(max-width: 552px) 50vw, (max-width: 1160px) 33vw, 300px" quality={90} /></span>
+                <span className="b-ccard__img"><Image src={photos[i]!.src} alt="" fill sizes="(max-width: 552px) 50vw, (max-width: 1160px) 33vw, 300px" quality={90} priority={i < 4} /></span>
                 <span className="b-ccard__txt">
                   <h2 className="b-ccard__name">{c.name}</h2>
                   <span className="b-small" style={{ color: "var(--ink-muted)" }}>{l ? (l.millionaire ? `${dollars(l.millionaire)} millionaire money ${when}` : `${dollars(l.pro)} Pro money ${when}`) : c.blurb}</span>

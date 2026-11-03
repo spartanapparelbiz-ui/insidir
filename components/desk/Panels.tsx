@@ -56,7 +56,7 @@ export function YourDesk({ desk, suggest }: { desk: Desk; suggest: Leader[] }) {
         </li>
         <li>
           <span className="d-desk__l">Following</span>
-          <a className="d-num" href="/wallets">{plural(desk.following, "wallet")}</a>
+          <a className={desk.following ? "d-num" : undefined} href="/wallets">{desk.following ? plural(desk.following, "wallet") : "Not following anyone yet"}</a>
         </li>
         {desk.following === 0 && suggest.length ? (
           <li className="d-desk__sug">
@@ -69,7 +69,7 @@ export function YourDesk({ desk, suggest }: { desk: Desk; suggest: Leader[] }) {
         ) : null}
         <li>
           <span className="d-desk__l">Your copies</span>
-          <a href="/copies/yours" className="d-num">{c.open ? plural(c.open, "open") : c.settled ? `${plural(c.settled, "settled")}` : "None yet"}
+          <a href="/copies/yours" className="d-num">{c.open ? plural(c.open, "open") : c.settled ? `${plural(c.settled, "settled")}` : "Copy a bet to track it"}
             {c.open && c.centsSince !== null ? <b className={c.centsSince > 0 ? "d-up" : c.centsSince < 0 ? "d-down" : "d-dim"}> {c.centsSince > 0 ? "+" : c.centsSince < 0 ? "−" : ""}{Math.abs(c.centsSince)}¢ since copying</b> : null}</a>
         </li>
       </ul>

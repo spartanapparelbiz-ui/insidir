@@ -86,8 +86,8 @@ export function CommandBar({ open: open0 = false }: { open?: boolean }) {
                   {(["yes", "no"] as const).map(s => (
                     <div key={s} className={`d-cmdres__side${lead === s ? " is-lead" : ""}`}>
                       <span className={s === "yes" ? "d-yes" : "d-no"}>{s === "yes" ? res.yesLabel : res.noLabel}</span>
-                      <b className="d-num">{dollars(res.millionaire[s].dollars)}</b>
-                      <span className="b-small">{w(res.millionaire[s].wallets)}{price(res.prices[s]) ? ` · now ${price(res.prices[s])}` : ""}</span>
+                      {res.millionaire[s].dollars > 0 ? <b className="d-num">{dollars(res.millionaire[s].dollars)}</b> : <b className="d-dim">No millionaire money</b>}
+                      <span className="b-small">{[res.millionaire[s].wallets > 0 ? w(res.millionaire[s].wallets) : null, price(res.prices[s]) ? `now ${price(res.prices[s])}` : null].filter(Boolean).join(" · ")}</span>
                     </div>
                   ))}
                 </div>

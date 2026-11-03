@@ -3,6 +3,7 @@
  * components. */
 import { ambientOf } from "./CategoryArt";
 import { TeamMark } from "@/components/desk/Marks";
+import { decidedText, decision } from "@/lib/millionaires/decided";
 import type { BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
 import { PriceMove, Side, signedDollars, TierBadge } from "./Bits";
@@ -40,6 +41,7 @@ export function BetRow({ bet, now, href, className = "", settle, copyHref }: { b
       <span className="b-row__money">
         <span className={`b-row__size b-num${gold ? " b-gold" : ""}`}>{dollars(bet.amount)}</span>
         <span className="b-small">{agoShort(bet.at, now)}</span>
+        {bet.outcome && decision(bet) ? <span className="b-small" data-testid="bet-decided">{decidedText(decision(bet)!, bet.outcome)}</span> : null}
         {copyHref ? <a className="b-btn b-panel-pill b-copy" href={copyHref} data-testid="bet-copy" aria-label={`Copy this bet: ${bet.title}`}>Copy</a> : null}
       </span>
     </div>

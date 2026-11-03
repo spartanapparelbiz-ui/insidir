@@ -46,7 +46,7 @@ export function Shell({ current, children }: { current: Tab; children: ReactNode
       <header className="b-topbar"><Logo /><a className="b-btn b-panel-pill" href="/settings">Account</a></header>
       <div className="b-main">{children}<BrandFoot inline /></div>
       <nav className="b-tabbar b-glass" aria-label="App">
-        {NAV.slice(0, 2).map(([k, label, href]) => <a key={k} href={href} aria-current={current === k ? "page" : undefined}><Icon name={k} />{label}</a>)}
+        {NAV.filter(([k]) => k === "home" || k === "election").map(([k, label, href]) => <a key={k} href={href} aria-current={current === k ? "page" : undefined}><Icon name={k} />{label}</a>)}
         <a className="b-tab-read" href={SEARCH_HREF} aria-label="Search a market or paste a bet link" data-testid="tab-search"><Icon name="check" /></a>
         {NAV.filter(([k]) => k === "board" || k === "wallets").map(([k, label, href]) => <a key={k} href={href} aria-current={current === k ? "page" : undefined}><Icon name={k} />{label}</a>)}
       </nav>

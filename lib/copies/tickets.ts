@@ -11,6 +11,7 @@ import { outcomeNames } from "@/lib/millionaires/queries";
 import type { Region } from "@/lib/types";
 import { isCategory, type CategorySlug } from "@/lib/brand/categories";
 import { kalshiMatchesFull, openFor, yesPrices } from "./store";
+import { decision, type Decision } from "@/lib/millionaires/decided";
 
 export interface Ticket {
   betId: string;
@@ -33,12 +34,15 @@ export interface Ticket {
   open: { venue: "kalshi" | "polymarket"; href: string } | null;
   yourPrice: number | null;
   settled: "won" | "lost" | "void" | null;
+  /** Settled, closed, or priced 97¢+/3¢- (lib/millionaires/decided.ts): no copy. */
+  decided: Decision | null;
 }
 
 export async function ticketFor(db: Db, betId: string, region: Region | null): Promise<Ticket | null> {
   const r = await db.execute(sql`select b.id, b.wallet, b.tier, b.market_id, b.market_title, b.outcome, b.outcome_side, b.amount::float as amount,
-      b.price::float as price, b.at, b.url, b.result, b.yes_label, b.no_label, b.category, w.pnl::float as pnl, t.won, t.lost
+      b.price::float as price, b.at, b.url, b.result, b.yes_label, b.no_label, b.category, w.pnl::float as pnl, t.won, t.lost, coalesce(i.closed, false) as closed
     from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet left join terminal.trader_records t on t.wallet = b.wallet
+    left join terminal.market_info i on i.source = 'polymarket' and i.market_id = b.market_id
     where b.id = ${betId}`);
   const b = r.rows[0] as Record<string, unknown> | undefined;
   if (!b) return null;
@@ -56,6 +60,7 @@ export async function ticketFor(db: Db, betId: string, region: Region | null): P
     record: b.won === null || b.won === undefined ? null : { won: Number(b.won), lost: Number(b.lost) },
     theirPrice: Number(b.price), priceNow: yes === undefined ? null : side === "yes" ? yes : 1 - yes,
     open: o.open, yourPrice: o.yourPrice, settled: (b.result as Ticket["settled"]) ?? null,
+    decided: decision({ result: (b.result as string | null) ?? null, closed: Boolean(b.closed), priceNow: yes === undefined ? null : side === "yes" ? yes : 1 - yes }),
   };
 }
 
@@ -65,6 +70,7 @@ export const MIN_COPY = 1, MAX_COPY = 100_000;
  *  else the wallet's). Once per member and bet; a settled bet can't be logged. */
 export async function logCopy(db: Db, userId: string, t: Ticket, amount: number): Promise<{ ok: true; id: number } | { ok: false; error: string }> {
   if (t.settled) return { ok: false, error: "That market has settled." };
+  if (t.decided) return { ok: false, error: "That market is decided: nothing left to copy." };
   if (!Number.isFinite(amount) || amount < MIN_COPY || amount > MAX_COPY) return { ok: false, error: `Enter an amount from $${MIN_COPY} to $${MAX_COPY.toLocaleString("en-US")}.` };
   const price = t.yourPrice ?? t.priceNow ?? t.theirPrice;
   const row = await db.insert(betCopies).values({
