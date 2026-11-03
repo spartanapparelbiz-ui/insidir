@@ -26,16 +26,22 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
   await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("You're bettingagainst millionaires.");
-  // Today's real total since midnight ET (the fixtures' six Millionaire bets of the last 90 minutes: $299K).
-  await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", "299000");
-  // "today" from midnight ET, or "in the last 24 hours" while today is still under $100K (just after midnight).
-  await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$1M\+ bet \$299K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
+  // Today's real total since midnight ET: the fixtures' six Millionaire bets of the last 90 minutes ($299K) once they all
+  // fall after midnight. Within 95 minutes of midnight ET only part of them do: then today's part, or the last 24 hours
+  // while today is still under $100K.
+  const etMinutes = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()); return Number(p.find(x => x.type === "hour")!.value) * 60 + Number(p.find(x => x.type === "minute")!.value); })();
+  if (etMinutes > 95) {
+    await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", "299000");
+    await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $1M+ bet $299K today. Which side were you on?", { timeout: 5_000 });
+  } else {
+    await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", /^[1-9]\d*$/);
+    await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$1M\+ bet \$\d+K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
+  }
   await expect(page.getByTestId("hero-check")).toHaveAttribute("href", "#check");
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
   // The Pulse: today's millionaire money, the biggest bet (side free), the hottest market; every card says something real.
   // Since midnight ET: $299K once all six fixture bets (8–90 minutes old) fall after midnight; just after midnight,
   // part or none of it (the card then says there's none yet today).
-  const etMinutes = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()); return Number(p.find(x => x.type === "hour")!.value) * 60 + Number(p.find(x => x.type === "minute")!.value); })();
   if (etMinutes > 95) await expect(page.getByTestId("pulse-total")).toContainText("$299K");
   else await expect(page.getByTestId("pulse-total")).toContainText(/\$\d+K|No millionaire money yet today/);
   await expect(page.getByTestId("pulse-biggest")).toContainText("Millionaire");
@@ -49,15 +55,19 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await expect(free.getByRole("heading", { level: 2 })).toHaveText("Free right now.No account.");
   const top = page.getByTestId("free-top");
   await expect(top).toContainText("E2E fixture: Chiefs vs. Bills");
-  await expect(top.getByTestId("tier-millionaire")).toContainText("$135K · 3 wallets");
   await expect(top).toContainText("Chiefs 51¢ · Bills 49¢");
-  await expect(page.getByTestId("free-top-line")).toHaveText("Millionaire money is 78% on Chiefs: $105K from 2 wallets against $30K from 1 wallet.");
+  // Today's money (since midnight ET): exact once every fixture bet falls after midnight.
+  if (etMinutes > 95) {
+    await expect(top.getByTestId("tier-millionaire")).toContainText("$135K · 3 wallets");
+    await expect(page.getByTestId("free-top-line")).toHaveText("Millionaire money is 78% on Chiefs: $105K from 2 wallets against $30K from 1 wallet.");
+  }
+  await expect(top).not.toContainText(/\bNone\b/);
   // The last 3 millionaire bets, sides included.
   const last3 = page.getByTestId("free-last3");
   await expect(last3.getByTestId("bet-row")).toHaveCount(3);
   await expect(last3.getByTestId("bet-row").first()).toContainText("Chiefs");
   await expect(last3.locator("[data-locked]")).toHaveCount(0);
-  await expect(page.getByTestId("free-more")).toHaveText(/^\+3 more today\. Members see every one live\.$/);
+  if (etMinutes > 95) await expect(page.getByTestId("free-more")).toHaveText(/^\+3 more today\. Members see every one live\.$/);
   await page.screenshot({ path: shotName("brand-free", page) });
 
   // What members get: five steps beside a phone showing real screens (on phones, each step shows its own).
@@ -74,7 +84,8 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await last3.getByTestId("bet-row").first().click();
   const sheet = page.getByTestId("pay-sheet");
   await expect(sheet).toHaveAttribute("data-kind", "free");
-  await expect(sheet.getByTestId("paywall-headline")).toHaveText("That was 1 of 6 millionaire bets today. See them all live, with a ping when the next one lands. $1 for 3 days.");
+  await expect(sheet.getByTestId("paywall-headline")).toHaveText(etMinutes > 95 ? "That was 1 of 6 millionaire bets today. See them all live, with a ping when the next one lands. $1 for 3 days."
+    : /^That was 1 of \d+ millionaire bets? today\. See them all live, with a ping when the next one lands\. \$1 for 3 days\.$/);
   await expect(sheet.getByTestId("paywall-price")).toContainText("$1 today, then $39/month from");
   await page.screenshot({ path: shotName("brand-popup", page) });
   await page.keyboard.press("Escape");

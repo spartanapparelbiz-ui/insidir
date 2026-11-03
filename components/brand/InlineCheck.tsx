@@ -45,7 +45,7 @@ export function InlineCheck({ chips }: { chips: Chip[] }) {
           emit="insidir:free-used" testid="free-check">
           <div style={row}>
             <span className="b-label">Pro money</span>
-            <span className="b-small" style={{ color: "var(--ink-muted)" }}>{c.pro.yes.dollars + c.pro.no.dollars ? ([[c.pro.yes.dollars, c.yesLabel], [c.pro.no.dollars, c.noLabel]] as const).filter(([v]) => v > 0).map(([v, l]) => `${dollars(v)} on ${l}`).join(" · ") : "None yet"}</span>
+            <span className="b-small" style={{ color: "var(--ink-muted)" }}>{c.pro.yes.dollars + c.pro.no.dollars ? ([[c.pro.yes.dollars, c.yesLabel], [c.pro.no.dollars, c.noLabel]] as const).filter(([v]) => v > 0).map(([v, l]) => `${dollars(v)} on ${l}`).join(" · ") : "No Pro money yet"}</span>
           </div>
           <div style={row} data-testid="free-check-price">
             <span className="b-label">Price now · {c.us ? "Kalshi (US)" : "Kalshi / Polymarket"}</span>

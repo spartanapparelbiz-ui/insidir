@@ -11,7 +11,7 @@ import { cents, Side, TierBadge } from "./Bits";
 type TierMoney = MarketMoney["millionaire"];
 const w = (n: number) => (n ? `${n} ${n === 1 ? "wallet" : "wallets"}` : "No wallets");
 /** One side's dollars; a side with none says so instead of "$0". */
-const Amount = ({ v }: { v: number }) => (v > 0 ? <span className="b-big b-num">{dollars(v)}</span> : <span className="b-big b-none">None</span>);
+const Amount = ({ v }: { v: number }) => (v > 0 ? <span className="b-big b-num">{dollars(v)}</span> : <span className="b-big b-none">No money yet</span>);
 const st = (on: boolean, d: number) => (on ? { "data-m": "settle" as const, style: { "--d": `${d}s` } as CSSProperties } : {});
 
 function TierBlock({ name, t, yes, no, locked, testid, build, d }: { name: string; t: TierMoney; yes: string; no: string; locked: boolean; testid: string; build: boolean; d: number }) {
