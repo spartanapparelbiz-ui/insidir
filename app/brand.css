@@ -901,3 +901,26 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
   .s-filters > * { flex: none; }
 }
 .b-head .s-ticket__px { margin-top: 20px; align-items: baseline; }
+/* My copies: the picker and the move rows. */
+.s-pick { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; width: 100%; cursor: pointer; text-align: left; }
+.s-pick__main, .s-pick__fig { display: grid; gap: 4px; }
+.s-pick__fig { text-align: right; }
+.s-picks li:has(input:checked) .s-strong { text-decoration: underline; text-underline-offset: 4px; }
+.s-move { display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; text-align: left; }
+.s-move__main { display: grid; gap: 4px; min-width: 0; }
+.s-move__px { grid-auto-flow: column; gap: 16px; }
+@media (max-width: 640px) { .s-move { grid-template-columns: minmax(0, 1fr); } .s-pick { grid-template-columns: auto minmax(0, 1fr); } .s-pick__fig { grid-column: 2; text-align: left; } }
+/* The wallet constellation (components/system/Constellation.tsx). */
+.s-const { width: 100%; max-width: calc(1120 * var(--u)); margin: 0 auto; display: grid; gap: 12px; }
+.s-const__sky { position: relative; width: 100%; aspect-ratio: 1000 / 620; }
+.s-const__sky svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.s-const__ring { fill: none; stroke: var(--glass-line); stroke-width: 1; }
+.s-const__link { stroke: var(--dim); stroke-width: 1; opacity: .5; }
+.s-const__link--against { stroke-dasharray: 4 6; }
+.s-const__star { fill: var(--ink); transform-box: fill-box; transform-origin: center; }
+.s-const__star--gold { fill: var(--gold); }
+.s-const a:hover .s-const__star, .s-const a:focus-visible .s-const__star { fill: var(--gold); }
+.s-const__cat { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; color: var(--dim); }
+.s-const__lbl { position: absolute; transform: translate(-50%, 0); white-space: nowrap; }
+.s-const__key { text-align: center; }
+@media (max-width: 640px) { .s-const__lbl { display: none; } }

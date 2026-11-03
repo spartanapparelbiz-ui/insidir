@@ -144,3 +144,48 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     polledAt: polled ? new Date(polled).getTime() : null, lastBetAt: last ? new Date(last).getTime() : null,
   };
 }
+
+/** The wallet constellation (/wallets): each millionaire wallet that bet in the window is a star (sized by the money it
+ *  put in, placed in its main category's sector, nearer the centre the bigger its all-time profit), and two stars are
+ *  joined when they bet the same market, a solid line on the same side and a dashed one against each other. Real rows
+ *  only: terminal.millionaire_bets and the watchlist's profit. */
+export interface Constellation {
+  stars: Array<{ wallet: string; short: string; pnl: number | null; money: number; category: string; bets: number }>;
+  links: Array<{ a: string; b: string; same: boolean; title: string }>;
+  /** The market most of them share, for the headline. */
+  shared: { title: string; wallets: number; same: boolean } | null;
+}
+export async function constellation(db: Db, since: number, limit = 40): Promise<Constellation> {
+  const rows = (await db.execute(sql`select b.wallet, b.market_id, max(b.market_title) as title, max(b.category) as category, b.outcome_side as side,
+      sum(b.amount)::float as money, count(*)::int as n, max(w.pnl)::float as pnl
+    from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet
+    where b.tier = 'millionaire' and b.at >= ${new Date(since)} group by b.wallet, b.market_id, b.outcome_side`)).rows as Array<{ wallet: string; market_id: string; title: string; category: string; side: string; money: number; n: number; pnl: number | null }>;
+  const byWallet = new Map<string, { money: number; bets: number; pnl: number | null; cats: Map<string, number> }>();
+  for (const r of rows) {
+    const w = byWallet.get(r.wallet) ?? { money: 0, bets: 0, pnl: r.pnl === null ? null : Number(r.pnl), cats: new Map() };
+    w.money += Number(r.money); w.bets += Number(r.n); w.cats.set(r.category, (w.cats.get(r.category) ?? 0) + Number(r.money));
+    byWallet.set(r.wallet, w);
+  }
+  const top = [...byWallet.entries()].sort((a, b) => b[1].money - a[1].money).slice(0, limit);
+  const keep = new Set(top.map(([w]) => w));
+  const stars = top.map(([wallet, w]) => ({ wallet, short: `${wallet.slice(0, 6)}…${wallet.slice(-4)}`, pnl: w.pnl, money: w.money, bets: w.bets,
+    category: [...w.cats.entries()].sort((a, b) => b[1] - a[1])[0]![0] }));
+  const byMarket = new Map<string, { title: string; sides: Array<{ wallet: string; side: string }> }>();
+  for (const r of rows) {
+    if (!keep.has(r.wallet)) continue;
+    const m = byMarket.get(r.market_id) ?? { title: r.title, sides: [] };
+    if (!m.sides.some(s => s.wallet === r.wallet && s.side === r.side)) m.sides.push({ wallet: r.wallet, side: r.side });
+    byMarket.set(r.market_id, m);
+  }
+  const links: Constellation["links"] = [];
+  let shared: Constellation["shared"] = null;
+  for (const m of byMarket.values()) {
+    const ws = [...new Set(m.sides.map(s => s.wallet))];
+    if (ws.length < 2) continue;
+    const sideOf = (w: string) => m.sides.find(s => s.wallet === w)!.side;
+    for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) links.push({ a: ws[i]!, b: ws[j]!, same: sideOf(ws[i]!) === sideOf(ws[j]!), title: m.title });
+    const same = new Set(m.sides.map(s => s.side)).size === 1;
+    if (!shared || ws.length > shared.wallets) shared = { title: m.title, wallets: ws.length, same };
+  }
+  return { stars, links: links.slice(0, 120), shared };
+}
