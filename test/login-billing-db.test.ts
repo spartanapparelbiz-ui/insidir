@@ -99,12 +99,16 @@ describe.skipIf(!URL0)("sign-in with Whop and billing, in Postgres", () => {
   afterEach(() => { vi.unstubAllGlobals(); });
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
 
-  it("sign-in: a new Whop user gets an account (not a member yet); signed in again, the same one", async () => {
-    const r = await signInAs(db, who("user_new", "New@Example.test"), "10.0.0.1", NOW);
-    expect(r).toMatchObject({ member: false, created: true });
-    expect(await signInAs(db, who("user_new", "new@example.test"), "10.0.0.1", NOW)).toEqual({ ...r, created: false });
-    const u = (await db.select().from(schema.users).where(eq(schema.users.id, r.userId)))[0]!;
-    expect(u).toMatchObject({ email: "new@example.test", whopUserId: "user_new", name: "Buyer", plan: "free" });
+  it("accounts only if you pay: a new Whop user without Insidir gets no account (and goes to the paywall); with a paid membership, one is made, a member", async () => {
+    expect(await signInAs(db, who("user_new", "New@Example.test"), "10.0.0.1", NOW)).toEqual({ userId: null, member: false, created: false });
+    expect((await db.select().from(schema.users).where(eq(schema.users.whopUserId, "user_new")))).toHaveLength(0);
+    whop.access.set("user_paid", true);
+    whop.memberships.set("mem_paid", membership({ id: "mem_paid", user: "user_paid", email: "paid@example.test" }));
+    const r = await signInAs(db, who("user_paid", "Paid@Example.test"), "10.0.0.1", NOW);
+    expect(r).toMatchObject({ member: true, created: true });
+    expect(await signInAs(db, who("user_paid", "paid@example.test"), "10.0.0.1", NOW)).toEqual({ ...r, created: false });
+    const u = (await db.select().from(schema.users).where(eq(schema.users.id, r.userId!)))[0]!;
+    expect(u).toMatchObject({ email: "paid@example.test", whopUserId: "user_paid", name: "Buyer" });
   });
 
   it("sign-in links an existing account with the same email; one linked to another Whop user isn't taken over", async () => {
@@ -113,13 +117,16 @@ describe.skipIf(!URL0)("sign-in with Whop and billing, in Postgres", () => {
     whop.memberships.set("mem_old", membership({ id: "mem_old", user: "user_old", email: "old@example.test" }));
     expect(await signInAs(db, who("user_old", "old@example.test"), null, NOW)).toEqual({ userId: "usr_old", member: true, created: false });
     expect((await db.select().from(schema.users).where(eq(schema.users.id, "usr_old")))[0]!.whopUserId).toBe("user_old");
+    whop.access.set("user_other", true);
     const other = await signInAs(db, who("user_other", "old@example.test"), null, NOW);
     expect(other.userId).not.toBe("usr_old");
-    expect((await db.select().from(schema.users).where(eq(schema.users.id, other.userId)))[0]!.email).toBeNull();
+    expect((await db.select().from(schema.users).where(eq(schema.users.id, other.userId!)))[0]!.email).toBeNull();
   });
 
   it("checkout signed in: our id in the metadata links the membership, Whop's access check makes them a member", async () => {
-    const r = await signInAs(db, who("user_buy", "buy@example.test"), null, NOW);
+    // An older account (made before accounts required payment) checking out signed in.
+    await db.insert(schema.users).values({ id: "usr_buy", email: "buy@example.test", whopUserId: "user_buy", settings: schema.DEFAULT_SETTINGS });
+    const r = { userId: "usr_buy" };
     const mem = membership({ id: "mem_buy", user: "user_buy", email: "buy@example.test", metadata: { insidir_user_id: r.userId } });
     whop.memberships.set("mem_buy", mem); whop.access.set("user_buy", true);
     const a = await applyBillingEvent(db, "membership.activated", webhookRef("membership.activated", { data: mem }), NOW);
@@ -137,7 +144,8 @@ describe.skipIf(!URL0)("sign-in with Whop and billing, in Postgres", () => {
   });
 
   it("deactivated or refunded: Whop's access check says no and access ends", async () => {
-    const r = await signInAs(db, who("user_end", "end@example.test"), null, NOW);
+    await db.insert(schema.users).values({ id: "usr_end", email: "end@example.test", whopUserId: "user_end", settings: schema.DEFAULT_SETTINGS });
+    const r = { userId: "usr_end" };
     const mem = membership({ id: "mem_end", user: "user_end", email: "end@example.test", metadata: { insidir_user_id: r.userId } });
     whop.memberships.set("mem_end", mem); whop.access.set("user_end", true);
     expect((await applyBillingEvent(db, "membership.activated", webhookRef("membership.activated", { data: mem }), NOW)).plan).toBe("insidir");

@@ -20,6 +20,7 @@ import { DEFAULT_SETTINGS, loginAttempts, users } from "@/lib/db/schema";
 import { appUrl } from "@/lib/app-url";
 import { whopRuntime } from "@/lib/billing/config";
 import { newUserId, normEmail, refreshPlan } from "@/lib/billing/access";
+import { checkAccess, fetchMemberships, planFrom, planIds } from "@/lib/billing/whop";
 import { isFreeAccess } from "@/lib/billing/free";
 import { CALLBACK_PATHS } from "@/lib/auth/callback-paths";
 
@@ -95,7 +96,20 @@ export async function rateLimited(db: Db, ip: string | null, now = Date.now()): 
  *  access, read from Whop now (not the 5-minute cache), so a new member is in at once. */
 /** `utm`: the first-touch UTM tags (or ?ref=) from their cookie, stored on a new account for attribution, or on an
  *  account the billing webhook made before they signed in (pay first). */
-export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now = Date.now(), utm: Record<string, string> | null = null): Promise<{ userId: string; member: boolean; created: boolean }> {
+/** Accounts only if you pay: a Whop user we have no account for gets one only when Whop says they have Insidir (a paid
+ *  membership, or the free-access list). Anyone else signs in to nothing: `userId` is null and they go to the paywall. */
+export async function hasPaidAccess(whopUserId: string, email: string | null, now = Date.now()): Promise<boolean> {
+  if (isFreeAccess(email)) return true;
+  const ids = planIds();
+  const [has, list] = await Promise.all([
+    ids.insidirProduct ? checkAccess(whopUserId, ids.insidirProduct).catch(() => null) : Promise.resolve(null),
+    fetchMemberships(whopUserId).catch(() => null),
+  ]);
+  if (has) return true;
+  return list ? planFrom(list, ids, now).plan !== "free" : false;
+}
+
+export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now = Date.now(), utm: Record<string, string> | null = null): Promise<{ userId: string | null; member: boolean; created: boolean }> {
   const email = who.email ? normEmail(who.email) : null;
   let u = (await db.select().from(users).where(eq(users.whopUserId, who.id)).limit(1))[0];
   let created = false;
@@ -106,6 +120,11 @@ export async function signInAs(db: Db, who: WhopIdentity, ip: string | null, now
       u = byEmail;
       if (!byEmail.whopUserId) await db.update(users).set({ whopUserId: who.id }).where(eq(users.id, byEmail.id));
     }
+  }
+  if (!u && !(await hasPaidAccess(who.id, email, now))) {
+    // No account and no Insidir: nothing is made (no free accounts); they go to the paywall.
+    await db.insert(loginAttempts).values({ email: email ?? `whop:${who.id}`, ip, ok: true, createdAt: new Date(now) });
+    return { userId: null, member: false, created: false };
   }
   if (!u) {
     // Their email belongs to an account linked to another Whop user: this one gets an account without it.
