@@ -11,7 +11,7 @@ import palette from "./palette.json";
 export type PhotoFile = "hero" | "cta" | "markets" | "politics" | "tech" | "oil" | "hurricane" | "racing" | "tennis" | "baseball" | "basketball" | "soccer" | "golf";
 
 export interface Photo {
-  src: `/brand/${PhotoFile}.jpg`; alt: string; /** 3840×2161 for the 4K masters (UHD), else 1672×941. */ width: number; height: number; /** Mean colour, the placeholder while it loads. */ tone: string;
+  src: `/brand/${PhotoFile}.jpg`; alt: string; width: 6144; height: 3458; /** Mean colour, the placeholder while it loads. */ tone: string;
   /** Where its subject is (CSS object-position), so a small crop keeps it in frame. */
   pos: string;
   /** Its ambient colour (scripts/brand-palette.ts → lib/brand/palette.json): cards tint themselves with it. */
@@ -25,12 +25,12 @@ const POS: Record<PhotoFile, string> = {
 };
 const AMBIENT = palette as Record<string, string>;
 
-/** Masters upscaled 4× with Real-ESRGAN (x4plus) and resized to 3840 wide, so they stay sharp on 2x and 4K screens. Each
- *  was compared with its original at 100%; racing, baseball and soccer stay at 1672 (the upscale smeared their city lights and stands). */
-const UHD: ReadonlySet<PhotoFile> = new Set<PhotoFile>(["hero", "cta", "markets", "politics", "tech", "oil", "hurricane", "tennis", "basketball", "golf"]);
-const size = (file: PhotoFile) => (UHD.has(file) ? { width: 3840, height: 2161 } : { width: 1672, height: 941 });
+/** 6K masters (6144×3458): each 1672px original upscaled 4× with Real-ESRGAN (x4plus), then resized to 6144 wide, and
+ *  compared with its original at 100%. Racing, baseball and soccer are 60% the upscale and 40% a plain resize of the
+ *  original: on its own the model smeared their city lights and stands into paint. */
+const SIZE = { width: 6144, height: 3458 } as const;
 
-const photo = (file: PhotoFile, alt: string, tone: string): Photo => ({ src: `/brand/${file}.jpg`, alt, ...size(file), tone, pos: POS[file], ambient: AMBIENT[file] ?? tone });
+const photo = (file: PhotoFile, alt: string, tone: string): Photo => ({ src: `/brand/${file}.jpg`, alt, ...SIZE, tone, pos: POS[file], ambient: AMBIENT[file] ?? tone });
 
 export const PHOTOS: Record<PhotoFile, Photo> = {
   hero: photo("hero", "A misty valley at dusk, the last orange light on the horizon", "#141a2e"),
