@@ -36,12 +36,12 @@ function PriceRows({ data, us }: { data: ReadData; us: boolean }) {
   if (us && p.yes.kalshi === null && p.no.kalshi === null) {
     return <div style={row} data-testid="read-prices"><span className="b-label">Price now · Kalshi (US)</span><span className="b-small" data-testid="price-kalshi">Not on Kalshi. In the US we show Kalshi only.</span></div>;
   }
-  // Each venue named, its price or "not listed" (never a dash or 0¢); the better one marked outside the US.
+  // Each venue's price (the row header names them) or "not listed" (never a dash or 0¢); the better one marked outside the US.
   const cell = (s: SidePrices, v: "kalshi" | "polymarket") => {
     const p = s[v], name = v === "kalshi" ? "Kalshi" : "Polymarket";
     return p === null
       ? <span className="b-small" data-testid={`price-${v}`}>{us ? "Not listed" : `${name}: not listed`}</span>
-      : <span className="b-num" data-testid={`price-${v}`} style={{ fontWeight: s.best === v && !us ? 600 : 500 }}>{us ? "" : `${name} `}{cents(p)}{s.best === v && !us ? " · best" : ""}</span>;
+      : <span className="b-num" data-testid={`price-${v}`} style={{ fontWeight: s.best === v && !us ? 600 : 500 }}>{cents(p)}{s.best === v && !us ? " · best" : ""}</span>;
   };
   return (
     <div style={row} data-testid="read-prices">

@@ -30,15 +30,16 @@ function Bg({ bg }: { bg: StageBg }) {
   );
 }
 
-export function Stage({ bg = { kind: "none" }, children, id, className = "", inner = true, label, testid, labelledBy, after, first = false }: {
+export function Stage({ bg = { kind: "none" }, children, id, className = "", inner = true, label, testid, labelledBy, after, first = false, style }: {
   bg?: StageBg; children: ReactNode; id?: string; className?: string; inner?: boolean; label?: string; testid?: string; labelledBy?: string;
   /** The page's first stage (the landing hero): its entrance plays at first paint (html.hero-in), never on scroll. */
   first?: boolean;
+  style?: CSSProperties;
   /** Pinned to the stage itself (the footer at its bottom). */
   after?: ReactNode;
 }) {
   return (
-    <section className={`b-stage ${className}`} id={id} aria-label={label} aria-labelledby={labelledBy} data-testid={testid} data-first={first ? "" : undefined}>
+    <section className={`b-stage ${className}`} id={id} aria-label={label} aria-labelledby={labelledBy} data-testid={testid} data-first={first ? "" : undefined} style={style}>
       <Bg bg={bg} />
       {inner ? <div className="b-stage__in">{children}</div> : children}
       {after}

@@ -85,7 +85,7 @@ function Free({ d }: { d: LandingData }) {
 function Markets({ d }: { d: LandingData }) {
   const list = d.categories.list, photos = categoryPhotos(list.map(c => c.slug)), when = d.categories.window === "day" ? "today" : "this week";
   return (
-    <Stage testid="markets" labelledBy="markets-h">
+    <Stage testid="markets" labelledBy="markets-h" className="b-stage--hrow" style={{ "--n": list.length } as CSSProperties}>
       <div className="b-head"><Lines id="markets-h" lines={STAGES.markets} size={64} /></div>
       {list.length ? (
         <div className="b-hrow" data-hrow="" data-testid="category-cards">

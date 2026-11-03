@@ -610,7 +610,7 @@ a.b-row { transition: border-color .18s ease, background .18s ease; } a.b-row:ho
 /* ---------- Markets: a sideways row (pinned and scrubbed on desktop by ScrollFx; a swipe on phones and without JS) ---------- */
 .b-hrow { width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .b-hrow::-webkit-scrollbar { display: none; }
-.b-hrow.is-pinned { overflow: visible; }
+
 .b-htrack { display: flex; gap: calc(12 * var(--u)); width: max-content; padding-bottom: 4px; }
 .b-htrack .b-ccard { width: calc(270 * var(--u)); flex: none; scroll-snap-align: start; }
 .b-ccard__img img { will-change: transform; }
@@ -622,3 +622,14 @@ a.b-row { transition: border-color .18s ease, background .18s ease; } a.b-row:ho
 @media (prefers-reduced-motion: reduce) { .b-progress { display: none; } .b-screen, .b-ph__ping { transition: none; } }
 .b-panels .b-col, .b-tile3 .b-col { max-width: none; margin: 0; justify-items: stretch; }
 .b-phone--mini { padding: 18px 20px; }
+/* Pinned scrollytelling without layout shifts: with motion allowed (html.bm, set before first paint) on desktop, the
+ * Pulse stage is two screens tall and the Markets stage is as tall as its row is wide, each with its content sticky;
+ * ScrollFx only scrubs transforms inside. Reduced motion and phones: normal stages. */
+@media (min-width: 861px) {
+  html.bm .b-stage--pulse, html.bm .b-stage--hrow { align-items: flex-start; }
+  html.bm .b-stage--pulse { min-height: 210dvh; }
+  html.bm .b-stage--hrow { --dist: max(0px, calc(var(--n, 0) * 282 * var(--u) - min(1180 * var(--u), 100vw - 2 * var(--gut)))); min-height: calc(100dvh + var(--dist)); }
+  html.bm .b-stage--pulse > .b-stage__in, html.bm .b-stage--hrow > .b-stage__in { position: sticky; top: 0; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; }
+}
+@media (min-width: 861px) and (max-width: 1160px) { html.bm .b-stage--hrow { --dist: max(0px, calc(var(--n, 0) * (max(220px, 270 * var(--u)) + 12px) - 100vw + 2 * var(--gut))); } }
+.b-foot a { min-width: 44px; justify-content: center; }
