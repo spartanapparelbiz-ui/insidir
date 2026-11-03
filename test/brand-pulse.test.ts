@@ -58,6 +58,7 @@ describe("outcome names on the check", () => {
     // A multi-outcome market's group title is not an outcome: a "Will …?" question is Yes or No.
     expect(outcomeNames("Will Republicans win Iowa and Kansas, and lose Alaska?", "IA, KS", "No")).toEqual({ yesLabel: "Yes", noLabel: "No" });
     expect(outcomeNames("Will Republicans lose the Texas Senate seat?", "None", "No")).toEqual({ yesLabel: "Yes", noLabel: "No" });
+    expect(outcomeNames("2026 Balance of Power: R Senate, R House", "Republicans Sweep", "No")).toEqual({ yesLabel: "Yes", noLabel: "No" });
   });
 });
 
