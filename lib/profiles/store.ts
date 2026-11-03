@@ -31,7 +31,7 @@ export async function savePositions(db: Db, wallet: string, list: readonly Close
     seen.add(k);
     const c = categoryOf([p.title, p.eventSlug, p.slug], hints.get(p.marketId) ?? null);
     return [{ wallet, marketId: p.marketId, outcomeIndex: p.outcomeIndex, title: p.title.slice(0, 300), outcome: p.outcome, eventSlug: p.eventSlug,
-      category: c.category, tab: c.tab, moneyIn: p.moneyIn, pnl: p.pnl, resolvedAt: p.resolvedAt ? new Date(p.resolvedAt) : null }];
+      category: c.category, tab: c.tab, moneyIn: p.moneyIn, pnl: p.pnl, resolvedAt: p.resolvedAt ? new Date(p.resolvedAt) : null, avgPrice: p.avgPrice ?? null }];
   });
   await db.transaction(async tx => {
     await tx.delete(traderPositions).where(eq(traderPositions.wallet, wallet));

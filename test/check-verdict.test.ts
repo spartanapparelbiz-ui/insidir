@@ -39,7 +39,9 @@ describe("outcome names", () => {
     expect(outcomeNames("Pelicans vs. Grizzlies", "Yes", "Grizzlies")).toEqual({ yesLabel: "Pelicans", noLabel: "Grizzlies" });
     expect(outcomeNames("NBA: Pelicans vs Grizzlies", "Pelicans", "No")).toEqual({ yesLabel: "Pelicans", noLabel: "Grizzlies" });
     expect(outcomeNames("Will it rain?", "Yes", "No")).toEqual({ yesLabel: "Yes", noLabel: "No" });
-    expect(outcomeNames("Who wins the race?", "Yes", "Verstappen")).toEqual({ yesLabel: "Other side", noLabel: "Verstappen" });
+    expect(outcomeNames("Who wins the race?", "Yes", "Verstappen")).toEqual({ yesLabel: "Not Verstappen", noLabel: "Verstappen" });
+    // Never a bare "No" next to a player's name.
+    expect(outcomeNames("Tennis match 100", "Player A", "No")).toEqual({ yesLabel: "Player A", noLabel: "Not Player A" });
     expect(outcomeNames("Chiefs vs. Bills", "Chiefs", "Bills")).toEqual({ yesLabel: "Chiefs", noLabel: "Bills" });
     expect(outcomeNames("Sport Lisboa e Benfica vs. FC Alverca: O/U 1.5", "Yes", "Under")).toEqual({ yesLabel: "Over", noLabel: "Under" });
   });

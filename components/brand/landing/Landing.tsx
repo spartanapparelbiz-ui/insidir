@@ -1,19 +1,19 @@
 /* The landing: a scrolling page of stages in the hero spec's language. Each stage is a full-viewport black stage with
  * one background that never animates; its foreground performs once as it enters (components/brand/StageMotion.tsx).
- *   1 Hero (the globe) · 2 The problem · 3 Free right now (the check, today's #1 market, the last 3 bets: whole, no
- *   account) · 4 What members get (five rows, each with a live preview) · 5 Proof (space.jpg) · 6 Markets ·
- *   7 Pricing (world.jpg) · 8 FAQ · 9 Final (the globe again, the footer inside).
+ *   Hero (the globe) · The Pulse (a live dashboard that assembles as you scroll) · Free right now (the check, today's
+ *   #1 market, the last 3 bets: whole, no account) · Election Day board (Nov 3–4 ET only) · What members get (a sticky
+ *   phone showing real screens) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
+ *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
 import type { CSSProperties } from "react";
 import Image from "next/image";
-import { category, category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
-import { FAQ, HERO, MEMBERS, PAST, PROBLEM, STAGES, faqLd } from "@/lib/brand/copy";
-import { dataLine, heavierSide, verdict } from "@/lib/brand/verdict";
-import { milDollars } from "@/lib/brand/landing";
+import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
+import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
+import { dataLine } from "@/lib/brand/verdict";
 import { slotPhoto } from "@/lib/brand/images";
 import type { LandingData } from "@/lib/brand/landing";
 import { dollars } from "@/lib/money";
-import { Arrow, cents, Lines, m, Pill, signedDollars, TierBadge } from "../Bits";
+import { Lines, m, Pill } from "../Bits";
 import { BetRow } from "../BetRow";
 import { InlineCheck } from "../InlineCheck";
 import { Faq } from "../Faq";
@@ -24,10 +24,12 @@ import { PayMoments } from "../PayMoments";
 import { Stage } from "../Stage";
 import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
+import { ScrollFx } from "./ScrollFx";
+import { ElectionStage, GapsStage, MembersStage, PulseStage, SpotlightStage, StakeStage } from "./Value";
 
 function Hero({ d }: { d: LandingData }) {
   return (
-    <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h">
+    <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
       <BrandNav motion />
       <div className="b-hero-inner">
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
@@ -37,24 +39,6 @@ function Hero({ d }: { d: LandingData }) {
           <Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
         </div>
       </div>
-    </Stage>
-  );
-}
-
-function Problem() {
-  return (
-    <Stage testid="problem" labelledBy="problem-h">
-      <div className="b-center">
-        <Lines id="problem-h" lines={PROBLEM.h1} size={64} />
-        <p className="b-sub" {...m("lift", 0.58)}>{PROBLEM.sub}</p>
-      </div>
-      <ul className="b-pains" style={{ listStyle: "none", padding: 0 }}>
-        {PROBLEM.rows.map(([pain, fix], i) => (
-          <li key={pain} className="b-pain b-glass" data-testid="pain-row" data-m="settle" style={{ "--d": `${0.8 + i * 0.12}s` } as CSSProperties}>
-            <span className="b-pain__p">{pain}</span><Arrow /><span className="b-pain__f">{fix}</span>
-          </li>
-        ))}
-      </ul>
     </Stage>
   );
 }
@@ -98,74 +82,14 @@ function Free({ d }: { d: LandingData }) {
   );
 }
 
-function Members({ d }: { d: LandingData }) {
-  const t = d.top;
-  const v = t ? verdict({ yes: t.m.millionaire.yes, no: t.m.millionaire.no, yesLabel: t.m.yesLabel, noLabel: t.m.noLabel }, heavierSide({ ...t.m.millionaire, yesLabel: t.m.yesLabel, noLabel: t.m.noLabel })) : null;
-  const previews: Record<string, React.ReactNode> = {
-    before: t && v ? (
-      <div style={{ display: "grid", gap: 8 }} data-testid="prev-check">
-        <span style={{ fontWeight: 500, color: v.kind === "agree" ? "var(--up)" : v.kind === "against" ? "var(--down)" : "var(--ink)" }}>{v.kind === "agree" ? "✓ " : v.kind === "against" ? "✕ " : ""}{v.headline}</span>
-        <span className="b-small">{t.m.title} · on {heavierSide({ ...t.m.millionaire, yesLabel: t.m.yesLabel, noLabel: t.m.noLabel }) === "yes" ? t.m.yesLabel : t.m.noLabel}</span>
-        {d.bestPrice && d.bestPrice.yes.kalshi !== null && d.bestPrice.yes.polymarket !== null
-          ? <div className="b-kv"><span className="b-small">Kalshi YES {cents(d.bestPrice.yes.kalshi)}</span><span className="b-small">Polymarket YES {cents(d.bestPrice.yes.polymarket)}</span></div>
-          : t.m.priceNow !== null ? <div className="b-kv"><span className="b-small">{t.m.yesLabel} {cents(t.m.priceNow)}</span><span className="b-small">{t.m.noLabel} {cents(1 - t.m.priceNow)}</span></div> : null}
-      </div>
-    ) : null,
-    allday: d.board.length ? (
-      <div style={{ display: "grid", gap: 6 }} data-testid="prev-board">
-        {d.board.map(b => <BetRow key={b.id} bet={b} now={d.now} />)}
-        {d.biggest ? <div className="b-row" style={{ gridTemplateColumns: "1fr" }}><span className="b-small" style={{ color: "var(--ink)" }}><span className="b-dot" aria-hidden="true" /> Insidir · A {d.biggest.pnl !== null ? `${signedDollars(d.biggest.pnl)} ` : ""}wallet just bet {dollars(d.biggest.amount)} on {d.biggest.title}</span></div> : null}
-      </div>
-    ) : null,
-    morning: d.brief.length ? (
-      <ol className="b-rows" style={{ paddingLeft: 0 }} data-testid="prev-brief">
-        {d.brief.map((m, i) => <li key={m.marketId} className="b-row" style={{ gridTemplateColumns: "auto minmax(0,1fr) auto" }}><span className="b-small">{i + 1}</span><span className="b-row__title">{m.title}</span><span className="b-num" style={{ fontWeight: 600 }}>{dollars(milDollars(m))}</span></li>)}
-      </ol>
-    ) : null,
-    overtime: d.wallet ? (
-      <div style={{ display: "grid", gap: 8 }} data-testid="prev-wallet">
-        <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><TierBadge tier={d.wallet.tier} /><span className="b-small">{d.wallet.short}</span><span className="b-up b-num" style={{ fontWeight: 600 }}>{signedDollars(d.wallet.pnl)} all-time</span></span>
-        {d.wallet.results.length ? (
-          <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }} aria-label="Last results">
-            {d.wallet.results.map((r, i) => <span key={i} className="b-tier" style={{ background: "var(--panel)", color: r.result === "won" ? "var(--up)" : r.result === "lost" ? "var(--down)" : "var(--ink-muted)" }} title={r.title}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Void"}</span>)}
-          </span>
-        ) : <span className="b-small">No settled bets on the record yet.</span>}
-      </div>
-    ) : null,
-    nights: d.bigNight ? (
-      <div style={{ display: "grid", gap: 6 }} data-testid="prev-night">
-        <span className="b-label">{category(d.bigNight.category).name} · now</span>
-        <span style={{ fontWeight: 500 }}>{d.bigNight.title}</span>
-        <span className="b-small">{dollars(milDollars(d.bigNight))} millionaire money · {d.bigNight.millionaire.yes.wallets + d.bigNight.millionaire.no.wallets} wallets</span>
-      </div>
-    ) : null,
-  };
-  return (
-    <Stage testid="members" labelledBy="members-h">
-      <div className="b-head"><Lines id="members-h" lines={STAGES.members} size={60} /></div>
-      <ul className="b-feats">
-        {MEMBERS.map((f, i) => (
-          <li key={f.k} className="b-feat b-glass" data-testid="member-row" data-m="settle" style={{ "--d": `${0.8 + i * 0.12}s` } as CSSProperties}>
-            <div style={{ display: "grid", gap: 6, alignContent: "start" }}><span className="b-label">{f.when}</span><p className="b-feat__t">{f.t}</p></div>
-            <div className="b-feat__prev">{previews[f.k] ?? <span className="b-small">Live as soon as there is data.</span>}</div>
-          </li>
-        ))}
-      </ul>
-      <div className="b-center" style={{ marginTop: 24 }}>
-        <div className="b-ctas"><Pill href="/go" delay={1.5} data-testid="members-start" data-checkout="members">Start for $1</Pill></div>
-        <p className="b-small" style={{ marginTop: 10 }} data-m="quiet">$1 for 3 days, then $39/month.</p>
-      </div>
-    </Stage>
-  );
-}
-
 function Markets({ d }: { d: LandingData }) {
   const list = d.categories.list, photos = categoryPhotos(list.map(c => c.slug)), when = d.categories.window === "day" ? "today" : "this week";
   return (
     <Stage testid="markets" labelledBy="markets-h">
       <div className="b-head"><Lines id="markets-h" lines={STAGES.markets} size={64} /></div>
       {list.length ? (
-        <div className="b-grid" data-testid="category-cards">
+        <div className="b-hrow" data-hrow="" data-testid="category-cards">
+          <div className="b-htrack" data-htrack="">
           {list.map((c, i) => (
             <a key={c.slug} className="b-ccard" href={`/markets/${c.slug}`} data-testid="category-card" data-m="settle" style={{ "--d": `${0.5 + i * 0.06}s` } as CSSProperties}>
               <span className="b-ccard__img"><Image src={photos[i]!.src} alt="" fill sizes="(max-width: 552px) 50vw, (max-width: 1160px) 33vw, 300px" quality={60} /></span>
@@ -175,6 +99,7 @@ function Markets({ d }: { d: LandingData }) {
               </span>
             </a>
           ))}
+          </div>
         </div>
       ) : <p className="b-empty" style={{ textAlign: "center" }}>No category has live millionaire money right now.</p>}
     </Stage>
@@ -237,16 +162,21 @@ export function Landing({ d }: { d: LandingData }) {
     <ViewAs />
     <main className="b-root" data-testid="landing">
       <Hero d={d} />
-      <Problem />
+      <PulseStage d={d} />
       <Free d={d} />
-      <Members d={d} />
-      <Proof d={d} />
+      <ElectionStage d={d} />
+      <MembersStage d={d} />
+      <SpotlightStage d={d} />
+      <StakeStage d={d} />
+      <GapsStage d={d} />
       <Markets d={d} />
+      <Proof d={d} />
       <Pricing />
       <FaqStage />
       <Final />
       {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
       <StageMotion />
+      <ScrollFx />
     </main>
     </>
   );

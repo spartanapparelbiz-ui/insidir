@@ -6,7 +6,7 @@
  * The verdict describes the data; it is never advice. Server component. */
 import type { CSSProperties } from "react";
 import { category as categoryInfo, categoryOf, categoryPhoto } from "@/lib/brand/categories";
-import type { MarketMoney, Position } from "@/lib/millionaires/queries";
+import { outcomeNames, type MarketMoney, type Position } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
 import { clockET, agoText } from "@/lib/moves/copy";
 import { cents, pct, pricesFor, UNUSUAL_TEXT } from "@/lib/read/math";
@@ -36,9 +36,13 @@ function PriceRows({ data, us }: { data: ReadData; us: boolean }) {
   if (us && p.yes.kalshi === null && p.no.kalshi === null) {
     return <div style={row} data-testid="read-prices"><span className="b-label">Price now · Kalshi (US)</span><span className="b-small" data-testid="price-kalshi">Not on Kalshi. In the US we show Kalshi only.</span></div>;
   }
-  const cell = (s: SidePrices, v: "kalshi" | "polymarket") => (
-    <span className="b-num" data-testid={`price-${v}`} style={{ fontWeight: s.best === v && s[v] !== null && !us ? 600 : 500 }}>{cents(s[v])}{s.best === v && s[v] !== null && !us ? " · best" : ""}</span>
-  );
+  // Each venue named, its price or "not listed" (never a dash or 0¢); the better one marked outside the US.
+  const cell = (s: SidePrices, v: "kalshi" | "polymarket") => {
+    const p = s[v], name = v === "kalshi" ? "Kalshi" : "Polymarket";
+    return p === null
+      ? <span className="b-small" data-testid={`price-${v}`}>{us ? "Not listed" : `${name}: not listed`}</span>
+      : <span className="b-num" data-testid={`price-${v}`} style={{ fontWeight: s.best === v && !us ? 600 : 500 }}>{us ? "" : `${name} `}{cents(p)}{s.best === v && !us ? " · best" : ""}</span>;
+  };
   return (
     <div style={row} data-testid="read-prices">
       <span className="b-label">Price now{us ? " · Kalshi (US)" : " · Kalshi / Polymarket"}</span>
@@ -49,9 +53,11 @@ function PriceRows({ data, us }: { data: ReadData; us: boolean }) {
   );
 }
 
-export function CheckPage({ id, data, money, positions, member, us, now, startHref }: {
+export function CheckPage({ id, data: raw, money, positions, member, us, now, startHref }: {
   id: string; data: ReadData; money: MarketMoney | null; positions: Position[]; member: boolean; us: boolean; now: number; startHref: string;
 }) {
+  // Both outcome names everywhere on the page: never "Yes"/"No" beside a team or player (outcomeNames).
+  const data: ReadData = { ...raw, ...outcomeNames(raw.question, raw.yesLabel, raw.noLabel) };
   const cat = categoryOf({ title: data.question, event: data.event, url: data.polymarket?.url ?? null });
   const side = (s: "yes" | "no") => (s === "yes" ? data.yesLabel : data.noLabel);
   const mil = money?.millionaire ?? { yes: { dollars: 0, wallets: 0 }, no: { dollars: 0, wallets: 0 } };
@@ -78,7 +84,7 @@ export function CheckPage({ id, data, money, positions, member, us, now, startHr
             <div style={row} data-testid="read-pro">
               <span className="b-label">Pro money · wallets with $100K+ all-time profit</span>
               {proSum ? (
-                <div className="b-kv"><span>{dollars(pro.yes.dollars)} on {data.yesLabel} · {dollars(pro.no.dollars)} on {data.noLabel}</span><span className="b-small">{pro.yes.wallets + pro.no.wallets} wallets</span></div>
+                <div className="b-kv"><span>{([[pro.yes.dollars, data.yesLabel], [pro.no.dollars, data.noLabel]] as const).filter(([v]) => v > 0).map(([v, l]) => `${dollars(v)} on ${l}`).join(" · ")}</span><span className="b-small">{pro.yes.wallets + pro.no.wallets} wallets</span></div>
               ) : <span className="b-small">None yet</span>}
             </div>
             {member ? (

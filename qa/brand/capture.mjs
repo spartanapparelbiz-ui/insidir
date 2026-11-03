@@ -8,9 +8,9 @@ import { mkdirSync } from "node:fs";
 const [base = "http://localhost:3000", out = "qa/screenshots/brand", ...extra] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
 const sizes = [{ w: 1280, h: 800, mobile: false }, { w: 390, h: 844, mobile: true }];
-const stages = ["hero", "problem", "free", "members", "proof", "markets", "pricing", "faq", "final-cta"];
+const stages = ["hero", "pulse", "free", "election", "members", "spotlight", "stake", "gaps", "markets", "proof", "pricing", "faq", "final-cta"];
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium" });
-const shot = (p, path, full = false) => p.screenshot({ path, fullPage: full, caret: "initial" });
+const shot = (p, path, full = false) => p.screenshot({ path: path.replace(/\.png$/, ".jpg"), type: "jpeg", quality: 72, fullPage: full, caret: "initial" });
 const report = [];
 
 for (const s of sizes) {
@@ -25,6 +25,9 @@ for (const s of sizes) {
   page.on("pageerror", e => errors.push(e.message));
   page.on("console", m => { if (m.type() === "error") errors.push(m.text().slice(0, 200)); });
   await page.goto(base + "/", { waitUntil: "load" });
+  // The whole page at rest: no scrolling, everything visible (the reveal is progressive enhancement).
+  await page.waitForTimeout(2500);
+  await shot(page, `${out}/landing-full-${s.w}.png`, true);
   for (const id of stages) {
     const el = page.locator(`[data-testid="${id}"]`).first();
     if (!(await el.count())) { report.push(`${s.w} ${id}: not on the page`); continue; }
@@ -52,7 +55,7 @@ for (const s of sizes) {
       } else report.push(`${s.w} free check: no chips`);
       continue;
     }
-    await page.waitForTimeout(id === "hero" ? 2200 : 2800);
+    await page.waitForTimeout(id === "hero" ? 2200 : id === "pulse" ? 3400 : 2800);
     await shot(page, `${out}/stage-${id}-${s.w}.png`);
   }
   report.push(`${s.w} landing: overflow ${await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)}px; errors: ${errors.length ? errors.join(" | ") : "none"}`);

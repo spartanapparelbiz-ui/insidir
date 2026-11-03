@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth/viewer";
 import { categoryOf } from "@/lib/brand/categories";
 import { getDb, hasDatabase } from "@/lib/db";
-import { marketMoney, positions } from "@/lib/millionaires/queries";
+import { marketMoney, outcomeNames, positions } from "@/lib/millionaires/queries";
 import { pricesFor } from "@/lib/read/math";
 import { getRead } from "@/lib/read/store";
 
@@ -29,7 +29,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const us = viewer.region !== "non_us";
   return NextResponse.json({
     id, question: d.question, key: d.key, category: categoryOf({ title: d.question, event: d.event, url: d.polymarket?.url ?? null }),
-    yesLabel: d.yesLabel, noLabel: d.noLabel,
+    // Both outcome names, never "Yes"/"No" beside a team or player (outcomeNames).
+    ...outcomeNames(d.question, d.yesLabel, d.noLabel),
     millionaire: m?.millionaire ?? zero, pro: m?.pro ?? zero, topPnl: { yes: top("yes"), no: top("no") },
     prices: pricesFor(d.prices, us), us,
   }, { headers: { "Cache-Control": "no-store" } });

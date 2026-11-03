@@ -1,7 +1,7 @@
 "use client";
 /* The hero's live line: "Wallets up $1M+ bet $4.2M today. Which side were you on?" The amount is the real total of
  * millionaire-tier watchlist bets since midnight ET (under $100K: the last 24 hours, said so), re-read every minute.
- * It ticks in when the hero enters and ticks to each new total. Rendered final on the server; reduced motion: no tick. */
+ * It shows the real total from first paint (never a count from $0) and ticks to each new total. Reduced motion: no tick. */
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { heroTotal, type Pulse } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
@@ -9,7 +9,7 @@ import { dollars } from "@/lib/money";
 export function HeroLine({ initial }: { initial: Pulse }) {
   const [t, setT] = useState(() => heroTotal(initial));
   const [shown, setShown] = useState(t.amount);
-  const from = useRef<number | null>(null);
+  const from = useRef<number | null>(t.amount);
 
   useEffect(() => {
     const id = setInterval(async () => {
@@ -19,7 +19,7 @@ export function HeroLine({ initial }: { initial: Pulse }) {
     return () => clearInterval(id);
   }, []);
 
-  // Tick: from zero the first time (after the headline has risen), then from the last value to the new one.
+  // Tick from the last value to each new one (the first value is already shown as rendered).
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setShown(t.amount); from.current = t.amount; return; }
     const start = from.current ?? 0, to = t.amount, delay = from.current === null ? 600 : 0, dur = 1400;

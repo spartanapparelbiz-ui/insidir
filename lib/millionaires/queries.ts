@@ -221,6 +221,8 @@ export async function marketMoney(db: Db, opts: { marketIds?: readonly string[];
 /** Both outcome names for a market. When only one is known (the venue's names weren't read and only one side was bet
  *  on), a "A vs. B" title names the other; a binary market is "Yes" / "No". Never "Yes" next to a team name. */
 export function outcomeNames(title: string, yes: string, no: string): { yesLabel: string; noLabel: string } {
+  // A "Will …?" question resolves Yes or No, whatever a multi-outcome market's group title says ("None", "IA, KS").
+  if (/^will\b[^?]*\?$/i.test(title.trim())) return { yesLabel: "Yes", noLabel: "No" };
   const isDefault = (l: string, d: string) => !l || l === d;
   if (!isDefault(yes, "Yes") && !isDefault(no, "No")) return { yesLabel: yes, noLabel: no };
   if (isDefault(yes, "Yes") && isDefault(no, "No")) return { yesLabel: "Yes", noLabel: "No" };
@@ -234,7 +236,8 @@ export function outcomeNames(title: string, yes: string, no: string): { yesLabel
     const other = known.toLowerCase() === a.toLowerCase() ? b : known.toLowerCase() === b.toLowerCase() ? a : null;
     if (other) return isDefault(yes, "Yes") ? { yesLabel: other, noLabel: no } : { yesLabel: yes, noLabel: other };
   }
-  return isDefault(yes, "Yes") ? { yesLabel: "Other side", noLabel: no } : { yesLabel: yes, noLabel: "Other side" };
+  // A name on one side only, and no way to tell the other's: the other side is "Not <name>", never a bare Yes or No.
+  return isDefault(yes, "Yes") ? { yesLabel: `Not ${no}`, noLabel: no } : { yesLabel: yes, noLabel: `Not ${yes}` };
 }
 
 /** The side most of a tier's money is on, when at least MIN_SPLIT_WALLETS wallets are in (else null: no split). */

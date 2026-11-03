@@ -23,6 +23,11 @@ export const PAST = "Past results, not a promise.";
 export const LEGAL = "Information, not financial or betting advice. Operated by Aethric LLC.";
 export const STAGES = {
   live: ["Millionaire money,", "right now."],
+  pulse: ["The pulse.", "Live, today."],
+  election: ["Election Day.", "Every race, live."],
+  spotlight: ["One wallet.", "Every result."],
+  stake: ["Your stake."],
+  gaps: ["Same bet.", "Two prices."],
   free: ["Free right now.", "No account."],
   members: ["Everything the", "millionaires do.", "As it happens."],
   markets: ["Every market", "people bet on."],

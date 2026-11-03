@@ -7,7 +7,7 @@
  * positions too. */
 import { inArray, notInArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { walletPnl, walletPnlQueue, watchlist } from "@/lib/db/schema";
+import { trackedWallets, walletPnl, walletPnlQueue, watchlist } from "@/lib/db/schema";
 import { isObject, num, rows, str } from "@/lib/exchanges/parse";
 import { leaderboardCursor } from "@/lib/moves/sources";
 
@@ -68,6 +68,10 @@ export async function refreshWatchlist(db: Db, poly: BoardSource, now: number): 
     for (const t of top) if (have.has(t.wallet)) await tx.update(walletPnl).set({ pnl: t.pnl }).where(sql`${walletPnl.wallet} = ${t.wallet}`);
     const missing = top.filter(t => !have.has(t.wallet)).map(t => ({ wallet: t.wallet, queuedAt: at }));
     for (let i = 0; i < missing.length; i += 500) await tx.insert(walletPnlQueue).values(missing.slice(i, i + 500)).onConflictDoNothing();
+    // Millionaire-tier wallets get their resolved positions read too (moves:records), for the landing's wallet
+    // spotlight. Never a name: one already tracked keeps its row as it is.
+    const mil = top.filter(t => t.tier === "millionaire").map(t => ({ wallet: t.wallet, name: null, reason: "watchlist" }));
+    for (let i = 0; i < mil.length; i += 500) await tx.insert(trackedWallets).values(mil.slice(i, i + 500)).onConflictDoNothing();
   });
   return { wallets: top.length, millionaires: top.filter(t => t.tier === "millionaire").length };
 }

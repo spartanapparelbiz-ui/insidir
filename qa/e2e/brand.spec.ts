@@ -20,7 +20,8 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   test.setTimeout(60_000);
   await context.addCookies([closed]);
   await page.goto("/");
-  const order = ["hero", "problem", "free", "members", "proof", "markets", "pricing", "faq", "final-cta"];
+  // Election Day (Nov 3–4 ET only), the spotlight, your stake and price gaps step aside when there is nothing real to show.
+  const order = ["hero", "pulse", "free", "members", "markets", "proof", "pricing", "faq", "final-cta"];
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
@@ -30,7 +31,11 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $1M+ bet $299K today. Which side were you on?", { timeout: 5_000 });
   await expect(page.getByTestId("hero-check")).toHaveAttribute("href", "#check");
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
-  await expect(page.getByTestId("pain-row")).toHaveCount(4);
+  // The Pulse: today's millionaire money, the biggest bet (side free), the hottest market; every card says something real.
+  await expect(page.getByTestId("pulse-total")).toContainText("$299K");
+  await expect(page.getByTestId("pulse-biggest")).toContainText("Millionaire");
+  await expect(page.getByTestId("pulse-hottest")).toContainText("Chiefs vs. Bills");
+  for (const id of ["pulse-total", "pulse-biggest", "pulse-hottest", "pulse-disagree", "pulse-unusual"]) await expect(page.getByTestId(id)).toBeVisible();
   await page.screenshot({ path: shotName("brand-hero", page) });
 
   // Free right now: today's #1 millionaire market whole (Chiefs vs. Bills: the split, the wallets, the price, the line).
@@ -50,13 +55,13 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await expect(page.getByTestId("free-more")).toHaveText(/^\+3 more today\. Members see every one live\.$/);
   await page.screenshot({ path: shotName("brand-free", page) });
 
-  // What members get: five rows, each with a live preview.
+  // What members get: five steps beside a phone showing real screens (on phones, each step shows its own).
   const members = page.getByTestId("members");
   await members.scrollIntoViewIfNeeded();
   await expect(page.getByTestId("member-row")).toHaveCount(5);
-  await expect(page.getByTestId("prev-check")).toContainText("Millionaires agree with you");
-  await expect(page.getByTestId("prev-brief").locator("li")).toHaveCount(3);
-  await expect(page.getByTestId("prev-wallet")).toContainText("Millionaire");
+  await expect(members.getByTestId("screen-check").first()).toContainText("Millionaires agree with you");
+  await expect(members.getByTestId("screen-brief").first()).toContainText("Chiefs vs. Bills");
+  await expect(members.getByTestId("screen-wallet").first()).toContainText("Millionaire");
   await expect(members).toContainText("$1 for 3 days, then $39/month.");
   await page.screenshot({ path: shotName("brand-members", page) });
 
@@ -158,7 +163,7 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("go-stake")).toContainText("$50 on every millionaire bet: +$674 over 30 settled. Past results, not a promise.");
   await page.screenshot({ path: shotName("go-6-aha", page), fullPage: true });
   await page.getByTestId("go-next").click();
-  await expect(page.getByTestId("paywall-headline")).toHaveText("Every millionaire bet on Football and Politics, live.");
+  await expect(page.getByTestId("paywall-headline")).toHaveText("See which side they took in Football and Politics.");
   await expect(page.getByTestId("paywall-timeline")).toContainText("Today $1");
   await expect(page.getByTestId("paywall-remind")).toBeChecked();
   await page.screenshot({ path: shotName("go-7-paywall", page) });

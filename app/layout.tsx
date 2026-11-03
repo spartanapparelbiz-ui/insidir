@@ -58,8 +58,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         {/* Every photo comes from Unsplash's image CDN (lib/unsplash.ts): open the connection before the first one is asked for. */}
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        {/* Before first paint: lets scroll reveals start hidden only when JS will show them (components/motion/Motion.tsx). */}
-        <script dangerouslySetInnerHTML={{ __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('js');document.documentElement.classList.add('bm');setTimeout(function(){if(!window.__bmOK)document.documentElement.classList.remove('bm')},6000)}" }} />
+        {/* Before first paint: motion is allowed (bm) and the landing hero plays its entrance from first paint (hero-in). Nothing is hidden here: components/brand/StageMotion.tsx hides only stages below the fold. */}
+        <script dangerouslySetInnerHTML={{ __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches){var h=document.documentElement;h.classList.add('js');if('IntersectionObserver' in window){h.classList.add('bm');h.classList.add('hero-in');setTimeout(function(){if(!window.__bmOK)h.classList.remove('bm')},6000)}}" }} />
       </head>
       <body>
         <ToastProvider>

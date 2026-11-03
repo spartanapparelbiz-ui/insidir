@@ -253,7 +253,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
         <GoStage testid="go-paywall">
           <div className="b-glass b-pad"  {...st(0.3, { width: "100%", maxWidth: 480, textAlign: "left" })}>
             <Paywall now={now} href="/go?step=checkout" testid="paywall" bullets={PAY_BULLETS}
-              headline={cats.length ? `Every millionaire bet on ${names(cats)}, live.` : "Every millionaire bet, live."}
+              headline={cats.length ? `See which side they took in ${names(cats)}.` : "See which side the millionaires took."}
               onStart={remind => put({ remind })} />
           </div>
         </GoStage>

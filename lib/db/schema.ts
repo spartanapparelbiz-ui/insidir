@@ -474,6 +474,8 @@ export const traderPositions = terminal.table("trader_positions", {
   moneyIn: doublePrecision("money_in").notNull(),
   pnl: doublePrecision("pnl").notNull(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  /** Average price paid, 0..1 (null on rows saved before it was kept). */
+  avgPrice: doublePrecision("avg_price"),
 }, t => [primaryKey({ columns: [t.wallet, t.marketId, t.outcomeIndex] }), index("trader_positions_resolved_idx").on(t.resolvedAt)]);
 
 /** A wallet's open positions (Data API /positions), replaced whole on each read: for the smart-money side of open

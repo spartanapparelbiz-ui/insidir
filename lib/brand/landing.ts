@@ -9,6 +9,11 @@ import type { CategorySlug } from "@/lib/brand/categories";
 import { lastResults, liveCategories, marketMoney, midnightET, positions, proof, pulse, recentBets, topWallets,
   type BoardBet, type CategoryLive, type MarketMoney, type Position, type Proof, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
 import { memo } from "@/lib/memo";
+import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
+
+let clients: { kalshi: KalshiClient; polymarket: PolymarketClient } | null = null;
+const gapClients = () => (clients ??= { kalshi: new KalshiClient(), polymarket: new PolymarketClient() });
+import { bestRecord, electionBoard, electionDay, priceGaps, pulseData, walletSpotlight, type ElectionBoard, type PriceGap, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
 
 const DAY = 86_400_000;
 
@@ -36,6 +41,13 @@ export interface LandingData {
   categories: { window: "day" | "week"; list: CategoryLive[] };
   proof: Proof | null;
   bestPrice: BestPrice | null;
+  /** The Pulse (lib/brand/pulse.ts). */
+  pulse2: Pulse2;
+  /** Election Day board, Nov 3–4 ET only (else null). */
+  election: ElectionBoard | null;
+  spotlight: Spotlight | null;
+  stake: StakeRecord | null;
+  gaps: PriceGap[];
 }
 
 /** The newest Read that priced both venues (the members' "better price" preview). */
@@ -76,7 +88,15 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   const wallet = w ? { ...w, results: await safe(lastResults(db, w.wallet, 5), []) } : null;
   const b = [...recent].sort((x, y) => y.amount - x.amount)[0];
   const pool = todayTop.length ? todayTop : dayTop;
+  const [pulse2, election, spotlight, stake, gaps] = await Promise.all([
+    safe(pulseData(db, now, p.sinceMidnight, pool), { today: p.sinceMidnight, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
+    electionDay(now) ? safe(electionBoard(db, now, member), null) : Promise.resolve(null),
+    safe(walletSpotlight(db), null),
+    safe(bestRecord(db, now), null),
+    safe(priceGaps(db, gapClients(), now), [] as PriceGap[]),
+  ]);
   return {
+    pulse2, election, spotlight, stake, gaps,
     now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, proof: pr, bestPrice: best,
     chips: day.slice(0, 5).map(m => ({ pick: `polymarket:${m.marketId}`, label: m.title })),
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
@@ -90,4 +110,5 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
 export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, chips: [], top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, proof: null, bestPrice: null,
+  pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [],
 });

@@ -57,7 +57,7 @@ body:has(.b-root) .foot, body:has(.b-root) .latebar, body:has(.b-root) .tabbar, 
 .b-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- Stage ---------- */
-.b-stage { position: relative; min-height: 100dvh; width: 100%; overflow: hidden; background: #000; display: flex; align-items: center; }
+.b-stage { position: relative; min-height: 100dvh; width: 100%; overflow: clip; background: #000; display: flex; align-items: center; }
 @supports not (height: 100dvh) { .b-stage { min-height: 100vh; } }
 .b-stage__bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .b-stage__bg img, .b-stage__bg video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -311,14 +311,21 @@ body:has(.b-root) .foot, body:has(.b-root) .latebar, body:has(.b-root) .tabbar, 
 .b-toggle input:checked { background: #5b5b5b; }
 .b-toggle input:checked::after { transform: translateX(18px); }
 
-/* ---------- The four behaviours (once per stage, then detached) ---------- */
-html.bm .b-stage:not(.is-done) .ln { overflow: hidden; padding-top: .26em; margin-top: -.26em; }
-html.bm .b-stage:not(.is-in):not(.is-done) .ln-i { transform: translateY(100%); }
-html.bm .b-stage:not(.is-in):not(.is-done) [data-m] { opacity: 0; }
-html.bm .b-stage.is-in:not(.is-done) .ln-i { animation: b-lineRise 1.05s var(--e-reveal) both; animation-delay: calc(var(--i, 0) * .1s + .12s); }
-html.bm .b-stage.is-in:not(.is-done) [data-m="lift"] { animation: b-subIn .85s var(--e-reveal) both; animation-delay: var(--d, .58s); }
-html.bm .b-stage.is-in:not(.is-done) [data-m="settle"] { animation: b-pillIn .7s var(--e-reveal) both; animation-delay: var(--d, .9s); }
-html.bm .b-stage.is-in:not(.is-done) [data-m="quiet"] { animation: b-liftIn .55s var(--e-soft) both; animation-delay: var(--d, .5s); }
+/* ---------- The four behaviours (once per stage, then detached) — progressive enhancement ----------
+ * Everything is visible by default. components/brand/StageMotion.tsx adds .b-pre (the hidden starting state) only to
+ * stages below the fold at load, when IntersectionObserver exists and motion is allowed; a stage gets .is-in the moment
+ * any of it enters the viewport and .is-done when its entrance is over. Anything not revealed within 1.2 s of entering
+ * the viewport, or jumped past (an anchor, a fast scroll), snaps to visible. The landing hero plays at first paint
+ * (html.hero-in, set before paint in app/layout.tsx): it never waits on scroll. Masked lines leave room for ascenders
+ * and descenders (.26em above, .14em below), so nothing is clipped mid-animation. */
+html.bm .b-stage:is(.b-pre, .is-in):not(.is-done) .ln,
+html.bm.hero-in .b-stage[data-first]:not(.is-done) .ln { overflow: hidden; padding-top: .26em; margin-top: -.26em; padding-bottom: .14em; margin-bottom: -.14em; }
+html.bm .b-stage.b-pre:not(.is-in):not(.is-done) .ln-i { transform: translateY(100%); }
+html.bm .b-stage.b-pre:not(.is-in):not(.is-done) [data-m] { opacity: 0; }
+html.bm :is(.b-stage.is-in, .hero-in .b-stage[data-first]):not(.is-done) .ln-i { animation: b-lineRise 1.05s var(--e-reveal) both; animation-delay: min(calc(var(--i, 0) * .1s + .12s), 1s); }
+html.bm :is(.b-stage.is-in, .hero-in .b-stage[data-first]):not(.is-done) [data-m="lift"] { animation: b-subIn .85s var(--e-reveal) both; animation-delay: min(var(--d, .58s), 1s); }
+html.bm :is(.b-stage.is-in, .hero-in .b-stage[data-first]):not(.is-done) [data-m="settle"] { animation: b-pillIn .7s var(--e-reveal) both; animation-delay: min(var(--d, .9s), 1s); }
+html.bm :is(.b-stage.is-in, .hero-in .b-stage[data-first]):not(.is-done) [data-m="quiet"] { animation: b-liftIn .55s var(--e-soft) both; animation-delay: min(var(--d, .5s), 1s); }
 html.bm .b-new { animation: b-pillIn .7s var(--e-reveal) both; }
 @keyframes b-lineRise { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes b-subIn { from { opacity: 0; transform: translateY(calc(14 * var(--u))); filter: blur(4px); } to { opacity: 1; transform: none; filter: blur(0); } }
@@ -326,8 +333,8 @@ html.bm .b-new { animation: b-pillIn .7s var(--e-reveal) both; }
 @keyframes b-pillIn { from { opacity: 0; transform: translateY(calc(8 * var(--u))) scale(.972); } to { opacity: 1; transform: none; } }
 @keyframes b-liftIn { from { opacity: 0; transform: translateY(calc(9 * var(--u))); } to { opacity: 1; transform: none; } }
 @media (max-width: 552px) {
-  html.bm .b-stage.is-in:not(.is-done) [data-m="lift"] { animation-name: b-subInFlat; }
-  html.bm .b-stage.is-in:not(.is-done) .ln-i { animation-duration: .92s; }
+  html.bm :is(.b-stage.is-in, .hero-in .b-stage[data-first]):not(.is-done) [data-m="lift"] { animation-name: b-subInFlat; }
+  html.bm :is(.b-stage.is-in, .hero-in .b-stage[data-first]):not(.is-done) .ln-i { animation-duration: .92s; }
 }
 @media (prefers-reduced-motion: reduce) {
   html.bm .b-stage .ln { overflow: visible; padding-top: 0; margin-top: 0; }
@@ -455,7 +462,7 @@ body:has(.viewas) .b-topbar, body:has(.viewas) .b-nav--fixed { top: 48px; }
 /* ---- Older member pages (Account, Alerts, Following) inside the brand shell: their own CSS reads these tokens, so
  * mapping them to the brand's makes them black glass with white type, brand pills and the brand font. ---- */
 .b-legacy {
-  --ink: #ffffff; --paper: #000000; --page: transparent; --night: transparent;
+  --ink: #ffffff; --paper: #000; --page: transparent; --night: transparent;
   --grey-1: rgba(255, 255, 255, .04); --grey-1b: rgba(255, 255, 255, .07); --grey-2: rgba(255, 255, 255, .09); --grey-3: rgba(237, 237, 237, .62); --grey-4: rgba(237, 237, 237, .4);
   --night-surface: var(--grey-1); --night-inset: var(--grey-1b); --night-line: var(--grey-2); --night-muted: var(--grey-3);
   --bg: var(--grey-1); --bg-alt: var(--grey-1b); --border: var(--grey-2); --text: #ffffff; --muted: var(--grey-3); --press: #e6e6e6;
@@ -471,7 +478,7 @@ body:has(.viewas) .b-topbar, body:has(.viewas) .b-nav--fixed { top: 48px; }
 .b-legacy .btn--primary { background: var(--white-btn); color: var(--btn-ink); }
 .b-legacy .btn--primary:hover { background: #e6e6e6; }
 .b-legacy .btn--secondary, .b-legacy .btn--ghost { background: var(--panel); color: #ededed; border: 1px solid var(--glass-line); padding: 0 18px; }
-.b-legacy .btn--secondary:hover, .b-legacy .btn--ghost:hover { background: #222; color: #fff; }
+.b-legacy .btn--secondary:hover, .b-legacy .btn--ghost:hover { background: #232323; color: #fff; }
 .b-legacy .input, .b-legacy input[type=text], .b-legacy input:not([type]), .b-legacy textarea, .b-legacy select { background: rgba(255, 255, 255, .04); color: #fff; border: 1px solid var(--glass-line); border-radius: 14px; min-height: 44px; }
 .b-legacy a:not(.btn) { color: #fff; }
 .b-legacy .acancel summary, .b-legacy label { min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
@@ -499,19 +506,19 @@ body:has(.viewas) .b-topbar, body:has(.viewas) .b-nav--fixed { top: 48px; }
 /* /go's Back: a round glass button, top left, under the progress bar. */
 .b-go-back { position: fixed; top: calc(14px + env(safe-area-inset-top)); left: max(12px, calc(var(--gut) - 10px)); z-index: 61; width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center;
   background: var(--glass-fill); border: 1px solid var(--glass-line); color: #ededed; cursor: pointer; -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); transition: background .18s ease, color .18s ease; }
-.b-go-back:hover { background: #1c1c1c; color: #fff; }
-.b-go-back:active { background: #262626; }
+.b-go-back:hover { background: #232323; color: #fff; }
+.b-go-back:active { background: #181818; }
 .b-go-back:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 
 /* ---- States, everywhere: hover lifts the fill, pressed darkens it, disabled fades and stops the pointer. ---- */
 .b-btn { transition: background .18s ease, color .18s ease, border-color .18s ease, opacity .18s ease; }
-.b-primary:active, .b-nav-start:active { background: #d4d4d4; }
-.b-panel-pill:active, .b-ghost:active { background: #2c2c2c; }
+.b-primary:active, .b-nav-start:active { background: #d9d9d9; }
+.b-panel-pill:active, .b-ghost:active { background: #181818; }
 .b-btn:disabled, .b-btn[aria-disabled="true"], .b-root button:disabled { opacity: .45; cursor: not-allowed; }
 .b-btn:disabled:hover, .b-btn[aria-disabled="true"]:hover { background: inherit; }
 .b-primary:disabled:hover, .b-primary[aria-disabled="true"]:hover { background: var(--white-btn); }
 .b-panel-pill[aria-pressed="true"], .b-panel-pill[data-on="true"], .b-panel-pill[aria-current="page"] { background: var(--white-btn); color: var(--btn-ink) !important; }
-.b-lock { transition: background .18s ease, color .18s ease; } .b-lock:hover { background: #232323; color: #fff; } .b-lock:active { background: #2c2c2c; }
+.b-lock { transition: background .18s ease, color .18s ease; } .b-lock:hover { background: #232323; color: #fff; } .b-lock:active { background: #181818; }
 .b-tile { transition: border-color .18s ease; } .b-tile:hover { border-color: rgba(255, 255, 255, .22); } .b-tile:active { border-color: rgba(255, 255, 255, .32); }
 .b-choices button { transition: background .18s ease, border-color .18s ease; } .b-choices button:hover { border-color: rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .05); } .b-choices button:active { background: rgba(255, 255, 255, .08); }
 .b-faq__q:hover { background: rgba(255, 255, 255, .03); } .b-faq__q:active { background: rgba(255, 255, 255, .06); }
@@ -522,3 +529,96 @@ a.b-row { transition: border-color .18s ease, background .18s ease; } a.b-row:ho
 /* Skeletons: the loading content's shape in quiet grey, static (no shimmer: motion stays the four behaviours). */
 .b-skel { display: grid; gap: 12px; min-height: 180px; }
 .b-skel__line { display: block; height: 14px; width: 100%; border-radius: 8px; background: rgba(255, 255, 255, .07); }
+
+/* ---------- The Pulse: one glass dashboard, five cards (slots; ScrollFx slides them in) ---------- */
+.b-dash { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(14 * var(--u)); align-items: stretch; }
+.b-dcard { padding: calc(20 * var(--u)); display: grid; gap: calc(10 * var(--u)); align-content: start; min-width: 0; will-change: transform; }
+.b-dcard--wide { grid-column: span 2; }
+.b-dcard--total { align-content: space-between; }
+.b-dbig { margin: 0; font-weight: 500; font-size: calc(54 * var(--u)); letter-spacing: calc(-2 * var(--u)); line-height: 1; }
+.b-dmid { margin: 0; font-weight: 500; font-size: calc(30 * var(--u)); letter-spacing: calc(-0.9 * var(--u)); line-height: 1.05; }
+.b-dtitle { font-weight: 500; font-size: calc(16 * var(--u)); line-height: 1.3; letter-spacing: calc(-0.2 * var(--u)); }
+.b-gap { display: grid; gap: calc(8 * var(--u)); }
+.b-gap__row { display: grid; grid-template-columns: minmax(0, 44%) minmax(0, 1fr); gap: 12px; align-items: center; font-size: calc(13.5 * var(--u)); color: var(--ink-muted); }
+.b-gap__row b { color: #fff; font-weight: 600; }
+.b-bar--up { background: rgba(255, 255, 255, .08); }
+.b-bar--dim { background: rgba(255, 255, 255, .08); }
+.b-bar--dim > span { background: rgba(255, 255, 255, .7); }
+.b-lockrow { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 44px; padding: 8px 12px; border-radius: 14px; background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--glass-line); color: var(--ink-muted); font: inherit; font-size: 13px; cursor: pointer; text-align: left; transition: background .18s ease, border-color .18s ease; }
+.b-lockrow:hover { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .18); }
+.b-lockrow:active { background: rgba(255, 255, 255, .09); }
+.b-lockrow .b-lock { pointer-events: none; }
+@media (max-width: 1160px) {
+  .b-dash { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .b-dcard { padding: max(16px, calc(20 * var(--u))); gap: 10px; }
+  .b-dbig { font-size: max(40px, calc(54 * var(--u))); } .b-dmid { font-size: max(24px, calc(30 * var(--u))); } .b-dtitle { font-size: 16px; } .b-gap__row { font-size: 13.5px; }
+}
+@media (max-width: 680px) { .b-dash { grid-template-columns: 1fr; } .b-dcard--wide { grid-column: auto; } .b-gap__row { grid-template-columns: 1fr; gap: 6px; } }
+
+/* ---------- What members get: steps on the left, a sticky phone on the right (HTML/CSS, real data) ---------- */
+.b-story { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) calc(330 * var(--u)); gap: calc(60 * var(--u)); align-items: start; }
+.b-story__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.b-step { min-height: 62vh; display: grid; align-content: center; gap: 8px; padding: calc(10 * var(--u)) 0; border-left: 2px solid var(--glass-line); padding-left: calc(24 * var(--u)); }
+.b-step .b-feat__t { margin: 0; font-size: calc(24 * var(--u)); line-height: 1.25; font-weight: 500; letter-spacing: calc(-0.5 * var(--u)); max-width: 30ch; }
+.b-step__screen { display: none; }
+.b-story__phone { position: sticky; top: calc(50dvh - 300px); }
+.b-phone { position: relative; width: 100%; max-width: 300px; aspect-ratio: 300 / 610; margin: 0 auto; border-radius: 46px; border: 1px solid rgba(255, 255, 255, .16); background: #050505;
+  box-shadow: 0 0 0 7px #111, 0 30px 80px rgba(0, 0, 0, .7); overflow: hidden; }
+.b-phone__notch { position: absolute; top: 12px; left: 50%; width: 92px; height: 26px; border-radius: 99px; background: #000; transform: translateX(-50%); z-index: 3; }
+.b-screen { position: absolute; inset: 0; padding: 56px 18px 18px; opacity: 0; transform: translateY(14px); transition: opacity .45s var(--e-soft), transform .45s var(--e-reveal); }
+.b-phone[data-active="0"] .b-screen[data-screen="0"], .b-phone[data-active="1"] .b-screen[data-screen="1"], .b-phone[data-active="2"] .b-screen[data-screen="2"],
+.b-phone[data-active="3"] .b-screen[data-screen="3"], .b-phone[data-active="4"] .b-screen[data-screen="4"] { opacity: 1; transform: none; }
+.b-ph { display: grid; gap: 10px; align-content: start; font-size: 13px; }
+.b-ph__label { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--dim); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.b-ph__title { font-weight: 600; font-size: 16px; line-height: 1.25; }
+.b-ph__pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.b-ph__pill { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 99px; background: var(--panel); border: 1px solid var(--glass-line); font-size: 12px; font-weight: 500; }
+.b-ph__pill.is-on { background: var(--white-btn); color: var(--btn-ink); }
+.b-ph__verdict { font-weight: 600; font-size: 20px; line-height: 1.15; letter-spacing: -.4px; }
+.b-ph__small { color: var(--ink-muted); font-size: 12.5px; line-height: 1.45; }
+.b-ph__big { font-weight: 600; font-size: 28px; letter-spacing: -.8px; }
+.b-ph__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 9px 10px; border-radius: 12px; background: rgba(255, 255, 255, .05); font-size: 12.5px; }
+.b-ph__row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-ph__ping { display: grid; gap: 3px; padding: 11px 12px; border-radius: 16px; background: rgba(40, 40, 40, .92); border: 1px solid rgba(255, 255, 255, .12); font-size: 12.5px; line-height: 1.35;
+  transform: translateY(18px); opacity: 0; transition: opacity .5s var(--e-soft) .35s, transform .6s var(--e-reveal) .35s; }
+.b-phone[data-active="1"] .b-ph__ping, .b-phone--mini .b-ph__ping { opacity: 1; transform: none; }
+@media (max-width: 1160px) { .b-step .b-feat__t { font-size: max(19px, calc(24 * var(--u))); } }
+/* Phones: no sticky phone; each step shows its own screen. */
+@media (max-width: 860px) {
+  .b-story { grid-template-columns: 1fr; gap: 0; }
+  .b-story__phone { display: none; }
+  .b-step { min-height: 0; padding: 18px 0 18px 16px; }
+  .b-step__screen { display: block; margin-top: 10px; }
+  .b-phone--mini { aspect-ratio: auto; max-width: 340px; margin: 0; border-radius: 26px; box-shadow: 0 0 0 5px #111; }
+  .b-phone--mini .b-screen { position: static; opacity: 1; transform: none; padding: 16px; }
+}
+
+/* ---------- Wallet spotlight, the race board, your stake ---------- */
+.b-srow, .b-race { grid-template-columns: minmax(0, 1fr) auto; }
+.b-res { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 99px; font-weight: 600; font-size: 13px; white-space: nowrap; background: rgba(255, 255, 255, .05); }
+.b-res--won { color: var(--up); } .b-res--lost { color: var(--down); }
+.b-race .b-bar { margin: 4px 0 2px; }
+.b-range { width: 100%; height: 44px; appearance: none; background: transparent; cursor: pointer; }
+.b-range::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #fff var(--v, 0%), rgba(255, 255, 255, .14) var(--v, 0%)); }
+.b-range::-moz-range-track { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, .14); }
+.b-range::-moz-range-progress { height: 6px; border-radius: 99px; background: #fff; }
+.b-range::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 2px 10px rgba(0, 0, 0, .5); }
+.b-range::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 0; }
+.b-range:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: 8px; }
+
+/* ---------- Markets: a sideways row (pinned and scrubbed on desktop by ScrollFx; a swipe on phones and without JS) ---------- */
+.b-hrow { width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.b-hrow::-webkit-scrollbar { display: none; }
+.b-hrow.is-pinned { overflow: visible; }
+.b-htrack { display: flex; gap: calc(12 * var(--u)); width: max-content; padding-bottom: 4px; }
+.b-htrack .b-ccard { width: calc(270 * var(--u)); flex: none; scroll-snap-align: start; }
+.b-ccard__img img { will-change: transform; }
+@media (max-width: 1160px) { .b-htrack { gap: 12px; } .b-htrack .b-ccard { width: max(220px, calc(270 * var(--u))); } }
+@media (max-width: 552px) { .b-htrack .b-ccard { width: 62vw; } }
+
+/* The thin progress line along the top (ScrollFx). */
+.b-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: var(--white-btn); transform-origin: 0 50%; transform: scaleX(0); z-index: 70; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .b-progress { display: none; } .b-screen, .b-ph__ping { transition: none; } }
+.b-panels .b-col, .b-tile3 .b-col { max-width: none; margin: 0; justify-items: stretch; }
+.b-phone--mini { padding: 18px 20px; }
