@@ -79,8 +79,8 @@ export const CHECKS: Check[] = [
   { name: "Polymarket CLOB GET /price", url: () => `${c}/price?token_id=${ctx.tokenId ?? ""}&side=buy`, fields: ["price:numeric"] },
   { name: "Polymarket CLOB GET /midpoint", url: () => `${c}/midpoint?token_id=${ctx.tokenId ?? ""}`, fields: ["mid:numeric"] },
   {
-    name: "Polymarket Data GET /trades (whales)", url: () => `${d}/trades?filterType=CASH&filterAmount=10000&limit=20`,
-    fields: ["[].proxyWallet:string", "[].side:string", "[].asset:string", "[].conditionId:string", "[].size:numeric", "[].price:numeric", "[].timestamp:numeric", "[].title:string"],
+    name: "Polymarket Data GET /v2/trades (whales, moves)", url: () => `${d}/v2/trades?filterType=CASH&filterAmount=10000&limit=20&takerOnly=true`,
+    fields: ["data[].proxy_wallet:string", "data[].side:string", "data[].token_id:string", "data[].condition_id:string", "data[].size:numeric", "data[].price:numeric", "data[].timestamp:numeric", "data[].title:string", "pagination.next_cursor:string"],
   },
   { name: "Polymarket US GET /v1/markets (unverified)", url: () => `${us}${US_ENDPOINTS.markets}?limit=5`, fields: ["markets|data:array"], optional: process.env.POLYMARKET_US_ENABLED !== "1" },
 ];

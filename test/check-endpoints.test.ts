@@ -17,16 +17,16 @@ describe("endpoint shape check", () => {
     ["Kalshi GET /markets/{ticker}/orderbook", "kalshi-orderbook-cents.json"],
     ["Polymarket Gamma GET /events", "gamma-events.json"],
     ["Polymarket CLOB POST /books", "clob-books.json"],
-    ["Polymarket Data GET /trades", "data-trades.json"],
+    ["Polymarket Data GET /v2/trades", "data-trades-v2.json"],
   ])("%s matches %s", (prefix, file) => {
     expect(shapeErrors(fx(file), fields(prefix))).toEqual([]);
   });
 
   it("fails loudly on a renamed or retyped field", () => {
-    const trades = fx("data-trades.json") as Array<Record<string, unknown>>;
-    const renamed = trades.map(({ proxyWallet, ...t }) => ({ ...t, wallet: proxyWallet }));
-    expect(shapeErrors(renamed, fields("Polymarket Data GET /trades"))).toEqual([expect.stringContaining("[].proxyWallet should be string")]);
-    expect(shapeErrors([{ ...trades[0], price: "n/a" }], ["[].price:numeric"])).toHaveLength(1);
+    const page = fx("data-trades-v2.json") as { data: Array<Record<string, unknown>> };
+    const renamed = { ...page, data: page.data.map(({ proxy_wallet, ...t }) => ({ ...t, wallet: proxy_wallet })) };
+    expect(shapeErrors(renamed, fields("Polymarket Data GET /v2/trades"))).toEqual([expect.stringContaining("data[].proxy_wallet should be string")]);
+    expect(shapeErrors([{ ...page.data[0], price: "n/a" }], ["[].price:numeric"])).toHaveLength(1);
     expect(shapeErrors({ orderbook: {} }, fields("Kalshi GET /markets/{ticker}/orderbook"))).toHaveLength(1);
   });
 });

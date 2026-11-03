@@ -1,0 +1,73 @@
+{
+ "data": [
+  {
+   "proxy_wallet": "0xebfdb8164f0e0748818d6c7a9ac85a323267fd63",
+   "side": "BUY",
+   "token_id": "1747175375576830684901473814029197172180116051236100953569678513760890781696",
+   "condition_id": "0x03dcddc07e835b8fffecc96b6663a6f4180000000000000000000000000000",
+   "size": 117079.798421,
+   "price": 0.4233937658,
+   "timestamp": 1793658865,
+   "title": "Charlottesville: Nicolas Mejia vs Murphy Cassone AND Villa Maria: Carlos Maria Zarate vs Gonzalo Villanueva",
+   "slug": "",
+   "icon": "",
+   "event_slug": "",
+   "outcome": "",
+   "outcome_index": 999,
+   "name": "fixture0",
+   "pseudonym": "fixture0",
+   "bio": "",
+   "profile_image": "",
+   "profile_image_optimized": "",
+   "transaction_hash": "0x0b29c1cc1ade1252a9d9ad058b62c30b9984a6e31b67eeb23da8c85d2e9f8daf"
+  },
+  {
+   "proxy_wallet": "0xf0318c32136c2db7fec88b84869aee6a1106c80c",
+   "side": "BUY",
+   "token_id": "26855838504707809072517413136980877959218237494111044616988392898290621314632",
+   "condition_id": "0x0836beef24c9f1c6db78c6a4068e1a3baa4352f65a27a277cc8899ea130ec8eb",
+   "size": 21960.05,
+   "price": 0.48,
+   "timestamp": 1793658702,
+   "title": "Spread: Grizzlies (-6.5)",
+   "slug": "nba-nop-mem-2026-11-02-spread-home-6pt5",
+   "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/super+cool+basketball+in+red+and+blue+wow.png",
+   "event_slug": "nba-nop-mem-2026-11-02",
+   "outcome": "Grizzlies",
+   "outcome_index": 0,
+   "name": "fixture1",
+   "pseudonym": "fixture1",
+   "bio": "",
+   "profile_image": "",
+   "profile_image_optimized": "",
+   "transaction_hash": "0x4dd3cd621ebc3f74042c64e8228eaeb23ffc865db67075e54ff1a6c6afa4a27e"
+  },
+  {
+   "proxy_wallet": "0x9a933a2a83188b28efaf1d07d45228ea6ee82793",
+   "side": "BUY",
+   "token_id": "8944870674701118814978227503356799838117152732928321689754751616721517203594",
+   "condition_id": "0xc138f7ba5966e0ec354a50479099578139e6ad25ddd6c3101aea81a3916aa43b",
+   "size": 161538.461539,
+   "price": 0.39,
+   "timestamp": 1793658660,
+   "title": "Bears vs. Seahawks",
+   "slug": "nfl-chi-sea-2026-11-03",
+   "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/nfl.png",
+   "event_slug": "nfl-chi-sea-2026-11-03",
+   "outcome": "Bears",
+   "outcome_index": 0,
+   "name": "fixture2",
+   "pseudonym": "fixture2",
+   "bio": "",
+   "profile_image": "",
+   "profile_image_optimized": "",
+   "transaction_hash": "0xcea27a196a135cfa5d7ace75b748b0547ad3d0e6872c9b2ad36c5d74b18d03d6"
+  }
+ ],
+ "pagination": {
+  "limit": 3,
+  "offset": 0,
+  "has_more": true,
+  "next_cursor": "eyJkYXRhIjp7InR5cGUiOiJ0cmFkZXMiLCJwYXJhbXMiOnsibCI6MywidHMiOjE3OTM2NTg2NjAsInNxIjoiOTY2MzU0NjkwMDAyMjAyNTkwIiwiZCI6M319LCJzaWciOiJlYmE2OTYwZWMwNGRiY2ZhNDgxNmU4ZjQ4YjY3MTcxMCJ9"
+ }
+}
