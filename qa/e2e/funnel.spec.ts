@@ -80,13 +80,14 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
   expect(await q("select 1 from terminal.users where email = $1", [email])).toHaveLength(1);
 
-  // Someone not on the list (and with no membership) is signed in without Insidir: sent to /start.
+  // Someone not on the list (and with no membership): accounts only if you pay, so no account; the paywall.
   await page.context().clearCookies();
+  await q("delete from terminal.users where email = $1", [`nolist-${w}@example.test`]);
   await post("/__whop_user", { email: `nolist-${w}@example.test`, name: null });
   await page.goto("/login");
   await page.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
-  expect((await q<{ plan: string }>("select plan from terminal.users where email = $1", [`nolist-${w}@example.test`]))[0]!.plan).toBe("free");
+  await expect(page).toHaveURL(/\/go\?step=paywall$/, { timeout: 15_000 });
+  expect(await q("select 1 from terminal.users where email = $1", [`nolist-${w}@example.test`])).toHaveLength(0);
 
   // /admin: marked Free access, and left out of the funnel.
   await adminIn(page);
@@ -114,7 +115,7 @@ test("/start: pay first: the checkout straight away, the charge line, Apple Pay 
   await page.screenshot({ path: `qa/screenshots/login-${page.viewportSize()!.width}.png`, fullPage: true });
 });
 
-test("signed in without paying: back later, /start opens the checkout already signed in; funnel events are recorded", async ({ page }) => {
+test("no free account: signing in without paying makes none and lands on the paywall; /start\'s pay-first checkout still opens; funnel events are recorded", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = `unpaid-${w}@example.test`;
   await whop("/__reset", { method: "POST" });
@@ -123,26 +124,16 @@ test("signed in without paying: back later, /start opens the checkout already si
   await page.goto("/start");
   await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(page.locator("[data-mock-checkout]")).toBeVisible({ timeout: 15_000 });
-  // They log in first (from "Already a member? Log in"): signed in without Insidir, back on /start's checkout.
+  // They try to log in without paying: no account is made and they land on the paywall, never an empty app.
   await post("/__whop_user", { email, name: null });
   await page.goto("/login?next=%2Fstart");
   await page.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
-  await page.getByTestId("age-18").getByRole("checkbox").check();
-  await expect(page.locator("[data-mock-checkout]")).toBeVisible({ timeout: 15_000 });
-  // Signed in, the 18+ confirmation is now kept with the account: next time the checkout opens straight away.
-  await expect.poll(async () => (await q<{ ok: boolean }>("select age_confirmed_at is not null as ok from terminal.users where email = $1", [email]))[0]?.ok).toBe(true);
-  // They leave without paying, and come back later: still signed in, the checkout opens again.
-  await page.goto("/");
-  await page.goto("/start");
-  await expect(page.getByTestId("start-signed-in")).toContainText(email);
-  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
-  // /login for someone signed in without Insidir: on to /start.
-  await page.goto("/login");
-  await expect(page).toHaveURL(/\/start$/);
+  await expect(page).toHaveURL(/\/go\?step=paywall$/, { timeout: 15_000 });
+  expect(await q("select 1 from terminal.users where email = $1", [email])).toHaveLength(0);
   await expect.poll(async () => (await q<{ name: string }>("select distinct name from terminal.events where name in ('start_view', 'account_created', 'checkout_start')")).map(r => r.name).sort())
-    .toEqual(["account_created", "checkout_start", "start_view"]);
+    .toEqual(["checkout_start", "start_view"]); // the pay-first checkout opened; no account was ever created
 });
+
 
 
 test("Start for $1 in the nav on public pages, home included (the brand nav's pill → /go), but not /start or /login; no old offer bars", async ({ page }) => {

@@ -103,7 +103,7 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   await expect(page).toHaveURL(/\/start$/);
 });
 
-test("a Whop account without Insidir: signed in, sent to /start with the checkout; a cancelled Whop sign-in goes back to /login", async ({ page }) => {
+test("no free sign-up: a Whop account without Insidir gets no account and no session and lands on the paywall; a cancelled Whop sign-in goes back to /login", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = `stranger-${w}@example.test`;
   await whop("/__reset", { method: "POST" });
@@ -113,13 +113,14 @@ test("a Whop account without Insidir: signed in, sent to /start with the checkou
   const callbacks: string[] = [];
   page.on("request", r => { if (/\/(login|reset)\/callback/.test(r.url())) callbacks.push(new URL(r.url()).pathname); });
   await page.goto("/login?next=%2Ffeed");
+  await expect(page.locator("body")).not.toContainText(/sign up|create (an )?account|join free/i);
   await page.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/start$/, { timeout: 15_000 });
-  await expect(page.getByTestId("start-signed-in")).toContainText(email);
+  await expect(page).toHaveURL(/\/go\?step=paywall$/, { timeout: 15_000 });
+  // Accounts only if you pay: nothing was made, and no session was set.
+  expect(await q("select id from terminal.users where lower(email) = $1", [email])).toHaveLength(0);
+  expect((await page.context().cookies()).some(c => c.name === "insidir_session")).toBe(false);
   // Whop only has /login/callback registered (as in production): the sign-in comes back there.
   expect(callbacks).toEqual(["/login/callback"]);
-  await page.getByTestId("age-18").getByRole("checkbox").check();
-  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
   // Whop says the sign-in was cancelled: back to /login, nothing set.
   await page.context().clearCookies();
   await page.goto("/reset/callback?error=access_denied");

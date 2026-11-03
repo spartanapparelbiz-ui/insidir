@@ -42,9 +42,10 @@ test("/board: visitors see bets 60 minutes late with the live count and Start fo
   if (etMinutes > 95) expect(Number(await page.getByTestId("board-live-count").textContent())).toBeGreaterThanOrEqual(6);
   await expect(page.getByTestId("board-start")).toHaveAttribute("href", "/go");
   const visitor = await page.getByTestId("bet-row").evaluateAll(rs => rs.map(r => r.getAttribute("data-bet")));
-  // Only the fixtures older than an hour (70 and 90 minutes); never the newer ones, and no Copy, no side.
+  // Only the fixtures older than an hour (read from the database: a long run ages them); never a newer one, no Copy, no side.
+  const ages = await q<{ id: string; old: boolean }>("select id, at < now() - interval '60 minutes' as old from terminal.millionaire_bets where id like 'e2e:mb%'");
+  for (const { id, old } of ages) { if (old) continue; expect(visitor, id).not.toContain(id); }
   expect(visitor).toEqual(expect.arrayContaining(["e2e:mb3", "e2e:mb6"]));
-  for (const id of ["e2e:mb4", "e2e:mb7", "e2e:mb1", "e2e:mb5", "e2e:mb2"]) expect(visitor, id).not.toContain(id);
   await expect(page.getByTestId("bet-copy")).toHaveCount(0);
   const live = await page.request.get("/api/millionaires/live?n=20&board=1");
   const bodyV = await live.json() as { bets: Array<{ id: string; side: string | null }> };
@@ -74,16 +75,16 @@ test("/election: control of the Senate and House first; visitors get the top 3 w
     }
     await context.addCookies([closed]);
     await page.goto("/election");
-    const board = page.getByTestId("election-board");
-    await expect(board).toContainText("Live");
-    const free = board.getByTestId("race-free");
+    // The headline is computed from the money; the stage is the homepage's (a dusk scene, the masked headline).
+    await expect(page.getByTestId("insight")).toBeVisible();
+    const free = page.getByTestId("race-card");
     await expect(free).toHaveCount(3);
     await expect(free.nth(0)).toContainText("control the Senate"); // control first, then by money
     await expect(free.nth(1)).toContainText("control the House");
     await expect(free.nth(2)).toContainText("Texas Senate race");
     await expect(free.nth(0)).toContainText("58¢");
-    await expect(board.getByTestId("race-locked")).toHaveCount(2);
-    await expect(board).not.toContainText("Iowa and Kansas"); // a combination bet isn't a race
+    await expect(page.getByTestId("election-locked").locator("li")).toHaveCount(2);
+    await expect(page.locator("main")).not.toContainText("Iowa and Kansas"); // a combination bet isn't a race
     await expect(page.getByTestId("election-start")).toBeVisible();
     // The locked rows never carry their split or price.
     const api = await (await page.request.get("/api/millionaires/election")).json() as { free: unknown[]; locked: Array<Record<string, unknown>> };
@@ -91,8 +92,9 @@ test("/election: control of the Senate and House first; visitors get the top 3 w
     expect(Object.keys(api.locked[0]!).sort()).toEqual(["title", "total"]);
     await signIn(context, "insidir");
     await page.goto("/election");
-    await expect(page.getByTestId("race-free")).toHaveCount(5);
-    await expect(page.getByTestId("race-locked")).toHaveCount(0);
+    await expect(page.getByTestId("race-card")).toHaveCount(5);
+    await expect(page.getByTestId("election-locked")).toHaveCount(0);
+    await expect(page.locator(".b-sidebar")).toHaveCount(0);
   } finally {
     for (const [id] of races) { await q("delete from terminal.millionaire_bets where id = $1", [`e2e:${id}`]); await q("delete from terminal.market_info where market_id = $1", [id]); }
   }

@@ -1,6 +1,7 @@
 "use client";
 /* The nav, the hero spec's: the wordmark left; Markets, Board, Record, Pricing, FAQ centred; Log in (panel pill) and
- * Start for $1 (white pill) right. At 1160px the links fold into the burger; its glass panel anchors under it. */
+ * Start for $1 (white pill) right; members get their places (Home, Election Day today, Board, Wallets, Markets, Your
+ * copies) and Account. At 1160px the links fold into the burger; its panel anchors under it. There is no sidebar. */
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
@@ -10,11 +11,14 @@ import { COMPANY, DATA_COMPANY, GAMBLER } from "@/lib/copy";
 const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m": kind, style: { "--d": `${d}s` } as CSSProperties } : {});
 
 const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["Record", "/results"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
+/** Members: the same bar, their places. No sidebar anywhere. */
+const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Your copies", "/copies/yours"]];
 
 export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
   /** Election Day leads the links until the board closes (decided on the server: lib/brand/pulse.ts electionDay). */
   election?: boolean }) {
-  const links: Array<[string, string]> = election ? [["Election Day", "/election"], ...LINKS] : LINKS;
+  const base = member ? MEMBER_LINKS : LINKS;
+  const links: Array<[string, string]> = election ? (member ? [base[0]!, ["Election Day", "/election"], ...base.slice(1)] : [["Election Day", "/election"], ...base]) : base;
   const [open, setOpen] = useState(false);
   const burger = useRef<HTMLButtonElement>(null), menu = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -30,7 +34,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
         <span {...q(motion, "quiet", 0.46)}><Logo /></span>
         <nav className="b-nav-links" aria-label="Primary">{links.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
         <div className="b-nav-actions">
-          {member ? <a className="b-btn b-panel-pill" href="/" {...q(motion, "settle", 0.68)}>Home</a> : <a className="b-btn b-panel-pill" href="/login" {...q(motion, "settle", 0.68)}>Log in</a>}
+          {member ? <a className="b-btn b-panel-pill" href="/settings" data-testid="nav-account" {...q(motion, "settle", 0.68)}>Account</a> : <a className="b-btn b-panel-pill" href="/login" {...q(motion, "settle", 0.68)}>Log in</a>}
           {member ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
           <button ref={burger} {...q(motion, "settle", 0.68)} className="b-burger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="b-menu" onClick={e => { e.stopPropagation(); setOpen(!open); }}><span /></button>
         </div>
@@ -38,7 +42,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
       <nav ref={menu} id="b-menu" className={`b-menu${open ? " open" : ""}`} aria-label="Mobile" onClick={e => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
         {links.map(([t, h]) => <a key={t} href={h}>{t}</a>)}
         <div className="b-divider" />
-        {member ? <a href="/">Home</a> : <a href="/login">Log in</a>}
+        {member ? <a href="/settings">Account</a> : <a href="/login">Log in</a>}
         {member ? null : <a className="b-m-start" href={startHref}>Start for $1<Arrow /></a>}
       </nav>
     </>

@@ -7,7 +7,7 @@ import { q, signIn } from "./helpers";
 /** The site's one money format (lib/moves/copy.ts dollars): $9.4K, $412K, $1.2M. */
 const money = (v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, "")}M` : v >= 1e4 ? `$${Math.round(v / 1e3)}K` : v >= 1e3 ? `$${(v / 1e3).toFixed(1).replace(/\.0$/, "")}K` : `$${Math.round(v)}`;
 
-test("members open the app on the Desk: no Check a bet button; the sidebar (desktop) or pill bar with search (phone) holds the rest", async ({ page, context }) => {
+test("members open the app on the Desk: no Check a bet button; the homepage nav (member mode) holds the rest, no sidebar", async ({ page, context }) => {
   await signIn(context, "insidir");
   await page.goto("/");
   await expect(page.getByTestId("member-home")).toHaveAttribute("data-home", "desk");
@@ -17,13 +17,17 @@ test("members open the app on the Desk: no Check a bet button; the sidebar (desk
   await expect(page.getByRole("button", { name: /check a bet/i })).toHaveCount(0);
   await expect(page.getByTestId("side-check")).toHaveCount(0);
   await expect(page.getByTestId("tab-check")).toHaveCount(0);
-  if (page.viewportSize()!.width > 860) {
-    const side = page.locator(".b-sidebar");
-    const nav = (await side.locator("a.b-navi").allInnerTexts()).map(t => t.trim()).filter(t => t !== "Election Day");
-    expect(nav).toEqual(["Desk", "Board", "Wallets", "Markets", "Your copies", "Library", "Account"]);
+  // No sidebar: the homepage's own nav, in member mode.
+  await expect(page.locator(".b-sidebar")).toHaveCount(0);
+  const nav = page.getByTestId("brand-nav");
+  await expect(nav).toBeVisible();
+  if (page.viewportSize()!.width > 1160) {
+    const links = (await nav.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim()).filter(t => t !== "Election Day");
+    expect(links).toEqual(["Home", "Board", "Wallets", "Markets", "Your copies"]);
+    await expect(page.getByTestId("nav-account")).toHaveAttribute("href", "/settings");
   } else {
-    await expect(page.getByTestId("tab-search")).toBeVisible();
-    await expect(page.locator(".b-tabbar a[href='/board']")).toBeVisible();
+    await page.locator(".b-burger").click();
+    await expect(page.locator("#b-menu a[href='/board']")).toBeVisible();
   }
   // Everything older stays live by URL.
   for (const path of ["/copies", "/feed", "/top", "/trackers", "/check", "/results", "/following", "/wallets"]) expect((await page.request.get(path)).status(), path).toBe(200);

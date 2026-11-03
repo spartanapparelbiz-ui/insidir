@@ -3,7 +3,11 @@
  * device's push; once on it reads "Pings on"). Text, never a second white pill. */
 import { useEffect, useState } from "react";
 import { enablePush, pushState, type PushState } from "@/components/app/push";
-import { vapidKey } from "./PingsPill";
+
+export async function vapidKey(): Promise<string | null> {
+  const j = await fetch("/api/push/key", { cache: "no-store" }).then(r => r.json() as Promise<{ publicKey?: string }>).catch(() => null);
+  return j?.publicKey ?? null;
+}
 
 export function FollowLink({ wallet, initial = false, short = false }: { wallet: string | null; initial?: boolean; short?: boolean }) {
   const [on, setOn] = useState(initial);

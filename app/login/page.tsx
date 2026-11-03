@@ -26,7 +26,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const next = safeNext(sp.next);
   const viewer = await getViewer();
   if (viewer.user && isPaid(viewer.plan)) redirect(next);
-  if (viewer.user) redirect("/start");
+  if (viewer.user) redirect("/go?step=paywall"); // signed in without Insidir: the paywall, never an empty app
   return (
     <AuthSplit>
       <div className="astart rise-in login">
