@@ -5,9 +5,9 @@
  *   phone showing real screens) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
  *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
+import { BrandPicture } from "@/components/brand/BrandPicture";
 import { electionDay } from "@/lib/brand/pulse";
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
 import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
 import { slotPhoto } from "@/lib/brand/images";
@@ -92,7 +92,7 @@ function Markets({ d }: { d: LandingData }) {
           <div className="b-htrack" data-htrack="">
           {list.map((c, i) => (
             <a key={c.slug} className={`b-ccard${photos[i] ? "" : " b-ccard--plain"}`} href={`/markets/${c.slug}`} data-testid="category-card" data-photo={photos[i]?.src ?? "none"} data-m="settle" style={{ "--d": `${0.5 + i * 0.06}s` } as CSSProperties}>
-              {photos[i] ? <span className="b-ccard__img"><Image src={photos[i]!.src} alt="" fill loading="eager" sizes="(max-width: 552px) 62vw, (max-width: 1160px) 270px, 300px" quality={90} /></span> : <span className="b-ccard__img" aria-hidden="true" />}
+              {photos[i] ? <span className="b-ccard__img"><BrandPicture src={photos[i]!.src} fill sizes="(max-width: 552px) 62vw, (max-width: 1160px) 270px, 300px" priority /></span> : <span className="b-ccard__img" aria-hidden="true" />}
               <span className="b-ccard__txt">
                 <h3 className="b-ccard__name">{categoryInfo(c.slug).name}</h3>
                 <span className="b-small" style={{ color: "var(--ink-muted)" }}>{c.millionaire ? `${dollars(c.millionaire)} millionaire money ${when}` : `${dollars(c.pro)} Pro money ${when}`}</span>

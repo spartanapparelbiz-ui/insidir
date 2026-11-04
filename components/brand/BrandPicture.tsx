@@ -4,13 +4,15 @@
 import type { CSSProperties } from "react";
 import { genPath, srcSet } from "@/lib/brand/picture";
 
-export function BrandPicture({ src, priority = false, sizes = "100vw", style }: { src: string; priority?: boolean; sizes?: string; style?: CSSProperties }) {
+export function BrandPicture({ src, priority = false, sizes = "100vw", style, fill = false }: { src: string; priority?: boolean; sizes?: string; style?: CSSProperties;
+  /** Cover its (positioned) box, like next/image's fill: cards and tiles. */
+  fill?: boolean }) {
   return (
-    <picture className="b-pic">
+    <picture className={`b-pic${fill ? " b-pic--fill" : ""}`}>
       <source type="image/avif" srcSet={srcSet(src, "avif")} sizes={sizes} />
       <source type="image/webp" srcSet={srcSet(src, "webp")} sizes={sizes} />
       {/* eslint-disable-next-line @next/next/no-img-element -- pre-generated sizes, not the optimizer */}
-      <img src={genPath(src, 1920, "webp")} alt="" decoding="async" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : undefined} style={style} />
+      <img src={genPath(src, fill ? 960 : 1920, "webp")} alt="" decoding="async" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : undefined} style={style} />
     </picture>
   );
 }

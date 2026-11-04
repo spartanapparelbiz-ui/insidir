@@ -5,7 +5,7 @@
  *   the first whole) · 7 paywall · 8 checkout (Whop, embedded) · 9 the same markets, now whole · sign in with Whop
  *   (one redirect) · 10 answers saved · 11 follow your first millionaire · 12 push · home.
  * The answers live in localStorage until they are saved to the account (POST /api/go/save) after sign-in. */
-import Image from "next/image";
+import { BrandPicture } from "@/components/brand/BrandPicture";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { beacon } from "@/components/app/beacon";
 import { enablePush } from "@/components/app/push";
@@ -85,7 +85,7 @@ function AhaCards({ cards, more }: { cards: AhaCard[]; more: number }) {
       <div className="b-cards3" data-testid="aha-cards">
         {cards.map((c, i) => (
           <div key={c.m.marketId}  {...st(0.5 + i * 0.1, { display: "grid", gap: 8 })}>
-            <div className="b-cardimg"><Image src={categoryPhoto(c.m.category).src} alt="" fill sizes="(max-width: 860px) 100vw, 33vw" quality={90} /></div>
+            <div className="b-cardimg"><BrandPicture src={categoryPhoto(c.m.category).src} fill sizes="(max-width: 860px) 100vw, 33vw" /></div>
             <MoneyCard m={c.m} positions={c.positions} locked={c.locked} testid={c.locked ? "aha-locked" : "aha-open"} />
           </div>
         ))}
@@ -192,7 +192,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               return (
                 <button key={c.slug} type="button" className="b-tile" aria-pressed={on} data-testid="go-tile" data-cat={c.slug} {...st(0.4 + i * 0.03)}
                   onClick={() => put({ cats: on ? a.cats.filter(x => x !== c.slug) : [...a.cats, c.slug] })}>
-                  <span className="b-tile__img"><Image src={categoryPhoto(c.slug).src} alt="" fill sizes="(max-width: 552px) 33vw, (max-width: 1160px) 25vw, 220px" quality={90} /></span>
+                  <span className="b-tile__img"><BrandPicture src={categoryPhoto(c.slug).src} fill sizes="(max-width: 552px) 33vw, (max-width: 1160px) 25vw, 220px" /></span>
                   <span className="b-tile__check" aria-hidden="true"><svg viewBox="0 0 11 9" fill="none"><path d="M1 4.5 4 7.5 10 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                   <span className="b-tile__name">{c.name}</span>
                 </button>

@@ -2,7 +2,7 @@
  * the white pill home and panel pills to the places people usually want. Client-safe (the 500 page is a client
  * component), so it writes the stage's markup itself rather than using components/brand/Stage (which reads the disk).
  * The caller supplies the frame (the nav). */
-import Image from "next/image";
+import { BrandPicture } from "@/components/brand/BrandPicture";
 import type { CSSProperties, ReactNode } from "react";
 import { Lines } from "@/components/brand/Lines";
 import { PHOTOS } from "@/lib/brand/images";
@@ -10,7 +10,7 @@ import { PHOTOS } from "@/lib/brand/images";
 export function WrongTrail({ code, title, text, children }: { code: string; title: string; text: string; children?: ReactNode }) {
   return (
     <section className="b-stage" data-first="" data-testid="wrong-trail" aria-labelledby="trail-h">
-      <div className="b-stage__bg" style={{ "--dark": 0.6 } as CSSProperties}><Image src={PHOTOS.hero.src} alt="" fill sizes="100vw" priority quality={85} /></div>
+      <div className="b-stage__bg" style={{ "--dark": 0.6 } as CSSProperties}><BrandPicture src={PHOTOS.hero.src} priority /></div>
       <div className="b-stage__in">
         <div className="b-head">
           <p className="b-label">{code}</p>
