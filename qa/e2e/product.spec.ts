@@ -144,7 +144,7 @@ test("one-tap copy: Copy on the board opens the ticket; Open on the venue; I pla
     await expect(page.getByTestId("copy-amount")).toHaveValue("10"); // the default from Account
     await page.getByTestId("copy-amount").fill("50");
     await page.getByTestId("copy-placed").click();
-    await expect(page.getByTestId("copy-logged")).toContainText("Your copies");
+    await expect(page.getByTestId("copy-logged")).toContainText("your Book");
     const row = (await q<{ amount: number; price: number; venue: string; result: string | null }>("select amount, price, venue, result from terminal.bet_copies where bet_id = $1", [id]))[0]!;
     expect(row).toEqual({ amount: 50, price: 0.62, venue: "polymarket", result: null });
     await page.goto("/copies/yours");

@@ -55,6 +55,8 @@ export interface UserSettings {
   go?: { categories: string[]; where: string | null; size: string | null } | null;
   /** "Remind me before I'm charged" on /go's paywall (on unless turned off): the trial_ending email on day 2. */
   remindBeforeCharge?: boolean;
+  /** The Book's daily summary push (/book), at this local time ("HH:MM"); null or unset = off. */
+  bookPushAt?: string | null;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {

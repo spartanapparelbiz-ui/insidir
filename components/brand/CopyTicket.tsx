@@ -14,7 +14,7 @@ export function CopyAction({ betId, open, defaultAmount, logged: was }: { betId:
     const j = r ? await r.json().catch(() => ({})) as { error?: string } : { error: "No connection. Try again." };
     if (r?.ok) setState("logged"); else { setState("error"); setMsg(j.error ?? "That didn't save. Try again."); }
   };
-  if (state === "logged") return <p className="b-msg" role="status" data-testid="copy-logged">Logged. It settles with the market in <a href="/copies/yours">Your copies</a>, losses included.</p>;
+  if (state === "logged") return <p className="b-msg" role="status" data-testid="copy-logged">Logged in <a href="/book">your Book</a>. It settles with the market, losses included.</p>;
   return (
     <div className="s-copyact" data-testid="copy-action">
       <label className="b-kv s-copyact__amt" htmlFor="copy-amount">
