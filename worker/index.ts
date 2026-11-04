@@ -6,6 +6,7 @@
  *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
  *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
  *   millionaires:pings every 30 s: a $1M+ wallet's $25K+ bet in a member's categories (max 8 a day, quiet hours)
+ *   twins:bets every 20 min: Kalshi twins for the games millionaires bet on, looked up by game (lib/twins/direct.ts)
  *   twins:daily every 15 min: after 9am ET, once, the twins that approved themselves yesterday, pushed to the owners
  *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
  *   emails:lifecycle every 10 min: day 0 welcome, day 2 "your trial ends tomorrow", Monday results (lib/emails/lifecycle.ts)
@@ -52,6 +53,7 @@ import { ALERT_MAX_AGE_MS, alertJobs, alertMessage } from "@/lib/moves/alerts";
 import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
 import { pingJobs, pingMessage } from "@/lib/millionaires/pings";
 import { twinsDailyOnce } from "@/lib/twins/daily";
+import { twinsFromBets } from "@/lib/twins/direct";
 import { twinOf } from "@/lib/entities/market";
 import { freshBigBets, pingUsers, pricesNow } from "@/lib/millionaires/ping-store";
 import { recordsFor } from "@/lib/moves/store";
@@ -263,6 +265,11 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("moves:alerts", ALERT_MS, moveAlertsOnce),
     every("millionaires:pings", 30_000, millionairePingsOnce),
     // Twins that approved themselves yesterday: one push to the owners after 9am ET, with a one-click Revoke list.
+    // Twins for the games with millionaire bets, found by game (the sweep only sees what's open on both venues now).
+    ...(clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? [every("twins:bets", 20 * 60_000, async () => {
+      const r = await twinsFromBets(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
+      if (r.twins) log(`twins:bets: ${r.events} games, ${r.twins} twins, ${r.auto} approved themselves`);
+    })] : []),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),

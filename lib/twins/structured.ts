@@ -12,6 +12,7 @@
  *   close       both state a close time, within 36 hours.
  * Any field that can't be read this way (missing, or only in the title) leaves the twin for a person in /admin/twins. */
 import type { VMarket } from "@/lib/types";
+import type { TwinResult } from "./check";
 import { TEAMS, type League } from "@/lib/matching/aliases";
 
 export type Field = "event" | "outcome" | "line" | "rules" | "close";
@@ -72,6 +73,9 @@ export function polyRace(slug: string | null | undefined): { state: string; offi
 /** "James Talarico (D)" → "james talarico". */
 const person = (s: string | null | undefined) => (s ?? "").replace(/\s*\((?:D|R|I|L|G)\)\s*$/i, "").trim().toLowerCase().replace(/\s+/g, " ");
 
+/** A time's date in US Eastern time, "2026-11-05". */
+export const etDate = (ms: number): string => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ms));
+
 const domain = (s: string | null | undefined): string[] => [...(s ?? "").matchAll(/(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)].map(m => m[1]!.toLowerCase());
 
 export function autoCheck(poly: VMarket, kalshi: VMarket): AutoCheck {
@@ -81,7 +85,10 @@ export function autoCheck(poly: VMarket, kalshi: VMarket): AutoCheck {
   let kind: AutoCheck["kind"] = null;
   const pg = polyGame(p.eventSlug), kg = kalshiGame(kalshi.eventId);
   if (pg && kg) {
-    fields.event = pg.league === kg.league && pg.date === kg.date && pg.teams.join() === kg.teams.join() ? "match" : "differs";
+    // Kalshi's ticker carries the game's US Eastern date; Polymarket's slug sometimes the UTC one (a 8:15pm ET Thursday
+    // game is "…-2026-11-06" on Polymarket and "26NOV05" on Kalshi). Either is the same game when the teams match.
+    const sameDay = pg.date === kg.date || (poly.closeTime !== null && etDate(poly.closeTime) === kg.date);
+    fields.event = pg.league === kg.league && sameDay && pg.teams.join() === kg.teams.join() ? "match" : "differs";
     const suffix = kalshi.id.slice(kalshi.eventId.length + 1);
     const kTeam = teamCode(kg.league, suffix.replace(/\d+$/, ""));
     const outcomes = p.outcomes ?? [];
@@ -117,4 +124,35 @@ export function autoCheck(poly: VMarket, kalshi: VMarket): AutoCheck {
   if (fields.close === "differs") notes.push("Close times more than 36 hours apart");
   const auto = kind !== null && Object.values(fields).every(b => b === "match");
   return { auto, kind, fields, notes };
+}
+
+const KIND = { moneyline: "winner", spread: "spread", total: "total", candidate: "party" } as const;
+
+/** The twin test's result for a pair whose five fields all match from structured data: an exact candidate. (The title
+ *  reading in lib/twins/check.ts can't read every venue's wording, e.g. Kalshi's "Los Angeles L wins" or NHL "goals";
+ *  for a game read from slugs, tickers, outcome names and line fields it isn't needed.) */
+export function structuredResult(a: AutoCheck): TwinResult {
+  return { verdict: "candidate", confidence: 0.99, checks: { event: true, outcome: true, line: true, rules: true, close: true }, notes: ["All five fields from the venues' structured data"], kind: KIND[a.kind!] };
+}
+
+/** Each Polymarket market's single Kalshi twin among `kalshi`: all five fields match from structured data. Pure. */
+export function pairByStructure(poly: readonly VMarket[], kalshi: readonly VMarket[]) {
+  const out: Array<{ poly: VMarket; kalshi: VMarket; result: TwinResult }> = [];
+  const taken = new Set<string>();
+  for (const pm of poly) {
+    const hits = kalshi.map(km => ({ km, a: autoCheck(pm, km) })).filter(x => x.a.auto);
+    if (hits.length === 1 && !taken.has(hits[0]!.km.id)) { taken.add(hits[0]!.km.id); out.push({ poly: pm, kalshi: hits[0]!.km, result: structuredResult(hits[0]!.a) }); }
+  }
+  return out;
+}
+
+/** Every game both venues list, paired market by market from structured data alone (games keyed by league and teams;
+ *  autoCheck then holds them to the same date). Pure. */
+export function structuredTwins(poly: readonly VMarket[], kalshi: readonly VMarket[]) {
+  const key = (g: { league: string; teams: string[] }) => `${g.league}|${g.teams.join("-")}`;
+  const kBy = new Map<string, VMarket[]>();
+  for (const k of kalshi) { const g = kalshiGame(k.eventId); if (g) { const l = kBy.get(key(g)) ?? []; l.push(k); kBy.set(key(g), l); } }
+  const pBy = new Map<string, VMarket[]>();
+  for (const p of poly) { const g = polyGame(p.ids?.eventSlug); if (g) { const l = pBy.get(key(g)) ?? []; l.push(p); pBy.set(key(g), l); } }
+  return [...pBy].flatMap(([k, ps]) => pairByStructure(ps, kBy.get(k) ?? []));
 }

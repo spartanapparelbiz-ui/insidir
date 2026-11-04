@@ -8,8 +8,8 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { marketTwins } from "@/lib/db/schema";
 import type { VMarket } from "@/lib/types";
-import { findTwins } from "./check";
-import { autoCheck } from "./structured";
+import { findTwins, type TwinResult } from "./check";
+import { autoCheck, structuredTwins } from "./structured";
 
 export interface Twin { polymarketId: string; kalshiId: string; kalshiUrl: string; kalshiTitle: string; polymarketTitle: string; kind: string }
 
@@ -19,35 +19,44 @@ export async function buildTwins(db: Db, now: number): Promise<{ candidate: numb
   const rows = (await db.execute(sql`select venue, data from terminal.markets where (data->>'active')::boolean and (
       (data->>'closeTime') is null or (data->>'closeTime')::bigint > ${now - 86_400_000})`)).rows as Array<{ venue: string; data: VMarket }>;
   const poly = rows.filter(r => r.venue === "polymarket").map(r => r.data), kalshi = rows.filter(r => r.venue === "kalshi").map(r => r.data);
-  const twins = findTwins(poly, kalshi);
+  // Games paired from structured data (every moneyline, spread and total both venues list), then everything else by the
+  // strict title test; a structured pair wins for its Polymarket market.
+  const byStructure = structuredTwins(poly, kalshi), done = new Set(byStructure.map(t => t.poly.id));
+  const twins = [...byStructure, ...findTwins(poly, kalshi).filter(t => !done.has(t.poly.id))];
   const counts = { candidate: 0, review: 0, auto: 0 };
   for (const t of twins) {
     counts[t.result.verdict as "candidate" | "review"]++;
-    const a = autoCheck(t.poly, t.kalshi);
-    const auto = a.auto && t.result.verdict === "candidate";
-    const v = {
-      polymarketId: t.poly.id, kalshiId: t.kalshi.id, kalshiUrl: t.kalshi.url, polymarketTitle: t.poly.title, kalshiTitle: t.kalshi.title,
-      kind: t.result.kind, verdict: t.result.verdict as "candidate" | "review", confidence: t.result.confidence, checks: t.result.checks, notes: t.result.notes,
-      polymarketClose: t.poly.closeTime ? new Date(t.poly.closeTime) : null, kalshiClose: t.kalshi.closeTime ? new Date(t.kalshi.closeTime) : null, updatedAt: new Date(now),
-      auto: a,
-    };
-    const same = sql`${marketTwins.kalshiId} = ${v.kalshiId} and ${marketTwins.checks} = ${JSON.stringify(v.checks)}::jsonb`;
-    const r = await db.insert(marketTwins).values({ ...v, ...(auto ? { status: "approved" as const, decidedBy: "auto", decidedAt: new Date(now) } : {}) }).onConflictDoUpdate({
-      target: marketTwins.polymarketId,
-      set: {
-        ...v,
-        // A different Kalshi market or different checks undo a decision: it looks again (itself, or a person). A pending
-        // twin that now passes the structured check approves itself; a person's decision on the same pair stands.
-        status: auto
-          ? sql`case when ${same} and ${marketTwins.status} <> 'pending' then ${marketTwins.status} else 'approved' end`
-          : sql`case when ${same} then ${marketTwins.status} else 'pending' end`,
-        decidedBy: auto ? sql`case when ${same} and ${marketTwins.status} <> 'pending' then ${marketTwins.decidedBy} else 'auto' end` : sql`case when ${same} then ${marketTwins.decidedBy} else null end`,
-        decidedAt: auto ? sql`case when ${same} and ${marketTwins.status} <> 'pending' then ${marketTwins.decidedAt} else ${new Date(now)} end` : sql`case when ${same} then ${marketTwins.decidedAt} else null end`,
-      },
-    }).returning({ by: marketTwins.decidedBy, at: marketTwins.decidedAt });
-    if (r[0]?.by === "auto" && r[0].at && r[0].at.getTime() === now) counts.auto++;
+    if (await saveTwin(db, t, now)) counts.auto++;
   }
   return counts;
+}
+
+/** Stores one twin (insert or update), approving it itself when the structured check passes and no person decided this
+ *  pair. True when it approved itself just now. */
+export async function saveTwin(db: Db, t: { poly: VMarket; kalshi: VMarket; result: TwinResult }, now: number): Promise<boolean> {
+  const a = autoCheck(t.poly, t.kalshi);
+  const auto = a.auto && t.result.verdict === "candidate";
+  const v = {
+    polymarketId: t.poly.id, kalshiId: t.kalshi.id, kalshiUrl: t.kalshi.url, polymarketTitle: t.poly.title, kalshiTitle: t.kalshi.title,
+    kind: t.result.kind, verdict: t.result.verdict as "candidate" | "review", confidence: t.result.confidence, checks: t.result.checks, notes: t.result.notes,
+    polymarketClose: t.poly.closeTime ? new Date(t.poly.closeTime) : null, kalshiClose: t.kalshi.closeTime ? new Date(t.kalshi.closeTime) : null, updatedAt: new Date(now),
+    auto: a,
+  };
+  const same = sql`${marketTwins.kalshiId} = ${v.kalshiId} and ${marketTwins.checks} = ${JSON.stringify(v.checks)}::jsonb`;
+  const r = await db.insert(marketTwins).values({ ...v, ...(auto ? { status: "approved" as const, decidedBy: "auto", decidedAt: new Date(now) } : {}) }).onConflictDoUpdate({
+    target: marketTwins.polymarketId,
+    set: {
+      ...v,
+      // A different Kalshi market or different checks undo a decision: it looks again (itself, or a person). A pending
+      // twin that now passes the structured check approves itself; a person's decision on the same pair stands.
+      status: auto
+        ? sql`case when ${same} and ${marketTwins.status} <> 'pending' then ${marketTwins.status} else 'approved' end`
+        : sql`case when ${same} then ${marketTwins.status} else 'pending' end`,
+      decidedBy: auto ? sql`case when ${same} and ${marketTwins.status} <> 'pending' then ${marketTwins.decidedBy} else 'auto' end` : sql`case when ${same} then ${marketTwins.decidedBy} else null end`,
+      decidedAt: auto ? sql`case when ${same} and ${marketTwins.status} <> 'pending' then ${marketTwins.decidedAt} else ${new Date(now)} end` : sql`case when ${same} then ${marketTwins.decidedAt} else null end`,
+    },
+  }).returning({ by: marketTwins.decidedBy, at: marketTwins.decidedAt });
+  return r[0]?.by === "auto" && Boolean(r[0].at) && r[0].at!.getTime() === now;
 }
 
 /** Approved twins for these Polymarket markets. Nothing pending or denied is ever returned. */
