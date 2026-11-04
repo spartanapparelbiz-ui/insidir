@@ -41,8 +41,9 @@ describe("the Election Day board's window", () => {
   it("Nov 3 and Nov 4 in ET only", () => {
     expect(electionDay(et("2026-11-03T04:59:00Z"), undefined)).toBe(false); // 11:59 pm ET, Nov 2
     expect(electionDay(et("2026-11-03T05:00:00Z"), undefined)).toBe(true); // midnight ET, Nov 3
-    expect(electionDay(et("2026-11-05T04:59:00Z"), undefined)).toBe(true); // 11:59 pm ET, Nov 4
-    expect(electionDay(et("2026-11-05T05:00:00Z"), undefined)).toBe(false);
+    expect(electionDay(et("2026-11-04T04:59:00Z"), undefined)).toBe(true); // 11:59 pm ET, Nov 3
+    expect(electionDay(et("2026-11-04T05:00:00Z"), undefined)).toBe(false); // Nov 4: the election is over
+    expect(electionDay(et("2026-11-04T20:00:00Z"), "on")).toBe(false); // a leftover "on" can't bring it back
   });
   it("ELECTION_BOARD=on / off overrides the dates", () => {
     expect(electionDay(et("2026-06-01T12:00:00Z"), "on")).toBe(true);

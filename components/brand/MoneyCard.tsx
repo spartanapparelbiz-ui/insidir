@@ -1,6 +1,6 @@
 /* One market's watchlist money as a glass panel: Millionaire money first (dollars per side and wallet counts; no split
  * however few wallets), then Pro money, the millionaire wallets' positions, the
- * price now. `locked` hides which side: never sent, only a placeholder that opens the paywall. `build` makes the
+ * price now. `locked` hides which side: never sent; one plain sentence says members see it. `build` makes the
  * panel's blocks settle in one after another (the auto-building free Read). */
 import type { CSSProperties, ReactNode } from "react";
 import { category as categoryInfo } from "@/lib/brand/categories";
@@ -22,10 +22,7 @@ function TierBlock({ name, t, yes, no, locked, testid, build, d }: { name: strin
     <div className="b-tierblock" data-testid={testid} data-wallet-split="true" {...st(build, d)}>
       <div className="b-kv"><span className="b-label">{name}</span><span className="b-num" style={{ fontWeight: 500 }}>{dollars(sum)} · {w(n)}</span></div>
       {locked ? (
-        <button type="button" className="b-locked-split b-split" data-locked="split" aria-label="Which side is hidden: start for $1 to see it">
-          <div><span className="b-label b-blur">Yes side</span><span className="b-big b-blur">$00K</span><span className="b-small">Side locked</span></div>
-          <div><span className="b-label b-blur">No side</span><span className="b-big b-blur">$00K</span><span className="b-small">Side locked</span></div>
-        </button>
+        <p className="b-small" data-locked="split">Members see which side the {dollars(sum)} is on.</p>
       ) : (
         <>
           <div className="b-bar" role="img" aria-label={`${Math.round(share * 100)}% of it on ${yes}`}><span style={{ transform: `scaleX(${share})` }} /></div>

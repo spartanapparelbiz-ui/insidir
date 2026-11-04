@@ -46,6 +46,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
               </dl>
               <p className="b-small">A proven wallet put {dollars(m.amount)} on {m.outcome} at {cents(m.theirPrice)}. Kalshi&apos;s ask when this was sent: {cents(m.ask)}. On Kalshi, buy {side} on {m.outcome} with a limit order at {cents(m.limitPrice)}; if the price has moved past it, the order waits instead of paying more.</p>
               <div className="b-ctas"><Pill href={m.kalshiUrl} data-testid="ticket-open">Open on Kalshi</Pill></div>
+              {/(SPREAD|TOTAL)-/.test(m.kalshiId) ? <p className="b-small" data-testid="ticket-line">Kalshi lists every line for this game on one page: pick the line on this ticket ({m.outcome}), market {m.kalshiId}.</p> : null}
             </>
           ) : <p className="b-small" data-testid="ticket-skip">{m.reason}</p>}
           {state ? <p className="b-small" data-testid="ticket-state">{state}{pnl !== null ? ` Paper result: ${pnl >= 0 ? "+" : "−"}${dollars(Math.abs(pnl))}.` : ""}</p> : null}

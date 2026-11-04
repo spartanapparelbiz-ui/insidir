@@ -1,0 +1,222 @@
+{
+ "polymarket": [
+  {
+   "venue": "polymarket",
+   "id": "0x9b16807f201e683a768a215bbbe207ce5a62330e4857bc0fdd99004c3bdb190f",
+   "eventId": "1236260",
+   "seriesId": null,
+   "title": "Will SK Slavia Praha win on 2026-11-04?",
+   "eventTitle": "SK Slavia Praha vs. Arsenal FC",
+   "yesLabel": "SK Slavia Praha",
+   "noLabel": "No",
+   "rules": "In the upcoming game, scheduled for November 4, 2026\nIf SK Slavia Praha wins, this market will resolve to \"Yes\".\nOtherwise, this market will resolve to \"No\".\nIf the game is postponed, this market will remain open until the game has been completed.\nIf the game is canceled entirely, with no make-up game, this market will resolve \"No\".\nThis market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event's conclusion, this market will resolve 50-50, or to \"Draw\" where applicable.",
+   "resolutionSource": "https://www.uefa.com/",
+   "closeTime": 1793822400000,
+   "category": "sports",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.05
+   },
+   "url": "https://polymarket.com/event/ucl-slp-ars-2026-11-04/ucl-slp-ars-2026-11-04-slp",
+   "ids": {
+    "eventSlug": "ucl-slp-ars-2026-11-04",
+    "group": "SK Slavia Praha",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": "moneyline",
+    "line": null
+   },
+   "yesTokenId": "47966066986714938441291325221079365457196593128238803366734694975615762333170",
+   "noTokenId": "89148236279380675079183001746367885331427589437167068071607496438236119924256",
+   "strike": null,
+   "active": true,
+   "result": null,
+   "volume24h": 296102.414965,
+   "yesPrice": 0.0025,
+   "startTime": 1793822400000
+  },
+  {
+   "venue": "polymarket",
+   "id": "0xbc8848ac43add7ccf757eae8b52bd5dce3b8ce564d8ebc00e7a781bca4746b73",
+   "eventId": "1236260",
+   "seriesId": null,
+   "title": "Will SK Slavia Praha vs. Arsenal FC end in a draw?",
+   "eventTitle": "SK Slavia Praha vs. Arsenal FC",
+   "yesLabel": "Draw (SK Slavia Praha vs. Arsenal FC)",
+   "noLabel": "No",
+   "rules": "In the upcoming game, scheduled for November 4, 2026\nIf the game ends in a draw, this market will resolve to \"Yes\".\nOtherwise, this market will resolve to \"No\".\nIf the game is postponed, this market will remain open until the game has been completed.\nIf the game is canceled entirely, with no make-up game, this market will resolve to \"Yes\".\nThis market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event's conclusion, this market will resolve 50-50, or to \"Draw\" where applicable.",
+   "resolutionSource": "https://www.uefa.com/",
+   "closeTime": 1793822400000,
+   "category": "sports",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.05
+   },
+   "url": "https://polymarket.com/event/ucl-slp-ars-2026-11-04/ucl-slp-ars-2026-11-04-draw",
+   "ids": {
+    "eventSlug": "ucl-slp-ars-2026-11-04",
+    "group": "Draw (SK Slavia Praha vs. Arsenal FC)",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": "moneyline",
+    "line": null
+   },
+   "yesTokenId": "65286528532023376695156808928051013895301797591714433051633056475443196250931",
+   "noTokenId": "72733582478030042545694205116828426485732402769600021926647107034526433707283",
+   "strike": null,
+   "active": true,
+   "result": null,
+   "volume24h": 150155.831515,
+   "yesPrice": 0.016,
+   "startTime": 1793822400000
+  },
+  {
+   "venue": "polymarket",
+   "id": "0xa42222b5a52a82d6ccbbc9ccc5345cf906ddafac21ae0d6a2c037a3133471bf3",
+   "eventId": "1236260",
+   "seriesId": null,
+   "title": "Will Arsenal FC win on 2026-11-04?",
+   "eventTitle": "SK Slavia Praha vs. Arsenal FC",
+   "yesLabel": "Arsenal FC",
+   "noLabel": "No",
+   "rules": "In the upcoming game, scheduled for November 4, 2026\nIf Arsenal FC wins, this market will resolve to \"Yes\".\nOtherwise, this market will resolve to \"No\".\nIf the game is postponed, this market will remain open until the game has been completed.\nIf the game is canceled entirely, with no make-up game, this market will resolve \"No\".\nThis market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event's conclusion, this market will resolve 50-50, or to \"Draw\" where applicable.",
+   "resolutionSource": "https://www.uefa.com/",
+   "closeTime": 1793822400000,
+   "category": "sports",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.05
+   },
+   "url": "https://polymarket.com/event/ucl-slp-ars-2026-11-04/ucl-slp-ars-2026-11-04-ars",
+   "ids": {
+    "eventSlug": "ucl-slp-ars-2026-11-04",
+    "group": "Arsenal FC",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": "moneyline",
+    "line": null
+   },
+   "yesTokenId": "100913283705193578858886401879221750828791501585884544215624568196336778632583",
+   "noTokenId": "84907647600633092270396251949176802811975917431447052322731235120597697436965",
+   "strike": null,
+   "active": true,
+   "result": null,
+   "volume24h": 1360954.453002,
+   "yesPrice": 0.9805,
+   "startTime": 1793822400000
+  }
+ ],
+ "kalshi": [
+  {
+   "venue": "kalshi",
+   "id": "KXUCLGAME-26NOV04SLAARS-SLA",
+   "eventId": "KXUCLGAME-26NOV04SLAARS",
+   "seriesId": "KXUCLGAME",
+   "title": "Slavia Prague wins",
+   "eventTitle": "Slavia Prague vs Arsenal",
+   "yesLabel": "Slavia Prague",
+   "noLabel": "No",
+   "rules": "If Slavia Prague wins the Slavia Prague vs Arsenal professional Champions League soccer game originally scheduled for Nov 4, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties), then the market resolves to Yes.\n\nThe following market refers to the Slavia Prague vs Arsenal professional Champions League soccer game originally scheduled for Nov 4, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties). If the game ends in a tie, the market called \"Tie\" resolves to Yes. If the game is cancelled or rescheduled to over 48 hours away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+   "resolutionSource": "ESPN (https://www.espn.com/); Fox Sports (https://www.foxsports.com/)",
+   "closeTime": 1793833200000,
+   "category": "sports",
+   "fee": {
+    "venue": "kalshi",
+    "multiplier": 1
+   },
+   "url": "https://kalshi.com/markets/kxuclgame/uefa-champions-league-game/kxuclgame-26nov04slaars",
+   "yesTokenId": null,
+   "noTokenId": null,
+   "strike": null,
+   "ids": {
+    "yesSub": "Slavia Prague",
+    "strikeType": "structured",
+    "floorStrike": null,
+    "capStrike": null
+   },
+   "active": true,
+   "result": null,
+   "volume24h": 604262.42,
+   "yesPrice": 0.01,
+   "startTime": null,
+   "openInterest": 501444.7
+  },
+  {
+   "venue": "kalshi",
+   "id": "KXUCLGAME-26NOV04SLAARS-ARS",
+   "eventId": "KXUCLGAME-26NOV04SLAARS",
+   "seriesId": "KXUCLGAME",
+   "title": "Arsenal wins",
+   "eventTitle": "Slavia Prague vs Arsenal",
+   "yesLabel": "Arsenal",
+   "noLabel": "No",
+   "rules": "If Arsenal wins the Slavia Prague vs Arsenal professional Champions League soccer game originally scheduled for Nov 4, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties), then the market resolves to Yes.\n\nThe following market refers to the Slavia Prague vs Arsenal professional Champions League soccer game originally scheduled for Nov 4, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties). If the game ends in a tie, the market called \"Tie\" resolves to Yes. If the game is cancelled or rescheduled to over 48 hours away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+   "resolutionSource": "ESPN (https://www.espn.com/); Fox Sports (https://www.foxsports.com/)",
+   "closeTime": 1793833200000,
+   "category": "sports",
+   "fee": {
+    "venue": "kalshi",
+    "multiplier": 1
+   },
+   "url": "https://kalshi.com/markets/kxuclgame/uefa-champions-league-game/kxuclgame-26nov04slaars",
+   "yesTokenId": null,
+   "noTokenId": null,
+   "strike": null,
+   "ids": {
+    "yesSub": "Arsenal",
+    "strikeType": "structured",
+    "floorStrike": null,
+    "capStrike": null
+   },
+   "active": true,
+   "result": null,
+   "volume24h": 1822512.82,
+   "yesPrice": 0.99,
+   "startTime": null,
+   "openInterest": 1464833.42
+  },
+  {
+   "venue": "kalshi",
+   "id": "KXUCLGAME-26NOV04SLAARS-TIE",
+   "eventId": "KXUCLGAME-26NOV04SLAARS",
+   "seriesId": "KXUCLGAME",
+   "title": "Tie is the result",
+   "eventTitle": "Slavia Prague vs Arsenal",
+   "yesLabel": "Tie",
+   "noLabel": "No",
+   "rules": "If Tie is the result of the Slavia Prague vs Arsenal professional Champions League soccer game originally scheduled for Nov 4, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties), then the market resolves to Yes.\n\nThe following market refers to the Slavia Prague vs Arsenal professional Champions League soccer game originally scheduled for Nov 4, 2026 after 90 minutes plus stoppage time (does not include extra time or penalties). If the game ends in a tie, the market called \"Tie\" resolves to Yes. If the game is cancelled or rescheduled to over 48 hours away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+   "resolutionSource": "ESPN (https://www.espn.com/); Fox Sports (https://www.foxsports.com/)",
+   "closeTime": 1793833200000,
+   "category": "sports",
+   "fee": {
+    "venue": "kalshi",
+    "multiplier": 1
+   },
+   "url": "https://kalshi.com/markets/kxuclgame/uefa-champions-league-game/kxuclgame-26nov04slaars",
+   "yesTokenId": null,
+   "noTokenId": null,
+   "strike": null,
+   "ids": {
+    "yesSub": "Tie",
+    "strikeType": "structured",
+    "floorStrike": null,
+    "capStrike": null
+   },
+   "active": true,
+   "result": null,
+   "volume24h": 152761.08,
+   "yesPrice": 0.02,
+   "startTime": null,
+   "openInterest": 131712.94
+  }
+ ]
+}

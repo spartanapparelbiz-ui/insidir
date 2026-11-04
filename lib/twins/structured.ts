@@ -38,6 +38,55 @@ export function polyGame(slug: string | null | undefined): Game | null {
   return a && b ? { league, date: `${m[4]}-${m[5]}-${m[6]}`, teams: [a, b].sort() } : null;
 }
 
+/* ---------- Soccer: one league's game on one date, teams by club name ---------- */
+
+/** Polymarket's soccer league prefixes → Kalshi's game series. */
+export const SOCCER_SERIES: Record<string, string> = {
+  ucl: "KXUCLGAME", uel: "KXUELGAME", epl: "KXEPLGAME", lal: "KXLALIGAGAME", sea: "KXSERIEAGAME", bun: "KXBUNDESLIGAGAME",
+  fl1: "KXLIGUE1GAME", mls: "KXMLSGAME", ere: "KXEREDIVISIEGAME", mex: "KXLIGAMXGAME",
+};
+const SERIES_LEAGUE = Object.fromEntries(Object.entries(SOCCER_SERIES).map(([k, v]) => [v, k]));
+
+/** "ucl-slp-ars-2026-11-04" → { league: "ucl", date }. Pure. */
+export function polySoccer(slug: string | null | undefined): { league: string; date: string } | null {
+  const m = /^([a-z0-9]+)-[a-z0-9]{2,6}-[a-z0-9]{2,6}-(\d{4}-\d{2}-\d{2})$/.exec(slug ?? "");
+  return m && SOCCER_SERIES[m[1]!] ? { league: m[1]!, date: m[2]! } : null;
+}
+/** "KXUCLGAME-26NOV04SLAARS" → { league: "ucl", date: "2026-11-04" }. Pure. */
+export function kalshiSoccer(eventTicker: string): { league: string; date: string } | null {
+  const m = /^(KX[A-Z0-9]+GAME)-(\d{2})([A-Z]{3})(\d{2})[A-Z0-9]+$/.exec(eventTicker);
+  const league = m ? SERIES_LEAGUE[m[1]!] : undefined;
+  if (!m || !league) return null;
+  const mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"].indexOf(m[3]!) + 1;
+  return mon ? { league, date: `20${m[2]}-${String(mon).padStart(2, "0")}-${m[4]}` } : null;
+}
+
+/** Club names as both venues write them, reduced to one form ("SK Slavia Praha" and "Slavia Prague" → "slavia prague";
+ *  "Arsenal FC" → "arsenal"). Only these exact forms count as the same club. Pure. */
+const CLUB_WORDS = new Set(["fc", "cf", "sc", "sk", "afc", "ac", "as", "ss", "ssc", "rc", "rcd", "cd", "ud", "sd", "sv", "fk", "nk", "bk", "if", "club", "de", "calcio", "1", "cp", "sl", "sad", "us", "osc", "ogc", "fsv", "tsg", "vfb", "vfl", "bsc", "sporting club"]);
+const CITY: Record<string, string> = { praha: "prague", munchen: "munich", koln: "cologne", lisboa: "lisbon", milano: "milan", torino: "turin", sevilla: "seville", roma: "rome", napoli: "naples", firenze: "florence", genova: "genoa", internazionale: "inter", wien: "vienna", bruxelles: "brussels", kobenhavn: "copenhagen", athina: "athens", psv: "eindhoven" };
+export function clubName(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/)
+    .filter(w => w && !CLUB_WORDS.has(w) && !/^\d+$/.test(w)).map(w => CITY[w] ?? w).join(" ").trim();
+}
+
+/** The same club: the same reduced name, or one's words all in the other's ("dortmund" in "bv borussia dortmund",
+ *  "leipzig" in "rb leipzig"), the shorter with a word of 4+ letters. Pure. */
+export function sameClub(a: string, b: string): boolean {
+  const x = clubName(a), y = clubName(b);
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const [s, l] = x.length <= y.length ? [x, y] : [y, x];
+  const sw = s.split(" "), lw = new Set(l.split(" "));
+  return sw.some(w => w.length >= 4) && sw.every(w => lw.has(w));
+}
+const teamsOf = (eventTitle: string | null | undefined): [string, string] | null => {
+  const m = /^(.+?)\s+vs\.?\s+(.+?)$/i.exec((eventTitle ?? "").trim());
+  return m ? [m[1]!, m[2]!] : null;
+};
+/** Both clubs of one game are both clubs of the other, in either order. Pure. */
+const sameGame = (p: [string, string], k: [string, string]) => (sameClub(p[0], k[0]) && sameClub(p[1], k[1])) || (sameClub(p[0], k[1]) && sameClub(p[1], k[0]));
+
 /** "KXNBAGAME-26NOV04ATLWAS" → { nba, 2026-11-04, [ATL, WAS], GAME }. The two team codes split where both halves are
  *  codes of that league. */
 export function kalshiGame(eventTicker: string): (Game & { type: "GAME" | "SPREAD" | "TOTAL" }) | null {
@@ -107,6 +156,20 @@ export function autoCheck(poly: VMarket, kalshi: VMarket): AutoCheck {
       fields.outcome = outcomes[0]?.toLowerCase() === "over" && k.strikeType === "greater" ? "match" : outcomes[0]?.toLowerCase() === "under" ? "differs" : "unknown";
       fields.line = typeof p.line === "number" && typeof k.floorStrike === "number" ? (p.line === k.floorStrike ? "match" : "differs") : "unknown";
     } else notes.push("Not a full-game moneyline, spread or total on both venues");
+  } else if (polySoccer(p.eventSlug) && kalshiSoccer(kalshi.eventId)) {
+    // Soccer: same league and date, the same two clubs; a club's win for that club, the draw for the tie. 90 minutes on
+    // both venues.
+    const ps = polySoccer(p.eventSlug)!, ks = kalshiSoccer(kalshi.eventId)!;
+    const sameDay = ps.date === ks.date || (poly.closeTime !== null && etDate(poly.closeTime) === ks.date);
+    const pt = teamsOf(poly.eventTitle), kt = teamsOf(kalshi.eventTitle);
+    fields.event = ps.league === ks.league && sameDay && pt && kt ? (sameGame(pt, kt) ? "match" : "differs") : "unknown";
+    if (p.sportsMarketType === "moneyline") {
+      kind = "moneyline";
+      const draw = /^draw\b/i.test(p.group ?? "") || /end in a draw/i.test(poly.title);
+      const tie = /^tie$/i.test(k.yesSub ?? "");
+      fields.outcome = draw || tie ? (draw && tie ? "match" : "differs") : p.group && k.yesSub ? (sameClub(p.group, k.yesSub) ? "match" : "differs") : "unknown";
+      fields.line = "match";
+    } else notes.push("Not a full-game moneyline on both venues");
   } else {
     const pr = polyRace(p.eventSlug), kr = kalshiRace(kalshi.eventId);
     if (pr && kr) {
@@ -119,6 +182,12 @@ export function autoCheck(poly: VMarket, kalshi: VMarket): AutoCheck {
   }
   const dp = domain(poly.resolutionSource), dk = domain(kalshi.resolutionSource);
   fields.rules = dp.length && dk.length ? (dp.some(d => dk.some(e => d === e || d.endsWith(`.${e}`) || e.endsWith(`.${d}`))) ? "match" : "differs") : "unknown";
+  // Soccer: the venues cite different reporters (the governing body's statistics, ESPN/Fox) of the same fact; what
+  // must match is the basis, the result after 90 minutes plus stoppage time, stated in both venues' rules.
+  if (kind === "moneyline" && polySoccer(p.eventSlug)) {
+    const ninety = (t: string | null | undefined) => /90 minutes/i.test(t ?? "") && /stoppage/i.test(t ?? "");
+    fields.rules = ninety(poly.rules) && ninety(kalshi.rules) ? "match" : poly.rules && kalshi.rules ? "differs" : "unknown";
+  }
   if (fields.rules === "unknown") notes.push("A venue states no resolution source");
   fields.close = poly.closeTime !== null && kalshi.closeTime !== null ? (Math.abs(poly.closeTime - kalshi.closeTime) <= CLOSE_MS ? "match" : "differs") : "unknown";
   if (fields.close === "differs") notes.push("Close times more than 36 hours apart");

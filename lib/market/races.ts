@@ -17,8 +17,8 @@ export interface ElectionDay { races: RaceCard[]; locked: Array<{ title: string;
 
 const mil = (m: MarketMoney | undefined) => ({ yes: m?.millionaire.yes.dollars ?? 0, no: m?.millionaire.no.dollars ?? 0 });
 
-export async function electionDay(db: Db, now: number, member: boolean): Promise<ElectionDay> {
-  const board = await electionBoard(db, now, true);
+export async function electionDay(db: Db, now: number, member: boolean, settled = false): Promise<ElectionDay> {
+  const board = await electionBoard(db, now, true, settled);
   const races = board.free;
   const art = await artFor(races.map(r => r.marketId)).catch(() => new Map<string, MarketArt>());
   // One card per event (several markets can belong to one race).

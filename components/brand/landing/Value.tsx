@@ -16,9 +16,7 @@ import { ElectionLive } from "./ElectionLive";
 import { LiveFeed } from "../LiveFeed";
 import { StakeSlider } from "./StakeSlider";
 
-const Lock = ({ children, label }: { children: ReactNode; label: string }) => (
-  <button type="button" className="b-lockrow" data-locked="row">{children}<span className="b-sr">{label}: start for $1 to see it.</span><span className="b-lock" aria-hidden="true">Locked</span></button>
-);
+
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 /* ---------- 1. The Pulse ---------- */
@@ -70,7 +68,7 @@ export function PulseStage({ d }: { d: LandingData }) {
               <span className="b-small">{dollars(dis.dollars)} from {dis.wallets} {dis.wallets === 1 ? "wallet" : "wallets"} up $1M+. The price says {cents(dis.price)}. Information, not advice.</span>
               {p.disagree.locked.length ? (
                 <ul className="b-rows" data-stagger="" data-testid="disagree-locked">{p.disagree.locked.map((l, i) => (
-                  <li key={i}><Lock label={`A ${l.categoryName} market where they disagree`}><span className="b-label">{l.categoryName}</span><span className="b-blur" aria-hidden="true">Millionaires 00% on Xxxxx · price 00¢</span></Lock></li>
+                  <li key={i} className="b-small" data-locked="row">A {l.categoryName.toLowerCase()} market where they disagree with the price: members see which one.</li>
                 ))}</ul>
               ) : null}
             </div>

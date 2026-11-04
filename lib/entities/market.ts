@@ -19,7 +19,8 @@ import { approvedTwins } from "@/lib/twins/store";
 import { marketPath } from "./slug";
 
 export interface Side { dollars: number; wallets: number }
-export interface MarketTwin { kalshiId: string; title: string; url: string; yes: number | null }
+/** yes: Kalshi's YES price (its ask now when the order book was read); yesAsk / noAsk: what buying each side costs now. */
+export interface MarketTwin { kalshiId: string; title: string; url: string; yes: number | null; yesAsk: number | null; noAsk: number | null }
 export interface MarketView {
   id: string; slug: string; title: string; event: string; category: CategorySlug; yesLabel: string; noLabel: string; url: string | null;
   priceNow: number | null; closed: boolean; result: "yes" | "no" | "void" | null;
@@ -36,8 +37,32 @@ let clients: { polymarket: PolymarketClient; kalshi: KalshiClient } | null = nul
 /** The market's Kalshi twin, approved, with Kalshi's YES price now (null when Kalshi hasn't been read). */
 export async function twinOf(db: Db, ids: readonly string[]): Promise<Map<string, MarketTwin>> {
   const twins = await approvedTwins(db, ids);
-  const px = await yesPrices(db, "kalshi", [...twins.values()].map(t => t.kalshiId)).catch(() => new Map<string, number>());
-  return new Map([...twins].map(([id, t]) => [id, { kalshiId: t.kalshiId, title: t.kalshiTitle, url: t.kalshiUrl, yes: px.get(t.kalshiId) ?? null }]));
+  const kIds = [...new Set([...twins.values()].map(t => t.kalshiId))];
+  const [px, book] = await Promise.all([
+    yesPrices(db, "kalshi", kIds).catch(() => new Map<string, number>()),
+    kalshiQuotes(kIds).catch(() => new Map<string, Quote>()),
+  ]);
+  return new Map([...twins].map(([id, t]) => {
+    const q = book.get(t.kalshiId);
+    return [id, { kalshiId: t.kalshiId, title: t.kalshiTitle, url: t.kalshiUrl, yes: q?.yesAsk ?? px.get(t.kalshiId) ?? null, yesAsk: q?.yesAsk ?? null, noAsk: q?.noAsk ?? null }];
+  }));
+}
+
+interface Quote { yesAsk: number | null; noAsk: number | null }
+let kalshiLive: KalshiClient | null = null;
+/** Kalshi's order book for these markets now: what buying YES or NO costs. Read live, 15 seconds per market. */
+async function kalshiQuotes(ids: readonly string[]): Promise<Map<string, Quote>> {
+  const out = new Map<string, Quote>();
+  if (!ids.length) return out;
+  const k = (kalshiLive ??= new KalshiClient());
+  await Promise.all(ids.map(async id => {
+    const q = await memo(`kalshi:quote:${id}`, 15_000, async () => {
+      const b = await Promise.race([k.getOrderbook(id, "hot"), new Promise<null>(r => setTimeout(() => r(null), 3000))]).catch(() => null);
+      return b ? { yesAsk: b.yesAsks[0]?.price ?? null, noAsk: b.noAsks[0]?.price ?? null } : null;
+    }).catch(() => null);
+    if (q) out.set(id, q);
+  }));
+  return out;
 }
 
 /** `fallbackTitle`: a market the matcher or an old position knows but no watchlist wallet bet on yet (its page still

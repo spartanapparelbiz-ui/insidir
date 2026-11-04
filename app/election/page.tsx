@@ -24,7 +24,7 @@ export default async function ElectionPage() {
   const viewer = await getViewer();
   const member = isPaid(viewer.plan), now = Date.now();
   const empty: ElectionDay = { races: [], locked: [], at: now };
-  const d = hasDatabase() ? await electionDay(getDb(), now, member).catch(e => { console.error("election", e instanceof Error ? e.message : e); return empty; }) : empty;
+  const d = hasDatabase() ? await electionDay(getDb(), now, member, true).catch(e => { console.error("election", e instanceof Error ? e.message : e); return empty; }) : empty;
   // The headline is what wallets did in one candidate's own market; the card below shows the same numbers.
   const lead = raceLead(d);
   const today = isElectionDay(now);
