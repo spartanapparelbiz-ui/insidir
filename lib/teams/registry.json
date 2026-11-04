@@ -9514,11 +9514,11 @@
      "name": "Hamburger SV",
      "short": "Hamburg",
      "color": "#1a26af",
-     "logo": "/teams/bun/hsv",
+     "logo": null,
      "dark": false,
-     "source": "espn",
-     "sourceUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/127.png",
-     "espn": "Hamburg SV"
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 96×96, under 400px; espn: logo on an opaque background"
     },
     {
      "abbr": "koe",
