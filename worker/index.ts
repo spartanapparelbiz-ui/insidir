@@ -306,7 +306,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const r = await kalshiAsksOnce(getDb(), { candles: (series, t, from, to, p) => k.getCandlesticks(series, t, from, to, p) }, Date.now());
         // Beats every run, so /status shows it working once every past bet is priced too.
         await heartbeat(getDb(), "kalshi:asks", true, null, r);
-        if (r.read) log(`kalshi:asks: ${r.read} past bets read, ${r.priced} priced at Kalshi's ask`);
+        if (r.read || r.failed) log(`kalshi:asks: ${r.read} past bets read, ${r.priced} priced at Kalshi's ask, ${r.failed} to retry`);
       }),
     ] : []),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),
