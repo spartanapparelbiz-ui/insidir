@@ -58,6 +58,7 @@ import { twinsFromBets } from "@/lib/twins/direct";
 import { screenWallets } from "@/lib/millionaires/proven";
 import { autopilotBacktestsOnce, autopilotOnce } from "@/lib/autopilot/jobs";
 import { settleMatches } from "@/lib/autopilot/engine";
+import { bookDailyOnce } from "@/lib/book/daily";
 import { twinOf } from "@/lib/entities/market";
 import { freshBigBets, freshBigSells, pingUsers, pricesNow, recordKalshiPings } from "@/lib/millionaires/ping-store";
 import { recordsFor } from "@/lib/moves/store";
@@ -288,6 +289,13 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     ...(clients.kalshi instanceof KalshiClient ? [every("autopilot", 3_000, async () => { await autopilotOnce(getDb(), clients.kalshi as KalshiClient, Date.now(), log); })] : []),
     every("autopilot:settle", 5 * 60_000, async () => { await settleMatches(getDb()); }),
     every("autopilot:backtests", 30 * 60_000, async () => { const n = await autopilotBacktestsOnce(getDb(), Date.now()); if (n) log(`autopilot:backtests: ${n} computed`); }),
+    // The Book's daily summary, at each member's chosen time.
+    every("book:daily", 5 * 60_000, async () => {
+      const db = getDb();
+      const n = await bookDailyOnce(db, Date.now(), { appUrl: appUrl(), claim: (u, k) => claimAlert(db, u, k, "push"),
+        async push(u, msg) { for (const t of await pushTargets(db, u)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint); } });
+      if (n) log(`book:daily: ${n} sent`);
+    }),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
