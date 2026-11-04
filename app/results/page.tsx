@@ -1,7 +1,8 @@
-/* The record (/results), on the homepage's system: how every settled millionaire bet did over the last 30 days, losses
- * included (lib/results/record.ts): won and lost, $100 on every bet at the price the wallet paid (only from 30 settled
- * bets), by day and by category, and the latest settled bets (wallets as short addresses, never a name or a picture).
- * Public. Past results, not a promise. */
+/* The record (/results), on the homepage's system. First, following the pings on Kalshi (lib/results/pings.ts): every
+ * buy ping on a market with a Kalshi twin, at Kalshi's price when it was sent, settled with the bet. Then how every
+ * settled millionaire bet did over the last 30 days, losses included (lib/results/record.ts): won and lost, $100 on
+ * every bet at the price the wallet paid (only from 30 settled bets), by day and by category, and the latest settled
+ * bets (wallets as short addresses, never a name or a picture). Public. Past results, not a promise. */
 import type { Metadata } from "next";
 import { Frame } from "@/components/brand/app/Frame";
 import { BetRow } from "@/components/brand/BetRow";
@@ -17,9 +18,10 @@ import { recentBets, type BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
 import { isPaid, TRIAL } from "@/lib/plans";
 import { MIN_SETTLED, millionaireRecord, settledCount, STAKE, type RecordView, type Tally } from "@/lib/results/record";
+import { kalshiPingRecord, type KalshiRecord } from "@/lib/results/pings";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "The record", description: "How every settled millionaire bet did, losses included: won and lost, $100 on every bet, by day and by category. Past results, not a promise." };
+export const metadata: Metadata = { title: "The record", description: "Following the pings on Kalshi, and how every settled millionaire bet did, losses included: won and lost, $100 on every one. Past results, not a promise." };
 
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 const tallyText = (t: Tally) => `${t.won} won, ${t.lost} lost${t.void ? `, ${t.void} voided` : ""}`;
@@ -28,21 +30,48 @@ export default async function ResultsPage() {
   const now = Date.now();
   const viewer = await getViewer();
   const member = isPaid(viewer.plan) && Boolean(viewer.user);
-  let rec: RecordView | null = null, latest: BoardBet[] = [];
+  let rec: RecordView | null = null, latest: BoardBet[] = [], kal: KalshiRecord | null = null;
   if (hasDatabase()) {
     const db = getDb();
-    [rec, latest] = await Promise.all([
+    [rec, latest, kal] = await Promise.all([
       memo("results:record", 60_000, () => millionaireRecord(db, now)).catch(() => null),
       recentBets(db, { now, all: true, tier: "millionaire", limit: 200, member: true }).then(l => l.filter(b => b.result).slice(0, 30)).catch(() => []),
+      memo("results:kalshi", 60_000, () => kalshiPingRecord(db, now)).catch(() => null),
     ]);
   }
-  const n = rec ? settledCount(rec.total) : 0;
+  const n = rec ? settledCount(rec.total) : 0, kn = kal ? settledCount(kal.total) : 0;
   return (
     <Frame member={member} current="board" testid="results-page">
       <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6, priority: true }} first testid="results-hero" labelledBy="r-h">
         <div className="b-head">
-          <Lines as="h1" id="r-h" lines={["How the millionaires' bets", "actually did."]} size={56} />
-          <p className="b-sub" data-m="lift">Every settled bet from a wallet up $1M+ in the last {rec?.days ?? 30} days. Losses included.</p>
+          <Lines as="h1" id="r-h" lines={["Following the pings", "on Kalshi."]} size={56} />
+          <p className="b-sub" data-m="lift">Every time a $1M+ wallet bought into a market Kalshi also lists, we pinged members with Kalshi&apos;s price. Here is what $100 at that price did.</p>
+        </div>
+        <Panel className="s-col" testid="results-kalshi">
+          {kal && kn ? (
+            <>
+              <p className="s-big b-num" data-testid="results-kalshi-tally">{tallyText(kal.total)}</p>
+              {kal.net !== null
+                ? <p className="b-sub" data-testid="results-kalshi-net">${STAKE} on every ping at Kalshi&apos;s price: {dollars(kal.total.staked)} in, <b>{signed(kal.net)}</b> back, before Kalshi&apos;s fees.</p>
+                : <p className="b-small" data-testid="results-kalshi-building">The ${STAKE}-a-ping line shows from {MIN_SETTLED} settled pings: {kn} so far, {kal.pinged} sent in the last {kal.days} days.</p>}
+              <p className="b-small">Kalshi&apos;s price when the ping went out, the same side the wallet bought. {PAST}</p>
+            </>
+          ) : <p className="b-empty" data-testid="results-kalshi-empty">{kal && kal.pinged ? `${kal.pinged} ${kal.pinged === 1 ? "ping" : "pings"} on Kalshi markets in the last ${kal.days} days; none has settled yet.` : "No ping on a Kalshi market has settled yet. The record starts with the first one."}</p>}
+        </Panel>
+        {kal && kal.latest.length ? (
+          <Panel className="s-col s-prose">
+            <table data-testid="results-kalshi-rows">
+              <thead><tr><th scope="col">Ping</th><th scope="col">Kalshi then</th><th scope="col">Result</th></tr></thead>
+              <tbody>{kal.latest.slice(0, 10).map(p => <tr key={p.id}><th scope="row">{p.kind === "add" ? "Added to" : "Bought"} {p.outcome} · {p.title}</th><td className="b-num">{Math.round(p.kalshiPrice * 100)}¢</td><td>{p.result === "won" ? "Won" : p.result === "lost" ? "Lost" : p.result === "void" ? "Voided" : "Open"}</td></tr>)}</tbody>
+            </table>
+          </Panel>
+        ) : null}
+      </Stage>
+
+      <Stage bg={{ kind: "globe", dark: 0.6 }} testid="results-own" labelledBy="ro-h">
+        <div className="b-head">
+          <Lines as="h2" id="ro-h" lines={["How the millionaires' bets", "actually did."]} size={48} />
+          <p className="b-sub" data-m="lift">Every settled bet from a wallet up $1M+ in the last {rec?.days ?? 30} days, at the price they paid. Losses included.</p>
         </div>
         <Panel className="s-col" testid="results-total">
           {rec && n ? (

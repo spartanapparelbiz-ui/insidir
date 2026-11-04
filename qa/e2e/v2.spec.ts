@@ -101,6 +101,8 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
 
 test("the record is public and honest: won and lost, the $100 line only from 30 settled, by category and by day; /pricing's live week numbers", async ({ page }) => {
   expect((await page.goto("/results"))?.status()).toBe(200);
+  // First, following the pings on Kalshi: a tally, or what it's waiting for; never a made-up number.
+  await expect(page.getByTestId("results-kalshi")).toContainText(/won, \d+ lost|ping/);
   const total = page.getByTestId("results-total");
   await expect(total).toBeVisible();
   await expect(total).toContainText(/won, \d+ lost|No millionaire bet has settled/);

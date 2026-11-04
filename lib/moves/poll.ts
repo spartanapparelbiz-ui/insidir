@@ -5,6 +5,7 @@
  *   own last day of trades (market maker or bot: skipped).
  *   Kalshi: every poll reads all public trades since the last one seen (cursor pages), and each trade of at least
  *   WHALE_MIN_KALSHI is a move. Kalshi trades are anonymous. */
+import { sellRuns, type SellRun } from "@/lib/millionaires/positions";
 import { kalshiMoves, noisyWallet, polymarketMoves, type MarketInfo, type WalletTrade } from "./detect";
 import { readKalshiFills, readPolymarketFills } from "./sources";
 import type { Fill, Move } from "./types";
@@ -46,6 +47,7 @@ export class MovesPoller {
   private kalshiSeen = new Map<string, number>();
   private kalshiSince: number | null = null;
   private watchedBets: Move[] = [];
+  private watchedSells: SellRun[] = [];
 
   constructor(private readonly src: MoveSources) {}
 
@@ -76,6 +78,8 @@ export class MovesPoller {
       : infoOrLookup;
     // The watchlist's bets skip the noise checks: who the wallet is is already known (top all-time profit).
     this.watchedBets = watchedOf(info);
+    // Their sells too: trims and exits of positions (lib/millionaires/positions.ts).
+    this.watchedSells = watched ? sellRuns(fills, w => watched(w)) : [];
     const candidates = polymarketMoves(fills, info);
     const out: Move[] = [];
     let checks = 0;
@@ -106,6 +110,9 @@ export class MovesPoller {
 
   /** The watchlist wallets' bets of BET_MIN or more in the last poll's buffer (LOOKBACK_MS), merged like moves. */
   lastWatchedBets(): readonly Move[] { return this.watchedBets; }
+
+  /** The watchlist wallets' sell runs of BET_MIN or more in the same buffer. */
+  lastWatchedSells(): readonly SellRun[] { return this.watchedSells; }
 
   /** `markets` is a map of known markets, or a lookup called with the tickers this poll's trades name. */
   async pollKalshi(now: number, marketsOrLookup: ReadonlyMap<string, VMarket> | MarketLookup, infoIn?: ReadonlyMap<string, MarketInfo>): Promise<Move[]> {
