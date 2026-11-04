@@ -83,7 +83,8 @@ async function checkPage(page: Page, path: string, width: number): Promise<{ fin
         const box = i.getBoundingClientRect(), fit = getComputedStyle(i).objectFit;
         const nat = ok ? await real(src) : 0, ratio = i.naturalWidth && i.naturalHeight ? i.naturalWidth / i.naturalHeight : 1;
         const need = fit === "cover" ? Math.max(box.width, box.height * ratio) : box.width;
-        return { src, ok, nat, shown: need };
+        // Darkened stage backgrounds must not be upscaled (1×); content images (cards, logos, faces) need 2×.
+        return { src, ok, nat, shown: need, bg: Boolean(i.closest(".b-stage__bg")) };
       }));
       const trunc = [...document.querySelectorAll("h1, h2, h3")].filter(h => { const s = getComputedStyle(h); return h.scrollWidth > h.clientWidth + 1 && s.overflow !== "visible"; }).map(h => (h.textContent ?? "").trim().slice(0, 80));
       const links = [...document.querySelectorAll("a[href]")].map(a => (a as HTMLAnchorElement).href).filter(h => h.startsWith(location.origin));
@@ -92,8 +93,8 @@ async function checkPage(page: Page, path: string, width: number): Promise<{ fin
     if (r.sideways > 0) add("sideways scroll", `${r.sideways}px wider than the screen`);
     for (const i of r.imgs) {
       if (!i.ok) add("broken image", i.src);
-      // Sharp enough: at least the box's pixels at 2× (3× screens get the 2× file; the eye can't tell), and never upscaled past 1×.
-      else if (!i.src.endsWith(".svg") && i.nat < Math.min(i.shown * Math.min(r.dpr, 2), 3840) * 0.9) add("blurry image", `${i.src} is ${i.nat}px wide, needs ${Math.round(i.shown * Math.min(r.dpr, 2))}px`);
+      // Sharp enough: content at 2× (3× screens get the 2× file; the eye can't tell); backgrounds never upscaled.
+      else { const need = Math.min(i.shown * (i.bg ? 1 : Math.min(r.dpr, 2)), 3840); if (!i.src.endsWith(".svg") && i.nat < need * 0.9) add("blurry image", `${i.src} is ${i.nat}px wide, needs ${Math.round(need)}px${i.bg ? " (background)" : ""}`); }
     }
     for (const t of r.trunc) add("truncated heading", t);
     for (const t of textFindings(r.text)) add("text", t);
@@ -146,6 +147,8 @@ async function main(): Promise<void> {
     for (const [w, h] of WIDTHS) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: w === 390 ? 3 : w === 768 ? 2 : 1 });
       await ctx.addCookies([{ name: "insidir_pay_closed", value: "1", url: BASE }, ...(signedIn ? COOKIE.split(";").map(c => { const [k, ...v] = c.trim().split("="); return { name: k!, value: v.join("="), url: BASE }; }) : [])]);
+      // tsx compiles named functions with an __name() helper that page.evaluate code must find in the page.
+      await ctx.addInitScript("window.__name = (f) => f");
       const page = await ctx.newPage();
       for (const p of signedIn ? MEMBER : paths) {
         const r = await checkPage(page, p, w);
