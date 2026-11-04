@@ -22,6 +22,8 @@ test("members-only pages send visitors to log in; the board, markets and wallets
 });
 
 test("every page: footer disclaimer, privacy and terms links, no sideways scroll, screenshot", async ({ page, context }) => {
+  // ~30 full-page screenshots (/credits lists every portrait); the phone run needs more than the default minute.
+  test.setTimeout(120_000);
   for (const path of [...PUBLIC_PAGES, "/admin"]) {
     const res = await page.goto(path);
     expect(res?.status(), path).toBeLessThan(400);
