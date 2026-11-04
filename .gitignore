@@ -9,3 +9,6 @@ qa/reports/lighthouse-*.json
 qa/reports/audit.log
 .cache/
 public/brand/gen/
+qa/reports/crawl.json
+qa/reports/crawl.md
+qa/reports/lh-*.json
