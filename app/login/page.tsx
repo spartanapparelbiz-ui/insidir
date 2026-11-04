@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ContinueButton } from "@/components/auth/ContinueButton";
 import { Lines, Stage } from "@/components/system";
-import { BrandNav } from "@/components/brand/Nav";
+import { BrandFoot, BrandNav } from "@/components/brand/Nav";
 import { safeNext } from "@/lib/auth/next";
 import { getViewer } from "@/lib/auth/viewer";
 import { slotPhoto } from "@/lib/brand/images";
@@ -42,6 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="b-small" data-testid="login-new">New here? <a className="s-link" href="/go" data-checkout="login">Start for $1</a></p>
         </div>
       </Stage>
+      <BrandFoot inline />
     </main>
   );
 }

@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "tsx scripts/check-placeholders.ts && next build",
+    "build": "tsx scripts/check-placeholders.ts && tsx scripts/brand-images.ts && next build",
+    "brand:images": "tsx scripts/brand-images.ts",
     "check:placeholders": "tsx scripts/check-placeholders.ts",
     "start": "next start -p ${PORT:-3000}",
     "worker": "tsx lib/db/migrate.ts && NODE_OPTIONS=--max-old-space-size=512 tsx worker/index.ts",

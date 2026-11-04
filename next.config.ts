@@ -26,9 +26,10 @@ const config: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com", port: "", pathname: "/photo-*" },
     ],
     formats: ["image/avif", "image/webp"],
-    // 96/192 for avatars; the rest for full-bleed photos, up to 6K (the brand masters are 6144px wide: a 5K/6K display, or
-    // a 2560 screen at 2x, gets a full-resolution scene; everyone else gets the width their screen needs).
-    deviceSizes: [96, 192, 390, 640, 828, 1080, 1280, 1672, 1920, 2560, 2880, 3840, 5120, 6144],
+    // 96/192 for avatars; the rest for cards and thumbnails. Never above 3840: the full-bleed stages use the pre-generated
+    // AVIF/WebP at 1920/2880/3840 (scripts/brand-images.ts, components/brand/BrandPicture.tsx), so the optimizer never
+    // builds a 5K or 6K image on request.
+    deviceSizes: [96, 192, 390, 640, 828, 1080, 1280, 1672, 1920, 2560, 2880, 3840],
     imageSizes: [40, 80, 160, 320],
     qualities: [55, 60, 66, 75, 85, 90],
     minimumCacheTTL: 86_400,

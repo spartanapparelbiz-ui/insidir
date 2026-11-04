@@ -4,7 +4,7 @@
  * is Hurricane, not Weather; a Fed market is Markets, not Politics). */
 import { sportsLeagueOf } from "@/lib/moves/classify";
 import type { League } from "@/lib/moves/types";
-import { FALLBACK, FALLBACKS, PHOTOS, type Photo, type PhotoFile } from "./images";
+import { FALLBACK, PHOTOS, type Photo, type PhotoFile } from "./images";
 
 export const CATEGORY_SLUGS = [
   "elections", "politics", "football", "basketball", "soccer", "baseball", "tennis", "hockey", "golf", "racing", "esports",
@@ -47,15 +47,22 @@ export function categoryPhoto(slug: CategorySlug): Photo {
   return PHOTOS[own];
 }
 
-/** Photos for a row of categories shown together: each its own, else its first fallback no other card uses yet. */
-export function categoryPhotos(slugs: readonly CategorySlug[]): Photo[] {
-  const used = new Set<PhotoFile>(slugs.filter(s => s in PHOTOS) as PhotoFile[]);
+/** Categories whose own photo is a slot's (no category photo of that name): Weather is the sea of clouds. */
+const OWN: Partial<Record<CategorySlug, PhotoFile>> = { weather: "cta" };
+/** A category's own photo, or null when it has none yet (it never borrows another category's). */
+export function ownPhoto(slug: CategorySlug): Photo | null {
+  const f = slug in PHOTOS ? (slug as PhotoFile) : OWN[slug] ?? null;
+  return f ? PHOTOS[f] : null;
+}
+/** Photos for a row of categories shown together (/markets, the landing's row): each its own, never one twice; a
+ *  category without its own photo gets none (a plain card), never a repeat. */
+export function categoryPhotos(slugs: readonly CategorySlug[]): Array<Photo | null> {
+  const used = new Set<string>();
   return slugs.map(slug => {
-    if (slug in PHOTOS) return PHOTOS[slug as PhotoFile];
-    const list = FALLBACKS[slug] ?? ["markets"];
-    const pick = list.find(f => !used.has(f)) ?? list[0]!;
-    used.add(pick);
-    return PHOTOS[pick];
+    const p = ownPhoto(slug);
+    if (!p || used.has(p.src)) return null;
+    used.add(p.src);
+    return p;
   });
 }
 

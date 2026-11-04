@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   description: WHAT_IS,
   openGraph: { title: WHAT_IS_TITLE, description: WHAT_IS, siteName: "Insidir", type: "website" },
   twitter: { card: "summary_large_image", title: WHAT_IS_TITLE, description: WHAT_IS },
-  icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
+  icons: { icon: [{ url: "/favicon.ico", sizes: "48x48" }, { url: "/icons/favicon.svg", type: "image/svg+xml" }], apple: "/apple-touch-icon.png" },
   manifest: "/manifest.webmanifest",
   // Added to an iPhone's home screen, Insidir opens full screen like an app: what iOS needs for web push alerts.
   appleWebApp: { capable: true, title: "Insidir", statusBarStyle: "black-translucent" },

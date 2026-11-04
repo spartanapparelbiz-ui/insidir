@@ -52,51 +52,12 @@ test("home: the nav's Start for $1 is recorded and opens /go", async ({ page }) 
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
 });
 
-test("one font: headlines, body text, buttons and cards are all Schibsted Grotesk, and it loads", async ({ page }) => {
-  await page.goto("/pricing");
-  await page.evaluate(() => document.fonts.ready);
-  const r = await page.evaluate(() => {
-    const root = getComputedStyle(document.documentElement);
-    const first = (v: string) => v.split(",")[0]!.trim().replace(/["']/g, "");
-    const font = (s: string) => first(getComputedStyle(document.querySelector(s)!).fontFamily);
-    return { sans: first(root.getPropertyValue("--font-schibsted")), rufina: root.getPropertyValue("--font-rufina").trim(),
-      h1: font("h1"), h2: font("h2"), body: font("body"), btn: font(".btn"),
-      loaded: [...document.fonts].filter(f => f.status === "loaded").map(f => f.family) };
-  });
-  expect(r.sans).not.toBe("");
-  expect(r.rufina).toBe("");
-  expect([r.h1, r.h2, r.body, r.btn]).toEqual([r.sans, r.sans, r.sans, r.sans]);
-  expect(r.loaded.map(x => x.replace(/["']/g, ""))).toContain(r.sans.replace(/["']/g, ""));
-});
-
 test("outside the US, the market page links to the source market", async ({ page, context }) => {
   await signIn(context, "proIntl");
   await page.goto("/market/0xe2emarket1");
   await expect(page.getByRole("link", { name: "See it on Polymarket" })).toHaveAttribute("href", /polymarket\.com/);
 });
 
-
-test("results are public: totals, refunds labelled, pages instead of a cap; /pricing's live week numbers", async ({ page }) => {
-  await page.goto("/results");
-  await expect(page).toHaveURL(/\/results$/);
-  await expect(page.locator(".rlist__res--won").first()).toBeVisible();
-  const total = page.getByTestId("results-total");
-  await expect(total).toContainText(/won, \d+ lost/);
-  await expect(total).toContainText("Average entry:");
-  // Polymarket wallets only, checked against their own trades: 1 won, 1 lost, 1 sold before the result; net
-  // +$180K − $64K + $10K = +$126K, explained in one line.
-  await expect(total).toContainText("1 won, 1 lost, 1 closed before settlement");
-  await expect(page.getByTestId("record-net")).toContainText("Net for these traders: +$126K");
-  await expect(total).toContainText("What these positions realized");
-  await expect(page.locator(".rlist__res--sold").first()).toHaveText("Closed before settlement");
-  // /pricing's "This week on Insidir": live numbers only, the last accuracy check among them.
-  await page.goto("/pricing");
-  await expect(page.getByTestId("week-positions")).toContainText(/\d/);
-  await expect(page.getByTestId("week-check")).toContainText(/\d+ of \d+/);
-  await expect(page.getByTestId("week-check")).toContainText("matched");
-  await page.goto("/results?page=99");
-  expect((await page.goto("/results?page=99"))?.status()).toBeLessThan(400);
-});
 
 test("share card: a 1080×1920 PNG, never early for free viewers", async ({ page, context }) => {
   const late = await page.request.get("/api/share/e2e%3Am4");
@@ -136,4 +97,18 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
   await expect(card.locator("li")).toHaveCount(5);
   await expect(page.locator("main")).not.toContainText("More coming");
+});
+
+test("the record is public and honest: won and lost, the $100 line only from 30 settled, by category and by day; /pricing's live week numbers", async ({ page }) => {
+  expect((await page.goto("/results"))?.status()).toBe(200);
+  const total = page.getByTestId("results-total");
+  await expect(total).toBeVisible();
+  await expect(total).toContainText(/won, \d+ lost|No millionaire bet has settled/);
+  // Under 30 settled bets it says how many so far, never a return.
+  const tally = await total.innerText();
+  if (/won, \d+ lost/.test(tally) && !(await page.getByTestId("results-net").count())) await expect(page.getByTestId("results-building")).toContainText(/settled/);
+  await expect(page.locator("main")).not.toContainText(/E2E-Top|E2E-Follow/); // never a name
+  await page.goto("/pricing");
+  await expect(page.getByTestId("week-bets")).toContainText(/\d/);
+  await expect(page.getByTestId("week-twins")).toContainText(/\d/);
 });

@@ -264,6 +264,7 @@ body:has(.b-root) .foot, body:has(.b-root) .latebar, body:has(.b-root) .tabbar, 
 .b-ccard__img { position: absolute; inset: calc(7 * var(--u)); border-radius: calc(var(--r) - 6px); overflow: hidden; }
 .b-ccard__img img { object-fit: cover; }
 .b-ccard__img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, .82), rgba(0, 0, 0, .35) 55%, rgba(0, 0, 0, .35)); }
+.b-ccard--plain .b-ccard__img { background: radial-gradient(120% 90% at 30% 20%, var(--panel), var(--bg)); }
 .b-ccard__txt { position: absolute; left: calc(20 * var(--u)); right: calc(20 * var(--u)); bottom: calc(18 * var(--u)); z-index: 2; display: grid; gap: calc(5 * var(--u)); }
 .b-ccard__name { margin: 0; font-weight: 500; font-size: calc(24 * var(--u)); letter-spacing: calc(-0.6 * var(--u)); }
 @media (max-width: 1160px) { .b-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } .b-ccard { padding: 6px; } .b-ccard__img { inset: 6px; } .b-ccard__txt { left: 16px; right: 16px; bottom: 14px; } .b-ccard__name { font-size: max(19px, calc(24 * var(--u))); } }

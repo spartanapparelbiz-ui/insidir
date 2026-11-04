@@ -8,6 +8,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { Photo } from "@/lib/brand/images";
 import { PHOTOS } from "@/lib/brand/images";
 import { Globe } from "./Globe";
+import { BrandPicture } from "./BrandPicture";
 
 export type StageBg = { kind: "globe"; dark?: number; faint?: boolean; poster?: boolean } | { kind: "photo"; photo: Photo; dark?: number; priority?: boolean } | { kind: "none" };
 
@@ -19,13 +20,13 @@ function Bg({ bg }: { bg: StageBg }) {
   if (bg.kind === "none") return null;
   const style = { "--dark": bg.dark ?? 0.35 } as CSSProperties;
   if (bg.kind === "photo") {
-    return <div className="b-stage__bg" style={style}><Image src={bg.photo.src} alt="" fill sizes="100vw" priority={bg.priority} fetchPriority={bg.priority ? "high" : undefined} quality={85} /></div>;
+    return <div className="b-stage__bg" style={style}><BrandPicture src={bg.photo.src} priority={bg.priority} style={{ objectPosition: bg.photo.pos }} /></div>;
   }
   const clip = globeReady(), poster = has(POSTER) ? POSTER : null;
   return (
     <div className={`b-stage__bg${bg.faint ? " b-stage__bg--faint" : ""}`} style={style}>
       {clip && !bg.poster ? <Globe src={GLOBE} poster={poster ?? PHOTOS.hero.src} />
-        : <div className="b-globe"><Image src={poster ?? PHOTOS.hero.src} alt="" fill sizes="100vw" priority={!bg.faint} quality={85} /></div>}
+        : <div className="b-globe">{poster ? <Image src={poster} alt="" fill sizes="100vw" priority={!bg.faint} quality={85} /> : <BrandPicture src={PHOTOS.hero.src} priority={!bg.faint} />}</div>}
     </div>
   );
 }

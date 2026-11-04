@@ -27,7 +27,7 @@ test("one primary action: pricing and legal pages show exactly one; the landing'
   for (const path of ["/pricing", "/terms", "/privacy"]) {
     await page.goto(path);
     // Pictures of the app are inert, and a closed laptop panel isn't shown: neither is an action on this page.
-    const primaries = await page.locator("main .btn--primary:not(.band2 .btn)").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).length);
+    const primaries = await page.locator("main .b-primary").evaluateAll(els => els.filter(e => (e as HTMLElement).offsetParent !== null && !e.closest("[inert]")).length);
     expect(primaries, path).toBe(1);
   }
 });

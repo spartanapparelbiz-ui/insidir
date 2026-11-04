@@ -114,3 +114,19 @@ describe("the old product's names are gone", () => {
     for (const t of ["We read Polymarket every 15 seconds.", "Read the rules"]) expect(READ.test(t), t).toBe(false);
   });
 });
+
+describe("every page is on the brand shell", () => {
+  /** The homepage system's frames: Frame (visitors: brand nav and footer; members: the app shell), the text-page shell
+   *  (TrustPage), the landing, the /go funnel, the member home, or a .b-root page of its own. Admin and the dev gallery
+   *  aside. No old SiteHeader, SiteFooter, Wordmark or AuthSplit anywhere. */
+  const SHELL = /<Frame\b|<TrustPage\b|<Landing\b|<Funnel\b|<HomePage\b|<Shell\b|className="b-root"/;
+  it("every page, the 404 and the error page render inside it", () => {
+    const pagesOff = [...files("app", /^(page|not-found|error)\.tsx$/)].filter(f => !/^app\/(admin|dev)\//.test(f) && !SHELL.test(readFileSync(f, "utf8")));
+    expect(pagesOff).toEqual([]);
+  });
+  it("the old shell is gone", () => {
+    for (const f of ["components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/Wordmark.tsx", "components/auth/AuthSplit.tsx", "components/Skeletons.tsx", "components/v2"]) expect(() => statSync(f), f).toThrow();
+    const users = [...files("app"), ...files("components"), ...files("lib")].filter(f => /SiteHeader|SiteFooter|Wordmark|AuthSplit|components\/v2\//.test(readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "")));
+    expect(users).toEqual([]);
+  });
+});
