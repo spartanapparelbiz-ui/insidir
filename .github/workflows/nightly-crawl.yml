@@ -1,0 +1,32 @@
+name: Nightly production crawl
+# Every night: every route on insidir.com at 390, 768 and 1440 (qa/crawl.ts), with zero tolerance for console errors,
+# 4xx/5xx, broken or blurry images, sideways scroll, truncated headings, raw ISO dates, "None", contrast and keyboard
+# failures, and Lighthouse performance ≥ 90 desktop / ≥ 80 mobile. The report is kept as an artifact; a finding fails
+# the run (GitHub emails the owners).
+on:
+  schedule:
+    - cron: "23 8 * * *"
+  workflow_dispatch:
+jobs:
+  crawl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Crawl production
+        env:
+          CRAWL_URL: https://insidir.com
+          CRAWL_COOKIE: ${{ secrets.CRAWL_COOKIE }}
+        run: npx tsx qa/crawl.ts
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crawl-report
+          path: qa/reports/
