@@ -103,9 +103,9 @@ test("Start for $1 in the nav on public pages, home included (the brand nav's pi
   await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   expect(Math.round((await page.getByTestId("nav-start").boundingBox())!.height)).toBeGreaterThanOrEqual(28);
   await page.goto("/pricing");
-  await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/go");
+  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   await page.goto("/login");
-  await expect(page.locator(".nav__cta")).toHaveCount(0);
+  await expect(page.getByTestId("nav-start")).toHaveCount(0);
 });
 
 

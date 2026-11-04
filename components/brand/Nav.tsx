@@ -14,7 +14,9 @@ const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/boa
 /** Members: the same bar, their places. No sidebar anywhere. */
 const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Your copies", "/copies/yours"]];
 
-export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
+export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
+  /** The Start for $1 pill (off on /login, which has its own way in). */
+  start?: boolean;
   /** Election Day leads the links until the board closes (decided on the server: lib/brand/pulse.ts electionDay). */
   election?: boolean }) {
   const base = member ? MEMBER_LINKS : LINKS;
@@ -46,7 +48,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
         <nav className="b-nav-links" aria-label="Primary">{links.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
         <div className="b-nav-actions">
           {member ? <a className="b-btn b-panel-pill" href="/settings" data-testid="nav-account" {...q(motion, "settle", 0.68)}>Account</a> : <a className="b-btn b-panel-pill" href="/login" {...q(motion, "settle", 0.68)}>Log in</a>}
-          {member ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
+          {member || !start ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
           <button ref={burger} {...q(motion, "settle", 0.68)} className="b-burger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="b-menu" onClick={e => { e.stopPropagation(); setOpen(!open); }}><span /></button>
         </div>
       </header>
