@@ -1,4 +1,4 @@
-/* One millionaire bet as a row: the market's name (teams with a chip in their colour; no photo, no logo), the wallet's profit tier and profit, the
+/* One millionaire bet as a row: both teams' logos for a game (lib/teams, 28px), the market's name, the wallet's profit tier and profit, the
  * market, the side (locked for visitors), size and time, price then → now when known. Safe in server and client
  * components. */
 import { decidedText, decision } from "@/lib/millionaires/decided";
@@ -6,6 +6,7 @@ import type { BoardBet } from "@/lib/millionaires/queries";
 import type { GroupedBet } from "@/lib/millionaires/group";
 import { dollars } from "@/lib/money";
 import { PriceMove, Side, signedDollars, TierBadge } from "./Bits";
+import { TeamPair } from "@/components/system/Team";
 
 export function agoShort(ms: number, now: number): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));
@@ -22,6 +23,7 @@ export function BetRow({ bet, now, href, className = "", settle, copyHref }: { b
   /** Members: the copy ticket for this bet. */
   copyHref?: string }) {
   const name = <>{bet.title}</>;
+  const teams = bet.teams ?? null;
   const n = "n" in bet ? bet.n : 1;
   const title = href ? <a className="b-row__link" href={href}>{name}</a> : name;
   // A Millionaire's $50K+ bet is gold.
@@ -30,7 +32,7 @@ export function BetRow({ bet, now, href, className = "", settle, copyHref }: { b
   return (
     <div className={`b-row b-row--plain ${className}`} data-testid="bet-row" data-bet={bet.id} data-n={n} data-ids={"ids" in bet ? bet.ids.join(" ") : bet.id} data-tier={bet.tier} style={style} {...(settle !== undefined ? { "data-m": "settle" } : {})}>
       <span className="b-row__main">
-        <span className="b-row__title">{title}</span>
+        <span className="b-row__title">{teams ? <TeamPair teams={teams} /> : null}{title}</span>
         <span className="b-row__meta">
           <TierBadge tier={bet.tier} />
           {bet.pnl !== null ? <span>{signedDollars(bet.pnl)} wallet</span> : null}

@@ -3,7 +3,7 @@
  * millionaire-tier watchlist bets since midnight ET (under $100K: the last 24 hours, said so), re-read every minute.
  * It shows the real total from first paint (never a count from $0) and ticks to each new total. Reduced motion: no tick. */
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { heroTotal, type Pulse } from "@/lib/millionaires/queries";
+import { heroTotal, type Pulse } from "@/lib/millionaires/pulse-shape";
 import { dollars } from "@/lib/money";
 
 export function HeroLine({ initial }: { initial: Pulse }) {

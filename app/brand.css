@@ -698,8 +698,9 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 .b-band .b-head { margin-bottom: 14px; justify-items: start; text-align: left; }
 
 /* Election rows: a D / R chip only where a party is named. */
-.b-party { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #fff; flex: none; }
-.b-party--d { background: var(--dem); } .b-party--r { background: var(--rep); }
+/* A party: a thin ring in the party's colour, its letter inside (no filled squares). */
+.b-party { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid currentColor; font-size: 12px; font-weight: 600; line-height: 1; flex: none; background: transparent; }
+.b-party--d { color: var(--dem); } .b-party--r { color: var(--rep); } .b-party--i { color: var(--dim); }
 .b-race { grid-template-columns: minmax(0, 1fr) auto; background: radial-gradient(130% 160% at 0% 50%, color-mix(in srgb, var(--amb, var(--dem)) 16%, transparent), transparent 70%), var(--panel); }
 .b-race[data-party="d"] { border-color: rgba(76, 141, 255, .35); } .b-race[data-party="r"] { border-color: rgba(255, 77, 94, .35); }
 .b-race__title { display: flex; gap: 8px; align-items: center; min-width: 0; }
@@ -733,9 +734,31 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 @media (max-width: 860px) { .b-app .b-main { padding: 84px 16px 40px; } }
 
 /* ---------- The system's shared pieces (components/system): homepage tokens only (lib/system/tokens.ts) ---------- */
-.s-face { flex: none; display: inline-grid; place-items: center; border-radius: 50%; overflow: hidden; background: var(--panel); box-shadow: 0 0 0 1px var(--glass-line); }
-.s-face img { width: 100% !important; height: 100% !important; object-fit: cover; object-position: 50% 30%; }
-.s-face--initials { color: var(--dim); font-size: 15px; font-weight: 600; }
+/* A face: the disc is a neutral skeleton until the portrait loads; initials on the same disc when there is none. */
+.s-face { flex: none; position: relative; display: inline-grid; place-items: center; border-radius: 50%; overflow: hidden; background: #181818; box-shadow: 0 0 0 1px var(--glass-line); }
+.s-face img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity .25s ease; }
+.s-face.is-loading { background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .09) 50%, transparent 70%) 0 0 / 300% 100% #181818; animation: s-skel 1.2s linear infinite; }
+.s-face.is-loading img { opacity: 0; }
+.s-face__ini { color: #ededed; font-weight: 600; letter-spacing: .02em; font-size: 15px; }
+.s-face--s .s-face__ini { font-size: 12px; } .s-face--l .s-face__ini { font-size: 28px; }
+@keyframes s-skel { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+@media (prefers-reduced-motion: reduce) { .s-face.is-loading { animation: none; } }
+
+/* Team marks (lib/teams): the logo as drawn, a light disc behind a dark one, a monogram when there is no logo. */
+.s-team { flex: none; display: inline-grid; place-items: center; }
+.s-team img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.s-team--disc { border-radius: 50%; background: #ededed; }
+.s-team--disc img { width: 74%; height: 74%; }
+.s-team--mono { border-radius: 50%; background: #ededed; color: var(--ink); font-weight: 600; letter-spacing: -.01em; line-height: 1; font-size: 12px; }
+.s-teampair { display: inline-flex; gap: 6px; align-items: center; flex: none; }
+.s-matchup { display: flex; align-items: flex-start; justify-content: center; gap: 28px; margin: 4px 0 20px; }
+.s-matchup__side { display: grid; justify-items: center; gap: 12px; min-width: 112px; }
+.s-matchup__name { font-size: 17px; font-weight: 600; text-align: center; }
+.s-matchup__vs { align-self: center; margin-top: -32px; font-size: 15px; color: var(--dim); }
+.s-team__mono { display: block; letter-spacing: -.03em; }
+.s-team--mono:not(.s-team--mono-m):not(.s-team--mono-l) .s-team__mono { transform: scale(.8); }
+.s-team--mono-m { font-size: 15px; } .s-team--mono-l { font-size: 28px; }
+.b-row__title .s-teampair { margin-right: 10px; vertical-align: middle; }
 .s-races { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; width: 100%; max-width: calc(1120 * var(--u)); margin: 0 auto; }
 .s-race__t { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
 .s-cands { list-style: none; margin: 0; padding: 0; display: grid; }
@@ -967,3 +990,8 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 .s-prose .stat__name { color: var(--ink); font-weight: 600; }
 .s-prose .stat__note, .s-prose .stat__fine { font-size: 14px; }
 .s-prose .stat__dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--up); margin-right: 8px; }
+
+/* /admin/art: the review grid. */
+.s-art { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.s-art__tile { display: grid; gap: 10px; padding: 16px; border-radius: var(--r); background: #000; box-shadow: 0 0 0 1px var(--glass-line); }
+.s-art__row { display: flex; align-items: center; gap: 16px; }

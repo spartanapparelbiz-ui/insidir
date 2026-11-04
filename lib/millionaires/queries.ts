@@ -2,6 +2,9 @@
  * terminal.watchlist, with "now" prices from terminal.market_info. Visitors see bets live with the side removed on the
  * server (redact): when, how much, the wallet's profit tier and the market are real; which side is never sent. Wallets leave here as their tier and a shortened address, plus the
  * full address only where a member can follow it. Server only. */
+import { matchupFor, type TeamArt } from "@/lib/teams";
+import { HERO_MIN, heroTotal, type Pulse } from "./pulse-shape";
+export { HERO_MIN, heroTotal, type Pulse };
 import { humanLine } from "@/lib/markets/title";
 import { sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
@@ -40,6 +43,8 @@ export interface BoardBet {
   result: "won" | "lost" | "void" | null;
   at: number;
   url: string | null;
+  /** A game's two teams (lib/teams: by the game in the URL), for their logos; null when it isn't a game. */
+  teams?: [TeamArt, TeamArt] | null;
 }
 
 type Row = Record<string, unknown>;
@@ -55,7 +60,10 @@ function toBet(r: Row, member: boolean): BoardBet {
     category: isCategory(cat) ? cat : "world", marketId: String(r.market_id), title: humanLine({ title: String(r.market_title) }), event: String(r.event_title),
     pnl: r.pnl === null || r.pnl === undefined ? null : n(r.pnl),
     outcome: String(r.outcome), side, amount: n(r.amount), priceThen: n(r.price), priceNow: yes === null ? null : side === "no" ? 1 - yes : yes,
-    closed: Boolean(r.closed), result: r.result === "won" || r.result === "lost" || r.result === "void" ? r.result : null, at: t(r.at), url: (r.url as string | null) ?? null,
+    closed: Boolean(r.closed), result: r.result === "won" || r.result === "lost" || r.result === "void" ? r.result : null, at: t(r.at),
+    // The Polymarket URL never leaves the server (a US user never gets a Polymarket link, payloads included); it is read
+    // here only for the game's two teams.
+    url: null, teams: matchupFor(r.url as string | null, String(r.event_title || r.market_title)),
   };
 }
 
@@ -98,19 +106,6 @@ export async function recentBets(db: Db, f: BetFilter): Promise<BoardBet[]> {
 /** A bet as a visitor gets it: everything but the side (and the prices that would give the side away). */
 export const redact = (b: BoardBet): BoardBet => ({ ...b, outcome: null, side: null, priceThen: null, priceNow: null, wallet: null });
 
-export interface Pulse {
-  /** Millionaire-tier bets in the window, and which window it is (the last hour, or today when the hour had none). */
-  count: number;
-  window: "hour" | "day";
-  wallets: number;
-  millionaires: number;
-  /** Dollars millionaire-tier wallets bet in the last 24 hours. */
-  today: number;
-  /** Dollars millionaire-tier wallets bet since midnight US Eastern (the hero's "today"). */
-  sinceMidnight: number;
-  /** How many millionaire-tier bets since midnight US Eastern. */
-  countToday: number;
-}
 
 /** /board for visitors: bets 60 minutes late (the live count stays live); members see them as they land. */
 export const BOARD_DELAY_MS = 60 * 60_000;
@@ -123,11 +118,6 @@ export function midnightET(now: number): number {
   return Math.floor((now - sinceMidnight) / 1000) * 1000;
 }
 
-/** The hero's live line: today's total (since midnight ET), or the last 24 hours when today is under HERO_MIN. */
-export const HERO_MIN = 100_000;
-export function heroTotal(p: Pulse): { amount: number; window: "today" | "24h" } {
-  return p.sinceMidnight >= HERO_MIN ? { amount: p.sinceMidnight, window: "today" } : { amount: p.today, window: "24h" };
-}
 
 /** The live counter and the watchlist's size. */
 /** The live numbers, for every category or one (the board's filter: every number on the page follows it). */

@@ -31,15 +31,10 @@ export function Insight({ text, fallback, as = "h1", size = 60, testid = "insigh
   return <Lines as={as} lines={lines} size={size} testid={testid} id={id} />;
 }
 
-const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]!.toUpperCase()).join("");
+/** A candidate's face (self-hosted, face-cropped; skeleton while loading, initials if none or it fails). Never a wallet. */
+export { Face } from "./Face";
 
-/** A candidate's face, only when verified (lib/market/art.ts verifiedHeadshot); otherwise their initials. Never a wallet. */
-export function Face({ name, image, size = 48 }: { name: string; image: string | null; size?: number }) {
-  return image
-    ? <span className="s-face" style={{ width: size, height: size }}><Image src={image} alt={name} width={size} height={size} sizes={`${size * 2}px`} quality={85} /></span>
-    : <span className="s-face s-face--initials" style={{ width: size, height: size }} aria-label={name}>{initialsOf(name)}</span>;
-}
-
-export function Party({ party }: { party: "D" | "R" | "I" | null }) {
-  return party ? <span className={`b-party b-party--${party.toLowerCase()}`} aria-hidden="true">{party}</span> : null;
+/** A party: a thin ring in the party's colour with its letter inside. */
+export function Party({ party, size = "s" }: { party: "D" | "R" | "I" | null; size?: "s" | "l" }) {
+  return party ? <span className={`b-party b-party--${party.toLowerCase()}${size === "l" ? " b-party--l" : ""}`} role="img" aria-label={party === "D" ? "Democrat" : party === "R" ? "Republican" : "Independent"}>{party}</span> : null;
 }
