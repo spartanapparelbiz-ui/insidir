@@ -1,5 +1,5 @@
 {
- "recordedAt": "2026-11-03T23:35:57.635Z",
+ "recordedAt": "2026-11-04T02:13:05.576Z",
  "kalshi": [
   {
    "venue": "kalshi",
@@ -27,12 +27,18 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 206.5 points",
+    "strikeType": "greater",
+    "floorStrike": 206.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
-   "volume24h": 0,
-   "yesPrice": 0,
+   "volume24h": 36.38,
+   "yesPrice": 0.87,
    "startTime": null,
-   "openInterest": 0
+   "openInterest": 36.38
   },
   {
    "venue": "kalshi",
@@ -59,6 +65,12 @@
     "value": 208.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 208.5 points",
+    "strikeType": "greater",
+    "floorStrike": 208.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -93,6 +105,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 210.5 points",
+    "strikeType": "greater",
+    "floorStrike": 210.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -125,6 +143,12 @@
     "value": 212.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 212.5 points",
+    "strikeType": "greater",
+    "floorStrike": 212.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -159,12 +183,18 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 214.5 points",
+    "strikeType": "greater",
+    "floorStrike": 214.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
-   "volume24h": 0,
-   "yesPrice": 0,
+   "volume24h": 2.36,
+   "yesPrice": 0.85,
    "startTime": null,
-   "openInterest": 0
+   "openInterest": 2.36
   },
   {
    "venue": "kalshi",
@@ -191,6 +221,12 @@
     "value": 216.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 216.5 points",
+    "strikeType": "greater",
+    "floorStrike": 216.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -225,6 +261,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 218.5 points",
+    "strikeType": "greater",
+    "floorStrike": 218.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -257,6 +299,12 @@
     "value": 220.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 220.5 points",
+    "strikeType": "greater",
+    "floorStrike": 220.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -291,6 +339,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 222.5 points",
+    "strikeType": "greater",
+    "floorStrike": 222.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -323,6 +377,12 @@
     "value": 224.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 224.5 points",
+    "strikeType": "greater",
+    "floorStrike": 224.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -357,6 +417,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 226.5 points",
+    "strikeType": "greater",
+    "floorStrike": 226.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -389,6 +455,12 @@
     "value": 228.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 228.5 points",
+    "strikeType": "greater",
+    "floorStrike": 228.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -423,12 +495,18 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 230.5 points",
+    "strikeType": "greater",
+    "floorStrike": 230.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
-   "volume24h": 95.13,
-   "yesPrice": 0.43,
+   "volume24h": 161.15,
+   "yesPrice": 0.52,
    "startTime": null,
-   "openInterest": 95.13
+   "openInterest": 99.15
   },
   {
    "venue": "kalshi",
@@ -456,12 +534,18 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 232.5 points",
+    "strikeType": "greater",
+    "floorStrike": 232.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
-   "volume24h": 8,
-   "yesPrice": 0.54,
+   "volume24h": 1530.47,
+   "yesPrice": 0.5,
    "startTime": null,
-   "openInterest": 280.41
+   "openInterest": 866.19
   },
   {
    "venue": "kalshi",
@@ -489,12 +573,18 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 234.5 points",
+    "strikeType": "greater",
+    "floorStrike": 234.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
-   "volume24h": 515.6,
-   "yesPrice": 0.43,
+   "volume24h": 1090.46,
+   "yesPrice": 0.46,
    "startTime": null,
-   "openInterest": 685.91
+   "openInterest": 774.28
   },
   {
    "venue": "kalshi",
@@ -522,9 +612,15 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 236.5 points",
+    "strikeType": "greater",
+    "floorStrike": 236.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
-   "volume24h": 103.03,
+   "volume24h": 432.83,
    "yesPrice": 0.41,
    "startTime": null,
    "openInterest": 432.83
@@ -554,6 +650,12 @@
     "value": 238.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 238.5 points",
+    "strikeType": "greater",
+    "floorStrike": 238.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -588,6 +690,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 240.5 points",
+    "strikeType": "greater",
+    "floorStrike": 240.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -620,6 +728,12 @@
     "value": 242.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 242.5 points",
+    "strikeType": "greater",
+    "floorStrike": 242.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -654,6 +768,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 244.5 points",
+    "strikeType": "greater",
+    "floorStrike": 244.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -686,6 +806,12 @@
     "value": 246.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 246.5 points",
+    "strikeType": "greater",
+    "floorStrike": 246.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -720,6 +846,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 248.5 points",
+    "strikeType": "greater",
+    "floorStrike": 248.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -752,6 +884,12 @@
     "value": 250.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 250.5 points",
+    "strikeType": "greater",
+    "floorStrike": 250.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -786,6 +924,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 252.5 points",
+    "strikeType": "greater",
+    "floorStrike": 252.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -818,6 +962,12 @@
     "value": 254.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 254.5 points",
+    "strikeType": "greater",
+    "floorStrike": 254.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -852,6 +1002,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 256.5 points",
+    "strikeType": "greater",
+    "floorStrike": 256.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -884,6 +1040,12 @@
     "value": 258.5,
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
+   },
+   "ids": {
+    "yesSub": "Over 258.5 points",
+    "strikeType": "greater",
+    "floorStrike": 258.5,
+    "capStrike": null
    },
    "active": true,
    "result": null,
@@ -918,6 +1080,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 260.5 points",
+    "strikeType": "greater",
+    "floorStrike": 260.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -951,6 +1119,12 @@
     "upper": null,
     "subject": "kxnbatotal:kxnbatotal-26nov04atlwas"
    },
+   "ids": {
+    "yesSub": "Over 262.5 points",
+    "strikeType": "greater",
+    "floorStrike": 262.5,
+    "capStrike": null
+   },
    "active": true,
    "result": null,
    "volume24h": 0,
@@ -978,175 +1152,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": null,
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "moneyline",
+    "line": null
+   },
    "yesTokenId": "6047234062165900217539830837728281097954840938663134342333674115099735148600",
    "noTokenId": "80030264709436811015170765095201246483563901149756066672456627231871946281678",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": 16266.085949000002,
-   "yesPrice": 0.535,
-   "startTime": 1793836800000
-  },
-  {
-   "venue": "polymarket",
-   "id": "0xc5b2b0f81938ed1ee4cbb7130f05d15426c0efe50bdc3137cb78f253f030c967",
-   "eventId": "1274876",
-   "seriesId": null,
-   "title": "Hawks vs. Wizards: Team to Score First",
-   "eventTitle": "Hawks vs. Wizards",
-   "yesLabel": "Hawks",
-   "noLabel": "Wizards",
-   "rules": "In the upcoming NBA game between Hawks and Wizards, originally scheduled for Wednesday, November 4, 2026 at 7:00 PM ET (as of creation of the first market related to the event):\nThis market will resolve to \"Hawks\" if the Hawks are the first to score a point, inclusive of free throws. This market will resolve to \"Wizards\" if the Wizards are the first to score a point, inclusive of free throws. The result will be determined based on the first point of the game scored only. If this market's outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 6, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve 50-50.",
-   "resolutionSource": "https://www.nba.com/",
-   "closeTime": 1793836800000,
-   "category": "sports",
-   "fee": {
-    "venue": "polymarket",
-    "rate": 0.05
-   },
-   "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-team-to-score-first",
-   "yesTokenId": "20368727136025479957747996537281363286002944730132665387233657159582216639850",
-   "noTokenId": "78693694144629897264493325328221380986344908026945810106574588809105533933825",
-   "strike": null,
-   "active": true,
-   "result": null,
-   "volume24h": null,
-   "yesPrice": 0.5,
-   "startTime": 1793836800000
-  },
-  {
-   "venue": "polymarket",
-   "id": "0x5f02b924b2b9f5d1162c7e3a0be6084074b31a20951d61f0c53c5ed2306f649c",
-   "eventId": "1274876",
-   "seriesId": null,
-   "title": "Hawks vs. Wizards: Odd/Even Score",
-   "eventTitle": "Hawks vs. Wizards",
-   "yesLabel": "Odd",
-   "noLabel": "Even",
-   "rules": "In the upcoming NBA game between Hawks and Wizards, originally scheduled for Wednesday, November 4, 2026 at 7:00 PM ET (as of creation of the first market related to the event): If the combined final score between the two participating teams equals an odd number, this market will resolve to \"Odd\". If the combined final score between the two participating teams equals an even number, this market will resolve to \"Even\". If this market's outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 6, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve 50-50. The result will be determined based on the final score including any overtime periods.",
-   "resolutionSource": "https://www.nba.com/",
-   "closeTime": 1793836800000,
-   "category": "sports",
-   "fee": {
-    "venue": "polymarket",
-    "rate": 0.05
-   },
-   "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-odd-even",
-   "yesTokenId": "12446824380863652769961774977977774658454118038543925767805345885822516485710",
-   "noTokenId": "72282801703652399713323301189970360957657673332297169875875665804504193311006",
-   "strike": null,
-   "active": true,
-   "result": null,
-   "volume24h": null,
-   "yesPrice": 0.5,
-   "startTime": 1793836800000
-  },
-  {
-   "venue": "polymarket",
-   "id": "0x00085417ab260987d76833d1d77e1d009226e30e54165d1e42f42d45e5d5c735",
-   "eventId": "1274876",
-   "seriesId": null,
-   "title": "Hawks vs. Wizards: Overtime?",
-   "eventTitle": "Hawks vs. Wizards",
-   "yesLabel": "Overtime?",
-   "noLabel": "No",
-   "rules": "In the upcoming NBA game between Hawks and Wizards, originally scheduled for Wednesday, November 4, 2026 at 7:00 PM ET (as of creation of the first market related to the event):\n\nThis market will resolve to \"Yes\" if the game goes to overtime.\n\nOtherwise, this market will resolve to \"No\".\n\nIf this market's outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 6, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve 50-50.",
-   "resolutionSource": "https://www.nba.com/",
-   "closeTime": 1793836800000,
-   "category": "sports",
-   "fee": {
-    "venue": "polymarket",
-    "rate": 0.05
-   },
-   "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-overtime",
-   "yesTokenId": "106145076415899023310364549779443963343910663824569691191789410813735766721410",
-   "noTokenId": "34433808293970054081687319706561885341557153953556942341211976152562331859687",
-   "strike": null,
-   "active": true,
-   "result": null,
-   "volume24h": null,
-   "yesPrice": 0.5,
-   "startTime": 1793836800000
-  },
-  {
-   "venue": "polymarket",
-   "id": "0x208db2696719835f4ce829a6974754a5e8be945d7a2918616bb848698474c3d9",
-   "eventId": "1274876",
-   "seriesId": null,
-   "title": "Hawks vs. Wizards: Race to 10 Points",
-   "eventTitle": "Hawks vs. Wizards",
-   "yesLabel": "Hawks",
-   "noLabel": "Wizards",
-   "rules": "In the upcoming NBA game between Hawks and Wizards, originally scheduled for Wednesday, November 4, 2026 at 7:00 PM ET (as of creation of the first market related to the event):\n\nThis market will resolve to \"Hawks\" if the Hawks are the first team to score 10 points in this game.\n\nThis market will resolve to \"Wizards\" if the Wizards are the first team to score 10 points in this game.\n\nIf neither team scores 10 points, this market will resolve 50-50.\n\nIf this market's outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 6, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve 50-50.",
-   "resolutionSource": "https://www.nba.com/",
-   "closeTime": 1793836800000,
-   "category": "sports",
-   "fee": {
-    "venue": "polymarket",
-    "rate": 0.05
-   },
-   "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-race-to-10",
-   "yesTokenId": "81502051411027874379690923108281739764974189730802465586626811171633828881485",
-   "noTokenId": "28676219655237602032088396863186221237216804901387884403861608023158579533589",
-   "strike": null,
-   "active": true,
-   "result": null,
-   "volume24h": null,
-   "yesPrice": 0.5,
-   "startTime": 1793836800000
-  },
-  {
-   "venue": "polymarket",
-   "id": "0x970e673977c73659a591f28d338ad1fccc4e4e25df9c6bc899655c4901b1bfc9",
-   "eventId": "1274876",
-   "seriesId": null,
-   "title": "Hawks vs. Wizards: Race to 20 Points",
-   "eventTitle": "Hawks vs. Wizards",
-   "yesLabel": "Hawks",
-   "noLabel": "Wizards",
-   "rules": "In the upcoming NBA game between Hawks and Wizards, originally scheduled for Wednesday, November 4, 2026 at 7:00 PM ET (as of creation of the first market related to the event):\n\nThis market will resolve to \"Hawks\" if the Hawks are the first team to score 20 points in this game.\n\nThis market will resolve to \"Wizards\" if the Wizards are the first team to score 20 points in this game.\n\nIf neither team scores 20 points, this market will resolve 50-50.\n\nIf this market's outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 6, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve 50-50.",
-   "resolutionSource": "https://www.nba.com/",
-   "closeTime": 1793836800000,
-   "category": "sports",
-   "fee": {
-    "venue": "polymarket",
-    "rate": 0.05
-   },
-   "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-race-to-20",
-   "yesTokenId": "22491434381675881888115768863074210773489729111916456495754214834298824220224",
-   "noTokenId": "8553436873519581351485031046024197816302642049222421255986216954055324478664",
-   "strike": null,
-   "active": true,
-   "result": null,
-   "volume24h": null,
-   "yesPrice": 0.5,
-   "startTime": 1793836800000
-  },
-  {
-   "venue": "polymarket",
-   "id": "0x63f077740d1f45b0b561f6314b1aa88a5528f6fbaff9562dbc721c9dc21afcf8",
-   "eventId": "1274876",
-   "seriesId": null,
-   "title": "Hawks vs. Wizards: Race to 30 Points",
-   "eventTitle": "Hawks vs. Wizards",
-   "yesLabel": "Hawks",
-   "noLabel": "Wizards",
-   "rules": "In the upcoming NBA game between Hawks and Wizards, originally scheduled for Wednesday, November 4, 2026 at 7:00 PM ET (as of creation of the first market related to the event):\n\nThis market will resolve to \"Hawks\" if the Hawks are the first team to score 30 points in this game.\n\nThis market will resolve to \"Wizards\" if the Wizards are the first team to score 30 points in this game.\n\nIf neither team scores 30 points, this market will resolve 50-50.\n\nIf this market's outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 6, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve 50-50.",
-   "resolutionSource": "https://www.nba.com/",
-   "closeTime": 1793836800000,
-   "category": "sports",
-   "fee": {
-    "venue": "polymarket",
-    "rate": 0.05
-   },
-   "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-race-to-30",
-   "yesTokenId": "20206647171344586061980302424997862250239551741024119972136199951986054505864",
-   "noTokenId": "51208577314738223334141770595035289566737302477492860719149314659925781560279",
-   "strike": null,
-   "active": true,
-   "result": null,
-   "volume24h": null,
-   "yesPrice": 0.5,
+   "volume24h": 24516.901048,
+   "yesPrice": 0.565,
    "startTime": 1793836800000
   },
   {
@@ -1167,13 +1190,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-1pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -1.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -1.5
+   },
    "yesTokenId": "42695454545158161645969003825595250929439682712393530651978599435856039689120",
    "noTokenId": "46230766371944526488451288090025350494299517826915666015366674702006915817459",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": null,
-   "yesPrice": 0.52,
+   "volume24h": 9.615385,
+   "yesPrice": 0.535,
    "startTime": 1793836800000
   },
   {
@@ -1194,13 +1228,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-234pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 234.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 234.5
+   },
    "yesTokenId": "107140154573437837472439788861641203366194003114786567289029307361379686409768",
    "noTokenId": "53143890776487868845192640068018710192615588529342699497995444346964552983793",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": null,
-   "yesPrice": 0.465,
+   "volume24h": 47.163637,
+   "yesPrice": 0.445,
    "startTime": 1793836800000
   },
   {
@@ -1221,13 +1266,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-2pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -2.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -2.5
+   },
    "yesTokenId": "25400096457544697669779699661919372577953231721763091988858284234016235740430",
    "noTokenId": "20671797658561011558223192016332683285107091706702182614576906872826247724825",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": null,
-   "yesPrice": 0.49,
+   "volume24h": 16.431373,
+   "yesPrice": 0.495,
    "startTime": 1793836800000
   },
   {
@@ -1248,13 +1304,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-232pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 232.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 232.5
+   },
    "yesTokenId": "71658379558848335478112831585117300262831931102218344943344789113036231934564",
    "noTokenId": "48254591549086491914557681959649844572384950412342169136044137148809961857905",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": null,
-   "yesPrice": 0.52,
+   "volume24h": 2894.941178,
+   "yesPrice": 0.495,
    "startTime": 1793836800000
   },
   {
@@ -1275,13 +1342,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-3pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -3.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -3.5
+   },
    "yesTokenId": "10356777295958183812944975401706910370017382715611469390333810884172693723900",
    "noTokenId": "89413079932556230623828048160668601649760124474444504803533497082720993909233",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.46,
+   "yesPrice": 0.455,
    "startTime": 1793836800000
   },
   {
@@ -1302,13 +1380,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-236pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 236.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 236.5
+   },
    "yesTokenId": "70165571208707714797030827904827699661318736811041187311755150144922955636567",
    "noTokenId": "25547547783889966798713667168202074463804813568189725160487409963728227994876",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": null,
-   "yesPrice": 0.42,
+   "volume24h": 24.39,
+   "yesPrice": 0.41,
    "startTime": 1793836800000
   },
   {
@@ -1329,13 +1418,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-4pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -4.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -4.5
+   },
    "yesTokenId": "15477599819877437336641172713123294368021290816261475282483034761738478487984",
    "noTokenId": "46800661178636044667633782359297770947067384934349146332262847452260567667105",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.41,
+   "yesPrice": 0.425,
    "startTime": 1793836800000
   },
   {
@@ -1356,6 +1456,17 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-230pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 230.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 230.5
+   },
    "yesTokenId": "93726268677537636307001079142465354130361036733695646053144854932476633186973",
    "noTokenId": "40335974250697215368951479712602077873580701348213629837709313827629830953915",
    "strike": null,
@@ -1383,13 +1494,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-1pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -1.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -1.5
+   },
    "yesTokenId": "42114265846116215693453198248734387606427728022601432509491282249094490117829",
    "noTokenId": "61014860848707884277302444111599965919316129763342322238000493764452746396435",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": null,
-   "yesPrice": 0.44,
+   "volume24h": 186.941459,
+   "yesPrice": 0.425,
    "startTime": 1793836800000
   },
   {
@@ -1410,13 +1532,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-238pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 238.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 238.5
+   },
    "yesTokenId": "6357864691879585922578012034420801494187693556184609541296451637774274893090",
    "noTokenId": "45762419261650784730763231992862346799359420716587993784013353845142895684943",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.39,
+   "yesPrice": 0.37,
    "startTime": 1793836800000
   },
   {
@@ -1437,13 +1570,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-5pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -5.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -5.5
+   },
    "yesTokenId": "64674796806714262723049268986559369637787172740107932793227341698063755055931",
    "noTokenId": "77384243711256771806556627963145827529720549390079764326833221741777258602055",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.38,
+   "yesPrice": 0.395,
    "startTime": 1793836800000
   },
   {
@@ -1464,13 +1608,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-228pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 228.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 228.5
+   },
    "yesTokenId": "11195732977938126827870671770556291892235710202782364847977850254651420934082",
    "noTokenId": "81177781330214399702195811659836046159392566476136300346243230278632193477079",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.59,
+   "yesPrice": 0.575,
    "startTime": 1793836800000
   },
   {
@@ -1491,13 +1646,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-2pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -2.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -2.5
+   },
    "yesTokenId": "104887900052934753378551624683571419073478711448283487633859976480625069741692",
    "noTokenId": "77620348159919678496099041597624103771736776071966391822184041499581831738067",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.395,
+   "yesPrice": 0.39,
    "startTime": 1793836800000
   },
   {
@@ -1518,13 +1684,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-240pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 240.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 240.5
+   },
    "yesTokenId": "92028609636500891189197705317868305549644292852257882680459425472117346328606",
    "noTokenId": "85967668724598432065058854074459048001537909023637701299617787730758040190821",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.365,
+   "yesPrice": 0.33,
    "startTime": 1793836800000
   },
   {
@@ -1545,13 +1722,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-6pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -6.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -6.5
+   },
    "yesTokenId": "67713437939529721468981438785770530390438012600602618764063447586495693121757",
    "noTokenId": "96900441862922127293697612184868846201829175963076457427422424016724483289165",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.33,
+   "yesPrice": 0.35,
    "startTime": 1793836800000
   },
   {
@@ -1572,13 +1760,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-226pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 226.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 226.5
+   },
    "yesTokenId": "113877938414002647715235050662899993114327865379187550672150858140962039153919",
    "noTokenId": "46889279549354777541188158129919439639465000431817669170716264376883500160460",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.61,
+   "yesPrice": 0.62,
    "startTime": 1793836800000
   },
   {
@@ -1599,13 +1798,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-3pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -3.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -3.5
+   },
    "yesTokenId": "44196274979914245658878527357953561299664720270223672288139049814377910624589",
    "noTokenId": "60246593304494850764943943972662862895789776893335176686951861846901051605793",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.365,
+   "yesPrice": 0.35,
    "startTime": 1793836800000
   },
   {
@@ -1626,13 +1836,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-242pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 242.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 242.5
+   },
    "yesTokenId": "66593210674945514403037308361999026507307631311021182857536926345447758760769",
    "noTokenId": "90966135734890302388286299239622544188847529349091315379859551757064877922108",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.335,
+   "yesPrice": 0.295,
    "startTime": 1793836800000
   },
   {
@@ -1653,13 +1874,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-7pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -7.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -7.5
+   },
    "yesTokenId": "52024163150541548339304643810273028484771333894350043114980864790205190125350",
    "noTokenId": "52997996003715961061527373621506166378291651477479897399398631652167782038274",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.3,
+   "yesPrice": 0.32,
    "startTime": 1793836800000
   },
   {
@@ -1680,13 +1912,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-224pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 224.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 224.5
+   },
    "yesTokenId": "51186069677125595089061743094369139350752200249997202701325247154221484143854",
    "noTokenId": "39489774106851455662813365687815294909749980036182910335617630119788798893958",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.665,
+   "yesPrice": 0.66,
    "startTime": 1793836800000
   },
   {
@@ -1707,13 +1950,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-4pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -4.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -4.5
+   },
    "yesTokenId": "54057121863897936822899330646948065342817447747952739492574266788800096089167",
    "noTokenId": "52490449103963112623045379505336055378196530248913432430835757817705886784721",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.31,
+   "yesPrice": 0.315,
    "startTime": 1793836800000
   },
   {
@@ -1734,13 +1988,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-244pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 244.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 244.5
+   },
    "yesTokenId": "4747384630179608245350878439774853103240240300283297882615007319222598842189",
    "noTokenId": "64889438318510570794725082735330277030785509485281134995665089447967616151810",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.3,
+   "yesPrice": 0.265,
    "startTime": 1793836800000
   },
   {
@@ -1761,13 +2026,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-9pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -9.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -9.5
+   },
    "yesTokenId": "109454167222753575021380404985609963650682293866538574998811841631534871952795",
    "noTokenId": "63801643604952587409775691167632012883845748899524781793931538475924077471283",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.26,
+   "yesPrice": 0.27,
    "startTime": 1793836800000
   },
   {
@@ -1788,13 +2064,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-222pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 222.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 222.5
+   },
    "yesTokenId": "110357036346451861012828614683400784909339146878761106912085768401142423775566",
    "noTokenId": "90430540709037486264791554035360867709449887022846418214089190804930696720780",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.745,
+   "yesPrice": 0.705,
    "startTime": 1793836800000
   },
   {
@@ -1815,6 +2102,17 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-6pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -6.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -6.5
+   },
    "yesTokenId": "21081154994600906823331850090938372395413900840169023424203123744961580016829",
    "noTokenId": "79509419553975811933341648378793934323009025720439514107273846771790229559960",
    "strike": null,
@@ -1842,13 +2140,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-246pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 246.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 246.5
+   },
    "yesTokenId": "95998822840885529187328292087363386515090778838510368617239470677732170533732",
    "noTokenId": "3901967211234143277774206874921364291720036008721019367725173753111567597013",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.23,
+   "yesPrice": 0.21,
    "startTime": 1793836800000
   },
   {
@@ -1869,13 +2178,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-11pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -11.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -11.5
+   },
    "yesTokenId": "110454548801096046907885863688143293683824107424730561273051450675989475261956",
    "noTokenId": "18160591184449633770896705867238964540961054813449470488600660860228400055261",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.23,
+   "yesPrice": 0.22,
    "startTime": 1793836800000
   },
   {
@@ -1896,13 +2216,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-220pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 220.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 220.5
+   },
    "yesTokenId": "15652073068196270788435764700025001807957298412778649530187001990012095610143",
    "noTokenId": "88695078245477699332044696240391898734122879720918493994292961670273021720176",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.72,
+   "yesPrice": 0.745,
    "startTime": 1793836800000
   },
   {
@@ -1923,6 +2254,17 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-8pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -8.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -8.5
+   },
    "yesTokenId": "110238377896195662830883047316065687245995367963896940849413304436560070967473",
    "noTokenId": "24546768170948684753985558396503173702621565095379758523891609594649274300856",
    "strike": null,
@@ -1950,13 +2292,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-248pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 248.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 248.5
+   },
    "yesTokenId": "98508235795607366883623252215581915235041126846592257509408701682583193268148",
    "noTokenId": "35423415241129591286850147149737637412238615967028686877635956772286742160977",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.245,
+   "yesPrice": 0.18,
    "startTime": 1793836800000
   },
   {
@@ -1977,13 +2330,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-13pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -13.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -13.5
+   },
    "yesTokenId": "5289049218703504007007670401325426533708815033364867694256185776153040176087",
    "noTokenId": "50907986899869560039147029611205469714372127169011700471295529756294717997668",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.2,
+   "yesPrice": 0.17,
    "startTime": 1793836800000
   },
   {
@@ -2004,13 +2368,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-218pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 218.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 218.5
+   },
    "yesTokenId": "21342595414802068060619745566069285905375660840857296493194676760642390288005",
    "noTokenId": "49110465682040305800693413441775477932351055634504801144154115011427424420382",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.74,
+   "yesPrice": 0.775,
    "startTime": 1793836800000
   },
   {
@@ -2031,13 +2406,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-10pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -10.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -10.5
+   },
    "yesTokenId": "80261867462141449587328022725413070678576439148560034945974055003948329151405",
    "noTokenId": "12434147030581824748748949107441015100437992476964262262762885371711717800011",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.19,
+   "yesPrice": 0.175,
    "startTime": 1793836800000
   },
   {
@@ -2058,13 +2444,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-250pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 250.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 250.5
+   },
    "yesTokenId": "41371390529881552561256492398056891102649309487573398125092100854231176511339",
    "noTokenId": "82027349165539065439511817610259429714671146986821610368134878793026238332175",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.21,
+   "yesPrice": 0.17,
    "startTime": 1793836800000
   },
   {
@@ -2085,13 +2482,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-15pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -15.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -15.5
+   },
    "yesTokenId": "85553356578054607924675859235990601125300497430825656630002183242438801892644",
    "noTokenId": "73285806134213316297437327504583814093087503757332629429949043719555569821759",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.175,
+   "yesPrice": 0.13,
    "startTime": 1793836800000
   },
   {
@@ -2112,13 +2520,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-216pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 216.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 216.5
+   },
    "yesTokenId": "34632592969242366448170192692946020673891856191956648765975513230002503695818",
    "noTokenId": "8924489107533272945733429095095179429001531770454010990279498436454158575772",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.775,
+   "yesPrice": 0.81,
    "startTime": 1793836800000
   },
   {
@@ -2139,13 +2558,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-12pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -12.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -12.5
+   },
    "yesTokenId": "53924027692911455930570250535148343293436280824792632020574053206706100454309",
    "noTokenId": "1759657287644743050753449222325771247871084864593071510774872332161056381133",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.18,
+   "yesPrice": 0.13,
    "startTime": 1793836800000
   },
   {
@@ -2166,13 +2596,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-252pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 252.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 252.5
+   },
    "yesTokenId": "58512402362426108572412309934247351442717575716404007162528214370865121291836",
    "noTokenId": "72803531969975564601976710213391603548797871947077842181750981059144179647951",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.21,
+   "yesPrice": 0.135,
    "startTime": 1793836800000
   },
   {
@@ -2193,13 +2634,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-17pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -17.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -17.5
+   },
    "yesTokenId": "40635240739357712922405946191532606115123461576110921086714414349112198961208",
    "noTokenId": "55635884563630940934178584441831361418906309745375344689556900735354746724593",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.14,
+   "yesPrice": 0.1,
    "startTime": 1793836800000
   },
   {
@@ -2220,13 +2672,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-214pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 214.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 214.5
+   },
    "yesTokenId": "23011701622656720175887182893561538317164636192064716386728033497167303245176",
    "noTokenId": "46118882890941892102563334917351251378330302832552813067657137619520921852575",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.79,
+   "yesPrice": 0.84,
    "startTime": 1793836800000
   },
   {
@@ -2247,13 +2710,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-14pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -14.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -14.5
+   },
    "yesTokenId": "16098618931973132080247445503667391426061392093367605632020821812355535816116",
    "noTokenId": "57412766317858722634632122574636479610656870568248127109052340651514505589440",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.155,
+   "yesPrice": 0.105,
    "startTime": 1793836800000
   },
   {
@@ -2274,13 +2748,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-254pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 254.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 254.5
+   },
    "yesTokenId": "3133289611857297752088385418381542219190027048091009009608366796379307970130",
    "noTokenId": "34853075928107451166898550537268989940699077694526180733029160578308261018699",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.205,
+   "yesPrice": 0.115,
    "startTime": 1793836800000
   },
   {
@@ -2301,13 +2786,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-19pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -19.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -19.5
+   },
    "yesTokenId": "84326646774308338302465986330251878199189778214440015747261820193567652031619",
    "noTokenId": "16899185106097280558692111341246959501366192970946992938109014699518950700637",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.115,
+   "yesPrice": 0.08,
    "startTime": 1793836800000
   },
   {
@@ -2328,13 +2824,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-212pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 212.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 212.5
+   },
    "yesTokenId": "21254344056022378682874874402481135011074562803518578929630974900809835889331",
    "noTokenId": "37848429396244486818097040116470630644308943936993449144645706627088482128304",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.8,
+   "yesPrice": 0.865,
    "startTime": 1793836800000
   },
   {
@@ -2355,13 +2862,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-16pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -16.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -16.5
+   },
    "yesTokenId": "11941011943775643498982136110174421637113162795803194646351524998914641655921",
    "noTokenId": "64422183227443311427738917107469601780562179161020222711705456983976508481456",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.14,
+   "yesPrice": 0.08,
    "startTime": 1793836800000
   },
   {
@@ -2382,13 +2900,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-256pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 256.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 256.5
+   },
    "yesTokenId": "15642222116241421240677921696662337940233853006359809553477374833772491212906",
    "noTokenId": "25638095729969549274595766809416047666215964549372192089166483624133243132640",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.2,
+   "yesPrice": 0.09,
    "startTime": 1793836800000
   },
   {
@@ -2409,13 +2938,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-21pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -21.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -21.5
+   },
    "yesTokenId": "14534316906859325191283082584672454078384402116246948128749036420923881284107",
    "noTokenId": "112345992971144485059630001562180359156559594036856394097631710529089854418171",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.105,
+   "yesPrice": 0.06,
    "startTime": 1793836800000
   },
   {
@@ -2436,13 +2976,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-210pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 210.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 210.5
+   },
    "yesTokenId": "9219093099174477735383347389593718564124628938770994787327324386424204885316",
    "noTokenId": "83787629961346196275681273835304116930622660482582417621951229904958962568895",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.805,
+   "yesPrice": 0.89,
    "startTime": 1793836800000
   },
   {
@@ -2463,13 +3014,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-18pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -18.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -18.5
+   },
    "yesTokenId": "41818103287320830836949543468459028329769730551382930399816801812666651952937",
    "noTokenId": "50838340355856345819145443221178972039141243965893519981887418885062274833165",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.125,
+   "yesPrice": 0.06,
    "startTime": 1793836800000
   },
   {
@@ -2490,13 +3052,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-258pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 258.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 258.5
+   },
    "yesTokenId": "74632153648705923062035770334604811299792058533839345574564069635347307615392",
    "noTokenId": "100420870273446180833764832978298172594037700155570954860605276349220333549423",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.19,
+   "yesPrice": 0.08,
    "startTime": 1793836800000
   },
   {
@@ -2517,13 +3090,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-23pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -23.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -23.5
+   },
    "yesTokenId": "56419230213747351073616657887821745193892944389420046788615315339808824434635",
    "noTokenId": "79274317608471900181886883176261907517809995237761212130943503945583329013119",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.1,
+   "yesPrice": 0.05,
    "startTime": 1793836800000
   },
   {
@@ -2544,13 +3128,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-208pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 208.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 208.5
+   },
    "yesTokenId": "32864938824137826641332796674149398739852943571732414295858124208415104850637",
    "noTokenId": "20228374952178360736034846462587004484197445514979282999738704850555580239649",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.81,
+   "yesPrice": 0.91,
    "startTime": 1793836800000
   },
   {
@@ -2571,13 +3166,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-20pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -20.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -20.5
+   },
    "yesTokenId": "101692874655338225190729155302613989537542630764014491604058327046033832464255",
    "noTokenId": "95978895104277458094884944902867504969799680995634873538160561676314079591108",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.105,
+   "yesPrice": 0.06,
    "startTime": 1793836800000
   },
   {
@@ -2598,13 +3204,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-260pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 260.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 260.5
+   },
    "yesTokenId": "14993268984245442517876114922622201094175946331095215902506530917709339933837",
    "noTokenId": "37141850095014281673909299980182521394137239244706367904335544783954507036712",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.18,
+   "yesPrice": 0.07,
    "startTime": 1793836800000
   },
   {
@@ -2625,13 +3242,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-25pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -25.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -25.5
+   },
    "yesTokenId": "91641551205919707954483597156695038772784014122995954984299248856977070995743",
    "noTokenId": "60440853164976039991428633892592276816721136345958880650923449506121205738518",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.09,
+   "yesPrice": 0.045,
    "startTime": 1793836800000
   },
   {
@@ -2652,13 +3280,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-206pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 206.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 206.5
+   },
    "yesTokenId": "19117807759032367099232328662664618534311507492395081164148564300476971348786",
    "noTokenId": "69410228027887077518636598828320343099461831838530280021536831598628433582015",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.91,
+   "yesPrice": 0.93,
    "startTime": 1793836800000
   },
   {
@@ -2679,13 +3318,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-22pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -22.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -22.5
+   },
    "yesTokenId": "71152443674749844273636973394046764542438401874334071459463141222882522341340",
    "noTokenId": "16473148538114495026694949195154122220131451917799734787763719415084025957226",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.1,
+   "yesPrice": 0.05,
    "startTime": 1793836800000
   },
   {
@@ -2706,13 +3356,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-total-262pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "O/U 262.5",
+    "outcomes": [
+     "Over",
+     "Under"
+    ],
+    "gameId": null,
+    "sportsMarketType": "totals",
+    "line": 262.5
+   },
    "yesTokenId": "49470209518669193544040684278227920748822569260095472911543864350005639375295",
    "noTokenId": "66510622444471732166341749015774652930727201294330510383454990382400404772071",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.17,
+   "yesPrice": 0.06,
    "startTime": 1793836800000
   },
   {
@@ -2733,13 +3394,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-27pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -27.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -27.5
+   },
    "yesTokenId": "33787653257914632448158890275710245924861881799388277286253662801499245429622",
    "noTokenId": "65061321889892343304642712644635595013965506901379371570866966697935406488764",
    "strike": null,
    "active": true,
    "result": null,
-   "volume24h": null,
-   "yesPrice": 0.08,
+   "volume24h": 7.6,
+   "yesPrice": 0.0275,
    "startTime": 1793836800000
   },
   {
@@ -2760,13 +3432,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-24pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -24.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -24.5
+   },
    "yesTokenId": "43729509841726880174827114978923579672693780641816117848947757496937287809562",
    "noTokenId": "35133921615628544907687272787425058690478802067483681665073056300046001478222",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.09,
+   "yesPrice": 0.045,
    "startTime": 1793836800000
   },
   {
@@ -2787,13 +3470,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-away-29pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -29.5",
+    "outcomes": [
+     "Hawks",
+     "Wizards"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -29.5
+   },
    "yesTokenId": "28078943455545303640600203146714788394034881901282638796719862349523488560372",
    "noTokenId": "98593409117076804514544677091641540390494960388553909091344216931015929772005",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.265,
+   "yesPrice": 0.09,
    "startTime": 1793836800000
   },
   {
@@ -2814,13 +3508,24 @@
     "rate": 0.05
    },
    "url": "https://polymarket.com/event/nba-atl-was-2026-11-04/nba-atl-was-2026-11-04-spread-home-26pt5",
+   "ids": {
+    "eventSlug": "nba-atl-was-2026-11-04",
+    "group": "Spread -26.5",
+    "outcomes": [
+     "Wizards",
+     "Hawks"
+    ],
+    "gameId": null,
+    "sportsMarketType": "spreads",
+    "line": -26.5
+   },
    "yesTokenId": "99717529148728411787776273770647222380607862721341396105175571635134964963382",
    "noTokenId": "13861807490226669298051029102790196453232390272988070932620898241853903247273",
    "strike": null,
    "active": true,
    "result": null,
    "volume24h": null,
-   "yesPrice": 0.08,
+   "yesPrice": 0.027,
    "startTime": 1793836800000
   }
  ]

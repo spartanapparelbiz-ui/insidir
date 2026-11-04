@@ -90,6 +90,24 @@ export interface VMarket {
   startTime?: number | null;
   /** Contracts held open (Kalshi), when the venue reports it. */
   openInterest?: number | null;
+  /** The venue's own structured identifiers, as sent (never parsed from a title). Twins auto-approve only on these
+   *  (lib/twins/structured.ts). */
+  ids?: VenueIds | null;
+}
+
+/** Polymarket: the event slug, the market's group item and outcome names, its sports game id, market type and line.
+ *  Kalshi: the yes subtitle, and the strike as the API sends it. */
+export interface VenueIds {
+  eventSlug?: string | null;
+  group?: string | null;
+  outcomes?: string[] | null;
+  gameId?: string | null;
+  sportsMarketType?: string | null;
+  line?: number | null;
+  yesSub?: string | null;
+  strikeType?: string | null;
+  floorStrike?: number | null;
+  capStrike?: number | null;
 }
 
 /** A group of markets on one venue that resolve together (Polymarket event, Kalshi event). */

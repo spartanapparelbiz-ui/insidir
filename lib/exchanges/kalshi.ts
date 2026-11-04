@@ -249,6 +249,10 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
     yesTokenId: null,
     noTokenId: null,
     strike,
+    ids: {
+      yesSub: yesSub ?? null, strikeType: str(m.strike_type) ?? null,
+      floorStrike: typeof m.floor_strike === "number" ? m.floor_strike : null, capStrike: typeof m.cap_strike === "number" ? m.cap_strike : null,
+    },
     active: status === undefined || TRADING_STATUSES.has(status),
     result: result(m.result) ?? (status !== undefined && VOID_STATUSES.has(status) ? "void" : null),
     volume24h: num(pick(m, "volume_24h_fp", "volume_24h")),
