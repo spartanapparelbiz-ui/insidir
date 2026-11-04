@@ -24,7 +24,7 @@ const MATCH_MS = 10_000;
 
 /** The freshness sources /status shows and the monitor checks: the worker job whose last good run dates each. */
 export const FRESHNESS: ReadonlyArray<{ key: "trades" | "twins" | "prices"; label: string; job: string }> = [
-  { key: "trades", label: "Trades (Polymarket bets)", job: "moves" },
+  { key: "trades", label: "Trades (Polymarket bets)", job: "moves:polymarket" },
   { key: "twins", label: "Kalshi twins", job: "twins:bets" },
   { key: "prices", label: "Prices", job: "markets:info" },
 ];
@@ -96,15 +96,17 @@ export async function runProduct(db: Db, d: ProductDeps): Promise<Step[]> {
 
   await run("search", async () => {
     const pick = (await db.execute(sql`select b.outcome, t.kalshi_url from terminal.millionaire_bets b join terminal.market_twins t on t.polymarket_id = b.market_id and t.status = 'approved'
-      where b.outcome not in ('Yes', 'No') order by b.at desc limit 1`)).rows[0] as { outcome: string; kalshi_url: string } | undefined;
+      where b.outcome not in ('Yes', 'No') order by (t.kalshi_id like '%GAME-%') desc, b.at desc limit 1`)).rows[0] as { outcome: string; kalshi_url: string } | undefined;
     must(pick, "no recent bet on a twinned market to search for");
     const q = async (s: string) => (await (await f(`${base}/api/search?q=${encodeURIComponent(s)}`, { signal: AbortSignal.timeout(15_000) })).json()) as { go: unknown; hits: unknown[] };
     must((await q(pick!.outcome)).hits.length > 0, `searching "${pick!.outcome}" found nothing`);
-    must((await q(pick!.kalshi_url)).go, `a pasted Kalshi link (${pick!.kalshi_url}) didn't open a market`);
+    // A link to one Kalshi market opens its page; a link to an event with several twinned lines lists them.
+    const k = await q(pick!.kalshi_url);
+    must(k.go || k.hits.length > 0, `a pasted Kalshi link (${pick!.kalshi_url}) found nothing`);
   });
 
   await run("fresh-bets", async () => {
-    const r = (await db.execute(sql`select last_ok_at from terminal.worker_heartbeats where job = 'moves'`)).rows[0] as { last_ok_at: string | null } | undefined;
+    const r = (await db.execute(sql`select last_ok_at from terminal.worker_heartbeats where job = 'moves:polymarket'`)).rows[0] as { last_ok_at: string | null } | undefined;
     const at = r?.last_ok_at ? new Date(r.last_ok_at).getTime() : null;
     must(at !== null && now - at <= BETS_FRESH_MS, at === null ? "the bet poller has never read Polymarket" : `the bet poller last read Polymarket ${Math.round((now - at) / 1000)}s ago`);
   });

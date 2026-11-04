@@ -35,7 +35,7 @@ const engine = () => runAutopilot(db, Date.now(), { appUrl: B, quote: async () =
   claim: async (u, k) => (await db.insert(schema.alertsSent).values({ userId: u, oppId: k, channel: "push" }).onConflictDoNothing().returning()).length > 0 });
 
 async function beats(ageMs: number) {
-  for (const job of ["moves", "twins:bets", "markets:info"]) await pool.query(`insert into terminal.worker_heartbeats (job, last_run_at, last_ok_at, ok) values ($1, now(), now() - $2 * interval '1 millisecond', true)
+  for (const job of ["moves:polymarket", "twins:bets", "markets:info"]) await pool.query(`insert into terminal.worker_heartbeats (job, last_run_at, last_ok_at, ok) values ($1, now(), now() - $2 * interval '1 millisecond', true)
     on conflict (job) do update set last_ok_at = excluded.last_ok_at`, [job, ageMs]);
 }
 

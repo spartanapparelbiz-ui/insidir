@@ -84,8 +84,9 @@ describe("rules, pure", () => {
 
 describe("backtest, pure", () => {
   const H = 3_600_000, NOW = Date.UTC(2026, 10, 4);
+  // Kalshi's ask defaults to the market's price then.
   const row = (o: Partial<BtRow>): BtRow => ({ id: "m", wallet: W, marketId: M, side: "yes", category: "basketball", url: URL_NBA, title: "Heat vs. Lakers", eventTitle: "Heat vs. Lakers", outcome: "Heat",
-    amount: 60_000, theirPrice: 0.5, seenPrice: 0.5, at: NOW - 10 * 24 * H, result: "won", provenThen: true, settledThen: 40, firstEntry: true, ...o });
+    amount: 60_000, theirPrice: 0.5, seenPrice: 0.5, at: NOW - 10 * 24 * H, result: "won", provenThen: true, settledThen: 40, firstEntry: true, ...o, kalshiAsk: o.kalshiAsk !== undefined ? o.kalshiAsk : o.seenPrice ?? 0.5 });
   it("counts agreement only from earlier bets, by wallets proven then", () => {
     const rows = [row({ id: "a", at: 0 }), row({ id: "b", wallet: W2, at: H / 2 }), row({ id: "c", wallet: "0x3", at: H / 2 + 1, provenThen: false }), row({ id: "d", wallet: W2, at: 3 * H })];
     expect(sameSideCounts(rows)).toEqual([1, 2, 2, 1]);

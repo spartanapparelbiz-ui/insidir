@@ -295,6 +295,13 @@
       "when": 1793870000000,
       "tag": "0041_autopilot",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793880000000,
+      "tag": "0042_kalshi_history",
+      "breakpoints": true
     }
   ]
 }

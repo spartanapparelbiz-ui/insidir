@@ -19,6 +19,9 @@ import { dollars } from "@/lib/money";
 import { isPaid, TRIAL } from "@/lib/plans";
 import { MIN_SETTLED, millionaireRecord, settledCount, STAKE, type RecordView, type Tally } from "@/lib/results/record";
 import { kalshiPingRecord, type KalshiRecord } from "@/lib/results/pings";
+import { autopilotBacktests } from "@/lib/db/schema";
+import { REPORT_KEY, type RulesReport } from "@/lib/autopilot/report";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "The record", description: "Following the pings on Kalshi, and how every settled millionaire bet did, losses included: won and lost, $100 on every one. Past results, not a promise." };
@@ -27,13 +30,14 @@ const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 const DAYF = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 /** "2026-11-04" → "Wed, Nov 4". */
 const dayLabel = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? DAYF.format(new Date(`${d}T12:00:00Z`)) : d);
+const categoryName = (c: string) => { try { return categoryInfo(c as Parameters<typeof categoryInfo>[0]).name; } catch { return c; } };
 const tallyText = (t: Tally) => `${t.won} won, ${t.lost} lost${t.void ? `, ${t.void} voided` : ""}`;
 
 export default async function ResultsPage() {
   const now = Date.now();
   const viewer = await getViewer();
   const member = isPaid(viewer.plan) && Boolean(viewer.user);
-  let rec: RecordView | null = null, latest: BoardBet[] = [], kal: KalshiRecord | null = null;
+  let rec: RecordView | null = null, latest: BoardBet[] = [], kal: KalshiRecord | null = null, rules: RulesReport | null = null;
   if (hasDatabase()) {
     const db = getDb();
     [rec, latest, kal] = await Promise.all([
@@ -41,6 +45,7 @@ export default async function ResultsPage() {
       recentBets(db, { now, all: true, tier: "millionaire", limit: 200, member: true }).then(l => l.filter(b => b.result).slice(0, 30)).catch(() => []),
       memo("results:kalshi", 60_000, () => kalshiPingRecord(db, now)).catch(() => null),
     ]);
+    rules = await memo("results:rules", 60_000, async () => ((await db.select().from(autopilotBacktests).where(eq(autopilotBacktests.key, REPORT_KEY)).limit(1))[0]?.result ?? null) as unknown as RulesReport | null).catch(() => null);
   }
   const n = rec ? settledCount(rec.total) : 0, kn = kal ? settledCount(kal.total) : 0;
   return (
@@ -97,6 +102,22 @@ export default async function ResultsPage() {
               <thead><tr><th scope="col">Category</th><th scope="col">Record</th><th scope="col">${STAKE} a bet</th></tr></thead>
               <tbody>{rec.byCategory.map(c => <tr key={c.category}><th scope="row">{categoryInfo(c.category).name}</th><td>{tallyText(c)}</td><td className="b-num">{settledCount(c) >= MIN_SETTLED ? signed(c.back - c.staked) : `${settledCount(c)} of ${MIN_SETTLED}`}</td></tr>)}</tbody>
             </table>
+          </Panel>
+        </Stage>
+      ) : null}
+
+      {rules && rules.rows.length ? (
+        <Stage testid="results-rules" labelledBy="rr-h">
+          <div className="b-head"><Lines as="h2" id="rr-h" lines={["Every rule we tested."]} size={48} />
+            <p className="b-sub">The last {rules.days} days of big bets, each rule followed on Kalshi at Kalshi&apos;s ask then + 1¢, $25 a bet, held to settlement, losses included. {rules.onKalshi.toLocaleString("en-US")} of {rules.bets.toLocaleString("en-US")} bets were on a market Kalshi lists; the rest can&apos;t be followed on Kalshi and are left out.</p></div>
+          <Panel className="s-col s-col--wide s-prose">
+            <table data-testid="results-rules-table">
+              <thead><tr><th scope="col">Rule</th><th scope="col">Settled</th><th scope="col">Won · lost</th><th scope="col">Net</th><th scope="col">Return</th></tr></thead>
+              <tbody>{rules.rows.filter(x => x.settled > 0).map(x => <tr key={x.key} data-leads={x.leads ? "1" : "0"}><th scope="row">{x.group === "Category" ? categoryName(x.name) : x.name}<span className="b-small"> · {x.group}</span></th>
+                <td className="b-num">{x.settled}</td><td>{x.result.won} · {x.result.lost}</td><td className="b-num">{signed(x.result.net)}</td>
+                <td className="b-num">{x.result.roi === null ? "" : `${x.result.roi >= 0 ? "+" : "−"}${Math.abs(Math.round(x.result.roi * 100))}%`}</td></tr>)}</tbody>
+            </table>
+            <p className="b-small">A rule is only recommended with {100} or more settled bets in profit. Kalshi&apos;s fees aren&apos;t taken off. {rules.note} Past results, not a promise.</p>
           </Panel>
         </Stage>
       ) : null}

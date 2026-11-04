@@ -40,13 +40,11 @@ const JOBS: Array<[RegExp, string, number]> = [
   [/^moves:settle$/, "Settlements", 10 * MIN],
   [/^moves:records$/, "Trader records", 5 * MIN],
   [/^moves:proven-backfill$/, "Proven-wallet backfill", MIN],
-  [/^markets:info$/, "Market prices", 5 * MIN],
+  [/^markets:info$/, "Market prices", 3 * MIN],
+  [/^twins:bets$/, "Kalshi twins", 4 * MIN],
   [/^accuracy$/, "Accuracy check", HOUR],
-  [/^monitor:money-path$/, "Money path", 10 * MIN],
+  [/^monitor:money-path$/, "Live tests", 15 * MIN],
   [/^smart:splits$/, "Positioning", 5 * MIN],
-  [/^stocks:form4$/, "SEC Form 4", 10 * MIN],
-  [/^stocks:13f$/, "SEC 13F", 6 * HOUR],
-  [/^stocks:prices$/, "Stock prices", HOUR],
 ];
 
 export const lightOf = (age: number | null, [amber, red]: [number, number]): Light => (age === null ? "red" : age > red ? "red" : age > amber ? "amber" : "green");
@@ -75,8 +73,9 @@ export async function readStatus(db: Db, now: number): Promise<Status> {
   ]);
   const fr = (f.rows[0] ?? {}) as Record<string, string | null>;
   const t = (v: string | null | undefined) => (v ? new Date(v).getTime() : null);
-  const sources: SourceFresh[] = (["polymarket", "kalshi", "form4", "13f"] as const).map(key => {
-    const lastAt = t(fr[key === "13f" ? "f13" : key]);
+  // Stocks are off: only the two venues' trades.
+  const sources: SourceFresh[] = (["polymarket", "kalshi"] as const).map(key => {
+    const lastAt = t(fr[key]);
     return { key, label: LABELS[key], lastAt, light: lightOf(lastAt === null ? null : now - lastAt, LIMITS[key]), note: lastAt === null ? "Nothing stored yet" : `Latest seen ${ago(lastAt, now)}` };
   });
   const jobs: JobBeat[] = [];
@@ -92,7 +91,7 @@ export async function readStatus(db: Db, now: number): Promise<Status> {
   const backfill: BackfillRate | null = bf?.stats ? { at: new Date(bf.last_run_at).getTime(), wallets: n("wallets"), requests: n("requests"), reqPerSec: n("reqPerSec"),
     limitPerSec: n("limitPerSec"), share: n("share"), rateLimited: n("rateLimited"), queued: n("queued"), due: n("due") } : null;
   const checks = (c.rows as Array<{ run_at: string; ok: number; checked: number; mismatch: number }>).map(r => ({ runAt: new Date(r.run_at).getTime(), ok: Number(r.ok), checked: Number(r.checked), mismatch: Number(r.mismatch) }));
-  const lights = [...sources.filter(s => s.key !== "13f").map(s => s.light), ...jobs.map(j => j.light)];
+  const lights = [...sources.map(s => s.light), ...jobs.map(j => j.light)];
   const overall: Light = lights.includes("red") ? "red" : lights.includes("amber") ? "amber" : "green";
   return { at: now, sources, jobs, backfill, checks, overall,
     web: { startedAt: STARTED_AT, commit: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? null, deployment: process.env.RAILWAY_DEPLOYMENT_ID ?? null } };
