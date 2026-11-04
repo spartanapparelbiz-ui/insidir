@@ -5,8 +5,8 @@
  *   market maker    it bought both sides of the same market within an hour, in MM_MARKETS or more markets
  *   high frequency  MAX_TRADES_PER_DAY or more trades in a day
  *   arbitrage       it holds both sides in ARB_SHARE or more of the markets it traded (ARB_MIN_MARKETS or more)
- * Screened once a day, a few wallets a run (worker millionaires:screen), once either count has been read: until then
- * a wallet keeps its tier. Only proven wallets keep the "millionaire" tier,
+ * Screened once a day, a few wallets a run (worker millionaires:screen), once its closed-market count has been read
+ * (the record alone is partial): until then a wallet keeps its tier. Only proven wallets keep the "millionaire" tier,
  * so pings, Autopilot and the board's default follow them only; a wallet not screened yet keeps its tier until it is.
  * /methodology lists who is excluded and why, by short address. */
 import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
@@ -66,11 +66,14 @@ export interface ScreenSource { trades(wallet: string, sinceMs: number): Promise
 
 /** Screens the $1M+ wallets screened longest ago (or never), `perRun` at a time, each at most once a day. */
 export async function screenWallets(db: Db, src: ScreenSource, now: number, perRun = 15): Promise<{ screened: number; proven: number; excluded: number }> {
+  // Short records whose closed-market count hasn't been read yet aren't judged: they keep their tier until it is.
+  await db.execute(sql`update terminal.watchlist w set tier = 'millionaire', exclusion = null, screened_at = null
+    where w.exclusion = 'under 30 settled' and w.pnl >= 1000000 and not exists (select 1 from terminal.wallet_pnl p where p.wallet = w.wallet)`);
   const due = await db.select({ wallet: watchlist.wallet }).from(watchlist)
     .where(and(sql`${watchlist.pnl} >= 1000000`, or(isNull(watchlist.screenedAt), lt(watchlist.screenedAt, new Date(now - 86_400_000)),
         // A short record is re-read sooner: its count may just not have been read yet.
         and(eq(watchlist.exclusion, "under 30 settled"), lt(watchlist.screenedAt, new Date(now - 30 * 60_000)))),
-      sql`(exists (select 1 from terminal.trader_records r where r.wallet = ${watchlist.wallet}) or exists (select 1 from terminal.wallet_pnl p where p.wallet = ${watchlist.wallet}))`))
+      sql`exists (select 1 from terminal.wallet_pnl p where p.wallet = ${watchlist.wallet})`))
     .orderBy(asc(sql`coalesce(${watchlist.screenedAt}, 'epoch')`)).limit(perRun);
   let proven = 0, excluded = 0;
   for (const { wallet } of due) {
