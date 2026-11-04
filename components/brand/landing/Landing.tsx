@@ -1,7 +1,7 @@
 /* The landing: a scrolling page of stages in the hero spec's language. Each stage is a full-viewport black stage with
  * one background that never animates; its foreground performs once as it enters (components/brand/StageMotion.tsx).
- *   Hero (the globe) · The Pulse (a live dashboard that assembles as you scroll) · Free right now (the check, today's
- *   #1 market, the last 3 bets: whole, no account) · Election Day board (Nov 3–4 ET only) · What members get (a sticky
+ *   Hero (the globe) · The Pulse (a live dashboard that assembles as you scroll) · Free right now (a live sample, no
+ *   account: today's #1 millionaire bet whole, the board 60 minutes late, one race in full) · Election Day board (Nov 3–4 ET only) · What members get (a sticky
  *   phone showing real screens) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
  *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
@@ -10,15 +10,12 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
 import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
-import { dataLine } from "@/lib/brand/verdict";
 import { slotPhoto } from "@/lib/brand/images";
 import type { LandingData } from "@/lib/brand/landing";
 import { dollars } from "@/lib/money";
 import { Lines, m, Pill } from "../Bits";
 import { BetRow } from "../BetRow";
-import { InlineCheck } from "../InlineCheck";
 import { Faq } from "../Faq";
-import { MoneyCard } from "../MoneyCard";
 import { HeroLine } from "../HeroLine";
 import { BrandFoot, BrandNav } from "../Nav";
 import { PayMoments } from "../PayMoments";
@@ -26,6 +23,7 @@ import { Stage } from "../Stage";
 import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
+import { RaceRow } from "./ElectionLive";
 import { BoardLeadStage, ElectionStage, GapsStage, MembersStage, PulseStage, SpotlightStage, StakeStage } from "./Value";
 
 function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
@@ -36,8 +34,8 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <HeroLine initial={d.pulse} />
         <div className="b-ctas">
-          <Pill href="#check" delay={0.9} data-testid="hero-check">Check my bet</Pill>
-          <Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
+          <Pill href="/go" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
+          <Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>
         </div>
       </div>
     </Stage>
@@ -45,38 +43,39 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
 }
 
 function Free({ d }: { d: LandingData }) {
-  const t = d.top;
+  const t = d.topBet, late = d.lead.slice(0, 4);
   return (
     <Stage id="free" testid="free" labelledBy="free-h">
-      <div className="b-head"><Lines id="free-h" lines={STAGES.free} size={64} /></div>
+      <div className="b-head"><Lines id="free-h" lines={STAGES.free} size={64} /><p className="b-sub">A live sample, no account.</p></div>
       <div className="b-tiles3">
-        <section id="check" className="b-glass b-pad b-tile3" data-testid="free-check-tile" data-m="settle" style={{ "--d": ".6s" } as CSSProperties}>
-          <h3 className="b-panel-h">Check one bet</h3>
-          <p className="b-small" style={{ marginBottom: 12 }}>Paste it or tap one: pick your side, see if millionaires agree.</p>
-          <InlineCheck chips={d.chips} />
-        </section>
-        <section className="b-glass b-pad b-tile3" data-testid="free-top" data-m="settle" style={{ "--d": ".72s" } as CSSProperties}>
-          <h3 className="b-panel-h">Today&apos;s #1 millionaire market</h3>
+        <section className="b-glass b-pad b-tile3" data-testid="free-top-bet" data-m="settle" style={{ "--d": ".6s" } as CSSProperties}>
+          <h3 className="b-panel-h">Today&apos;s #1 millionaire bet</h3>
           {t ? (
             <div style={{ display: "grid", gap: 12 }}>
-              <MoneyCard m={t.m} positions={t.positions} bare testid="free-top-card" />
-              <div style={{ display: "grid", gap: 6, paddingTop: 12, borderTop: "1px solid var(--glass-line)" }}>
-                <span className="b-label">Analyst line</span>
-                <p style={{ margin: 0, fontWeight: 300, fontSize: 15, lineHeight: 1.5 }} data-testid="free-top-line">{dataLine({ yes: t.m.millionaire.yes, no: t.m.millionaire.no, yesLabel: t.m.yesLabel, noLabel: t.m.noLabel, pro: t.m.pro })}</p>
-              </div>
-              <a className="b-btn b-panel-pill" style={{ justifySelf: "start" }} href="/go" data-free="top">See every wallet in it</a>
-              <p className="b-small">{t.window === "today" ? "Most $1M+ money since midnight ET." : "Most $1M+ money in the last 24 hours."} Information, not advice.</p>
+              <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
+              <p className="b-small">The biggest single bet since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
             </div>
-          ) : <p className="b-empty">No millionaire money today yet.</p>}
+          ) : <p className="b-empty">No millionaire bet since midnight ET yet.</p>}
         </section>
-        <section className="b-glass b-pad b-tile3" data-testid="free-last3" data-m="settle" style={{ "--d": ".84s" } as CSSProperties}>
-          <h3 className="b-panel-h">The last 3 millionaire bets</h3>
-          {d.last3.length ? (
+        <section className="b-glass b-pad b-tile3" data-testid="free-late" data-m="settle" style={{ "--d": ".72s" } as CSSProperties}>
+          <h3 className="b-panel-h">The board, 60 minutes late</h3>
+          {late.length ? (
             <>
-              <ul className="b-rows">{d.last3.map(b => <li key={b.id} data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={b} now={d.now} /></li>)}</ul>
-              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.moreToday ? `+${d.moreToday} more today. ` : ""}Members see every one live.</p>
+              <ul className="b-rows">{late.map(b => <li key={b.id}><BetRow bet={b} now={d.now} /></li>)}</ul>
+              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.pulse.countToday ? `${d.pulse.countToday.toLocaleString("en-US")} millionaire bets today. ` : ""}Members see each one the second it lands.</p>
             </>
-          ) : <p className="b-empty">No millionaire bets yet today.</p>}
+          ) : <p className="b-empty">No millionaire bets in the last day yet.</p>}
+          <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/board">The board</a>
+        </section>
+        <section className="b-glass b-pad b-tile3" data-testid="free-race" data-m="settle" style={{ "--d": ".84s" } as CSSProperties}>
+          <h3 className="b-panel-h">One race in full</h3>
+          {d.race ? (
+            <>
+              <ul className="b-rows"><RaceRow r={d.race} /></ul>
+              <p className="b-small" style={{ marginTop: 12 }}>The race with the most watchlist money this week, whole: every side and the price now.</p>
+            </>
+          ) : <p className="b-empty">No race has watchlist money this week.</p>}
+          <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/election">Every race</a>
         </section>
       </div>
     </Stage>
@@ -150,7 +149,7 @@ function Final() {
         <Lines id="final-h" lines={STAGES.final} />
         <div className="b-ctas">
           <Pill href="/go" delay={0.9} data-testid="final-start" data-checkout="final">Start for $1</Pill>
-          <Pill href="#check" kind="ghost" delay={0.97}>Check my bet</Pill>
+          <Pill href="/board" kind="ghost" delay={0.97}>See the board</Pill>
         </div>
       </div>
     </Stage>

@@ -74,7 +74,7 @@ export default async function PricingPage() {
   const a = w.proof?.accuracy;
   const items = [
     w.proven ? { label: "Proven wallets right now", value: w.proven.toLocaleString("en-US"), note: "30+ settled positions and a positive followable return", testid: "week-positions" } : null,
-    a ? { label: "Last accuracy check", value: `${a.ok} of ${a.checked}`, note: "positions re-read from the source matched", testid: "week-check" } : null,
+    a ? { label: "Last accuracy audit", value: `${a.ok} of ${a.checked}`, note: "positions re-read from the source matched", testid: "week-check" } : null,
   ].filter(<T,>(x: T | null): x is T => x !== null);
   return (
     <>

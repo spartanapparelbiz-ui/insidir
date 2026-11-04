@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { closeDb } from "@/lib/db";
 import { createServer as createHttp } from "node:http";
 import { OPENROUTER_PORT, APP_URL, E2E_DB, OUT, PUSH_PORT, WHOP, WHOP_PORT } from "./env";
-import { SLIPS } from "../../scripts/slips/fixtures";
 import { Pool } from "pg";
 import { startMockWhop } from "./mock-whop";
 import { seed } from "./seed";
@@ -30,25 +29,15 @@ export default async function globalSetup() {
     });
   });
   await new Promise<void>(ok => push.listen(PUSH_PORT, ok));
-  // A stand-in OpenRouter (chat completions): every slip reads as the DraftKings 3-leg parlay (scripts/slips/fixtures.ts,
-  // the reading the real model gives). Each request is recorded for the tests.
+  // A stand-in OpenRouter: every request gets a 503, so the browser specs check the planner and template paths (the
+  // model paths are unit-tested with their own stand-ins). Each request is recorded.
   const asked: unknown[] = [];
   const openrouter = createHttp((req, res) => {
-    const chunks: Buffer[] = [];
-    req.on("data", c => chunks.push(c as Buffer));
+    req.resume();
     req.on("end", () => {
-      const body = JSON.parse(Buffer.concat(chunks).toString() || "{}") as { model?: string; response_format?: { type?: string }; messages?: Array<{ content: string | Array<{ type: string; image_url?: { url?: string } }> }> };
-      // Text-only requests (analyst notes, Research) get a 503: the browser specs check the planner and template paths
-      // (the model paths are unit-tested with their own stand-ins).
-      const first = body.messages?.[0]?.content;
-      if (!Array.isArray(first)) { res.writeHead(503, { "content-type": "application/json" }); res.end(JSON.stringify({ error: { message: "e2e: text requests are not served" } })); return; }
-      const image = first.find(c => c.type === "image_url")?.image_url?.url ?? "";
-      asked.push({ path: req.url, model: body.model, format: body.response_format?.type ?? null, image: /^data:([^;]+);base64,/.exec(image)?.[1] ?? null,
-        auth: req.headers.authorization, referer: req.headers["http-referer"], title: req.headers["x-title"] });
+      asked.push({ path: req.url });
       writeFileSync(join(OUT, "openrouter.json"), JSON.stringify(asked, null, 2));
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ id: "gen-e2e", object: "chat.completion", model: body.model, choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: JSON.stringify(SLIPS[0]!.expect), refusal: null } }],
-        usage: { prompt_tokens: 1500, completion_tokens: 400, total_tokens: 1900, cost: 0.0105 } }));
+      res.writeHead(503, { "content-type": "application/json" }); res.end(JSON.stringify({ error: { message: "e2e: model requests are not served" } }));
     });
   });
   await new Promise<void>(ok => openrouter.listen(OPENROUTER_PORT, ok));

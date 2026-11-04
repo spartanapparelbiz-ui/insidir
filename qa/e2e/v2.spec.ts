@@ -29,47 +29,31 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; /stocks and /insider-trading pages stay live by URL and in the sitemaps", async ({ page, context }) => {
+test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; the retired stock pages are 301s", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/You're betting\s*against millionaires\./);
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
-  for (const path of ["/stocks", "/insider-trading/EXDV"]) expect((await page.request.get(path)).status(), path).toBe(200);
-  expect(await (await page.request.get("/sitemaps/pages.xml")).text()).toContain("/stocks</loc>");
-  expect(await (await page.request.get("/sitemaps/companies.xml")).text()).toContain("/insider-trading/");
+  for (const path of ["/stocks", "/insider-trading/EXDV", "/NVDA"]) {
+    const r = await page.request.get(path, { maxRedirects: 0 });
+    expect(r.status(), path).toBe(301);
+    expect(r.headers().location, path).toMatch(/\/board$/);
+  }
+  expect(await (await page.request.get("/sitemaps/pages.xml")).text()).not.toContain("/stocks</loc>");
 });
 
-test("home: the nav's Start for $1 is recorded and opens /go; the trackers page (by URL) lists every tracker with its record or the record being built", async ({ page }) => {
+test("home: the nav's Start for $1 is recorded and opens /go", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
   await page.goto("/");
   await page.getByTestId("nav-start").click();
   await expect(page).toHaveURL(/\/go(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
-  await page.goto("/trackers");
-  await expect(page.getByRole("heading", { level: 1, name: "Trackers" })).toBeVisible();
-  // Every tracker but Crypto Prices (its tab isn't live), in four groups.
-  await expect(page.locator(".ttile")).toHaveCount(32);
-  for (const g of ["Styles", "Leagues", "Topics", "Stocks"]) await expect(page.getByRole("heading", { level: 2, name: g })).toBeVisible();
-  // Every tracker but Tennis has fewer than 30 settled: "Building record · N of 30", never New, never a made-up record.
-  for (const r of await page.locator(".ttile .res").allInnerTexts()) expect(r).toMatch(/^(Building record · \d+ of 30|[\s\S]*Won \d+%)$/);
-  await expect(page.locator(".ttile", { hasText: "Tennis" }).locator(".res")).toContainText("Won 63%");
-  await expect(page.locator(".ttile .res", { hasText: /^New$/ })).toHaveCount(0);
-  // Each cover: 4:3, deep colour.
-  const box = (await page.locator(".ttile .tcover").first().boundingBox())!;
-  expect(box.width / box.height).toBeCloseTo(4 / 3, 1);
-  await page.locator(`.ttile a[href="/trackers/biggest-bets"]`).click();
-  await expect(page).toHaveURL(/\/trackers\/biggest-bets$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Whales ($100K+)" })).toBeVisible();
-  // Fewer than 20 settled moves: every rate says so instead of a number.
-  await expect(page.getByText(/Not enough data yet: the chart starts at 20 settled positions/)).toBeVisible();
-  await expect(page.locator(".tile").filter({ has: page.locator("dt", { hasText: /^Win rate$/ }) })).toContainText("Not enough data yet");
-  await expect(page.getByRole("button", { name: /^Copy/ }).first()).toBeVisible();
 });
 
 test("one font: headlines, body text, buttons and cards are all Schibsted Grotesk, and it loads", async ({ page }) => {
-  await page.goto("/trackers/biggest-bets");
+  await page.goto("/pricing");
   await page.evaluate(() => document.fonts.ready);
   const r = await page.evaluate(() => {
     const root = getComputedStyle(document.documentElement);
@@ -83,53 +67,6 @@ test("one font: headlines, body text, buttons and cards are all Schibsted Grotes
   expect(r.rufina).toBe("");
   expect([r.h1, r.h2, r.body, r.btn]).toEqual([r.sans, r.sans, r.sans, r.sans]);
   expect(r.loaded.map(x => x.replace(/["']/g, ""))).toContain(r.sans.replace(/["']/g, ""));
-});
-
-test("the public preview: home and the product pages show real moves 30 minutes late, records blurred, never sent", async ({ page }) => {
-  // /markets is the categories page now; /sports keeps the preview.
-  const bodies = await captureBodies(page, async () => { await page.goto("/"); await page.goto("/markets"); await page.goto("/sports"); });
-  await expect(page.locator(".move").first()).toBeVisible();
-  const locked = page.getByTestId("locked-record").first();
-  await expect(locked).toBeVisible();
-  await expect(locked).toContainText("Win rate · All-time net P&L");
-  await expect(locked).toContainText("members only");
-  expect(await locked.innerText()).not.toMatch(/\d|NaN/);
-  for (const b of bodies) expect(b.body, b.url).not.toMatch(/Won 41 of 63|Won 00 of 00|NaN%/);
-});
-
-test("member feed: live moves with the record line; following a trader shows on Following", async ({ page, context }) => {
-  await signIn(context, "pro");
-  await page.goto("/feed");
-  await expect(page.locator(".move__head", { hasText: "Chiefs to beat the Bills" }).first()).toBeVisible();
-  await expect(page.getByText("Won 41 of 63 · Net P&L +$1.2M").first()).toBeVisible();
-  await expect(page.locator(".move__live").first()).toContainText(/^Entry \d+%/);
-  await expect(page.getByText(/Live · updated \d+s ago/)).toBeVisible();
-  await q("delete from terminal.follows");
-  await page.locator(".move").first().getByRole("button", { name: "Copy" }).click();
-  await expect(page.locator(".move").first().getByRole("button", { name: "Copying" })).toBeVisible();
-  await page.goto("/following");
-  await expect(page.locator(".flist").getByRole("link", { name: "E2E-Top" })).toBeVisible();
-  // Their recent moves are in the Following feed too.
-  await expect(page.getByTestId("following-feed").locator(".move__head", { hasText: "Chiefs to beat the Bills" }).first()).toBeVisible();
-  await q("delete from terminal.follows");
-});
-
-test("a US member never gets an international Polymarket link, and Coming soon saves an email", async ({ page, context }) => {
-  await signIn(context, "insidir");
-  for (const path of ["/", "/feed", "/market/0xe2emarket1", "/trader/0xe2e00000000000000000000000000000000000aa", "/p/0xe2e00000000000000000000000000000000000aa", "/top", "/results"]) {
-    await page.goto(path);
-    const hrefs = await page.locator("a[href]").evaluateAll(as => as.map(a => (a as HTMLAnchorElement).href));
-    for (const h of hrefs) expect(h, `${path}: ${h}`).not.toMatch(/^https?:\/\/(www\.)?polymarket\.com/);
-  }
-  await q("delete from terminal.waitlist");
-  await page.goto("/feed");
-  await page.getByRole("button", { name: /Crypto/ }).first().click();
-  const sheet = page.getByRole("dialog");
-  await expect(sheet.getByRole("heading", { name: "Coming soon." })).toBeVisible();
-  await sheet.getByRole("textbox").fill("waitlist@example.test");
-  await sheet.getByRole("button", { name: "Tell me when it's live" }).click();
-  await expect(sheet.getByText("Thanks. You're on the list.")).toBeVisible();
-  expect(await q("select feature from terminal.waitlist where email = 'waitlist@example.test'")).toEqual([{ feature: "crypto" }]);
 });
 
 test("outside the US, the market page links to the source market", async ({ page, context }) => {
@@ -148,9 +85,6 @@ test("location is asked once, as a sheet, the first time a market link is tapped
   await expect(sheet).toBeVisible();
   await sheet.getByRole("button", { name: "Outside US" }).click();
   await expect(page.getByRole("link", { name: "See it on Polymarket" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Location: Outside US/ })).toHaveCount(0); // the pill lives on the feed
-  await page.goto("/feed");
-  await expect(page.getByRole("button", { name: /Location: Outside US/ })).toBeVisible();
   } finally {
     await q("update terminal.users set region = 'us' where id = 'user_e2e_pro'");
   }
@@ -178,16 +112,6 @@ test("results are public: totals, refunds labelled, pages instead of a cap; /pri
   expect((await page.goto("/results?page=99"))?.status()).toBeLessThan(400);
 });
 
-test("results show wins and losses; /terminal goes to the feed", async ({ page, context }) => {
-  await signIn(context, "insidir");
-  await page.goto("/results");
-  await expect(page.getByText("Real past positions. Not a promise.")).toBeVisible();
-  await expect(page.locator(".rlist__res--won").first()).toBeVisible();
-  await expect(page.locator(".rlist__res--lost").first()).toBeVisible();
-  await page.goto("/terminal");
-  await expect(page).toHaveURL(/\/feed$/);
-});
-
 test("share card: a 1080×1920 PNG, never early for free viewers", async ({ page, context }) => {
   const late = await page.request.get("/api/share/e2e%3Am4");
   expect(late.status()).toBe(200);
@@ -210,42 +134,11 @@ test("/admin/posts: only the allowlisted email; top moves with Download and a ca
   await expect(page.getByRole("heading", { name: "Posts", level: 1 })).toBeVisible();
   const first = page.locator("[data-post]").first();
   await expect(first.getByRole("link", { name: "Download" })).toHaveAttribute("href", /^\/api\/share\//);
-  await expect(first.getByLabel("Caption")).toHaveValue(/^E2E-Top · Top-ranked trader: \$412K position on Chiefs to win\./);
+  await expect(first.getByLabel("Caption")).toHaveValue(/^0xe2…aa · Top-ranked trader: \$412K position on Chiefs to win\./);
   await expect(first.getByLabel("Caption")).toHaveValue(/Not financial advice\./);
 });
 
-test("Stocks: insider buys and fund adds in plain words, each linking to its SEC filing", async ({ page, context }) => {
-  await signIn(context, "insidir");
-  await page.goto("/feed?tab=stocks");
-  await expect(page.getByRole("button", { name: "Stocks", pressed: true })).toBeVisible();
-  const insider = page.locator("[data-move='f4:000099999926000001']");
-  await expect(insider.locator(".move__head")).toHaveText("E2E Fixture Devices stock, bought by its CEO");
-  // The amount is said once, under the headline; the right side says what it is: a purchase.
-  await expect(insider.locator(".move__meta")).toContainText("$1.4M");
-  await expect(insider.locator(".res__st")).toHaveText("Purchase");
-  // Never "just bought": the filing day, then the trade date; the note carries both dates (in Details).
-  await insider.locator(".move__more summary").click();
-  await expect(insider.getByText(/^Form 4 · Filed [A-Z][a-z]{2} \d{1,2} · CEO Jane Fixture purchased \$1\.4M of EXDV on Oct 22\.$/)).toBeVisible();
-  await expect(insider.getByText(/^Traded Oct 22 at \$182\.65 a share\. Filed with the SEC [A-Z][a-z]{2} \d{1,2}\.$/)).toBeVisible();
-  await expect(insider.getByRole("link", { name: /Where this comes from: SEC EDGAR filing/ })).toHaveAttribute("href", /^https:\/\/www\.sec\.gov\//);
-  await expect(insider.locator(".move__kind")).toHaveText("Stocks · EXDV");
-  const link = insider.getByRole("link", { name: "See the SEC filing" });
-  await expect(link).toHaveAttribute("href", "https://www.sec.gov/Archives/edgar/data/999999/000099999926000001/0000999999-26-000001-index.htm");
-  await expect(link).toHaveAttribute("target", "_blank");
-  const fund = page.locator("[data-move='13f:000099999826000002:037833100']");
-  await fund.locator(".move__more summary").click();
-  await expect(fund.getByText(/^13F · Q3 \d{4} · E2E Fixture Capital added \$250M of E2E Fixture Devices\.$/)).toBeVisible();
-  await expect(fund.getByText(/^Q3 \d{4} holdings · filed Oct 21\. 13F data can be up to 45 days old\.$/)).toBeVisible();
-  // Stock cards never offer Follow or a market page, and Crypto is still Coming soon.
-  await expect(page.locator("[data-move^='f4:'] .follow--locked, [data-move^='13f:'] a[href^='/market/']")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Crypto/ })).toContainText("Soon");
-  await expect(page.getByRole("button", { name: /Crypto/ })).not.toContainText("Coming soon");
-  // Stocks never mixes into the Sports tab.
-  const sports = await (await page.request.get("/api/moves?tab=sports&min=10000")).json() as { items: Array<{ tab: string }> };
-  expect(sports.items.every(i => i.tab === "sports")).toBe(true);
-});
-
-test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan card, and /start's three lines", async ({ page }) => {
+test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan card", async ({ page }) => {
   await page.goto("/");
   const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
@@ -257,8 +150,4 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
   await expect(card.locator("li")).toHaveCount(5);
   await expect(page.locator("main")).not.toContainText("More coming");
-  // /start is the checkout itself (pay first; qa/e2e/funnel.spec.ts checks it).
-  await page.goto("/start");
-  await page.getByTestId("age-18").getByRole("checkbox").check();
-  await expect(page.locator("[data-mock-checkout]")).toBeVisible();
 });

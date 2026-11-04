@@ -12,7 +12,6 @@ import * as schema from "@/lib/db/schema";
 import { RECORD_MAX_PAGES } from "@/lib/moves/jobs";
 import { budgetFor, enqueueWallets, INLINE_MAX, nextShare, PROVEN_RECORD_TTL_MS, provenBackfillOnce, resetShare, SHARE_MAX, SHARE_MIN, SHARE_START, walletsToBackfill } from "@/lib/moves/proven-backfill";
 import { recordsFor, saveWalletPnl, walletPnlFor } from "@/lib/moves/store";
-import { buildRead, type Clients } from "@/lib/read/build";
 
 const URL0 = process.env.E2E_DATABASE_URL;
 const NAME = `terminal_backfill_${process.pid}`;
@@ -86,56 +85,6 @@ describe.skipIf(!URL0)("proven-wallet backfill, in Postgres", () => {
     // A day later F is due again: first among the 72-hour wallets ($500K in the election). Tonight's game has started,
     // so A is back with the rest, newest first.
     expect(await walletsToBackfill(db, NOW + 25 * H, PROVEN_RECORD_TTL_MS, 10)).toEqual([Q2, Q1, F, B, C, A, D]);
-  });
-
-  it("a Read queues its wallets with no record at the front, reads up to 5 inline, and shows the proven ones", async () => {
-    const ws = ["1", "2", "3", "4", "5", "6", "7"].map(c => W(`9${c}`));
-    for (const [i, w] of ws.entries()) await move(`r${i}`, { market: "0xread", wallet: w, amount: 10_000 * (i + 1), at: NOW - H });
-    await move("other", { market: "0xother", wallet: A, amount: 900_000, at: NOW - H });
-    await info("0xother", { start: NOW + 2 * H });
-    await pool.query(`insert into terminal.markets (venue, id, data) values ('polymarket', '0xread', $1)`, [JSON.stringify({ venue: "polymarket", id: "0xread", title: "Fixture", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, active: true, result: null, closeTime: NOW + DAY })]);
-    const poly = fakePoly({ closed: () => 35, pnl: () => 5_000 });
-    const dead = () => Promise.reject(new Error("offline"));
-    // Polymarket answers the Read's own market, so it's up: the wallets are read inline.
-    const answered = async () => new Map([["0xread", { venue: "polymarket", id: "0xread", title: "Fixture", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, closeTime: NOW + DAY }]]);
-    const clients = { polymarket: { ...poly, getMarketsById: answered }, kalshi: { getMarketsById: dead } } as unknown as Clients;
-    const r = await buildRead(db, clients, "polymarket", "0xread", NOW);
-    // Five read inline (35 closed, +$5,000: proven), shown on this Read.
-    const stored = await walletPnlFor(db, ws);
-    expect(stored.size).toBe(INLINE_MAX);
-    expect(r.proven.walletRows).toHaveLength(INLINE_MAX);
-    expect(r.proven.walletRows!.every(w => w.closed === 35 && w.profit === 5_000)).toBe(true);
-    // The other two wait at the front of the backfill, ahead of A's $900K in tonight's game.
-    const next = await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 3);
-    expect(next.slice(0, 2).sort()).toEqual(ws.filter(w => !stored.has(w)).sort());
-    expect(next[2]).toBe(A);
-    // The worker then reads them, and the queue empties.
-    await provenBackfillOnce(db, poly, NOW, 5_000);
-    expect((await walletPnlFor(db, ws)).size).toBe(7);
-    expect(Number((await pool.query("select count(*)::int as n from terminal.wallet_pnl_queue")).rows[0].n)).toBe(0);
-  });
-
-  it("Polymarket not answering the Read's own market: no inline reads at all, the wallets only queued", async () => {
-    await move("o1", { market: "0xout", wallet: C, amount: 10_000, at: NOW - H });
-    await pool.query(`insert into terminal.markets (venue, id, data) values ('polymarket', '0xout', $1)`, [JSON.stringify({ venue: "polymarket", id: "0xout", title: "Out", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, active: true, result: null, closeTime: NOW + DAY })]);
-    const dead = () => Promise.reject(new Error("offline"));
-    const poly = fakePoly({ closed: () => 35, pnl: () => 1 });
-    await buildRead(db, { polymarket: { ...poly, getMarketsById: dead }, kalshi: { getMarketsById: dead } } as unknown as Clients, "polymarket", "0xout", NOW);
-    expect(poly.calls).toEqual([]);
-    expect(await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 1)).toEqual([C]);
-  });
-
-  it("a slow Data API never holds a Read: nothing read inline past the budget, every wallet queued", async () => {
-    await move("s1", { market: "0xslow", wallet: B, amount: 10_000, at: NOW - H });
-    await pool.query(`insert into terminal.markets (venue, id, data) values ('polymarket', '0xslow', $1)`, [JSON.stringify({ venue: "polymarket", id: "0xslow", title: "Slow", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, active: true, result: null, closeTime: NOW + DAY })]);
-    const dead = () => Promise.reject(new Error("offline"));
-    const answered = async () => new Map([["0xslow", { venue: "polymarket", id: "0xslow", title: "Slow", eventTitle: null, yesLabel: "Yes", noLabel: "No", url: null, yesPrice: 0.5, volume24h: 1000, closeTime: NOW + DAY }]]);
-    const clients = { polymarket: { ...fakePoly({ closed: () => 35, pnl: () => 1, delayMs: 2_500 }), getMarketsById: answered }, kalshi: { getMarketsById: dead } } as unknown as Clients;
-    const t0 = Date.now();
-    await buildRead(db, clients, "polymarket", "0xslow", NOW);
-    expect(Date.now() - t0).toBeLessThan(2_500);
-    expect((await walletPnlFor(db, [B])).size).toBe(0);
-    expect(await walletsToBackfill(db, NOW, PROVEN_RECORD_TTL_MS, 1)).toEqual([B]);
   });
 
   it("a wallet past the page cap is kept as \"at least\", with pnl from its own leaderboard row; trader_records untouched", async () => {

@@ -13,8 +13,8 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { clientIp } from "@/lib/http";
 
 /** Pages a signed-in non-member asked for that they can still use; anywhere else (the home page included) they go to
- *  /start to get Insidir. */
-const OPEN_TO_ALL = /^\/(start|welcome|settings|pricing|terms|privacy|faq|help|methodology|data|status|security|disclosures|credits|changelog|about)(\/|\?|$)/;
+ *  /go to get Insidir. */
+const OPEN_TO_ALL = /^\/(go|settings|pricing|terms|privacy|faq|help|methodology|data|status|security|disclosures|credits|changelog|about)(\/|\?|$)/;
 
 /** Where anyone without Insidir lands after signing in: the paywall, never an empty app. */
 export const PAYWALL = "/go?step=paywall";
@@ -26,7 +26,7 @@ export async function handleLoginCallback(req: NextRequest) {
   try { saved = JSON.parse(req.cookies.get(LOGIN_COOKIE)?.value ?? "{}") as typeof saved; } catch { saved = {}; }
   const done = (res: NextResponse) => { res.cookies.delete({ name: LOGIN_COOKIE, path: "/" }); return res; };
   const denied = req.nextUrl.searchParams.get("error");
-  if (denied) { logLine(`cancelled at Whop (${denied.slice(0, 60)})`); return done(to(safeNext(saved.next).startsWith("/start") ? "/start?error=cancelled" : "/login?error=cancelled")); }
+  if (denied) { logLine(`cancelled at Whop (${denied.slice(0, 60)})`); return done(to(safeNext(saved.next).startsWith("/go") ? "/go?step=paywall&error=cancelled" : "/login?error=cancelled")); }
   if (!code || !state || state !== saved.state || !saved.verifier) { logLine("expired or mismatched state"); return done(to("/login?error=expired")); }
   if (!hasDatabase()) return done(to("/login?error=unavailable"));
   const db = getDb(), ip = clientIp(req);

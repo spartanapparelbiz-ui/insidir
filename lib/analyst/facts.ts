@@ -58,10 +58,10 @@ export interface BetRaw {
 
 export function buildBetFacts(r: BetRaw, now: number): Facts {
   const m = r.move, f: Fact[] = [];
-  const who = m.wallet ? walletLabel(m.wallet, m.walletName) : null;
+  const who = m.wallet ? "This wallet" : null; // never a name or an address in a note: Insidir never identifies a wallet
   const src = moveSource(m);
   const venue = m.source === "polymarket" ? "Polymarket" : "Kalshi";
-  const profile = m.wallet ? { label: `${who} on Insidir`, href: `/p/${m.wallet}` } : null;
+  const profile = m.wallet ? { label: `${who} on Insidir`, href: `/wallet/${m.wallet}` } : null;
   const outcome = headlineOf(m);
   f.push({ key: "position", label: "The position", text: `${dollars(m.amount)} on ${outcome}`, source: src ? { label: src.label, href: src.href } : null });
   if (who) f.push({ key: "account", label: "Account", text: who, source: profile });
@@ -110,8 +110,8 @@ export function buildInsiderFacts(r: InsiderRaw, now: number): Facts {
     { key: "purchase", label: "The purchase", text: `${dollars(m.amount)} of ${d.company} stock`, source: filing },
     { key: "insider", label: "Who", text: `${d.ownerName}, ${d.role}`, source: filing },
   ];
-  f.push({ key: "prior", label: "Their earlier purchases at the company", text: r.priorBuys === 0 ? "first open-market purchase on file" : `${r.priorBuys} earlier ${r.priorBuys === 1 ? "purchase" : "purchases"} on file`, source: d.ticker ? { label: `${d.ticker} insider trades`, href: `/insider-trading/${d.ticker}` } : filing });
-  if (r.cluster >= 2) f.push({ key: "cluster", label: "Insiders buying in 30 days", text: `${r.cluster} insiders bought in 30 days`, source: d.ticker ? { label: `${d.ticker} insider trades`, href: `/insider-trading/${d.ticker}` } : filing });
+  f.push({ key: "prior", label: "Their earlier purchases at the company", text: r.priorBuys === 0 ? "first open-market purchase on file" : `${r.priorBuys} earlier ${r.priorBuys === 1 ? "purchase" : "purchases"} on file`, source: filing });
+  if (r.cluster >= 2) f.push({ key: "cluster", label: "Insiders buying in 30 days", text: `${r.cluster} insiders bought in 30 days`, source: filing });
   if (r.priceSince !== null) {
     const p = Math.round(r.priceSince * 1000) / 10;
     f.push({ key: "price_since", label: "Price since the filing", text: `${p > 0 ? "+" : p < 0 ? "−" : ""}${Math.abs(p).toFixed(1)}% since the filing`, source: { label: "Daily closes", href: "/data" } });

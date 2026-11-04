@@ -3,7 +3,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { coverFigure } from "@/components/trackers/TrackerCover";
 import { FEATURED, homeOrder, recordResult, returnPct, trackerBySlug, type TrackerRecord } from "@/lib/trackers";
 import { cumulative } from "@/lib/trackers-store";
 
@@ -23,16 +22,6 @@ describe("polish", () => {
     expect(recordResult(null)).toEqual({ amount: null, tone: "none", status: "Building record · 0 of 30" });
   });
 
-  it("the cover's return is the followable return; filings show money bought; the record being built otherwise, never New", () => {
-    expect(returnPct(rec(30, 10, 12_400, 100_000))).toBe("+12.4%");
-    expect(returnPct(rec(30, 10, -5_000, 100_000))).toBe("−5.0%");
-    expect(returnPct(rec(30, 10, 5_000))).toBeNull();
-    const whales = trackerBySlug("biggest-bets")!, ceo = trackerBySlug("ceo-buys")!;
-    expect(coverFigure(whales, { record: rec(30, 10, 12_400, 100_000), curve: [], tracked30d: 0 })).toEqual({ figure: "+12.4%", label: "Followable ROI" });
-    expect(coverFigure(whales, { record: rec(3, 1, 9, 10), curve: [], tracked30d: 0 })).toEqual({ figure: "Building record", label: "4 of 30 settled" });
-    expect(coverFigure(ceo, { record: null, curve: [], tracked30d: 2_400_000 })).toEqual({ figure: "$2.4M", label: "30-day volume" });
-    expect(coverFigure(ceo, null).figure).toBe("No filings yet");
-  });
 
   it("the curve is cumulative by week, oldest first, and empty when nothing happened", () => {
     expect(cumulative([{ week: 0, v: 5 }, { week: 2, v: 10 }, { week: 30, v: 99 }], 4)).toEqual([0, 10, 10, 15]);

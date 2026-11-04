@@ -59,9 +59,9 @@ const leagueArg = (a: Args): League | undefined => { const v = str(a, "league")?
 /* ---------- rows ---------- */
 const ago = (ms: number, now: number) => { const m = Math.max(1, Math.round((now - ms) / 60_000)); return m < 60 ? `${m}m ago` : m < 48 * 60 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`; };
 function positionRow(m: Move, now: number): Cell[] {
-  const who = m.wallet ? { text: walletLabel(m.wallet, m.walletName), href: `/p/${m.wallet}` } : { text: m.source === "sec" && m.detail?.kind === "insider" ? m.detail.ownerName : "Anonymous" };
+  const who = m.wallet ? { text: walletLabel(m.wallet, m.walletName), href: `/wallet/${m.wallet}` } : { text: m.source === "sec" && m.detail?.kind === "insider" ? m.detail.ownerName : "Anonymous" };
   return [
-    { text: headlineOf(m), href: `/position/${encodeURIComponent(m.id)}`, art: artOfMove(m) },
+    { text: headlineOf(m), href: `/market/${encodeURIComponent(m.marketId)}`, art: artOfMove(m) },
     { text: m.source === "sec" ? (m.detail?.kind === "insider" ? m.detail.company : "SEC") : sublineOf({ ...m, leagueLabel: leagueLabel(m) }) },
     who,
     { text: dollars(m.amount) },
@@ -121,7 +121,7 @@ async function listTrackers(c: ToolCtx, a: Args): Promise<Table> {
     tool: "list_trackers", title: `Trackers by ${sort === "roi" ? "followable ROI (30+ settled)" : sort === "settled" ? "settled positions" : "30-day volume"}${group ? `: ${group}` : ""}`,
     columns: ["Tracker", "Followable ROI", "$100 line", "Record", "Volume, 30 days"], numeric: [1, 3, 4],
     rows: list.map(x => [
-      { text: x.t.name, href: `/trackers/${x.t.slug}` },
+      { text: x.t.name },
       x.roi !== null ? { text: roiText(x.r!.net, x.r!.staked!), tone: x.r!.net >= 0 ? "pos" as const : "neg" as const } : { text: x.t.kind === "filings" ? "Filings" : `Building · ${x.n} of 30` },
       { text: x.roi !== null ? hundredLine({ net: x.r!.net, staked: x.r!.staked! }) : "—" },
       { text: x.r ? `${x.r.won}–${x.r.lost}` : "—" },
@@ -156,7 +156,7 @@ async function accountRecord(c: ToolCtx, a: Args): Promise<Table> {
   const won = rows.filter(m => m.result === "won").length, lost = rows.length - won;
   const name = rows[0] ? walletLabel(wallet, rows[0].walletName) : walletLabel(wallet, null);
   const scope = [league, category, type].filter(Boolean).join(" ");
-  return { tool: "account_record", title: `${name}: ${scope ? `${scope} ` : ""}record ${won}–${lost}`, columns: POS_COLS, numeric: [3], rows: rows.map(m => positionRow(m, c.now)), sources: [{ label: `${name} on Insidir`, href: `/p/${wallet}` }, SRC.polymarket], at: c.until, live: c.live,
+  return { tool: "account_record", title: `${name}: ${scope ? `${scope} ` : ""}record ${won}–${lost}`, columns: POS_COLS, numeric: [3], rows: rows.map(m => positionRow(m, c.now)), sources: [{ label: `${name} on Insidir`, href: `/wallet/${wallet}` }, SRC.polymarket], at: c.until, live: c.live,
     note: "Settled large positions Insidir tracked from this account, newest first. Past results, not a promise." };
 }
 

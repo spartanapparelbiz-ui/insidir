@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (user && !user.ageConfirmed) await getDb().update(users).set({ ageConfirmedAt: new Date(confirmedAt) }).where(eq(users.id, user.id));
   if (!user) {
     const visitor = req.cookies.get(VISITOR_COOKIE)?.value;
-    return NextResponse.json({ planId, metadata: { ...(visitor && /^[A-Za-z0-9_-]{6,64}$/.test(visitor) ? { insidir_visitor_id: visitor } : {}), insidir_age_18: confirmedAt }, email: null, returnUrl: `${appUrl()}/welcome` });
+    return NextResponse.json({ planId, metadata: { ...(visitor && /^[A-Za-z0-9_-]{6,64}$/.test(visitor) ? { insidir_visitor_id: visitor } : {}), insidir_age_18: confirmedAt }, email: null, returnUrl: `${appUrl()}/go?from=checkout` });
   }
-  return NextResponse.json({ planId, metadata: { insidir_user_id: user.id }, email: user.email, returnUrl: `${appUrl()}/welcome` });
+  return NextResponse.json({ planId, metadata: { insidir_user_id: user.id }, email: user.email, returnUrl: `${appUrl()}/go?from=checkout` });
 }

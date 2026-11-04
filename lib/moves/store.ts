@@ -244,16 +244,12 @@ export async function moveById(db: Db, id: string): Promise<Move | null> {
 
 /** For Polymarket markets: the matched Kalshi market's link, when the matching engine paired them. */
 export async function kalshiMatches(db: Db, polymarketIds: readonly string[]): Promise<Map<string, string>> {
+  // Only approved twins (lib/twins, /admin/twins): a Kalshi link is shown for nothing a person hasn't confirmed.
   const ids = [...new Set(polymarketIds)];
   if (!ids.length) return new Map();
-  const r = await db.execute(sql`select case when p.data->'a'->>'venue' = 'polymarket' then p.data->'a'->>'id' else p.data->'b'->>'id' end as poly,
-      k.data->>'url' as url
-    from terminal.pairs p
-    join terminal.markets k on k.venue = 'kalshi' and k.id = case when p.data->'a'->>'venue' = 'kalshi' then p.data->'a'->>'id' else p.data->'b'->>'id' end
-    where not p.blocked and (
-      (p.data->'a'->>'venue' = 'polymarket' and p.data->'a'->>'id' in (${sql.join(ids.map(i => sql`${i}`), sql`, `)}))
-      or (p.data->'b'->>'venue' = 'polymarket' and p.data->'b'->>'id' in (${sql.join(ids.map(i => sql`${i}`), sql`, `)})))`);
-  return new Map((r.rows as Array<{ poly: string; url: string | null }>).filter(x => x.url).map(x => [x.poly, x.url!]));
+  const r = await db.execute(sql`select polymarket_id as poly, kalshi_url as url from terminal.market_twins
+    where status = 'approved' and polymarket_id in (${sql.join(ids.map(i => sql`${i}`), sql`, `)})`);
+  return new Map((r.rows as Array<{ poly: string; url: string }>).map(x => [x.poly, x.url]));
 }
 
 /** "Big money in the last 24h: $1.2M on Yes, $300k on No", per outcome side. */

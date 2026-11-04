@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <ul>
         <li><strong>Your account</strong>: email and Whop user id (from signing in with Whop), your plan and membership status, your US or outside-the-US answer, when you confirmed you are 18 or older, the Reads you run, and the reason you gave if you cancel. We never have a password or card number for you.</li>
         <li><strong>What you follow</strong>: trackers, traders and markets, your alert settings, and push subscriptions for the devices where you turned alerts on.</li>
-        <li><strong>Bets you check</strong>: the legs we matched and how they settled. A slip image is sent to an AI model through OpenRouter to read it, and isn&apos;t stored by us. A Kalshi CSV you upload on the P&amp;L page is read and not stored.</li>
+        <li><strong>Your searches</strong>: the legs we matched and how they settled. A slip image is sent to an AI model through OpenRouter to read it, and isn&apos;t stored by us. A Kalshi CSV you upload on the P&amp;L page is read and not stored.</li>
         <li><strong>Heads-ups</strong>: if you sign up to hear when a feature launches, your email and that feature.</li>
         <li><strong>Usage</strong>: first-party events (page viewed, checkout started) with a random visitor id from a cookie and, when you&apos;re signed in, your account id; which version of a page you saw; campaign tags (utm) of the link that brought you.</li>
       </ul>
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
       <h2>Who else handles data</h2>
       <ul>
         <li><strong>Whop</strong>: sign-in, payments and memberships.</li>
-        <li><strong>OpenRouter</strong> and the AI model it routes to: reading a bet slip image you choose to check.</li>
+        <li><strong>OpenRouter</strong> and the AI model it routes to: writing the analyst's notes.</li>
         <li><strong>Your browser&apos;s push service</strong> (Apple, Google or Mozilla): delivering alerts you turned on.</li>
         <li><strong>Railway</strong>: hosting the site and the database.</li>
       </ul>

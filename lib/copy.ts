@@ -18,7 +18,7 @@ export const COMPANY = { name: "Aethric LLC", place: "Pompano Beach, FL", email:
 
 /** The thin bar above the nav, and the one paid call to action (docs/INSIDIR-V2.md §6). */
 /** What Insidir is, in one plain sentence: the first FAQ answer, the meta description and link previews. */
-export const WHAT_IS = "Check any Polymarket or Kalshi bet against the wallets up $1M+: which side their money is on, their bets as they happen, and the best price.";
+export const WHAT_IS = "Every bet from Polymarket wallets up $1M+, live, with the side they took, and the same market on Kalshi where there is one.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
 export const WHAT_IS_TITLE = "Insidir: see which side the millionaires bet";
 /* The trial, said one way everywhere and always from lib/plans.ts TRIAL (it must match the Whop plan exactly, or

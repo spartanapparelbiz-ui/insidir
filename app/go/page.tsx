@@ -1,11 +1,18 @@
 /* /go: the onboarding funnel (components/brand/go/Funnel.tsx). Every Start button, DM link and ad lands here; UTM tags
  * are kept (middleware's first-touch cookie, the go_view event's props). Full screen, no nav. ?step= picks up where
- * a pop-up, the checkout or the Whop sign-in left them. Members who are set up go home. */
+ * a pop-up, the checkout or the Whop sign-in left them. Members who are set up go home.
+ * ?status= is where the checkout lands (it was /welcome): pay first, then sign in. A buyer who paid signed out goes
+ * straight through Whop's sign-in and lands back here signed in; it waits for Whop to say the account has Insidir
+ * (components/auth/Welcome.tsx), then goes back to ?next. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
+import { Welcome } from "@/components/auth/Welcome";
 import { Funnel, type Step } from "@/components/brand/go/Funnel";
+import { Stage as SystemStage } from "@/components/system";
+import { PHOTOS } from "@/lib/brand/images";
+import { safeNext } from "@/lib/auth/next";
 import { Stage } from "@/components/brand/Stage";
 import { StageMotion } from "@/components/brand/StageMotion";
 import { readUtm, recordEvent, UTM_COOKIE } from "@/lib/analytics";
@@ -26,6 +33,21 @@ const EMPTY = (now: number): GoData => ({ now, paid: false, pulse: { count: 0, w
 export default async function GoPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const now = Date.now();
   const [sp, viewer, jar] = await Promise.all([searchParams, getViewer(), cookies()]);
+  // The checkout's return (Whop adds ?status=; a redirect from Whop's own return carries from=checkout).
+  const st = Array.isArray(sp.status) ? sp.status[sp.status.length - 1] : sp.status;
+  if (typeof st === "string" || sp.from === "checkout") {
+    const status = st ?? "succeeded", next = typeof sp.next === "string" ? safeNext(sp.next) : "/";
+    const failed = status === "failed" || status === "canceled";
+    if (!failed && !viewer.user) redirect(`/login/start?next=${encodeURIComponent(`/go?${new URLSearchParams({ status, ...(next !== "/" ? { next } : {}) }).toString()}`)}`);
+    return (
+      <main className="b-root" data-testid="welcome">
+        <SystemStage bg={{ kind: "photo", photo: PHOTOS.hero, dark: 0.55, priority: true }} first testid="welcome-band">
+          <Welcome status={status} next={next} />
+          <p className="b-small b-center">Information, not advice. Insidir never places a bet or holds money.</p>
+        </SystemStage>
+      </main>
+    );
+  }
   const asked = typeof sp.step === "string" && STEPS.has(sp.step as Step) ? (sp.step as Step) : "hook";
   const member = isPaid(viewer.plan) && Boolean(viewer.user);
   // A member who is set up has nothing to do here, unless they are finishing the funnel's last steps.

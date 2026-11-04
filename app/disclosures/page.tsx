@@ -23,7 +23,7 @@ export default function DisclosuresPage() {
       <p>{PAST} Every performance figure on Insidir is computed from settled positions by the rules on <Link href="/methodology">Methodology</Link>, losses included. Followable returns assume you followed at the price Insidir showed plus one point; real fills can be worse. A tracker that made money before can lose money next.</p>
 
       <h2>Where you live matters</h2>
-      <p>Whether you can use a prediction market or a sportsbook depends on where you live and your age. Polymarket and Kalshi each decide who can use them. If you tell us you&apos;re in the US, we only link to apps that work in the US. Check the rules where you are before you use any of them.</p>
+      <p>Whether you can use a prediction market or a sportsbook depends on where you live and your age. Polymarket and Kalshi each decide who can use them. If you tell us you&apos;re in the US, we only link to apps that work in the US. Know the rules where you are before you use any of them.</p>
 
       <h2>Problem gambling</h2>
       <p className="lp-about__lead">{GAMBLER}</p>

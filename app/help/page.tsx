@@ -18,9 +18,9 @@ export default function HelpPage() {
       <ul>
         <li><strong>Cancel or change your card</strong>: <Link href="/settings#billing">Settings → Manage subscription</Link> opens your Whop orders page.</li>
         <li><strong>Can&apos;t sign in</strong>: sign in with the same Whop account you paid with, on <Link href="/login">Sign in</Link>.</li>
-        <li><strong>Turn alerts on or off</strong>: <Link href="/alerts">Alerts</Link>.</li>
+        <li><strong>Turn alerts on or off</strong>: <Link href="/settings">Settings</Link>.</li>
         <li><strong>Delete your account</strong>: <Link href="/settings#delete">Settings → Delete account</Link>.</li>
-        <li><strong>A number looks wrong</strong>: every card links its source. Check <Link href="/status">Status</Link>, then tell us.</li>
+        <li><strong>A number looks wrong</strong>: every card links its source. Compare <Link href="/status">Status</Link>, then tell us.</li>
         <li><strong>Report a security issue</strong>: see <Link href="/security">Security</Link>.</li>
       </ul>
 

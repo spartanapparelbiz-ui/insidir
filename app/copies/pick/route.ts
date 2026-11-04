@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (!user) return NextResponse.redirect(new URL("/login?next=/", appUrl()), 303);
-  if (!isPaid(user.plan)) return NextResponse.redirect(new URL("/start", appUrl()), 303);
+  if (!isPaid(user.plan)) return NextResponse.redirect(new URL("/go", appUrl()), 303);
   const form = await req.formData().catch(() => null);
   const onboarding = form?.get("onboarding") === "1", skipped = form?.get("skip") === "1";
   const db = getDb(), now = Date.now();

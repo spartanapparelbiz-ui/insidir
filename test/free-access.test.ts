@@ -12,7 +12,6 @@ import { freeAccessEmails, isFreeAccess } from "@/lib/billing/free";
 import { comingSoonLine, startList } from "@/components/v2/Pricing";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { parsePicks, topicCategories } from "@/lib/picks";
 
 const ENV0 = process.env.FREE_ACCESS_EMAILS;
 afterEach(() => { if (ENV0 === undefined) delete process.env.FREE_ACCESS_EMAILS; else process.env.FREE_ACCESS_EMAILS = ENV0; });
@@ -48,13 +47,6 @@ describe("/start", () => {
   });
 });
 
-describe("onboarding picks", () => {
-  it("keeps only known tabs, leagues and topics; a league or topic implies its tab", () => {
-    expect(parsePicks({ tabs: ["crypto"], leagues: ["NFL", "XFL"], topics: ["world", "sports"] })).toEqual({ tabs: ["sports", "markets"], leagues: ["NFL"], topics: ["world"] });
-    expect(parsePicks({ tabs: [] })).toBeNull();
-    expect(topicCategories(["economy", "world"])).toEqual(["economics", "finance", "geopolitics"]);
-  });
-});
 
 describe("the funnel", () => {
   it("has the eight steps in order and drop-off between them", () => {

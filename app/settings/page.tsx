@@ -86,7 +86,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             ) : paid ? (
               <>
                 <p className="s-strong">{s.alertPush && devices ? `On for ${devices} ${devices === 1 ? "device" : "devices"}` : s.alertEmail ? "Email alerts on" : "Off"}{s.quietStart && s.quietEnd ? ` · quiet ${s.quietStart}–${s.quietEnd}` : ""}</p>
-                <div className="b-ctas"><PingsLink /><a className={BTN} href="/alerts">Alert settings</a></div>
+                <div className="b-ctas"><PingsLink /></div>
+                <form method="post" action="/api/settings" className="s-form" data-testid="alert-settings">
+                  <label className="s-form b-small">Email pings
+                    <select name="alertEmail" defaultValue={s.alertEmail ? "on" : "off"} className="s-input"><option value="on">On</option><option value="off">Off</option></select>
+                  </label>
+                  <div className="s-split">
+                    <label className="s-form b-small">Quiet from<input type="time" name="quietStart" defaultValue={s.quietStart ?? ""} className="s-input" /></label>
+                    <label className="s-form b-small">Quiet until<input type="time" name="quietEnd" defaultValue={s.quietEnd ?? ""} className="s-input" /></label>
+                  </div>
+                  <div><button type="submit" className={BTN}>Save pings</button></div>
+                </form>
               </>
             ) : <p className="b-small">Pings come with Insidir: within a minute of a $25K+ millionaire bet, or a new bet from a wallet you follow.</p>}
           </Panel>
@@ -140,7 +150,6 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <Panel className="s-form">
             <h2 className="b-label">Sign-in</h2>
             <dl className="s-kv"><div><dt className="b-small">Email</dt><dd className="s-strong">{user.email ?? "Not set yet"}</dd></div></dl>
-            {viewer.plan === "insidir" ? <div className="b-ctas" aria-label="More tools"><a className={BTN} href="/whales">Whales</a><a className={BTN} href="/pnl">Your P&amp;L</a></div> : null}
             <form method="post" action="/auth/logout"><button type="submit" className={BTN}>Sign out</button></form>
           </Panel>
 

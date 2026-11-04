@@ -1,6 +1,5 @@
 /* docs/BRIEF.md phase 1: the pure parts of the signature components. */
 import { describe, expect, it } from "vitest";
-import { beatState, beatText } from "@/components/sig/Heartbeat";
 import { dollarBarLabel } from "@/components/ui/DollarBar";
 import { followGreen, marketKey, settle } from "@/lib/engines/receipts";
 import { keptCurve, SLIDER_MIN_DEALS, SLIDER_STAKES } from "@/lib/kept";
@@ -25,17 +24,6 @@ describe("the $1 bar's sentence", () => {
   });
 });
 
-describe("the heartbeat", () => {
-  it("is live under 20s, stale to 60s, paused after or when the scanner is down", () => {
-    expect(beatState(true, 2)).toBe("live");
-    expect(beatState(true, 21)).toBe("stale");
-    expect(beatState(true, 61)).toBe("paused");
-    expect(beatState(false, 2)).toBe("paused");
-    expect(beatState(true, null)).toBe("paused");
-    expect(beatText("live", 2)).toBe("Scanning live. Last scan 2s ago.");
-    expect(beatText("paused", null)).toBe("Live data paused. Retrying now.");
-  });
-});
 
 describe("what you could have kept", () => {
   const many = (n: number) => Array.from({ length: n }, (_, i) => {

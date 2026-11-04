@@ -5,18 +5,16 @@
  * button and a menu; members get a bottom tab bar: Read, Account. Every target is 44px+. `status` is kept for
  * callers and shown under the nav when given. */
 import Link from "next/link";
-import { positioningOn } from "@/lib/smart/gate";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/types";
 import { NAV_CTA } from "@/lib/copy";
 import { Wordmark } from "./Wordmark";
-import { isReady } from "@/lib/features";
 import { TabIcon } from "./TabIcon";
 import { ViewAs } from "./ViewAs";
 
-const SECTION: Record<string, string> = { "/settings": "/account", "/alerts": "/account", "/pnl": "/account", "/whales": "/account", "/terminal": "/feed", "/gaps": "/feed", "/p": "/top", "/market": "/feed" };
+const SECTION: Record<string, string> = { "/settings": "/account", "/wallet": "/wallets", "/market": "/board" };
 
-export function SiteHeader({ signedIn, current, status, plan, trialHref = "/start", tone = "dark", minimal = false, offer = true }: {
+export function SiteHeader({ signedIn, current, status, plan, trialHref = "/go", tone = "dark", minimal = false, offer = true }: {
   plan?: Plan; signedIn: boolean; current?: string; status?: ReactNode; trialHref?: string; tone?: "dark" | "light";
   /** The nav's "Start for $1" button for visitors (off where a page has nothing to sell, like the checkout). */
   offer?: boolean;
@@ -36,15 +34,11 @@ export function SiteHeader({ signedIn, current, status, plan, trialHref = "/star
   const link = (href: string, label: string, section = href) => (
     <Link key={href} href={href} aria-current={at === section ? "page" : undefined}>{label}</Link>
   );
-  // Trackers first: each one is a live portfolio of large positions. Members open the app on Trackers (home).
-  // Research opens the ⌘K palette (components/research/ResearchPalette.tsx); without JavaScript, the /research page.
-  const research = <Link key="research" href="/research" data-research-open aria-current={at === "/research" ? "page" : undefined}>Research</Link>;
   const links = signedIn
-    ? [link("/", "Read", "/"), link("/settings", "Account", "/account")]
-    : [link("/pricing", "Pricing"), <Link key="login" href="/signin">Log in</Link>];
+    ? [link("/board", "Board"), link("/settings", "Account", "/account")]
+    : [link("/pricing", "Pricing"), <Link key="login" href="/login">Log in</Link>];
   // Everything else lives in the members' menu only.
-  const menu = signedIn ? [links[0]!, link("/copies", "My copies"), link("/feed", "Activity"), link("/top", "Winners"), research, ...(positioningOn() ? [link("/splits", "Positioning")] : []),
-    link("/trackers", "Trackers"), link("/following", "Following"), link("/check", "Position check"), link("/results", "Track record"), links[1]!] : links;
+  const menu = signedIn ? [links[0]!, link("/election", "Election"), link("/markets", "Markets"), link("/wallets", "Wallets"), link("/copies", "My copies"), link("/results", "Track record"), links[1]!] : links;
   return (
     <>
       <ViewAs />

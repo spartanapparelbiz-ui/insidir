@@ -1,5 +1,5 @@
 "use client";
-/* The visitors' bottom bar: "You're seeing data 30 minutes late. Live: $1 for your first 3 days." (TRIAL_LINE) with "Start for $1". On a page
+/* The visitors' bottom bar: "You're seeing data 60 minutes late. Live: $1 for your first 3 days." (TRIAL_LINE) with "Start for $1". On a page
  * with a hero ([data-hero], the home page) it comes up once the hero has scrolled out of view; elsewhere after 30% of
  * the page. Never at load. × hides it for the rest of the session. Never on sign-up, sign-in, checkout or account
  * pages. It slides up with transform only, so nothing on the page moves. Rendered by app/layout.tsx for visitors. */
@@ -43,8 +43,8 @@ export function LateBar() {
   return (
     <div className={`latebar${on ? " latebar--on" : ""}`} role="region" aria-label="Live data" aria-hidden={!on} data-testid="late-bar">
       <div className="pg latebar__in">
-        <p className="latebar__t">You&apos;re seeing data 30 minutes late. <b>Live: {TRIAL_LINE}.</b></p>
-        <Link className="btn btn--primary latebar__cta" href={`/start?next=${encodeURIComponent(path)}&from=latebar`} tabIndex={on ? 0 : -1} data-checkout="latebar">Start for $1</Link>
+        <p className="latebar__t">You&apos;re seeing data 60 minutes late. <b>Live: {TRIAL_LINE}.</b></p>
+        <Link className="btn btn--primary latebar__cta" href={`/go?from=latebar`} tabIndex={on ? 0 : -1} data-checkout="latebar">Start for $1</Link>
         <button type="button" className="latebar__x" aria-label="Hide for this visit" tabIndex={on ? 0 : -1} onClick={close}>×</button>
       </div>
     </div>

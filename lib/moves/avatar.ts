@@ -7,7 +7,7 @@
  * A wallet whose public username is blocked (lib/moves/names.ts) never shows its picture, and /admin can hide any
  * wallet's picture (terminal.trader_avatars.hidden_at). */
 import { isBlockedName } from "./names";
-import { shortWallet, walletLabel } from "./records";
+import { shortWallet } from "./records";
 import type { Move } from "./types";
 
 /** Polymarket's own image host for profile pictures. The only host a picture may come from (next.config.ts allows the
@@ -68,9 +68,9 @@ export function shownAvatar(row: { url: string | null; blocked: boolean; hiddenA
 }
 
 /** A Polymarket wallet's face. */
-export function walletFace(wallet: string, name: string | null, avatars: ReadonlyMap<string, string>): Face {
-  const blocked = isBlockedName(name);
-  return { src: blocked ? null : avatars.get(wallet) ?? null, mono: monogram(blocked ? shortWallet(wallet) : walletLabel(wallet, name)) };
+/** A wallet's face: never a picture (Insidir never shows who is behind a wallet), only its address's monogram. */
+export function walletFace(wallet: string, _name: string | null, _avatars: ReadonlyMap<string, string>): Face {
+  return { src: null, mono: monogram(shortWallet(wallet)) };
 }
 
 /** The face on a move: the wallet's picture or monogram; "Someone" (Kalshi); the company's ticker (SEC insiders and

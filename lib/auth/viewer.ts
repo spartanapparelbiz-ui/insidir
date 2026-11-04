@@ -38,7 +38,7 @@ export function feedViewer(v: Viewer): FeedViewer {
 export async function requireMember(next: string): Promise<Viewer> {
   const v = await getViewer();
   if (!v.user) redirect(`/login?next=${encodeURIComponent(next)}`);
-  if (v.plan === "free") redirect("/start");
+  if (v.plan === "free") redirect("/go?step=paywall");
   return v;
 }
 

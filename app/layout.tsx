@@ -5,7 +5,6 @@ import { RegisterSW } from "@/components/app/RegisterSW";
 import { Motion } from "@/components/motion/Motion";
 import { NavProgress } from "@/components/motion/NavProgress";
 import { SiteFooter } from "@/components/SiteFooter";
-import { ResearchPalette } from "@/components/research/ResearchPalette";
 import { LateBar } from "@/components/paywall/LateBar";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE } from "@/lib/auth/session";
@@ -71,7 +70,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </ToastProvider>
         <JsonLd data={organizationLd()} />
         <RegisterSW />
-        <ResearchPalette />
         {visitor ? <LateBar /> : null}
         <Motion />
         <Suspense fallback={null}><NavProgress /></Suspense>

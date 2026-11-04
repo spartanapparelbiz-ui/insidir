@@ -18,7 +18,7 @@ export function Welcome({ status, next = "/" }: { status: string | null; next?: 
       if (gone) return;
       const r = await fetch("/api/checkout/status", { method: "POST" }).then(x => x.json() as Promise<{ member: boolean; next?: string }>).catch(() => ({ member: false } as { member: boolean; next?: string }));
       if (r.member) {
-        try { const from = sessionStorage.getItem("insidir_pay_from"); if (from) { beacon("paid_seen", "popup", { page: from }); sessionStorage.removeItem("insidir_pay_from"); } } catch { /* attribution only */ } location.replace(r.next === "/onboarding" ? `/onboarding${next && next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}` : next || "/"); return; }
+        try { const from = sessionStorage.getItem("insidir_pay_from"); if (from) { beacon("paid_seen", "popup", { page: from }); sessionStorage.removeItem("insidir_pay_from"); } } catch { /* attribution only */ } location.replace(next || "/"); return; }
       if (++n === 30) setSlow(true);
       setTimeout(tick, n < 30 ? 1000 : 3000);
     };
@@ -29,13 +29,13 @@ export function Welcome({ status, next = "/" }: { status: string | null; next?: 
     <div className="b-head">
       <Lines as="h1" lines={["Payment didn’t go through."]} size={56} />
       <p className="b-sub" role="alert">Nothing was charged. Try again, or use another card.</p>
-      <div className="b-ctas"><Link className="b-btn b-btn-lg b-primary" href="/start">Try again</Link></div>
+      <div className="b-ctas"><Link className="b-btn b-btn-lg b-primary" href="/go?step=paywall">Try again</Link></div>
     </div>
   );
   return (
     <div className="b-head" aria-live="polite" data-testid="setting-up">
       <Lines as="h1" lines={[slow ? "Payment received, finishing up" : "Setting up your account…"]} size={56} />
-      {slow ? <p className="b-sub">Your payment went through. Your account is still being set up; this page keeps checking. Refresh in a moment, or write to <a className="s-link" href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : <p className="b-sub">Whop is confirming your payment. This takes a few seconds.</p>}
+      {slow ? <p className="b-sub">Your payment went through. Your account is still being set up; this page keeps asking Whop. Refresh in a moment, or write to <a className="s-link" href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : <p className="b-sub">Whop is confirming your payment. This takes a few seconds.</p>}
       <span className="s-meterbar s-wait" aria-hidden="true"><span className="s-grow" /></span>
       {slow ? <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => location.reload()}>Refresh</button></div> : null}
     </div>

@@ -1,7 +1,6 @@
 /* Trader records (docs/INSIDIR-V2.md §3), pure. From a Polymarket wallet's real resolved positions: markets won and lost,
  * win rate, all-time profit and biggest win. A record is shown only with RECORD_MIN_RESOLVED resolved markets; a wallet
  * is a "top trader" only with that many and positive all-time profit. Never anything about who is behind a wallet. */
-import { isBlockedName } from "./names";
 import type { TraderRecord } from "./types";
 
 export const RECORD_MIN_RESOLVED = 20;
@@ -28,7 +27,6 @@ export const isTopTrader = (r: TraderRecord | null | undefined): boolean => hasR
 /** "0x12…ab" */
 export const shortWallet = (w: string): string => (w.length > 8 ? `${w.slice(0, 4)}…${w.slice(-2)}` : w);
 
-/** The public Polymarket name or pseudonym when it has one, else the short address. */
-/** The name to show: the public username, unless it is an address or a blocked name (lib/moves/names.ts), then the short
- *  0x address. */
-export const walletLabel = (wallet: string, name: string | null): string => (name && name.trim() && !/^0x[0-9a-f]{6,}/i.test(name) && !isBlockedName(name) ? name.trim() : shortWallet(wallet));
+/** What a wallet is called anywhere on Insidir: its short 0x address, always. Never a name, a username or a pseudonym,
+ *  even a public one: Insidir never identifies who is behind a wallet. (`_name` is kept for callers that still pass it.) */
+export const walletLabel = (wallet: string, _name: string | null): string => shortWallet(wallet);

@@ -93,7 +93,7 @@ export function parseTicker(raw: string): string | null {
 
 /** Where a name on a card goes: a trader's profile (/p/0x…), or an insider's or fund's public page. */
 export function profileHref(ref: ProfileRef): string {
-  if (ref.kind === "trader") return `/p/${ref.wallet.toLowerCase()}`;
+  if (ref.kind === "trader") return `/wallet/${ref.wallet.toLowerCase()}`;
   return ref.kind === "insider" ? insiderHref(ref.cik, ref.name) : fundHref(ref.cik, ref.name);
 }
 

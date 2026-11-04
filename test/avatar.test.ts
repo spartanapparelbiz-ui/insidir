@@ -108,8 +108,9 @@ describe("monograms", () => {
   });
   it("the face on each kind of move", () => {
     const pics = new Map([[W, PIC]]);
-    expect(moveFace(move(), pics)).toEqual({ src: PIC, mono: "KC" });
-    expect(moveFace(move(), new Map())).toEqual({ src: null, mono: "KC" });
+    // Never a picture or a name's letters for a wallet: the address's monogram, even when a picture is stored.
+    expect(moveFace(move(), pics)).toEqual({ src: null, mono: "AB" });
+    expect(moveFace(move(), new Map())).toEqual({ src: null, mono: "AB" });
     expect(moveFace(move({ walletName: null }), new Map())).toEqual({ src: null, mono: "AB" });
     // A blocked name: no picture even if one were stored, and the address's monogram (never the name's letters).
     expect(moveFace(move({ walletName: "Aryan88" }), pics)).toEqual({ src: null, mono: "AB" });

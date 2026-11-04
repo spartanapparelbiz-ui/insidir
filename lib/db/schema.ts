@@ -919,3 +919,24 @@ export const betCopies = terminal.table("bet_copies", {
   pnl: doublePrecision("pnl"),
   settledAt: timestamp("settled_at", { withTimezone: true }),
 }, t => [uniqueIndex("bet_copies_user_bet").on(t.userId, t.betId)]);
+
+/** Market twins (drizzle/0037_market_twins.sql, lib/twins): a Polymarket market and its Kalshi twin. `verdict` is the
+ *  machine's (candidate / review); `status` is the person's (pending / approved / denied). Only approved twins are used. */
+export const marketTwins = terminal.table("market_twins", {
+  polymarketId: text("polymarket_id").primaryKey(),
+  kalshiId: text("kalshi_id").notNull(),
+  kalshiUrl: text("kalshi_url").notNull(),
+  polymarketTitle: text("polymarket_title").notNull(),
+  kalshiTitle: text("kalshi_title").notNull(),
+  kind: text("kind").notNull(),
+  verdict: text("verdict").$type<"candidate" | "review">().notNull(),
+  status: text("status").$type<"pending" | "approved" | "denied">().notNull().default("pending"),
+  confidence: doublePrecision("confidence").notNull(),
+  checks: jsonb("checks").$type<{ event: boolean; outcome: boolean; line: boolean; rules: boolean; close: boolean }>().notNull(),
+  notes: jsonb("notes").$type<string[]>().notNull().default([]),
+  polymarketClose: timestamp("polymarket_close", { withTimezone: true }),
+  kalshiClose: timestamp("kalshi_close", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  decidedBy: text("decided_by"),
+}, t => [index("market_twins_status_idx").on(t.status), index("market_twins_kalshi_idx").on(t.kalshiId)]);

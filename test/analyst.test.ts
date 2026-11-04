@@ -5,14 +5,13 @@ import { describe, expect, it } from "vitest";
 import { buildBetFacts, buildInsiderFacts, type BetRaw } from "@/lib/analyst/facts";
 import { templateNote, writeNote } from "@/lib/analyst/note";
 import { REASONING_HEADROOM, usageCost } from "@/lib/analyst/llm";
-import { writeLine } from "@/lib/read/line";
 import { numbersIn, validateNote } from "@/lib/analyst/validate";
 import type { Move } from "@/lib/moves/types";
 
 const NOW = Date.UTC(2026, 9, 31, 1);
 const move = (o: Partial<Move> = {}): Move => ({
   id: "pm:w:m:0:1", source: "polymarket", marketId: "0xmarket", eventTitle: "Knicks vs. Celtics", marketTitle: "Knicks vs. Celtics", outcome: "Knicks", outcomeSide: "yes",
-  amount: 62_000, avgPrice: 0.48, wallet: "0x" + "a".repeat(40), walletName: "googleplay", at: NOW - 40 * 60_000, lastAt: NOW - 40 * 60_000, fills: 3, tab: "sports", league: "NBA",
+  amount: 62_000, avgPrice: 0.48, wallet: "0x" + "a".repeat(40), walletName: "This wallet", at: NOW - 40 * 60_000, lastAt: NOW - 40 * 60_000, fills: 3, tab: "sports", league: "NBA",
   category: "sports", url: null, result: null, settledAt: null, ...o,
 } as Move);
 const raw = (o: Partial<BetRaw> = {}): BetRaw => ({
@@ -25,12 +24,12 @@ describe("facts", () => {
     const f = buildBetFacts(raw(), NOW);
     const t = Object.fromEntries(f.facts.map(x => [x.key, x.text]));
     expect(t).toMatchObject({
-      position: "$62K on Knicks to beat the Celtics", account: "googleplay", rank: "4th-largest position this month", vs_median: "3.1× their median",
+      position: "$62K on Knicks to beat the Celtics", account: "This wallet", rank: "4th-largest position this month", vs_median: "3.1× their median",
       record: "41–22", scope_record: "NBA record: 14–6", scope_roi: "followable ROI +12.0%", proven: "2 proven accounts with $85K",
       price_move: "6 points their way", since: "40 minutes since", to_start: "95 minutes before the start", prior: "1 earlier position in this market", share_24h: "31% of the large-position money here in 24 hours",
     });
-    expect(f.facts.find(x => x.key === "account")!.source!.href).toBe(`/p/0x${"a".repeat(40)}`);
-    expect(f.names).toContain("googleplay");
+    expect(f.facts.find(x => x.key === "account")!.source!.href).toBe(`/wallet/0x${"a".repeat(40)}`);
+    expect(f.names).toContain("This wallet");
   });
   it("leaves out what isn't there or isn't meaningful", () => {
     const f = buildBetFacts(raw({ move: move({ wallet: null, walletName: null, source: "kalshi" }), median: null, monthRank: null, record: null, scopeWon: 1, scopeLost: 1, scopeFollow: null, proven: { n: 0, amount: 0 }, prior: 0, nowPrice: null, minutesToStart: null, market24h: 62_000 }), NOW);
@@ -48,7 +47,7 @@ describe("the template", () => {
   it("reads like the house example and passes the validator", () => {
     const f = buildBetFacts(raw(), NOW);
     const n = templateNote(f);
-    expect(n).toBe("googleplay's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6, followable ROI +12.0%. The price has moved 6 points their way in the 40 minutes since.");
+    expect(n).toBe("This wallet's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6, followable ROI +12.0%. The price has moved 6 points their way in the 40 minutes since.");
     expect(validateNote(n, f)).toEqual({ ok: true, problems: [] });
   });
   it("every shape of facts gives a note that passes", () => {
@@ -68,9 +67,9 @@ describe("the template", () => {
 describe("the validator", () => {
   const f = buildBetFacts(raw(), NOW);
   it("reads numbers as written", () => {
-    expect(numbersIn("googleplay's 4th-largest, 3.1× their median, 14–6, +12.0%, $85K, −6.4%")).toEqual(["4th", "3.1×", "14–6", "12.0%", "$85K", "-6.4%"]);
+    expect(numbersIn("This wallet's 4th-largest, 3.1× their median, 14–6, +12.0%, $85K, −6.4%")).toEqual(["4th", "3.1×", "14–6", "12.0%", "$85K", "-6.4%"]);
   });
-  it("fails a number that isn't in the facts", () => expect(validateNote("googleplay's 3rd-largest position this month.", f).problems).toContain("number not in the facts: 3rd"));
+  it("fails a number that isn't in the facts", () => expect(validateNote("This wallet's 3rd-largest position this month.", f).problems).toContain("number not in the facts: 3rd"));
   it("fails a name that isn't in the facts", () => expect(validateNote("Their NBA record: 14–6, like Warren Buffett.", f).problems).toEqual(["name not in the facts: Warren", "name not in the facts: Buffett"]));
   it("fails advice, predictions and certainty", () => {
     for (const bad of ["You should follow this one.", "The Knicks will win tonight.", "A likely winner.", "Guaranteed value here.", "Smart money is on the Knicks.", "Our AI flagged it."]) expect(validateNote(bad, f).ok, bad).toBe(false);
@@ -93,7 +92,7 @@ describe("writing a note", () => {
   const prev = process.env.OPENROUTER_API_KEY;
   it("keeps the model's note when it passes; logs its cost and model", async () => {
     process.env.OPENROUTER_API_KEY = "test";
-    const { f, sent } = fake(["googleplay's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6."]);
+    const { f, sent } = fake(["This wallet's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6."]);
     const n = await writeNote(buildBetFacts(raw(), NOW), { f });
     expect(n).toMatchObject({ origin: "model", model: "test/model", costUsd: 0.0004, version: NOTE_VERSION });
     expect(JSON.parse(sent[0]!).messages[1].content).not.toMatch(/0x|https?:/);
@@ -101,7 +100,7 @@ describe("writing a note", () => {
   });
   it("asks once more with the problems, then falls back to the template", async () => {
     process.env.OPENROUTER_API_KEY = "test";
-    const { f, sent } = fake(["googleplay's 2nd-largest position.", "They will win, 99% sure."]);
+    const { f, sent } = fake(["This wallet's 2nd-largest position.", "They will win, 99% sure."]);
     const facts = buildBetFacts(raw(), NOW);
     const n = await writeNote(facts, { f });
     expect(sent).toHaveLength(2);
@@ -119,7 +118,7 @@ describe("writing a note", () => {
 
 describe("OpenRouter: reasoning models, empty replies, cost", () => {
   const prev = process.env.OPENROUTER_API_KEY;
-  const NOTE = "googleplay's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6.";
+  const NOTE = "This wallet's 4th-largest position this month, 3.1× their median. Their NBA record: 14–6.";
   it("asks for low-effort reasoning left out of the reply, with headroom on top of the answer's tokens, and the usage", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const { f, sent } = fake([NOTE]);
@@ -152,14 +151,6 @@ describe("OpenRouter: reasoning models, empty replies, cost", () => {
     expect(usageCost({ cost: 0.00031 })).toBe(0.00031);
     expect(usageCost({ cost: "0.00042" })).toBe(0.00042);
     expect(usageCost({ prompt_tokens: 1000, completion_tokens: 200 })).toBeCloseTo((1000 * 3 + 200 * 15) / 1e6, 9);
-  });
-  it("the Read's one line: empty twice falls back to the template, marked template-empty", async () => {
-    process.env.OPENROUTER_API_KEY = "test";
-    const { f } = fake(["", ""]);
-    const facts = { moveId: "p:x", kind: "bet" as const, names: ["Yes", "No"], facts: [{ key: "proven_none", label: "Proven money", text: "no proven money holds a position" }], at: NOW };
-    const line = await writeLine(facts, { allowModel: true, f });
-    expect(line).toMatchObject({ origin: "template", model: "template-empty" });
-    process.env.OPENROUTER_API_KEY = prev;
   });
 });
 

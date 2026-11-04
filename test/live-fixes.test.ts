@@ -11,7 +11,6 @@ import type { Db } from "@/lib/db";
 import { checkPoly } from "@/lib/accuracy/check";
 import * as schema from "@/lib/db/schema";
 import { gammaCategory } from "@/lib/exchanges/polymarket";
-import { trimTitle } from "@/lib/home/curate";
 import { classify, looksLikeSport } from "@/lib/moves/classify";
 import { isCombo } from "@/lib/moves/combos";
 import { dollars, stockSentence } from "@/lib/moves/copy";
@@ -66,10 +65,6 @@ describe("the hourly accuracy check and positions", () => {
 });
 
 describe("titles and combos", () => {
-  it("keeps the question's 'Will'", () => {
-    expect(trimTitle("Will Benjamin Netanyahu be the next Prime Minister?", 80)).toBe("Will Benjamin Netanyahu be the next Prime Minister?");
-    expect(trimTitle("Will Arsenal FC win on 2026-10-27?", 80)).toBe("Will Arsenal FC win?");
-  });
   it("multi-leg combos are combos; single markets aren't", () => {
     expect(isCombo({ source: "kalshi", marketId: "KXMVECROSSCATEGORY-S2026X", marketTitle: "yes Roma,yes Como" })).toBe(true);
     expect(isCombo({ source: "kalshi", marketId: "KXNHLGAME-26OCT27CBJPHI", marketTitle: "Columbus vs Philadelphia", outcome: "yes Roma,no Como wins by over 1.5 goals" })).toBe(true);
@@ -86,7 +81,7 @@ describe("display names", () => {
   });
   it("a blocked name shows the short 0x address", () => {
     expect(walletLabel(W, "Aryan88")).toBe("0xe1…30");
-    expect(walletLabel(W, "Theo4")).toBe("Theo4");
+    expect(walletLabel(W, "Theo4")).toBe(walletLabel(W, null));
   });
 });
 

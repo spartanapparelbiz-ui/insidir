@@ -15,7 +15,7 @@ export default function AboutPage() {
       <p>A tracker is a live portfolio of large positions that fit one rule: every $100K+ position, the largest NBA positions, CEO purchases of their own stock. Each one has a public record built from settled positions, losses included, and a followable return: what $100 on every position would have made at the price Insidir showed it. Members see every position live; visitors see the same data 30 minutes late.</p>
 
       <h2>Why</h2>
-      <p>Large positions on prediction markets and insider purchases are public, but they&apos;re buried in raw trade logs and filings, and most &ldquo;smart money&rdquo; claims never show their losses. Insidir reads all of it, checks it against the source every hour, and shows the record, so you can see what following big money would really have done.</p>
+      <p>Large positions on prediction markets and insider purchases are public, but they&apos;re buried in raw trade logs and filings, and most &ldquo;smart money&rdquo; claims never show their losses. Insidir reads all of it, verifies it against the source every hour, and shows the record, so you can see what following big money would really have done.</p>
 
       <h2>Who builds it</h2>
       <p>Insidir is built by {COMPANY.name} in {COMPANY.place}. It was founded by {COMPANY.founder}, who builds and runs it. There&apos;s no call centre: when you write, the person who builds Insidir reads it.</p>

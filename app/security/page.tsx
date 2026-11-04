@@ -16,16 +16,16 @@ export default function SecurityPage() {
       <ul>
         <li><strong>Sign-in</strong> uses Whop&apos;s OAuth with PKCE: you sign in on Whop (Google, Apple or email) and Whop tells us who you are. We never see or store a password.</li>
         <li><strong>Payments</strong> run on Whop&apos;s checkout. Card details go straight to Whop and never touch our servers.</li>
-        <li><strong>Your membership</strong> is read from Whop: we check it at sign-in, when Whop tells us something changed, and at least every 5 minutes after that.</li>
+        <li><strong>Your membership</strong> is read from Whop: we confirm it at sign-in, when Whop tells us something changed, and at least every 5 minutes after that.</li>
         <li>Sessions are kept in an HTTP-only, secure cookie. Signing out ends the session on our side.</li>
       </ul>
 
       <h2>What we keep, and for how long</h2>
       <ul>
         <li><strong>While you have an account</strong>: your email and Whop user id, your plan, your region answer, the trackers, traders and markets you follow, your alert settings and push subscriptions.</li>
-        <li><strong>Bet slips you check</strong> are sent to an AI model through OpenRouter to read the legs, then thrown away: we never store the image. We keep the legs we matched so you can see your history.</li>
+        <li><strong>Your searches</strong> are sent to an AI model through OpenRouter to read the legs, then thrown away: we never store the image. We keep the legs we matched so you can see your history.</li>
         <li><strong>Usage events</strong> (pages viewed, checkout started) are tied to a random visitor id and, when you&apos;re signed in, your account id. We use them to improve Insidir and don&apos;t sell or share them.</li>
-        <li><strong>When you delete your account</strong>, your account, sessions, follows, alerts, push subscriptions and checked bets are removed at once. Usage events stay, without your account id.</li>
+        <li><strong>When you delete your account</strong>, your account, sessions, follows, alerts, push subscriptions and logged copies are removed at once. Usage events stay, without your account id.</li>
       </ul>
 
       <h2>Delete your account</h2>

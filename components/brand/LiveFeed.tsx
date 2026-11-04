@@ -50,7 +50,7 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
         <ul className="b-rows" data-testid="feed-rows" aria-live="polite">
           {rows.map((b, i) => (
             <li key={b.id}>
-              <BetRow bet={b} now={s.now} href={links ? `/read/open?pick=polymarket:${b.marketId}` : undefined} copyHref={copy && !decision(b) ? `/copy/${encodeURIComponent(b.id)}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
+              <BetRow bet={b} now={s.now} href={links ? `/market/${encodeURIComponent(b.marketId)}` : undefined} copyHref={copy && !decision(b) ? `/copy/${encodeURIComponent(b.id)}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
                 settle={settle && first.current.has(b.id) ? 0.6 + i * 0.07 : undefined} />
             </li>
           ))}

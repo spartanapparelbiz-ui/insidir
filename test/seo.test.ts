@@ -20,7 +20,7 @@ describe("titles", () => {
 describe("sitemaps", () => {
   it("an index of every type and escaped URL sets", () => {
     const x = indexXml(Date.UTC(2026, 9, 31, 3, 40));
-    expect(x.match(/<sitemap>/g)).toHaveLength(7);
+    expect(x.match(/<sitemap>/g)).toHaveLength(3);
     expect(x).toContain("<lastmod>2026-10-31T03:00:00.000Z</lastmod>");
     expect(urlsetXml([{ loc: "https://insidir.com/market/a&b", changefreq: "hourly", priority: 0.5 }])).toContain("<loc>https://insidir.com/market/a&amp;b</loc><changefreq>hourly</changefreq><priority>0.5</priority>");
   });

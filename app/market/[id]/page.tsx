@@ -22,7 +22,6 @@ import { FollowLink } from "@/components/desk/Act";
 import { MarketLinkButton } from "@/components/v2/LocationPill";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
-import { isReady } from "@/lib/features";
 import { dollars } from "@/lib/moves/copy";
 import { feedItems } from "@/lib/moves/feed";
 import { movePlan } from "@/lib/moves/gate";
@@ -39,7 +38,6 @@ import { marketSmart, splitsFor } from "@/lib/smart/store";
 import { positioningOn } from "@/lib/smart/gate";
 import { SMART_MIN_MONEY, SMART_MIN_WALLETS } from "@/lib/smart/splits";
 import { EntityLd } from "@/lib/seo/jsonld";
-import { TRACKERS } from "@/lib/trackers";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -88,7 +86,6 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   if (!moves.length && !market && !anySplit) notFound();
   const info = infos.get(id) ?? null;
   const title = humanLine({ title: market?.title ?? moves[0]?.marketTitle ?? anySplit!.title });
-  const trackersHere = TRACKERS.filter(t => moves.some(m => (m.trackers ?? []).includes(t.slug))).slice(0, 8);
   const event = market?.eventTitle ?? moves[0]?.eventTitle ?? anySplit?.subtitle ?? null;
   const yesLabel = market?.yesLabel ?? moves.find(m => m.outcomeSide === "yes")?.outcome ?? (anySplit?.detail.yesLabel as string | undefined) ?? smart?.outcomes[0] ?? "Yes";
   const noLabel = market?.noLabel ?? moves.find(m => m.outcomeSide === "no")?.outcome ?? (anySplit?.detail.noLabel as string | undefined) ?? smart?.outcomes[1] ?? "No";
@@ -133,7 +130,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
   const priceLine = p0 !== null && p1 !== null && points.length >= 2 ? `${yesLabel} went from ${c(p0)} to ${c(p1)}.` : null;
   const sideLine = yes.total + no.total > 0 ? `${dollars(yes.total)} of large money on ${yesLabel}, ${dollars(no.total)} on ${noLabel}.` : null;
   const traderRows = (l: ReturnType<typeof side>["top"]) => l.map(x => ({
-    key: x.wallet, title: paid ? <a className="s-link" href={`/p/${x.wallet}`}>{walletLabel(x.wallet, x.name)}</a> : walletLabel(x.wallet, x.name),
+    key: x.wallet, title: paid ? <a className="s-link" href={`/wallet/${x.wallet}`}>{walletLabel(x.wallet, x.name)}</a> : walletLabel(x.wallet, x.name),
     sub: `${x.n.toLocaleString("en-US")} ${x.n === 1 ? "position" : "positions"}`, right: dollars(x.amount) }));
   return (
     <Frame member={paid} current="markets" testid="market-page">
@@ -163,7 +160,7 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
               ...(tab === "sports" && bigShare !== null ? [{ key: "big", name: "All large positions", share: bigShare, text: `${Math.round(bigShare * 100)}% of the money` }] : []),
             ]} />
             {opposite ? <p className="b-small" data-testid="split-opposite">Large positions and proven traders are on opposite sides of this game.</p> : null}
-            {split?.crowd && (positioningOn() || paid) ? <p className="b-small">{Math.round(split.crowd.gap)} points apart. <a className="s-link" href="/splits">Every split</a></p> : null}
+            {split?.crowd && (positioningOn() || paid) ? <p className="b-small">{Math.round(split.crowd.gap)} points apart.</p> : null}
           </Panel>
         </Stage>
       ) : null}
@@ -201,7 +198,6 @@ export default async function MarketPage({ params }: { params: Promise<{ id: str
               sub: <>{m.who.href && paid ? <a className="s-link" href={m.who.href}>Their record</a> : null}{m.who.href && paid ? " · " : null}{m.ago}{m.analyst ? <><br /><span data-testid="analyst-note">Analyst note: {m.analyst.text}</span></> : null}</>,
               right: m.result === "won" ? "Won" : m.result === "lost" ? "Lost" : m.result === "void" ? "Void" : undefined }))} />
           </Panel>
-          {trackersHere.length ? <div className="b-center"><p className="b-small">Trackers holding this market</p><div className="s-filters">{trackersHere.map(t => <Pill key={t.slug} href={`/trackers/${t.slug}`} kind="panel" arrow={false}>{t.name}</Pill>)}</div></div> : null}
         </Stage>
       ) : null}
       <ScrollFx />

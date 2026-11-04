@@ -204,7 +204,11 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   await saveMarkets(db, [kTennis]);
   await db.execute(sql`insert into terminal.pairs (id, data, safety) values (${"e2e-tennis-100"}, ${JSON.stringify({ id: "e2e-tennis-100", a: { venue: "polymarket", id: "0xe2etennis100" }, b: { venue: "kalshi", id: kTennis.id }, inverted: true, method: "deterministic", confidence: 1, safety: "green", safetyNotes: [], blocked: false })}::jsonb, 'green')
     on conflict (id) do update set data = excluded.data, blocked = false`);
-  await db.insert(marketInfo).values({ source: "kalshi", marketId: kTennis.id, yesPrice: 0.4, closed: false, historyKey: null, endAt: null, updatedAt: new Date(now) });
+  // Its Kalshi twin (lib/twins), approved: YES on Kalshi pays on Player A too, at 60¢.
+  await db.insert(marketInfo).values({ source: "kalshi", marketId: kTennis.id, yesPrice: 0.6, closed: false, historyKey: null, endAt: null, updatedAt: new Date(now) });
+  await db.execute(sql`insert into terminal.market_twins (polymarket_id, kalshi_id, kalshi_url, polymarket_title, kalshi_title, kind, verdict, status, confidence, checks)
+    values ('0xe2etennis100', ${kTennis.id}, ${kTennis.url}, 'E2E fixture: Tennis match 100', ${kTennis.title}, 'winner', 'candidate', 'approved', 0.99, '{"event":true,"outcome":true,"line":true,"rules":true,"close":true}'::jsonb)
+    on conflict (polymarket_id) do update set status = 'approved', kalshi_id = excluded.kalshi_id, kalshi_url = excluded.kalshi_url`);
   // Tracker tags, as the worker stores them (lib/trackers-tag.ts).
   while (await tagOnce(db) > 0) { /* every untagged move */ }
   await db.insert(traderRecords).values([

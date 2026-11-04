@@ -3,7 +3,7 @@
  * top 3 whole for visitors, the rest by title and total with the split locked. Refreshes every minute (the live dot
  * says when it last did); a failed refresh keeps what is shown and says so. */
 import { useEffect, useState } from "react";
-import type { ElectionBoard } from "@/lib/brand/pulse";
+import type { ElectionBoard, Race } from "@/lib/brand/pulse";
 import { dollars } from "@/lib/money";
 import { cents } from "../Bits";
 
@@ -36,8 +36,25 @@ export function ElectionLive({ initial, member }: { initial: ElectionBoard; memb
     <div className="b-glass b-pad" style={{ maxWidth: "min(100%, calc(900 * var(--u)))", margin: "0 auto", display: "grid", gap: 12 }} data-testid="election-board">
       <div className="b-kv"><span className="b-label" style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><span className="b-dot" aria-hidden="true" /> {stale ? "Catching up" : "Live"}</span><span className="b-small">Updated {ET.format(new Date(b.at))} ET · every minute</span></div>
       <ul className="b-rows" data-stagger="">
-        {b.free.map(r => {
-          const m = r.millionaire.yes.dollars + r.millionaire.no.dollars, share = m ? r.millionaire.yes.dollars / m : 0, party = partyOf(r.title);
+        {b.free.map(r => <RaceRow key={r.marketId} r={r} />)}
+        {member ? null : b.locked.map((r, i) => (
+          <li key={`l${i}`}>
+            <button type="button" className="b-lockrow" data-locked="race" data-testid="race-locked">
+              <span className="b-race__title">{partyOf(r.title) ? <span className={`b-party b-party--${partyOf(r.title)}`} aria-label={partyOf(r.title) === "d" ? "Democrats" : "Republicans"}>{partyOf(r.title) === "d" ? "D" : "R"}</span> : null}<span className="b-row__title" style={{ textAlign: "left" }}>{r.title}</span></span>
+              <span className="b-small b-num">{dollars(r.total)} in<span className="b-sr">. The split and price are for members: start for $1 to see them.</span></span>
+              <span className="b-lock" aria-hidden="true">Locked</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="b-small">Watchlist money (wallets up $100K+) in each race this week; the price is Polymarket&apos;s now. Information, not advice.</p>
+    </div>
+  );
+}
+
+/** One race, whole: the millionaire money on each side, its bar, and the price now. */
+export function RaceRow({ r }: { r: Race }) {
+  const m = r.millionaire.yes.dollars + r.millionaire.no.dollars, share = m ? r.millionaire.yes.dollars / m : 0, party = partyOf(r.title);
           const sides = ([[r.millionaire.yes.dollars, r.yesLabel], [r.millionaire.no.dollars, r.noLabel]] as const).filter(([v]) => v > 0);
           return (
             <li key={r.marketId} className="b-row b-race" data-testid="race-free" data-party={party ?? undefined}>
@@ -53,18 +70,4 @@ export function ElectionLive({ initial, member }: { initial: ElectionBoard; memb
               <span className="b-race__price">{r.priceNow !== null ? <><b className="b-num">{cents(r.priceNow)}</b><span className="b-small">{r.yesLabel} · price now</span></> : <span className="b-small">No price yet</span>}</span>
             </li>
           );
-        })}
-        {member ? null : b.locked.map((r, i) => (
-          <li key={`l${i}`}>
-            <button type="button" className="b-lockrow" data-locked="race" data-testid="race-locked">
-              <span className="b-race__title">{partyOf(r.title) ? <span className={`b-party b-party--${partyOf(r.title)}`} aria-label={partyOf(r.title) === "d" ? "Democrats" : "Republicans"}>{partyOf(r.title) === "d" ? "D" : "R"}</span> : null}<span className="b-row__title" style={{ textAlign: "left" }}>{r.title}</span></span>
-              <span className="b-small b-num">{dollars(r.total)} in<span className="b-sr">. The split and price are for members: start for $1 to see them.</span></span>
-              <span className="b-lock" aria-hidden="true">Locked</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p className="b-small">Watchlist money (wallets up $100K+) in each race this week; the price is Polymarket&apos;s now. Information, not advice.</p>
-    </div>
-  );
 }

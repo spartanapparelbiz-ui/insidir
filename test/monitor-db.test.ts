@@ -25,9 +25,8 @@ function site(whop: "ok" | "invalid") {
     const html = (s: string, status = 200) => new Response(s, { status, headers: { "content-type": "text/html" } });
     if (u.host === "insidir.test") {
       if (u.pathname === "/") return html(`<h1>${HEADLINE}</h1>`);
-      if (u.pathname === "/api/read" && m === "POST") return Response.json({ id: "abc123" });
-      if (u.pathname === "/read/abc123") return html('<article data-testid="read-card"></article>');
-      if (u.pathname === "/start") return html('<div data-testid="start-pay"></div>');
+      if (u.pathname.startsWith("/market/")) return html('<main data-testid="market-page"></main>');
+      if (u.pathname === "/go") return html('<section data-testid="go-hook"></section>');
       if (u.pathname === "/api/checkout/start") return Response.json({ planId: "plan_1" });
       if (u.pathname === "/login/start") return new Response(null, { status: 303, headers: { location: "https://api.whop.test/oauth/authorize?client_id=app_1&redirect_uri=https%3A%2F%2Finsidir.com%2Flogin%2Fcallback" } });
     }
@@ -49,18 +48,18 @@ describe.skipIf(!URL0)("the money-path monitor", () => {
     pool = new pg.Pool({ connectionString: u.toString(), max: 4 });
     db = drizzle(pool, { schema });
     await migrate(db, { migrationsFolder: "drizzle", migrationsSchema: "terminal" });
-    await pool.query(`insert into terminal.moves (id, source, market_id, event_title, market_title, outcome, outcome_side, amount, avg_price, at, last_at, tab, category)
-      values ('m1', 'polymarket', '0xopen', 'E', 'E', 'Yes', 'yes', 50000, 0.5, $1, $1, 'sports', 'sports')`, [new Date(NOW - 3_600_000)]);
+    await pool.query(`insert into terminal.millionaire_bets (id, wallet, tier, source, market_id, event_title, market_title, outcome, outcome_side, amount, price, category, at, last_at)
+      values ('b1', '0xw', 'millionaire', 'polymarket', '0xopen', 'E', 'E', 'Yes', 'yes', 50000, 0.5, 'football', $1, $1)`, [new Date(NOW - 3_600_000)]);
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
 
-  it("passes every step, reads an open market as a monitor visitor, and emails nobody", async () => {
+  it("passes every step, opens a market page as a monitor visitor, and emails nobody", async () => {
     const mails: Alert[] = [];
     const { f, seen } = site("ok");
     const r = await moneyPathOnce(db, { base: B, f, now: NOW, notify: async a => { mails.push(a); return "sent"; } });
     expect(r.ok).toBe(true);
-    expect(r.steps.map(s => [s.step, s.ok])).toEqual([["landing", true], ["read", true], ["checkout", true], ["sign-in", true]]);
-    expect(seen).toEqual(["GET /", "POST /api/read", "GET /read/abc123", "GET /start", "POST /api/checkout/start", "GET /login/start", "GET /oauth/authorize"]);
+    expect(r.steps.map(s => [s.step, s.ok])).toEqual([["landing", true], ["market", true], ["checkout", true], ["sign-in", true]]);
+    expect(seen).toEqual(["GET /", "GET /market/0xopen", "GET /go", "POST /api/checkout/start", "GET /login/start", "GET /oauth/authorize"]);
     expect(mails).toEqual([]);
   });
 

@@ -10,7 +10,7 @@ import { ago, readStatus, STARTED_AT, type Light, type Status } from "@/lib/stat
 import { monitorView, type MonitorView } from "@/lib/monitor/money-path";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Status", description: "Live status of every Insidir data source, the worker jobs, the hourly accuracy checks and the web app." };
+export const metadata: Metadata = { title: "Status", description: "Live status of every Insidir data source, the worker jobs, the hourly accuracy audits and the web app." };
 
 const WORD: Record<Light, string> = { green: "Working", amber: "Behind", red: "Failing" };
 const Dot = ({ l }: { l: Light }) => <span className={`stat__dot stat__dot--${l}`} aria-hidden="true" />;
@@ -22,7 +22,7 @@ export default async function StatusPage() {
   const incidents = s ? [
     ...s.jobs.filter(j => j.light === "red").map(j => ({ at: j.lastRunAt, text: `${j.label}: ${j.error ?? "last run failed"}` })),
     ...(mp?.failures24h ?? []).map(f => ({ at: f.at, text: `Money path failed at ${f.step ?? "a step"}: ${f.detail ?? "no detail"}` })),
-    ...s.checks.filter(c => c.mismatch > 0).map(c => ({ at: c.runAt, text: `Accuracy check: ${c.mismatch} of ${c.checked} didn't match the source and were hidden until they do` })),
+    ...s.checks.filter(c => c.mismatch > 0).map(c => ({ at: c.runAt, text: `Accuracy audit: ${c.mismatch} of ${c.checked} didn't match the source and were hidden until they do` })),
   ].sort((a, b) => b.at - a.at) : [];
   const overall = s?.overall ?? "red";
   return (
@@ -43,7 +43,7 @@ export default async function StatusPage() {
                 <span className="stat__note">{mp.last.ok ? `Every step passed ${ago(mp.last.at, now)} (${mp.last.ms} ms)` : `Failed ${ago(mp.last.at, now)} at ${mp.last.failedStep}: ${mp.last.detail ?? ""}`}</span><span className="stat__word">{mp.last.ok ? "Working" : "Failing"}</span></li>
               {mp.last.steps.map(st => <li key={st.step} className="stat__row"><Dot l={st.ok ? "green" : "red"} /><span className="stat__name">{st.step}</span><span className="stat__note">{st.ok ? `${st.ms} ms` : st.detail}</span><span className="stat__word" /></li>)}
             </ul>
-          ) : <p>The money-path check hasn&apos;t run yet.</p>}
+          ) : <p>The money-path monitor hasn&apos;t run yet.</p>}
           {mp ? <p className="stat__fine">Checked every 10 minutes: {mp.runs24h} runs in the last 24 hours, {mp.failures24h.length} failed. A failure is sent as a push alert to the owners&apos; devices.</p> : null}
         </div>
 
@@ -62,12 +62,12 @@ export default async function StatusPage() {
           </p>
         ) : null}
 
-        <h2>Accuracy checks</h2>
+        <h2>Accuracy audits</h2>
         {s.checks.length ? (
           <ul className="stat__list" data-testid="status-checks">
             {s.checks.slice(0, 12).map(c => <li key={c.runAt} className="stat__row"><Dot l={c.mismatch ? "amber" : "green"} /><span className="stat__name">{dateTimeET(c.runAt)}</span><span className="stat__note">{c.ok} of {c.checked} matched the source</span><span className="stat__word">{c.mismatch ? `${c.mismatch} hidden` : "All matched"}</span></li>)}
           </ul>
-        ) : <p>No accuracy checks in the last 7 days.</p>}
+        ) : <p>No accuracy audits in the last 7 days.</p>}
 
         <h2>Web app</h2>
         <ul className="stat__list">

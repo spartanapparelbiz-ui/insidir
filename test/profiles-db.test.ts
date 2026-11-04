@@ -15,7 +15,6 @@ import { saveRecord, upsertMoves } from "@/lib/moves/store";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import type { Move, TraderRecord } from "@/lib/moves/types";
 import { followedTrades, fundQuarters, issuerForTicker, issuersByCik, issuerTradesFor, latestCloses, marketsFor, ownersByCik, sitemapSec, stockSuggestions, topRanking } from "@/lib/profiles/store";
-import { followingFeed } from "@/lib/following-feed";
 import { follow, followList, listMoves } from "@/lib/moves/store";
 import { traderStats } from "@/lib/profiles/trader";
 import { whyLines } from "@/lib/profiles/why-facts";
@@ -227,17 +226,5 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
       expect(s.companies[0]).toMatchObject({ cik: "999999", insiders: 2 });
     });
 
-    it("following an insider and a company: their filings in the member's feed, with moves of followed traders", async () => {
-      await seed();
-      await db.insert(schema.users).values({ id: "u1", email: "u1@example.com", plan: "insidir", settings: DEFAULT_SETTINGS });
-      await follow(db, "u1", "insider", "777");
-      await follow(db, "u1", "company", "111");
-      await follow(db, "u1", "trader", wallet(5));
-      expect((await followedTrades(db, ["777"], [], new Date(NOW - 30 * DAY))).map(r => r.accession)).toEqual(["a2"]);
-      await upsertMoves(db, [move({ id: "pm:f", wallet: wallet(5), at: NOW - 2 * H }), move({ id: "pm:g", wallet: wallet(6), at: NOW - H })]);
-      expect((await listMoves(db, { followed: { wallets: [], marketIds: [] } })).length).toBe(0);
-      const feed = await followingFeed(db, await followList(db, "u1"), "insidir", "us", NOW);
-      expect(feed.map(e => (e.type === "move" ? e.item.id : e.item.key))).toEqual(["pm:f", "f4:b1:555:P", "f4:a2:777:P"]);
-    });
   });
 });

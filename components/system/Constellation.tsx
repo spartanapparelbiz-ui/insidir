@@ -50,7 +50,7 @@ export function Constellation({ data, testid = "constellation" }: { data: Data; 
           {stars.map((s, i) => {
             const p = pos.get(s.wallet)!;
             return (
-              <a key={s.wallet} href={`/p/${s.wallet}`}>
+              <a key={s.wallet} href={`/wallet/${s.wallet}`}>
                 <title>{`${s.short} · ${s.pnl !== null ? `${signed(s.pnl)} all-time · ` : ""}${dollars(s.money)} today on ${s.bets} ${s.bets === 1 ? "bet" : "bets"} · ${name(s.category)}`}</title>
                 <circle cx={p.x} cy={p.y} r={p.r} className={`s-const__star s-pop${gold.has(s.wallet) ? " s-const__star--gold" : ""}`} style={{ "--at": (i / stars.length).toFixed(2) } as CSSProperties} />
               </a>

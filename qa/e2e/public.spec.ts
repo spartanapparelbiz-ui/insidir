@@ -1,9 +1,9 @@
-/* Members-only pages send visitors to log in; the data pages open for them 30 minutes late; every page has the footer and legal links,
+/* Members-only pages send visitors to log in; the data pages open for them 60 minutes late; every page has the footer and legal links,
  * no internal link 404s, nothing scrolls sideways, and every page is screenshotted at both sizes. */
 import { expect, test } from "@playwright/test";
-import { dealId, footerOk, MEMBER_PAGES, noHorizontalScroll, OPEN_PAGES, PRO_PAGES, PUBLIC_PAGES, shotName, signIn } from "./helpers";
+import { footerOk, MEMBER_PAGES, noHorizontalScroll, OPEN_PAGES, PRO_PAGES, PUBLIC_PAGES, shotName, signIn } from "./helpers";
 
-test("members-only pages send visitors to log in; the feed, markets, profiles and Whales open for visitors 30 minutes late; account APIs say no", async ({ page, context }) => {
+test("members-only pages send visitors to log in; the board, markets and wallets open for visitors 60 minutes late", async ({ page, context }) => {
   for (const path of MEMBER_PAGES) {
     await page.goto(path);
     // The next page, encoded or not (/settings sends "?next=/settings").
@@ -13,17 +13,15 @@ test("members-only pages send visitors to log in; the feed, markets, profiles an
   for (const path of OPEN_PAGES) {
     const res = await page.goto(path);
     expect(res?.status(), path).toBe(200);
-    await expect(page, path).not.toHaveURL(/\/login|\/start/);
+    await expect(page, path).not.toHaveURL(/\/login|\/go/);
   }
-  for (const api of ["/api/moves", "/api/feed"]) expect((await page.request.get(api)).status(), api).toBe(200);
-  expect((await page.request.get("/api/receipts/csv")).status()).toBe(401);
+  expect((await page.request.get("/api/millionaires/live")).status()).toBe(200);
   await signIn(context, "freeUs");
-  await page.goto("/feed");
-  await expect(page).toHaveURL(/\/feed$/);
+  await page.goto("/board");
+  await expect(page).toHaveURL(/\/board$/);
 });
 
 test("every page: footer disclaimer, privacy and terms links, no sideways scroll, screenshot", async ({ page, context }) => {
-  const handcheck = await dealId("Hawks");
   for (const path of [...PUBLIC_PAGES, "/admin"]) {
     const res = await page.goto(path);
     expect(res?.status(), path).toBeLessThan(400);
@@ -33,12 +31,12 @@ test("every page: footer disclaimer, privacy and terms links, no sideways scroll
     await page.screenshot({ path: shotName(name, page), fullPage: true });
   }
   await signIn(context, "pro");
-  for (const path of [...PRO_PAGES, `/deal/${handcheck}`]) {
+  for (const path of PRO_PAGES) {
     const res = await page.goto(path);
     expect(res?.status(), path).toBeLessThan(400);
     await footerOk(page);
     await noHorizontalScroll(page);
-    const name = path.startsWith("/deal/") ? "deal-pro" : path.slice(1).replace(/\//g, "-") + (path === "/gaps" ? "-pro" : "");
+    const name = (path === "/" ? "home" : path.slice(1).replace(/\//g, "-")) + "-pro";
     await page.screenshot({ path: shotName(name, page), fullPage: true });
   }
   const missing = await page.goto("/this-page-does-not-exist");

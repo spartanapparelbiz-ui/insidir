@@ -128,9 +128,9 @@ describe("trader records", () => {
     expect(isTopTrader(recordFrom(W, null, [...positions(5, 15)], T0))).toBe(false);
     expect(recordLine(recordFrom(W, null, positions(19, 0), T0))).toBeNull();
   });
-  it("names: the public name or a short address, never anything else", () => {
+  it("names: the short address, never a username or a pseudonym", () => {
     expect(shortWallet(W)).toBe("0xab…01");
-    expect(walletLabel(W, "Quiet-Fox")).toBe("Quiet-Fox");
+    expect(walletLabel(W, "Quiet-Fox")).toBe(walletLabel(W, null));
     expect(walletLabel(W, "0xabc000000")).toBe("0xab…01");
     expect(walletLabel(W, null)).toBe("0xab…01");
   });
@@ -139,11 +139,11 @@ describe("trader records", () => {
 describe("plain-English copy", () => {
   const base = polymarketMoves([fill({ contracts: 664_516, price: 0.62 })], info)[0]!;
   const top = recordFrom(W, null, Array.from({ length: 63 }, (_, i) => ({ marketId: `M${i}`, realizedPnl: i < 41 ? 50_000 : -40_000 })), T0);
-  it("name the trader: username, short address, new account, Anonymous · Kalshi", () => {
+  it("name the trader: the short address only (never a username), new account, Anonymous · Kalshi", () => {
     expect(moveSentence({ ...base, amount: 412_000 }, top)).toBe("0xab…01 · Top-ranked trader: $412K position on Chiefs to win.");
-    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, top)).toBe("kch123 · Top-ranked trader: $412K position on Chiefs to win.");
-    // Free viewers get no record, so nobody is called a top trader; the name is for everyone.
-    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, null)).toBe("kch123: $412K position on Chiefs to win.");
+    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, top)).toBe("0xab…01 · Top-ranked trader: $412K position on Chiefs to win.");
+    // Free viewers get no record, so nobody is called a top trader; the short address is for everyone.
+    expect(moveSentence({ ...base, amount: 412_000, walletName: "kch123" }, null)).toBe("0xab…01: $412K position on Chiefs to win.");
     expect(moveSentence({ ...base, amount: 200_000, newWallet: true }, null)).toBe("New account: $200K position on Chiefs to win.");
     const fed: Move = { ...base, tab: "markets", outcome: "Yes", marketTitle: "Fed rate cut in December?", amount: 85_000 };
     expect(moveSentence(fed, null)).toBe('0xab…01: $85K position on "Yes" in "Fed rate cut in December?".');
