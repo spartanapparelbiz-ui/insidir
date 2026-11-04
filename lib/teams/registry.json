@@ -1742,10 +1742,11 @@
      "name": "Bears",
      "short": "Bears",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/brwn",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "bryant",
@@ -1782,10 +1783,11 @@
      "name": "Bulldogs",
      "short": "Bulldogs",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/but",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "byu",
@@ -1872,10 +1874,11 @@
      "name": "Cougars",
      "short": "Cougars",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/chs",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "chsou",
@@ -1912,10 +1915,11 @@
      "name": "Lions",
      "short": "Lions",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/clmb",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "clmsn",
@@ -1982,40 +1986,44 @@
      "name": "Big Red",
      "short": "Big Red",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/cor",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "dart",
      "name": "Big Green",
      "short": "Dartmouth",
      "color": "#005730",
-     "logo": "/teams/cfb/dart",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "dav",
      "name": "Wildcats",
      "short": "Wildcats",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/dav",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "day",
      "name": "Flyers",
      "short": "Dayton",
      "color": "#004b8d",
-     "logo": "/teams/cfb/day",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "del",
@@ -2292,10 +2300,11 @@
      "name": "Hoyas",
      "short": "Georgetown",
      "color": "#110e42",
-     "logo": "/teams/cfb/gtwn",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "hamp",
@@ -2312,10 +2321,11 @@
      "name": "Crimson",
      "short": "Harvard",
      "color": "#990000",
-     "logo": "/teams/cfb/harv",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "hawaii",
@@ -2472,10 +2482,11 @@
      "name": "Tigers",
      "short": "Tigers",
      "color": "#495a5a",
-     "logo": "/teams/cfb/jackst",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cfb/_jackst_50000306.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "jaxst",
@@ -2702,10 +2713,11 @@
      "name": "Lakers",
      "short": "Lakers",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/mhud34ce7",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "mia",
@@ -2802,10 +2814,11 @@
      "name": "Eagles",
      "short": "Eagles",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/more",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "morgst",
@@ -2832,10 +2845,11 @@
      "name": "Red Foxes",
      "short": "Marist",
      "color": "#e53730",
-     "logo": "/teams/cfb/mrst",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "mspst",
@@ -3042,10 +3056,11 @@
      "name": "Chargers",
      "short": "Chargers",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/nhc",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "nichls",
@@ -3212,10 +3227,11 @@
      "name": "Quakers",
      "short": "Quakers",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/penn",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "pennst",
@@ -3322,10 +3338,11 @@
      "name": "RedStorm",
      "short": "RedStorm",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/rio",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "robms",
@@ -3562,10 +3579,11 @@
      "name": "Hatters",
      "short": "Stetson",
      "color": "#0a5640",
-     "logo": "/teams/cfb/stet",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "stmn",
@@ -3582,10 +3600,11 @@
      "name": "Skyhawks",
      "short": "Skyhawks",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/stnh",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "sutah",
@@ -3882,10 +3901,11 @@
      "name": "Toreros",
      "short": "San Diego",
      "color": "#2f99d4",
-     "logo": "/teams/cfb/usd",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "utah",
@@ -3922,10 +3942,11 @@
      "name": "Vaqueros",
      "short": "Vaqueros",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/utrgv",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "utsa",
@@ -3942,10 +3963,11 @@
      "name": "Argonauts",
      "short": "Argonauts",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/uwfl",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "uwg",
@@ -4012,10 +4034,11 @@
      "name": "Dragons",
      "short": "Dragons",
      "color": "#8a8a93",
-     "logo": "/teams/cfb/vlb",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/espn+college+football+logo.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 22 teams"
     },
     {
      "abbr": "vtech",
@@ -4469,10 +4492,11 @@
      "name": "Briar Cliff Chargers",
      "short": "Briar Cliff Chargers",
      "color": "#1748a4",
-     "logo": "/teams/cbb/bcu",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Briar Cliff Chargers-2d77ad84b4.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "bella",
@@ -4539,10 +4563,11 @@
      "name": "Bob Jones Bruins",
      "short": "Bob Jones Bruins",
      "color": "#2b4791",
-     "logo": "/teams/cbb/bob",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Bob Jones Bruins-72c87fb3f7.jpg"
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "boise",
@@ -4834,20 +4859,22 @@
      "name": "Cheyney Wolves",
      "short": "Cheyney Wolves",
      "color": "#164b99",
-     "logo": "/teams/cbb/chey",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_chey_60001316.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 7 teams"
     },
     {
      "abbr": "chim",
      "name": "Chicago Maroons",
      "short": "Chicago Maroons",
      "color": "#164b99",
-     "logo": "/teams/cbb/chim",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_chim_60000909.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 7 teams"
     },
     {
      "abbr": "chist",
@@ -5888,8 +5915,9 @@
      "color": "#123297",
      "logo": "/teams/cbb/jackst",
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_jackst_60000306.png"
+     "source": "espn",
+     "sourceUrl": "https://a.espncdn.com/guid/897ef4c2-5845-320e-2af5-b4d950413aed/logos/primary_logo_on_black_color.png",
+     "espn": "Jackson State Tigers"
     },
     {
      "abbr": "jarvch",
@@ -6071,10 +6099,11 @@
      "name": "La Sierra Golden Eagles",
      "short": "La Sierra Golden Eagles",
      "color": "#e85ce8",
-     "logo": "/teams/cbb/lasu",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/La Sierra Golden Eagles-c456465f20.jpg"
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "lbb",
@@ -6520,10 +6549,11 @@
      "name": "Mississippi University For Women Owls",
      "short": "Mississippi University For Women Owls",
      "color": "#164b99",
-     "logo": "/teams/cbb/missw",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_missw_60001281.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 7 teams"
     },
     {
      "abbr": "monm",
@@ -7285,20 +7315,22 @@
      "name": "Penn State-Shenango Nittany Lions",
      "short": "Penn State-Shenango Nittany Lions",
      "color": "#16479c",
-     "logo": "/teams/cbb/psshen",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Penn State-Shenango Nittany Lions-b962329fab.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 2 teams"
     },
     {
      "abbr": "psusk",
      "name": "Penn State-Schuylkill Nittany Lions",
      "short": "Penn State-Schuylkill Nittany Lions",
      "color": "#16479c",
-     "logo": "/teams/cbb/psusk",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Penn State-Schuylkill Nittany Lions-5dde0acbd3.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 2 teams"
     },
     {
      "abbr": "pur",
@@ -7728,10 +7760,11 @@
      "name": "Southern-New Orleans Knights",
      "short": "Southern-New Orleans Knights",
      "color": "#164b99",
-     "logo": "/teams/cbb/snok",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_snok_60000847.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 7 teams"
     },
     {
      "abbr": "soumis",
@@ -7768,10 +7801,11 @@
      "name": "Stanton Elks",
      "short": "Stanton Elks",
      "color": "#164b99",
-     "logo": "/teams/cbb/stant",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_stant_60001345.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 7 teams"
     },
     {
      "abbr": "stbon",
@@ -8182,10 +8216,11 @@
      "name": "Union University Bulldogs",
      "short": "Union University Bulldogs",
      "color": "#164b99",
-     "logo": "/teams/cbb/uc",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_uc_60001173.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 7 teams"
     },
     {
      "abbr": "ucdv",
@@ -8504,10 +8539,11 @@
      "name": "VU of Lynchburg Dragons",
      "short": "VU of Lynchburg Dragons",
      "color": "#164b99",
-     "logo": "/teams/cbb/vulyn",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_vulyn_60001147.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 7 teams"
     },
     {
      "abbr": "wag",
@@ -11429,11 +11465,12 @@
      "name": "Girona FC",
      "short": "Girona",
      "color": "#aa1830",
-     "logo": null,
+     "logo": "/teams/ucl/gir",
      "dark": false,
-     "source": null,
-     "sourceUrl": null,
-     "note": "polymarket: source 316×316, under 400px"
+     "source": "espn",
+     "sourceUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/9812.png",
+     "note": "the La Liga logo",
+     "espn": "Girona"
     },
     {
      "abbr": "gnk",
@@ -12836,10 +12873,11 @@
      "name": "UMF Stjarnan",
      "short": "UMF Stjarnan",
      "color": "#3232c8",
-     "logo": "/teams/ucl/stj",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/soccer/ucl/ucl_stj_90000613.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "stl",
@@ -13220,21 +13258,23 @@
      "name": "AC Virtus",
      "short": "Virtus",
      "color": "#206020",
-     "logo": "/teams/ucl/vir",
+     "logo": null,
      "dark": false,
-     "source": "polymarket",
-     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/soccer/ucl/ucl_vir_90002766.png"
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "wob",
      "name": "VfL Wolfsburg",
      "short": "VfL Wolfsburg",
      "color": "#61a220",
-     "logo": null,
+     "logo": "/teams/ucl/wob",
      "dark": false,
-     "source": null,
-     "sourceUrl": null,
-     "note": "polymarket: source 316×316, under 400px"
+     "source": "espn",
+     "sourceUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/138.png",
+     "note": "the Bundesliga logo",
+     "espn": "VfL Wolfsburg"
     },
     {
      "abbr": "yob",

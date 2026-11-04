@@ -202,9 +202,21 @@ def crop(buf):
     # Too much of the crop outside the photo (replicated edge): not a portrait we can frame.
     left, top = cx - BOX / 2 / scale, cy - BOX * EYE_Y / scale
     over = max(0, -left) + max(0, left + side - w) + max(0, -top) + max(0, top + side - h)
-    if over > 0.18 * side:
+    if over > 0.06 * side:
         return None, "photo too tight to frame"
     return Image.fromarray(cv2.cvtColor(out, cv2.COLOR_BGR2RGB)), None
+
+
+# Portraits a person reviewed on /admin/art and turned down (name|state → why). That source is skipped; the next one, or
+# initials, takes its place.
+REJECTED = {
+    "Marquita Bradshaw|TN": "wearing a face mask",
+    "Mark Teixeira|TX": "a game photo in a batting helmet, not a portrait",
+    "Jason Clark|CO": "looking up and away, the top of the head cut off",
+    "Micah Lasher|NY": "a side-on close-up",
+    "Eric Barlow|WY": "a side-on close-up",
+    "Luke Bronin|CT": "too close: the top of the head cut off",
+}
 
 
 def save(img, name):
@@ -230,7 +242,9 @@ def main():
         if poly_verified(p):
             tries.append({"kind": "polymarket", "url": p["polyImage"], "source": p["polyImage"], "license": "Polymarket candidate image", "author": "Polymarket"})
         done = None
-        for t in tries + ["commons"]:
+        if f"{p['name']}|{p['state']}" in REJECTED:
+            tries, notes = [], [f"reviewed: {REJECTED[p['name'] + '|' + p['state']]}"]
+        for t in tries + (["commons"] if f"{p['name']}|{p['state']}" not in REJECTED else []):
             if t == "commons":
                 c = commons_for(p)
                 if not c:

@@ -9,7 +9,8 @@
  * every logo has the same optical size (the same inked area, never wider than 88% of the box) and centred on its visual
  * weight. "Dark" marks (a dark outline and mostly dark ink: they'd vanish on black) are flagged; they sit on a light disc.
  * College teams: only those in Polymarket's open college games (the list grows as the sync runs daily). */
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 
@@ -142,6 +143,8 @@ export async function normalizeLogo(src: Buffer): Promise<Normalized> {
     if (a > 128) { area++; cx += x; cy += y; }
   }
   if (x1 < 0 || area < 500) return { ok: false, why: "blank image" };
+  // Still a solid rectangle (a logo on a background we couldn't take out): not a mark we can show on black.
+  if (!note && area > 0.94 * (x1 - x0 + 1) * (y1 - y0 + 1)) return { ok: false, why: "logo on an opaque background" };
   cx /= area; cy /= area;
   const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
   const s = Math.min(TARGET / Math.sqrt(area), MAXDIM / Math.max(bw, bh));
@@ -221,9 +224,32 @@ async function main() {
       if (!entry.logo) entry.note = why.join("; ") || "no logo listed";
       out.push(entry);
     });
+    // The same image for different teams is a placeholder (Polymarket uses one for teams without a logo): none of them
+    // gets it.
+    const byHash = new Map<string, RegTeam[]>();
+    for (const t of out) if (t.logo) { const h = createHash("sha1").update(readFileSync(join(OUT, league, `${t.abbr}-128.webp`))).digest("hex"); byHash.set(h, [...(byHash.get(h) ?? []), t]); }
+    for (const same of byHash.values()) {
+      if (new Set(same.map(t => t.name)).size < 2) continue;
+      for (const t of same) {
+        for (const s of [128, 256]) rmSync(join(OUT, league, `${t.abbr}-${s}.webp`), { force: true });
+        Object.assign(t, { logo: null, dark: false, source: null, sourceUrl: null, espn: undefined, note: `placeholder image shared by ${same.length} teams` });
+      }
+    }
     out.sort((a, b) => a.abbr.localeCompare(b.abbr));
     leagues[league] = { label: cfg.label, teams: out };
     console.log(`${league}: ${out.length} teams, ${ok} logos, ${out.length - ok} monograms`);
+  }
+  // A Champions League club with no logo of its own takes its domestic league's (the same club, by name).
+  if (leagues.ucl) {
+    const home = Object.entries(leagues).filter(([l]) => l !== "ucl" && LEAGUES[l]?.soccer).flatMap(([l, v]) => v.teams.filter(t => t.logo).map(t => ({ l, t })));
+    for (const t of leagues.ucl.teams) {
+      if (t.logo) continue;
+      const hit = home.filter(h => words(h.t.name).join(" ") === words(t.name).join(" "));
+      if (hit.length !== 1) continue;
+      const { l, t: d } = hit[0]!;
+      for (const s of [128, 256]) writeFileSync(join(OUT, "ucl", `${t.abbr}-${s}.webp`), readFileSync(join(OUT, l, `${d.abbr}-${s}.webp`)));
+      Object.assign(t, { logo: `/teams/ucl/${t.abbr}`, dark: d.dark, source: d.source, sourceUrl: d.sourceUrl, espn: d.espn, note: `the ${LEAGUES[l]!.label} logo` });
+    }
   }
   writeFileSync(REG, JSON.stringify({ leagues }, null, 1) + "\n");
 }
