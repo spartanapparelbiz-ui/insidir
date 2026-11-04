@@ -35,14 +35,16 @@ export function askAt(candles: readonly Candle[], side: "yes" | "no", at: number
 export interface CandleSource { candles(series: string, ticker: string, fromMs: number, toMs: number, periodMin: 1 | 60): Promise<unknown> }
 
 /** Kalshi asks for recorded bets on twinned markets that don't have one yet, newest first. */
-export async function kalshiAsksOnce(db: Db, src: CandleSource, now: number, batch = 60): Promise<{ read: number; priced: number }> {
+export async function kalshiAsksOnce(db: Db, src: CandleSource, now: number, batch = 200, lanes = 6): Promise<{ read: number; priced: number }> {
   const r = await db.execute(sql`select m.id, m.outcome_side, m.seen_at, t.kalshi_id from terminal.moves m
       join terminal.market_twins t on t.polymarket_id = m.market_id and t.status = 'approved'
     where m.source = 'polymarket' and m.seen_at is not null and m.at > ${new Date(now - 181 * 86_400_000)}
       and not exists (select 1 from terminal.kalshi_history h where h.move_id = m.id)
     order by m.seen_at desc limit ${batch}`);
-  let priced = 0;
-  for (const x of r.rows as Array<{ id: string; outcome_side: string; seen_at: string; kalshi_id: string }>) {
+  let priced = 0, next = 0;
+  const list = r.rows as Array<{ id: string; outcome_side: string; seen_at: string; kalshi_id: string }>;
+  // A few bets at once: one at a time left the 180-day fill hours behind; Kalshi's limiter still sets the pace.
+  await Promise.all(Array.from({ length: Math.min(lanes, list.length) }, async () => { while (next < list.length) { const x = list[next++]!;
     const at = new Date(x.seen_at).getTime(), series = x.kalshi_id.split("-")[0]!;
     let ask: number | null = null;
     for (const [from, to, period] of [[at - 10 * MIN, at + 2 * MIN, 1], [at - 3 * 60 * MIN, at + 60 * MIN, 60]] as const) {
@@ -52,6 +54,6 @@ export async function kalshiAsksOnce(db: Db, src: CandleSource, now: number, bat
     }
     await db.execute(sql`insert into terminal.kalshi_history (move_id, kalshi_id, ask, read_at) values (${x.id}, ${x.kalshi_id}, ${ask}, ${new Date(now)}) on conflict (move_id) do nothing`);
     if (ask !== null) priced++;
-  }
+  } }));
   return { read: r.rows.length, priced };
 }

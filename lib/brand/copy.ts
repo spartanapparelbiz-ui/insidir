@@ -3,8 +3,11 @@
  * from lib/plans.ts. Never "guaranteed" or "risk-free" (test/compliance.test.ts). */
 import { PLANS, TRIAL } from "@/lib/plans";
 
+/** The product in one line: "Bet with the people who actually win, on Kalshi, in seconds, and know when they get out." */
+export const ONE_LINE = "Bet with the people who actually win, on Kalshi, in seconds, and know when they get out.";
 export const HERO = {
-  h1: ["You're betting", "against millionaires."],
+  h1: ["Bet with the people", "who actually win."],
+  sub: "On Kalshi, in seconds, and know when they get out.",
   /** Under it, the live line (components/brand/HeroLine.tsx): "Wallets up $1M+ bet $X today. Which side were you on?" */
 } as const;
 export const ASK_PLACEHOLDER = "Paste your bet: a Kalshi or Polymarket link, or type it";
@@ -34,7 +37,7 @@ export const STAGES = {
   pricing: ["Less than", "one bad bet."],
   pricingSub: `$${TRIAL.fee} for three days, then $${PLANS.insidir.price} a month. Cancel anytime.`,
   faq: ["Questions."],
-  final: ["Bet with the", "millionaires."],
+  final: ["Bet with the people", "who actually win."],
 } as const;
 
 /** Five questions, one sentence each. */

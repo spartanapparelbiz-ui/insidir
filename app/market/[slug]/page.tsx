@@ -68,7 +68,8 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   const trail = [["Markets", "/markets"], [cat.name, `/markets/${m.category}`], [m.title, canonical]] as const;
   return (
     <Frame member={member} current="markets" testid="market-page">
-      <Stage bg={{ kind: "photo", photo: categoryPhoto(m.category), dark: 0.55, priority: true }} first testid="market-hero" labelledBy="m-h">
+      {/* Logos never sit on a photo: a game's hero is the plain stage, its two logos the only images. */}
+      <Stage bg={teams ? { kind: "globe", dark: 0.6 } : { kind: "photo", photo: categoryPhoto(m.category), dark: 0.55, priority: true }} first testid="market-hero" labelledBy="m-h">
         <div className="b-head">
           <Crumbs trail={trail} />
           {teams ? <Matchup teams={teams} /> : null}

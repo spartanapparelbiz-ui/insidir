@@ -1,6 +1,7 @@
 /* The e2e database's millionaire fixtures (qa/e2e/seed.ts calls it): a watchlist of four Millionaire and two Pro
  * wallets, open bets in four categories (one on the seeded Tennis match 100, so a check of it has millionaire money),
- * market prices, and 30 settled Millionaire bets (20 won, 10 lost at 45¢), the landing's proof record. Test data. */
+ * market prices, 30 settled Millionaire bets (20 won, 10 lost at 45¢), and a rules report with one leading rule. Test
+ * data. */
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 
@@ -40,4 +41,15 @@ export async function seedMillionaires(db: Db, now: number): Promise<void> {
   for (const [id, p] of [[MIL_MARKETS.nfl, 0.51], [MIL_MARKETS.pol, 0.66], [MIL_MARKETS.soc, 0.44]] as const) {
     await db.execute(sql`insert into terminal.market_info (source, market_id, yes_price, closed, updated_at) values ('polymarket', ${id}, ${p}, false, ${new Date(now)}) on conflict do nothing`);
   }
+  // The rules report (lib/autopilot/report.ts): following every bet loses; one rule is positive over 100+ settled and
+  // leads /go, the paywall and the landing; one is positive under 100 settled and may not.
+  const res = (won: number, lost: number, net: number) => ({ days: 180, from: now - 180 * DAY, to: now, bets: won + lost, won, lost, void: 0, open: 0, staked: (won + lost) * 25, net,
+    roi: net / ((won + lost) * 25), winRate: won / (won + lost), tooLate: 0, capped: 0, maxDrawdown: 0, offKalshi: 0 });
+  const report = { at: now, days: 180, bets: 400, onKalshi: 380, note: "", rows: [
+    { key: "all", group: "Baseline", name: "Every proven-wallet bet of $5K+", result: res(133, 144, -907), settled: 277, leads: false },
+    { key: "consensus", group: "Variants", name: "2+ proven wallets, same side, within 1h", result: res(40, 20, 300), settled: 60, leads: false },
+    { key: "big", group: "Variants", name: "Bets of $50K+", result: res(64, 54, 412), settled: 118, leads: true },
+  ] };
+  await db.execute(sql`insert into terminal.autopilot_backtests (key, result, computed_at) values ('report:rules:v1', ${JSON.stringify(report)}::jsonb, ${new Date(now)})
+    on conflict (key) do update set result = excluded.result, computed_at = excluded.computed_at`);
 }

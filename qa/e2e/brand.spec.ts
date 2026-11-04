@@ -25,7 +25,8 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
-  await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("You're betting against millionaires.");
+  await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("Bet with the people who actually win.");
+  await expect(page.getByTestId("hero-sub")).toHaveText("On Kalshi, in seconds, and know when they get out.");
   // Today's real total since midnight ET: the fixtures' six Millionaire bets of the last 90 minutes ($299K) once they all
   // fall after midnight. Within 95 minutes of midnight ET only part of them do: then today's part, or the last 24 hours
   // while today is still under $100K.
@@ -86,10 +87,12 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await page.keyboard.press("Escape");
   await expect(sheet).toHaveCount(0);
 
-  await expect(page.getByTestId("proof-net")).toHaveText("+$1,348");
-  await expect(page.getByTestId("proof")).toContainText("$100 on every millionaire bet · 30 settled");
+  // The record is the leading rule from the Kalshi backtest (positive over 100+ settled), never "every bet".
+  await expect(page.getByTestId("proof-net")).toHaveText("+$412");
+  await expect(page.getByTestId("proof")).toContainText("“Bets of $50K+” on Kalshi · $25 a bet · 64 won of 118 settled · 180 days");
+  await expect(page.getByTestId("proof")).not.toContainText("on every");
   await expect(page.getByTestId("pricing")).toContainText("Less than one bad bet.");
-  await expect(page.getByTestId("final-cta").getByRole("heading")).toHaveText("Bet with the millionaires.");
+  await expect(page.getByTestId("final-cta").getByRole("heading")).toHaveText("Bet with the people who actually win.");
   await expect(page.getByTestId("brand-foot")).toContainText("Gambling problem? Call 1-800-GAMBLER.");
   await noHorizontalScroll(page);
 });
@@ -151,10 +154,12 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("aha-open")).toHaveCount(1);
   await expect(page.getByTestId("aha-locked")).toHaveCount(1);
   await expect(page.getByTestId("aha-locked").locator("[data-locked=split]")).toHaveCount(1); // the side drawn from nothing
-  await expect(page.getByTestId("go-stake")).toContainText("$50 on every millionaire bet: +$674 over 30 settled. Past results, not a promise.");
+  await expect(page.getByTestId("go-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise. Every rule we tested.");
+  await expect(page.getByTestId("go-aha")).not.toContainText("on every");
   await page.screenshot({ path: shotName("go-6-aha", page), fullPage: true });
   await page.getByTestId("go-next").click();
   await expect(page.getByTestId("paywall-headline")).toHaveText("See which side they took in Football and Politics.");
+  await expect(page.getByTestId("paywall-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise.");
   await expect(page.getByTestId("paywall-timeline")).toContainText("Today $1");
   await expect(page.getByTestId("paywall-remind")).toBeChecked();
   await page.screenshot({ path: shotName("go-7-paywall", page) });

@@ -46,8 +46,10 @@ describe("V2 landing page", () => {
 
   it("the hero's words, its two CTAs (Start for $1 → /go, the free sample), and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
-    expect(copy.HERO.h1).toEqual(["You're betting", "against millionaires."]);
-    expect(copy.STAGES.final).toEqual(["Bet with the", "millionaires."]);
+    expect(copy.HERO.h1).toEqual(["Bet with the people", "who actually win."]);
+    expect(copy.HERO.sub).toBe("On Kalshi, in seconds, and know when they get out.");
+    expect([...copy.HERO.h1, copy.HERO.sub].join(" ").replace("win. On", "win, on")).toBe(copy.ONE_LINE);
+    expect(copy.STAGES.final).toEqual(["Bet with the people", "who actually win."]);
     expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
     const landing = read("components/brand/landing/Landing.tsx");
     expect(landing).toContain('<Pill href="/go" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
