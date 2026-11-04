@@ -49,7 +49,7 @@ export default async function ElectionPage() {
             <div className="b-ctas"><Pill href="/go" data-checkout="election-locked">Start for ${TRIAL.fee}</Pill></div>
           </Panel>
         ) : null}
-        <p className="b-small b-center">Live prices from Polymarket. Faces come from each market&apos;s own image and show only when the name and the race match. Information, not advice.</p>
+        <p className="b-small b-center">Live prices from Polymarket. Portraits are official congressional photos, the candidate images on each race, or Wikimedia Commons, shown only for that candidate in that race (sources on <a className="s-link" href="/credits">Credits</a>). Information, not advice.</p>
       </Stage>
       {member ? null : <PayMoments ctx={{ count: 0, window: "day", biggest: null }} now={now} />}
       <ScrollFx />
