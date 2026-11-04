@@ -1,9 +1,8 @@
 /* The money path, end to end, with Whop stood in by a local mock (qa/e2e/mock-whop.ts):
- *   home → pricing → /start: one "Continue" → Whop's sign-in (mocked OAuth: our login app, /reset/callback, PKCE) →
- *   back on /start signed in, the embedded checkout open with their email → pay → "You're in" (onboarding) → the feed,
- *   a member by Whop's access check; the account linked to their Whop user. Sign out → the app is members only →
- *   /login: one "Continue" → back where they were going. Settings: "Manage subscription" goes to Whop's orders page.
- *   A refund ends access. A Whop account without Insidir is signed in and sent to /start.
+ *   pricing → /go's checkout (18+ first, pay first) → pay → unlocked → Whop's sign-in (mocked OAuth: our login app,
+ *   /reset/callback, PKCE) → the member home, a member by Whop's access check; the account linked to their Whop user.
+ *   Sign out → the app is members only → /login: one "Continue" → back where they were going. Settings: "Manage
+ *   subscription" goes to Whop's orders page. A refund ends access. A Whop account without Insidir gets the paywall.
  *   A buyer who paid signed out goes straight through Whop's sign-in and lands signed in. */
 import { expect, test } from "@playwright/test";
 import { WHOP_PORT } from "./env";
@@ -13,7 +12,7 @@ import { whopUserFor } from "./mock-whop";
 const whop = (path: string, init?: RequestInit) => fetch(`http://localhost:${WHOP_PORT}${path}`, init);
 const post = (path: string, body: unknown) => whop(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
-test("pay first: /start opens the checkout signed out → pay → Whop sign-in → in; cancel needs one reason; log in; refund ends access", async ({ page }) => {
+test("pay first: /go opens the checkout signed out → pay → Whop sign-in → in; cancel needs one reason; log in; refund ends access", async ({ page }) => {
   const w = page.viewportSize()!.width;
   const email = `buyer-${w}@example.test`;
   await whop("/__reset", { method: "POST" });
@@ -22,7 +21,8 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
 
   await page.goto("/pricing");
   await page.locator('[data-checkout="pricing"]').first().click();
-  await expect(page).toHaveURL(/\/start$/);
+  await expect(page).toHaveURL(/\/go/);
+  await page.goto("/go?step=checkout");
   // Signed out: 18+ first (the checkout doesn't open until it's ticked), then the embedded checkout straight away
   // (pay first): no sign-in step, no password.
   const form = page.locator("[data-mock-checkout]");
@@ -31,22 +31,19 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   expect((await page.request.post("/api/checkout/start", { data: {} })).status()).toBe(400);
   await page.getByTestId("age-18").getByRole("checkbox").check();
   await expect(form).toBeVisible();
-  await expect(page.getByTestId("start-pay-first")).toContainText("Pay first; you sign in with Whop right after");
-  await expect(page.getByTestId("continue")).toHaveCount(0);
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
-  const due = new Date(Date.now() + 3 * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
-  await expect(page.getByTestId("charge-line")).toHaveText(`$1 today. $39 on ${due} unless you cancel.`);
-  await expect(page.getByText("Apple Pay and Google Pay where your device has them. Secure payments by Whop.")).toBeVisible();
   await page.screenshot({ path: `qa/screenshots/checkout-${w}.png`, fullPage: true });
 
   // Pay with an email; then Whop's sign-in (mocked) as the same Whop user, and they're in.
   await post("/__whop_user", { email, name: "Buyer Example" });
   await form.getByLabel("Email").fill(email);
   await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "What do you bet on?" })).toBeVisible({ timeout: 25_000 });
-  await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/localhost:\d+\/$/, { timeout: 15_000 });
-  await expect(page.getByTestId("member-home")).toBeVisible();
+  await expect(page).toHaveURL(/\/go\?step=unlocked/, { timeout: 20_000 });
+  await page.getByTestId("go-signin").click();
+  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "push", { timeout: 25_000 });
+  await page.getByTestId("go-push-skip").click();
+  await page.getByTestId("go-next").click();
+  await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
   const made = (await q<{ id: string; plan: string; whop_user_id: string; visitor_id: string | null }>("select id, plan, whop_user_id, visitor_id from terminal.users where email = $1", [email]))[0]!;
   expect(made).toMatchObject({ plan: "insidir", whop_user_id: whopUserFor(email) });
   // The 18+ confirmation is stored with the account (carried on the checkout's metadata).
@@ -79,8 +76,8 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
 
   // Sign out: members only. /login has one Continue, and it comes back to where they were going.
   await page.getByRole("button", { name: "Sign out" }).click();
-  await page.goto("/following");
-  await expect(page).toHaveURL(/\/login\?next=%2Ffollowing/);
+  await page.goto("/settings");
+  await expect(page).toHaveURL(/\/login\?next=(%2F|\/)settings/);
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   await expect(page.getByTestId("continue")).toHaveText("Continue");
   await expect(page.getByText("Secure sign-in and payments by Whop.")).toBeVisible();
@@ -88,7 +85,7 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   await expect(page.getByText(/forgot password/i)).toHaveCount(0);
   await page.screenshot({ path: `qa/screenshots/login-${w}.png` });
   await page.getByTestId("continue").click();
-  await expect(page).toHaveURL(/\/following$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/settings$/, { timeout: 15_000 });
   const cookie = (await page.context().cookies()).find(c => c.name === "insidir_session")!;
   expect(cookie.httpOnly).toBe(true);
   expect(cookie.expires * 1000 - Date.now()).toBeGreaterThan(29 * 86_400_000);
@@ -99,8 +96,8 @@ test("pay first: /start opens the checkout signed out → pay → Whop sign-in �
   // A refund ends access: Whop's access check says no.
   await post("/__refund", { email });
   expect((await q<{ plan: string }>("select plan from terminal.users where email = $1", [email]))[0]!.plan).toBe("free");
-  await page.goto("/following");
-  await expect(page).toHaveURL(/\/start$/);
+  await page.goto("/settings");
+  await expect(page).toHaveURL(/\/go\?step=paywall/);
 });
 
 test("no free sign-up: a Whop account without Insidir gets no account and no session and lands on the paywall; a cancelled Whop sign-in goes back to /login", async ({ page }) => {
@@ -112,7 +109,7 @@ test("no free sign-up: a Whop account without Insidir gets no account and no ses
   await post("/__whop_user", { email, name: null });
   const callbacks: string[] = [];
   page.on("request", r => { if (/\/(login|reset)\/callback/.test(r.url())) callbacks.push(new URL(r.url()).pathname); });
-  await page.goto("/login?next=%2Ffeed");
+  await page.goto("/login?next=%2Fboard");
   await expect(page.locator("body")).not.toContainText(/sign up|create (an )?account|join free/i);
   await page.getByTestId("continue").click();
   await expect(page).toHaveURL(/\/go\?step=paywall$/, { timeout: 15_000 });
@@ -142,9 +139,9 @@ test("paid signed out: straight through Whop's sign-in, landing signed in", asyn
   await post("/__pay", { plan: "plan_e2e_insidir", email, metadata: {} });
   await expect.poll(async () => (await q<{ plan: string }>("select plan from terminal.users where email = $1", [email]))[0]?.plan).toBe("insidir");
   await post("/__whop_user", { email, name: null });
+  // The old checkout return (/welcome) is a 301 to /go, which sends them through Whop's sign-in and back (keeping where
+  // they were going); signed in and a member.
   await page.goto("/welcome?status=succeeded&next=%2Fpricing");
-  // /welcome sends them through Whop's sign-in and back (keeping where they were going); signed in and a member.
-  await expect(page).toHaveURL(/\/onboarding\?next=%2Fpricing$/, { timeout: 20_000 });
-  await page.getByRole("button", { name: "Skip" }).click();
-  await expect(page).toHaveURL(/\/pricing$/);
+  await expect(page).toHaveURL(/\/pricing$/, { timeout: 25_000 });
+  expect((await page.context().cookies()).some(c => c.name === "insidir_session")).toBe(true);
 });

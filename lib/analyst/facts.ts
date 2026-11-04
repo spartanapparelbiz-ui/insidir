@@ -58,7 +58,7 @@ export interface BetRaw {
 
 export function buildBetFacts(r: BetRaw, now: number): Facts {
   const m = r.move, f: Fact[] = [];
-  const who = m.wallet ? walletLabel(m.wallet, m.walletName) : null;
+  const who = m.wallet ? "This wallet" : null; // never a name or an address in a note: Insidir never identifies a wallet
   const src = moveSource(m);
   const venue = m.source === "polymarket" ? "Polymarket" : "Kalshi";
   const profile = m.wallet ? { label: `${who} on Insidir`, href: `/wallet/${m.wallet}` } : null;

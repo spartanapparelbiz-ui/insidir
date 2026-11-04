@@ -81,7 +81,7 @@ describe("display names", () => {
   });
   it("a blocked name shows the short 0x address", () => {
     expect(walletLabel(W, "Aryan88")).toBe("0xe1…30");
-    expect(walletLabel(W, "Theo4")).toBe("Theo4");
+    expect(walletLabel(W, "Theo4")).toBe(walletLabel(W, null));
   });
 });
 

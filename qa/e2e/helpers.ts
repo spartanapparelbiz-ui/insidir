@@ -60,12 +60,12 @@ export async function readLive(page: Page, ms = 3000): Promise<string> {
 }
 
 /** Pages every visitor can open, and the ones a signed-in Pro member adds. */
-export const PUBLIC_PAGES = ["/", "/open", "/top", "/results", "/pricing", "/sports", "/markets", "/stocks", "/methodology", "/faq", "/help", "/data", "/status", "/security", "/disclosures", "/credits", "/changelog", "/terms", "/privacy", "/about", "/login", "/start"];
-/** Members only: a visitor is sent to log in, a member without a plan to /start. */
-export const MEMBER_PAGES = ["/following", "/alerts", "/receipts", "/gaps", "/pnl", "/settings", "/check/history"];
+export const PUBLIC_PAGES = ["/", "/board", "/election", "/markets", "/markets/tennis", "/wallets", "/results", "/pricing", "/methodology", "/faq", "/help", "/data", "/status", "/security", "/disclosures", "/credits", "/changelog", "/terms", "/privacy", "/about", "/login", "/go"];
+/** Members only: a visitor is sent to log in, a member without a plan to the paywall. */
+export const MEMBER_PAGES = ["/settings"];
 /** Open to visitors (30 minutes late); live for members. */
-export const OPEN_PAGES = ["/feed", "/p/0xe2e00000000000000000000000000000000000aa", "/market/0xe2emarket1", "/whales"];
-export const PRO_PAGES = ["/feed", "/results", "/top", "/following", "/gaps", "/settings", "/alerts", "/pnl", "/whales", "/market/0xe2emarket1"];
+export const OPEN_PAGES = ["/board", "/wallets", "/wallet/0xe2e00000000000000000000000000000000000aa", "/market/0xe2emarket1"];
+export const PRO_PAGES = ["/", "/board", "/results", "/wallets", "/copies", "/settings", "/market/0xe2emarket1", "/wallet/0xe2e00000000000000000000000000000000000aa"];
 
 export async function noHorizontalScroll(page: Page): Promise<void> {
   const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

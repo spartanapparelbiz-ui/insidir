@@ -57,9 +57,9 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
   }, { endpoint, p256dh: b64u(ecdh.getPublicKey()), auth: b64u(auth) });
 
   await signIn(context, "pro");
-  await page.goto("/alerts");
-  await page.getByRole("button", { name: "Turn on alerts" }).click();
-  await expect(page.getByRole("button", { name: "Turn off alerts on this device" })).toBeVisible();
+  await page.goto("/settings");
+  await page.getByTestId("desk-pings").first().click();
+  await expect(page.getByTestId("desk-pings").first()).toHaveText("Pings on");
   const subs = await q<{ endpoint: string }>("select endpoint from terminal.push_subscriptions where user_id = $1", [pro.id]);
   expect(subs.map(s => s.endpoint)).toEqual([endpoint]);
 
@@ -105,9 +105,9 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
       await expect.poll(shown, { timeout: 3_000 }).toContain(payload.title);
     }).toPass({ timeout: 20_000 });
 
-    // Opening the alert records alert_opened and lands on the deal.
+    // Opening the alert records alert_opened and lands on the board (deal pages are retired).
     await page.goto(payload.url);
-    await expect(page).toHaveURL(new RegExp(`/deal/${hawks}`));
+    await expect(page).toHaveURL(/\/board$/);
     const opened = await q("select 1 from terminal.events where user_id = $1 and name = 'alert_opened'", [pro.id]);
     expect(opened.length).toBeGreaterThan(0);
   } finally {
@@ -149,7 +149,7 @@ test("move alert: the worker pushes a followed trader's new move, once, in plain
     expect(ravens.length, log).toBe(1);
     const payload = ravens[0]!;
     expect(payload.title).toBe("New position from a trader you follow");
-    expect(payload.body).toBe("E2E-Top · Top-ranked trader: $230K position on Ravens to win. Payout 2.00× if Ravens win.");
+    expect(payload.body).toBe("0xe2…aa · Top-ranked trader: $230K position on Ravens to win. Payout 2.00× if Ravens win.");
     expect(payload.url).toBe(`${APP_URL}/market/0xe2emarket9?from=alert`);
     const sent = await q("select 1 from terminal.alerts_sent where user_id = $1 and opp_id = $2", [ins.id, `move:${id}`]);
     expect(sent.length).toBe(1);

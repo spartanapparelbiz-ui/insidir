@@ -47,7 +47,7 @@ const config: NextConfig = {
     return [
       { source: "/how-it-works", destination: "/methodology", permanent: true },
       // Retired routes (the old product). Every one is a 301; see test/routes.test.ts for the keep list.
-      ...RETIRED.map(([source, destination]) => ({ source, destination, permanent: true })),
+      ...RETIRED.map(([source, destination]) => ({ source, destination, statusCode: 301 as const })),
     ];
   },
   // Apple Pay's domain verification file (from Whop, public/.well-known): exactly as is, as plain text.

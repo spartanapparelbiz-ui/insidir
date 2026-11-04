@@ -31,7 +31,7 @@ describe.skipIf(!URL0)("analyst notes in Postgres", () => {
 
   const mv = (id: string, o: Partial<typeof schema.moves.$inferInsert>): typeof schema.moves.$inferInsert => ({
     id, source: "polymarket", marketId: "0xmk", eventTitle: "Knicks vs. Celtics", marketTitle: "Knicks vs. Celtics", outcome: "Knicks", outcomeSide: "yes", amount: 20_000, avgPrice: 0.5,
-    wallet: W, walletName: "googleplay", at: new Date(NOW - 5 * DAY), lastAt: new Date(NOW - 5 * DAY), fills: 1, tab: "sports", league: "NBA", category: "sports", ...o,
+    wallet: W, walletName: "This wallet", at: new Date(NOW - 5 * DAY), lastAt: new Date(NOW - 5 * DAY), fills: 1, tab: "sports", league: "NBA", category: "sports", ...o,
   } as typeof schema.moves.$inferInsert);
 
   it("facts from SQL, a note for each new position, read back", async () => {
@@ -53,7 +53,7 @@ describe.skipIf(!URL0)("analyst notes in Postgres", () => {
     const row = (await db.select().from(schema.moves)).find(r => r.id === "now")!;
     const t = Object.fromEntries((await factsFor(db, fromRow(row), NOW)).facts.map(f => [f.key, f.text]));
     expect(t).toMatchObject({
-      account: "googleplay", rank: "largest position this month", record: "41–22", scope_record: "NBA record: 14–6",
+      account: "This wallet", rank: "largest position this month", record: "41–22", scope_record: "NBA record: 14–6",
       proven: "2 proven accounts with $85K", price_move: "6 points their way", since: "40 minutes since", to_start: "95 minutes before the start", prior: "1 earlier position in this market",
     });
     expect(t.vs_median).toMatch(/^3\.\d× their median$/);
@@ -70,7 +70,7 @@ describe.skipIf(!URL0)("analyst notes in Postgres", () => {
     const notes = await notesFor(db, ["now", "p1", "p2", "before", "h17", "h18", "h19", "h0"]);
     expect([...notes.keys()].sort()).toEqual(["before", "h18", "h19", "now", "p1", "p2"]);
     for (const n of notes.values()) expect(validateNote(n.text, n.facts), n.text).toMatchObject({ ok: true });
-    expect(notes.get("now")!.text).toMatch(/^googleplay's largest position this month, 3\.\d× their median\. Their NBA record: 14–6, followable ROI/);
+    expect(notes.get("now")!.text).toMatch(/^This wallet's largest position this month, 3\.\d× their median\. Their NBA record: 14–6, followable ROI/);
     // Nothing new: nothing written.
     expect((await notesOnce(db, NOW)).written).toBe(0);
   });

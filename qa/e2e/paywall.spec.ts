@@ -1,8 +1,8 @@
-/* Paid data never reaches someone without a plan (visitors and members without a plan see the 30-minute-delayed view): every response body (HTML, React Server Component payloads, /api/feed
- * JSON) is scanned while a signed-out visitor and a signed-in free member use the site. Fresh deals (under 30
- * minutes old) must not appear at all; delayed deals must not carry their size, cost, fees or profit. */
+/* Paid data never reaches someone without a plan: every response body (HTML, React Server Component payloads, the live
+ * board's JSON) is scanned while a signed-out visitor and a signed-in free member use the site. The retired price-gap
+ * deals must not appear at all, fresh or old, nor their size, cost, fees or profit. */
 import { expect, test } from "@playwright/test";
-import { captureBodies, dealId, q, signIn } from "./helpers";
+import { captureBodies, q, signIn } from "./helpers";
 
 interface Paid { id: string; title: string; profit: number; cost: number; fees: number; sets: number }
 
@@ -31,17 +31,17 @@ for (const who of ["visitor", "member without a plan"] as const) {
     const { fresh, old } = await seeded();
     expect(fresh.length).toBeGreaterThan(0);
     const bodies = await captureBodies(page, async () => {
-      for (const path of ["/", "/pricing", "/sports", "/markets", "/feed", "/whales", "/market/0xe2emarket1", "/gaps", "/receipts", `/deal/${await dealId("Jets")}`, `/deal/${await dealId("Hawks")}`]) {
+      for (const path of ["/", "/pricing", "/board", "/markets", "/markets/football", "/wallets", "/results", "/market/0xe2emarket1"]) {
         await page.goto(path);
         await page.waitForTimeout(300);
       }
-      await page.evaluate(() => fetch("/api/feed").then(r => r.text()));
+      await page.evaluate(() => fetch("/api/millionaires/live").then(r => r.text()));
     });
     expect(bodies.length).toBeGreaterThan(5);
     const found: string[] = [];
     for (const { url, body } of bodies.filter(b => !b.url.includes("/_next/static/"))) {
       for (const f of fresh) {
-        if (body.includes(f.id) && !url.includes(`/deal/${f.id}`) && !url.includes("next=")) found.push(`${url}: fresh deal id ${f.id}`);
+        if (body.includes(f.id) && !url.includes("next=")) found.push(`${url}: fresh deal id ${f.id}`);
         if (body.includes(f.title.replace("E2E fixture: ", ""))) found.push(`${url}: fresh deal title ${f.title}`);
       }
       for (const o of old) {
@@ -52,13 +52,7 @@ for (const who of ["visitor", "member without a plan"] as const) {
       }
     }
     expect(found).toEqual([]);
-    expect((await page.request.get("/api/feed")).status()).toBe(200);
   });
 }
 
-test("a paid member does get the live numbers", async ({ page, context }) => {
-  await signIn(context, "pro");
-  const feed = await (await page.request.get("/api/feed")).json() as { rows: Array<{ title: string; profit: number | null }> };
-  const hawks = feed.rows.find(r => r.title.includes("Hawks"));
-  expect(hawks?.profit).toBeCloseTo(2.06, 2);
-});
+

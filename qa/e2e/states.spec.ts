@@ -19,81 +19,11 @@ test("404: on-brand, says what happened, links back home", async ({ page }) => {
   await noHorizontalScroll(page);
 });
 
-test("error: a deal that doesn't exist says so and points to the Terminal; the API answers 404 with no data", async ({ page, context }) => {
-  await signIn(context, "pro");
-  const api = await page.request.get("/api/deal/no-such-deal");
-  expect(api.status()).toBe(404);
-  expect(await api.json()).toMatchObject({ view: { state: "not_found" } });
-  await page.goto("/deal/no-such-deal");
-  await expect(page.getByRole("heading", { name: "Deal not found" })).toBeVisible();
-  await expect(page.getByText(/It may have closed/)).toBeVisible();
-  const go = page.locator("main .btn--primary");
-  await expect(go).toHaveCount(1);
-  await expect(go).toHaveText("See today's live deals");
-});
-
-test("behind: when the move polls stop, the feed says it's catching up (never 'Connection lost' or 'paused')", async ({ page, context }) => {
-  await signIn(context, "pro");
-  try {
-    await q("insert into terminal.worker_heartbeats (job, last_run_at, ok) values ('e2e:pause', now(), true) on conflict do nothing");
-    await q("update terminal.worker_heartbeats set last_run_at = now() - interval '10 minutes', last_ok_at = now() - interval '10 minutes', ok = true, error = null where job like 'moves:%'");
-    await page.goto("/feed");
-    await expect(page.getByText("Catching up · last update 10m ago")).toBeVisible();
-    await expect(page.getByText(/Last update from the source/)).toBeVisible();
-    await expect(page.getByText(/Connection lost|Live data paused/)).toHaveCount(0);
-    await expect(page.locator(".move").first()).toBeVisible();
-  } finally {
-    await q("delete from terminal.worker_heartbeats where job = 'e2e:pause'");
-    await q("update terminal.worker_heartbeats set last_run_at = now(), last_ok_at = now(), ok = true, error = null where job like 'moves:%'");
-  }
-});
-
-test("empty: a quiet feed says so and points to Results", async ({ page, context }) => {
-  await signIn(context, "pro");
-  const saved = await q<Record<string, unknown>>("select * from terminal.moves");
-  try {
-    await q("delete from terminal.moves");
-    await page.goto("/feed");
-    await expect(page.getByText("Quiet right now.")).toBeVisible();
-    await expect(page.getByText("Follow a few top-ranked traders to see their new positions in Following.")).toBeVisible();
-  } finally {
-    for (const m of saved) {
-      const cols = Object.keys(m);
-      await q(`insert into terminal.moves (${cols.join(", ")}) values (${cols.map((_, i) => `$${i + 1}`).join(", ")}) on conflict do nothing`, cols.map(c => m[c]));
-    }
-  }
-});
-
-test("empty: Whales with no large trades says what shows up there and offers the Terminal", async ({ page, context }) => {
-  await signIn(context, "pro");
-  const saved = await q<{ key: string; data: unknown; at: Date }>("select key, data, at from terminal.whale_trades");
-  try {
-    await q("delete from terminal.whale_trades");
-    await page.goto("/whales");
-    const empty = page.locator("[data-empty=whales]");
-    await expect(empty).toBeVisible();
-    await expect(empty.getByText("No large trades yet")).toBeVisible();
-    await expect(empty.getByRole("link", { name: "Open Activity" })).toHaveAttribute("href", "/feed");
-    await noHorizontalScroll(page);
-  } finally {
-    for (const w of saved) await q("insert into terminal.whale_trades (key, data, at) values ($1, $2, $3) on conflict do nothing", [w.key, w.data, w.at]);
-  }
-});
-
-test("empty: P&L before anything is loaded says what to do first", async ({ page, context }) => {
-  await signIn(context, "pro");
-  await page.goto("/pnl");
-  await expect(page.locator("[data-empty=pnl]")).toContainText("Start by pasting your Polymarket wallet address");
-  await expect(page.getByLabel("Your Polymarket wallet address")).toBeVisible();
-  await expect(page.locator("main .btn--primary")).toHaveCount(1);
-});
-
-test("one primary action: pricing and legal pages show exactly one; the landing's white pills are only Check my bet, Check and Start for $1", async ({ page }) => {
+test("one primary action: pricing and legal pages show exactly one; the landing's white pills are only Start for $1", async ({ page }) => {
   await page.goto("/");
   const home = await page.locator("main .b-primary").evaluateAll(els => els.map(e => (e as HTMLElement).innerText.trim()));
-  expect(home.length).toBeGreaterThan(2);
-  for (const t of home) expect(["Check my bet", "Check", "Start for $1"]).toContain(t);
-  expect(home[0]).toBe("Check my bet");
+  expect(home.length).toBeGreaterThan(1);
+  for (const t of home) expect(["Start for $1"]).toContain(t);
   for (const path of ["/pricing", "/terms", "/privacy"]) {
     await page.goto(path);
     // Pictures of the app are inert, and a closed laptop panel isn't shown: neither is an action on this page.

@@ -64,7 +64,7 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
   await expect(page.getByTestId("copy-pnl")).toContainText("at $50 a move");
   // The wallet's page shows it followed; nothing names who is behind it on My copies.
   await expect(page.getByTestId("my-copies")).not.toContainText("E2E-Follow");
-  await page.goto(`/p/${W}`);
+  await page.goto(`/wallet/${W}`);
   // Following a wallet is copying it: the wallet's page shows it as followed.
   await expect(page.getByTestId("desk-follow")).toHaveAttribute("aria-pressed", "true");
   await q("update terminal.users set settings = settings - 'copySize' where id = 'user_e2e_insidir'");

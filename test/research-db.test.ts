@@ -61,7 +61,7 @@ describe.skipIf(!URL0)("Research in Postgres", () => {
     expect(ceo.tables[0]!.rows.map(r => r[0]!.text)).toEqual(["Acme Corp (ACME)"]);
     expect(ceo.tables[0]!.note).toBe("Sector isn't in Insidir's data; the filings are listed by size.");
     const rec = await research(db, "This account's record on soccer totals", { ...visitor, wallet: W });
-    expect(rec.tables[0]!.title).toBe("deskacct: soccer totals record 1–1");
+    expect(rec.tables[0]!.title).toMatch(/^0x\w{2}…\w{2}: soccer totals record 1–1$/);
     expect(ids(rec).sort()).toEqual(["/market/0xsoc1", "/market/0xsoc2"]);
     expect((await research(db, "Which bet should I take tonight?", visitor)).origin).toBe("refused");
     expect((await research(db, "Who is behind deskacct?", visitor)).text).toBe("Not in Insidir's data.");
@@ -104,7 +104,7 @@ describe.skipIf(!URL0)("Research in Postgres", () => {
     if (!m.ok) throw new Error("member limited");
     expect(m.answer.tables[0]!.rows).toHaveLength(3);
     const csv = answerCsv((await answerById(db, m.id, "usr_m"))!);
-    expect(csv.split("\n").slice(0, 3)).toEqual(['"Large positions: open, NBA"', '"Position","Market","Account","Amount","Status","When"', '"Knicks to beat the Celtics","Knicks vs. Celtics · NBA","deskacct","$300K","Open","5m ago"']);
+    expect(csv.split("\n").slice(0, 3)).toEqual(['"Large positions: open, NBA"', '"Position","Market","Account","Amount","Status","When"', '"Knicks to beat the Celtics","Knicks vs. Celtics · NBA","0xff…ff","$300K","Open","5m ago"']);
     expect(await answerById(db, m.id, "someone-else")).toBeNull();
     const logged = await pool.query("select count(*)::int n, count(*) filter (where cached)::int c from terminal.research_queries");
     expect(logged.rows[0]).toEqual({ n: 4, c: 1 });
