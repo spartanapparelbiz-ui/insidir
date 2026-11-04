@@ -49,13 +49,26 @@ async function getJson<T>(url: string): Promise<T | null> {
   return r?.ok ? (await r.json().catch(() => null)) as T | null : null;
 }
 
-/** Art for up to 40 markets by condition id (one request), cached 10 minutes. Missing ones are left out. */
-export async function artFor(marketIds: readonly string[]): Promise<Map<string, MarketArt>> {
-  const ids = [...new Set(marketIds.filter(id => /^0x[0-9a-f]{64}$/i.test(id)))].slice(0, 40);
+/** Gamma reads up to this many condition ids per request. */
+export const ART_BATCH = 40;
+
+/** Art for markets by condition id, ART_BATCH per request, cached 10 minutes. Missing ones are left out. Gamma's
+ *  /markets leaves closed markets out unless asked, so each batch asks for open and closed: a settled race keeps its
+ *  event (Nov 4: the Florida governor race lost its event slug when it settled, and /race/florida-governor-winner-2026
+ *  went 404). */
+export async function artFor(marketIds: readonly string[], get: <T>(url: string) => Promise<T | null> = getJson): Promise<Map<string, MarketArt>> {
+  const ids = [...new Set(marketIds.filter(id => /^0x[0-9a-f]{64}$/i.test(id)))];
   if (!ids.length) return new Map();
-  const key = `gamma:art:${ids.slice().sort().join(",")}`;
-  const list = await memo(key, 10 * 60_000, () => getJson<GammaMarket[]>(`${GAMMA}/markets?${ids.map(i => `condition_ids=${i}`).join("&")}&limit=${ids.length}`)).catch(() => null);
-  return new Map((list ?? []).map(toArt).filter(a => a.marketId).map(a => [a.marketId, a]));
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += ART_BATCH) batches.push(ids.slice(i, i + ART_BATCH));
+  const lists = await Promise.all(batches.map(batch => {
+    const q = `${GAMMA}/markets?${batch.map(i => `condition_ids=${i}`).join("&")}&limit=${batch.length}`;
+    return memo(`gamma:art:${batch.slice().sort().join(",")}`, 10 * 60_000, async () => {
+      const [open, closed] = await Promise.all([get<GammaMarket[]>(q), get<GammaMarket[]>(`${q}&closed=true`)]);
+      return [...(open ?? []), ...(closed ?? [])];
+    }).catch(() => [] as GammaMarket[]);
+  }));
+  return new Map(lists.flat().map(toArt).filter(a => a.marketId).map(a => [a.marketId, a]));
 }
 
 /** Every candidate market of an event ("texas-senate-election-winner"), cached 2 minutes for live prices. */

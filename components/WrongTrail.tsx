@@ -19,7 +19,7 @@ export function WrongTrail({ code, title, text, children }: { code: string; titl
         </div>
         <div className="b-center"><div className="b-ctas">{children ?? <a className="b-btn b-btn-lg b-primary" href="/">Back to home</a>}<a className="b-btn b-btn-lg b-ghost" href="/board">The board</a></div></div>
         <nav className="s-filters" aria-label="Elsewhere">
-          {[["Markets", "/markets"], ["Election Day", "/election"], ["Help", "/help"], ["Status", "/status"]].map(([t, h]) => <a key={h} className="b-btn b-panel-pill" href={h}>{t}</a>)}
+          {[["Markets", "/markets"], ["Election results", "/election"], ["Help", "/help"], ["Status", "/status"]].map(([t, h]) => <a key={h} className="b-btn b-panel-pill" href={h}>{t}</a>)}
         </nav>
       </div>
     </section>
