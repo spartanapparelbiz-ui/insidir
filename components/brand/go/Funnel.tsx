@@ -11,7 +11,7 @@ import { beacon } from "@/components/app/beacon";
 import { enablePush } from "@/components/app/push";
 import { CATEGORIES, category as categoryInfo, categoryPhoto, type CategorySlug } from "@/lib/brand/categories";
 import type { AhaCard, GoData } from "@/lib/go/data";
-import { SIZES, WHERE, type Size, type Where } from "@/lib/go/data";
+import { SIZES, WHERE, type Size, type Where } from "@/lib/go/answers";
 import { leadLine } from "@/lib/autopilot/lead-line";
 import { dollars } from "@/lib/money";
 import { Arrow, Lines, m, signedDollars, TierBadge } from "../Bits";
