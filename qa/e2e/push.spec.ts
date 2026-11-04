@@ -58,8 +58,10 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
 
   await signIn(context, "pro");
   await page.goto("/settings");
-  await page.getByTestId("desk-pings").first().click();
-  await expect(page.getByTestId("desk-pings").first()).toHaveText("Pings on");
+  await page.getByTestId("ping-on").first().click();
+  await expect(page.getByTestId("ping-setup").first()).toHaveAttribute("data-state", "on");
+  // Turning pings on sends one test ping straight away (POST /api/push/test).
+  await expect(page.getByRole("status").filter({ hasText: "Sent." })).toBeVisible();
   const subs = await q<{ endpoint: string }>("select endpoint from terminal.push_subscriptions where user_id = $1", [pro.id]);
   expect(subs.map(s => s.endpoint)).toEqual([endpoint]);
 
@@ -71,9 +73,11 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
     await q("update terminal.opportunities set first_seen_at = now() - interval '1 minute' where id = any($1)", [[await dealId("Hawks"), await dealId("Fed cut")]]);
     const log = await runWorker(12_000);
     const pushes = JSON.parse(readFileSync(join(OUT, "pushes.json"), "utf8")) as Array<{ path: string; headers: Record<string, string>; body: string }>;
-    const mine = pushes.slice(before).filter(p => endpoint.endsWith(p.path));
+    const open = (p: { body: string }) => JSON.parse(ece.decrypt(Buffer.from(p.body, "base64"), { version: "aes128gcm", privateKey: ecdh, authSecret: auth }).toString("utf8")) as { url: string; title: string };
+    const all = pushes.slice(before).filter(p => endpoint.endsWith(p.path));
+    expect(all.filter(p => open(p).title === "Pings are on").length).toBe(1);
+    const mine = all.filter(p => open(p).title !== "Pings are on");
     // A deal alert, and possibly a millionaire ping (a seeded $25K+ bet from a $1M+ wallet, all categories): one deal.
-    const open = (p: { body: string }) => JSON.parse(ece.decrypt(Buffer.from(p.body, "base64"), { version: "aes128gcm", privateKey: ecdh, authSecret: auth }).toString("utf8")) as { url: string };
     const deals = mine.filter(p => open(p).url.includes("/api/alerts/opened"));
     expect(deals.length, log).toBe(1);
     expect(mine.filter(p => !deals.includes(p)).every(p => open(p).url.includes("/copy/"))).toBe(true);

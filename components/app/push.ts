@@ -8,6 +8,39 @@ export const isIos = (): boolean =>
 export const isStandalone = (): boolean =>
   (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia("(display-mode: standalone)").matches;
 
+export interface Device {
+  os: "ios" | "android" | "mac" | "windows" | "other";
+  browser: "safari" | "chrome" | "edge" | "firefox" | "samsung" | "other";
+  /** The app whose built-in browser this is (Instagram, X, TikTok…): web push never works there. */
+  inApp: string | null;
+}
+
+const IN_APP: Array<[RegExp, string]> = [
+  [/Instagram/, "Instagram"], [/FBAN|FBAV|FB_IAB/, "Facebook"], [/Twitter/, "X"], [/TikTok|musical_ly|BytedanceWebview/, "TikTok"],
+  [/Snapchat/, "Snapchat"], [/LinkedInApp/, "LinkedIn"], [/Pinterest/, "Pinterest"], [/Discord/, "Discord"], [/ Line\//, "LINE"],
+];
+
+/** Which device and browser, from what the browser reports (pure, so it can be tested). */
+export function detectDevice(ua: string, platform = "", maxTouchPoints = 0): Device {
+  const ios = /iP(hone|od|ad)/.test(ua) || (platform === "MacIntel" && maxTouchPoints > 1);
+  const os: Device["os"] = ios ? "ios" : /Android/.test(ua) ? "android" : /Macintosh|Mac OS X/.test(ua) ? "mac" : /Windows/.test(ua) ? "windows" : "other";
+  const browser: Device["browser"] = /Edg(e|A|iOS)?\//.test(ua) ? "edge" : /SamsungBrowser/.test(ua) ? "samsung" : /Firefox|FxiOS/.test(ua) ? "firefox"
+    : /Chrome|CriOS|Chromium/.test(ua) ? "chrome" : /Safari/.test(ua) ? "safari" : "other";
+  const named = IN_APP.find(([re]) => re.test(ua))?.[1] ?? null;
+  return { os, browser, inApp: named ?? (os === "android" && /; wv\)/.test(ua) ? "this app" : null) };
+}
+
+export const thisDevice = (): Device => detectDevice(navigator.userAgent, navigator.platform, navigator.maxTouchPoints);
+
+/** Sends a test push to every device this account turned pings on for. */
+export async function sendTestPing(): Promise<"sent" | "none" | "wait" | "error"> {
+  const r = await fetch("/api/push/test", { method: "POST" }).catch(() => null);
+  if (!r) return "error";
+  if (r.status === 429) return "wait";
+  const j = (await r.json().catch(() => null)) as { sent?: number } | null;
+  return r.ok ? ((j?.sent ?? 0) > 0 ? "sent" : "none") : "error";
+}
+
 const supported = (): boolean => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 
 function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {

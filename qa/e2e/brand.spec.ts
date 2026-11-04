@@ -176,7 +176,7 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   // Right after paying and signing in: the ping opt-in, then follow a millionaire.
   await expect(go).toHaveAttribute("data-step", "push", { timeout: 25_000 });
   await page.screenshot({ path: shotName("go-10-push", page) });
-  await page.getByTestId("go-push-skip").click();
+  await page.getByTestId("ping-next").click();
   await expect(go).toHaveAttribute("data-step", "follow");
   const saved = (await q<{ settings: { go: { categories: string[]; where: string; size: string }; betOn: string[]; remindBeforeCharge: boolean }; utm: Record<string, string> | null }>("select settings, utm from terminal.users where email = $1", [email]))[0]!;
   expect(saved.settings.go).toEqual({ categories: ["football", "politics"], where: "kalshi", size: "25-100" });
