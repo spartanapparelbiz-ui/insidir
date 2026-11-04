@@ -2,6 +2,7 @@
  * now 94¢" (green or red only for the change), the wallet's all-time profit (never a face), the entry-vs-now chart,
  * then Copy and Follow. The chart's line draws as its stage enters; the entry dots pop at their times; "now" lands last.
  * Real points only: without the venue's history it says so and shows the entry and the price now. */
+import { TeamPair } from "./Team";
 import Image from "next/image";
 import type { Edge } from "@/lib/desk/edge";
 import type { MarketArt } from "@/lib/market/art";
@@ -51,11 +52,12 @@ export function EntryChart({ edge }: { edge: Edge }) {
 }
 
 export function Ticket({ bet, edge, art, followed = false, testid = "ticket" }: { bet: BoardBet; edge: Edge | null; art: MarketArt | null; followed?: boolean; testid?: string }) {
+  const teams = bet.teams ?? null;
   const now = edge?.now ?? bet.priceNow, entry = edge?.avg ?? bet.priceThen, dec = decision({ ...bet, priceNow: now });
   return (
     <Panel className="s-ticket" testid={testid}>
       <div className="s-ticket__head">
-        {art?.image ? <span className="s-disc"><Image src={art.image} alt="" width={56} height={56} sizes="112px" quality={85} /></span> : null}
+        {teams ? <TeamPair teams={teams} size={32} /> : art?.image && !/\b(senate|governor|house|president)\b/i.test(bet.title) ? <span className="s-disc"><Image src={art.image} alt="" width={56} height={56} sizes="112px" quality={85} /></span> : null}
         <div><h3 className="s-ticket__mkt">{bet.title}</h3><p className="b-small">{dollars(edge?.total ?? bet.amount)} from wallets up $1M+</p></div>
       </div>
       <div className="s-ticket__px">

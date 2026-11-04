@@ -8,13 +8,19 @@ const MIN = 60_000, DAY = 86_400_000;
 export const MW = (n: number) => `0xe2e0000000000000000000000000000000000${String(n).padStart(3, "0")}`;
 export const MIL_MARKETS = { tennis: "0xe2etennis100", nfl: "0xe2emilnfl", pol: "0xe2emilpol", soc: "0xe2emilsoc" } as const;
 
+/** The games' Polymarket event URLs (lib/teams reads the league and both teams from them: their logos). */
+const GAME_URL: Record<string, string> = {
+  [MIL_MARKETS.nfl]: "https://polymarket.com/event/nfl-kc-buf-2026-11-08/nfl-kc-buf-2026-11-08",
+  [MIL_MARKETS.soc]: "https://polymarket.com/event/epl-ars-che-2026-11-08/epl-ars-che-2026-11-08-ars",
+};
+
 export async function seedMillionaires(db: Db, now: number): Promise<void> {
   await db.execute(sql`truncate terminal.watchlist, terminal.millionaire_bets`);
   const wallets: Array<[number, "millionaire" | "pro", number]> = [[1, "millionaire", 3_100_000], [2, "millionaire", 2_400_000], [3, "millionaire", 1_500_000], [4, "millionaire", 1_200_000], [5, "pro", 450_000], [6, "pro", 210_000]];
   for (const [n, tier, pnl] of wallets) await db.execute(sql`insert into terminal.watchlist (wallet, tier, pnl, refreshed_at) values (${MW(n)}, ${tier}, ${pnl}, ${new Date(now)})`);
   const bet = (id: string, n: number, tier: string, market: string, title: string, outcome: string, side: "yes" | "no", amount: number, price: number, category: string, mins: number, yes: string, no: string, result: string | null = null) =>
     db.execute(sql`insert into terminal.millionaire_bets (id, wallet, tier, source, market_id, event_title, market_title, outcome, outcome_side, amount, price, category, url, yes_label, no_label, at, last_at, result, settled_at)
-      values (${id}, ${MW(n)}, ${tier}, 'polymarket', ${market}, ${title}, ${title}, ${outcome}, ${side}, ${amount}, ${price}, ${category}, null, ${yes}, ${no},
+      values (${id}, ${MW(n)}, ${tier}, 'polymarket', ${market}, ${title}, ${title}, ${outcome}, ${side}, ${amount}, ${price}, ${category}, ${GAME_URL[market] ?? null}, ${yes}, ${no},
         ${new Date(now - mins * MIN)}, ${new Date(now - mins * MIN)}, ${result}, ${result ? new Date(now - mins * MIN + DAY) : null})`);
   const T = "E2E fixture: Tennis match 100", N = "E2E fixture: Chiefs vs. Bills", P = "E2E fixture: Will the funding bill pass?", S = "E2E fixture: Arsenal FC vs. Chelsea FC";
   await bet("e2e:mb1", 1, "millionaire", MIL_MARKETS.tennis, T, "Player A", "yes", 74_000, 0.52, "tennis", 25, "Player A", "Player B");

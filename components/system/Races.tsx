@@ -16,9 +16,9 @@ export function RaceCards({ races, testid = "races" }: { races: RaceCard[]; test
         <Panel key={r.key} className="s-race" testid="race-card" data-race={r.key}>
           <h3 className="s-race__t"><a className="s-link" href={racePath(raceSlugOf(r.key, r.title))} data-entity="race">{r.title.replace(/ Election Winner$/, "")}</a></h3>
           {r.candidates.length ? (
-            <ul className="s-cands">{r.candidates.map(c => (
+            <ul className="s-cands">{r.candidates.map((c, i) => (
               <li key={c.marketId} data-testid="candidate" data-market={c.marketId} data-face={c.image ? "photo" : "initials"} data-result={c.result ?? undefined}>
-                {r.kind === "race" ? <Face name={c.name} image={c.image} /> : <Party party={c.party} />}
+                {r.kind === "race" ? <Face name={c.name} src={c.image} eager={i < 2} /> : <Party party={c.party} size="l" />}
                 <span className="s-cand__n">
                   <span><b>{c.name}</b>{c.party && r.kind === "race" ? <span className="b-dim"> ({c.party})</span> : null}{c.result ? <span className="s-result">{c.result === "won" ? "Won" : "Lost"}</span> : null}</span>
                   <span className="b-bar s-meter" role="img" aria-label={`Price ${cents(c.price)}`}><span data-bar={(c.price ?? 0).toFixed(3)} style={{ transform: `scaleX(${c.price ?? 0})` }} /></span>

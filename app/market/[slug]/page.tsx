@@ -9,6 +9,8 @@ import { Frame } from "@/components/brand/app/Frame";
 import { BetRow } from "@/components/brand/BetRow";
 import { Lines, Panel, Pill, ScrollFx, Stage } from "@/components/system";
 import { Crumbs, KalshiFirst, RelatedLinks } from "@/components/system/Entity";
+import { Matchup } from "@/components/system/Team";
+import { matchupFor } from "@/lib/teams";
 import { Bars, SeriesChart } from "@/components/system/Figures";
 import { getViewer } from "@/lib/auth/viewer";
 import { category as categoryInfo, categoryPhoto } from "@/lib/brand/categories";
@@ -55,12 +57,15 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   const sideText = (t: typeof mil, s: "yes" | "no") => dollars(t[s].dollars) + " · " + walletsText(t[s].wallets);
   const n = m.betCount;
   const subLine = n ? n.toLocaleString("en-US") + (n === 1 ? " bet" : " bets") + " from wallets up $100K+, " + dollars(m.money.total || m.bets.reduce((a, b) => a + b.amount, 0)) + " in all." : "No watchlist wallet has bet on it yet.";
+  // A game: both teams' logos (the registry, by the game in the market's URL; a monogram when a team has none).
+  const teams = matchupFor(m.url, m.event || m.title);
   const trail = [["Markets", "/markets"], [cat.name, `/markets/${m.category}`], [m.title, canonical]] as const;
   return (
     <Frame member={member} current="markets" testid="market-page">
       <Stage bg={{ kind: "photo", photo: categoryPhoto(m.category), dark: 0.55, priority: true }} first testid="market-hero" labelledBy="m-h">
         <div className="b-head">
           <Crumbs trail={trail} />
+          {teams ? <Matchup teams={teams} /> : null}
           {m.event && m.event !== m.title ? <p className="b-label" data-m="lift">{m.event}</p> : null}
           <Lines as="h1" id="m-h" lines={[m.title]} size={m.title.length > 44 ? 40 : 56} />
           <p className="b-sub" data-m="lift" data-testid="market-sub">{subLine}</p>

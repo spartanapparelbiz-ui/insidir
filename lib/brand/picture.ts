@@ -1,5 +1,6 @@
 /* The pre-generated sizes of the brand photos (scripts/brand-images.ts) and their srcsets. Pure, client-safe. */
-export const BRAND_WIDTHS = [1920, 2880, 3840] as const;
+/** 640 and 960 for cards and tiles; 1920, 2880 and 3840 for full-bleed stages. */
+export const BRAND_WIDTHS = [640, 960, 1920, 2880, 3840] as const;
 /** The widest image anything on the site asks for (next.config.ts deviceSizes ends here too). */
 export const MAX_IMAGE_WIDTH = 3840;
 

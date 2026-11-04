@@ -3,10 +3,11 @@
  * candidate's name and party, the live price, the headshot Polymarket carries on that market (shown only when its file
  * names the candidate AND the race; otherwise initials), and the millionaire money on and against each candidate.
  * Control of a chamber shows parties, never a face. Visitors get the top 3 races whole; the rest locked. Server only. */
+import { portraitOf, portraitSrc } from "@/lib/brand/people";
 import type { Db } from "@/lib/db";
 import { electionBoard, type Race } from "@/lib/brand/pulse";
 import { marketMoney, type MarketMoney } from "@/lib/millionaires/queries";
-import { artFor, eventMarkets, verifiedHeadshot, type MarketArt } from "./art";
+import { artFor, eventMarkets, type MarketArt } from "./art";
 import { headlineLines } from "./headline";
 import { dollars } from "@/lib/money";
 
@@ -38,7 +39,8 @@ export async function electionDay(db: Db, now: number, member: boolean): Promise
       marketId: m.marketId,
       name: m.name ?? (m.question.replace(/^\d{4} Balance of Power:\s*/i, "").replace(/^Will (the )?/i, "").replace(/ (win|control).*$/i, "") || m.question),
       party: m.party ?? (/democrat/i.test(m.question) ? "D" : /republican/i.test(m.question) ? "R" : null),
-      image: kind === "race" && verifiedHeadshot(m.image, m.name, event) ? m.image : null,
+      // The self-hosted, verified portrait (lib/brand/people.ts: same name, same state's race), at the 96px file.
+      image: kind === "race" ? ((p => (p ? portraitSrc(p, 48) : null))(portraitOf(m.name, slug))) : null,
       price: m.price, mil: mil(money.get(m.marketId)),
       // Settled (closed) or priced as decided: the result.
       result: m.price !== null && (m.closed || m.price >= 0.97 || m.price <= 0.03) ? (m.price >= 0.5 ? "won" as const : "lost" as const) : null,

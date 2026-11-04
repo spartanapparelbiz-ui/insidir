@@ -21,7 +21,7 @@ export interface Photo {
 /** Each photo's subject, by eye: the stadium, the hoop, the hurricane's eye, the rig, the White House, the court… */
 const POS: Record<PhotoFile, string> = {
   hero: "50% 80%", cta: "50% 78%", markets: "60% 75%", politics: "60% 80%", tech: "70% 75%", oil: "66% 75%", hurricane: "30% 45%",
-  racing: "50% 60%", tennis: "40% 55%", baseball: "55% 75%", basketball: "60% 55%", soccer: "75% 75%", golf: "40% 55%",
+  racing: "50% 60%", tennis: "40% 55%", baseball: "55% 75%", basketball: "30% 40%", soccer: "75% 75%", golf: "40% 55%",
 };
 const AMBIENT = palette as Record<string, string>;
 
@@ -43,7 +43,8 @@ export const PHOTOS: Record<PhotoFile, Photo> = {
   racing: photo("racing", "A street circuit's light trails below a city skyline at night", "#141c1e"),
   tennis: photo("tennis", "A clay tennis court from above, in late sun between trees", "#5a3a1a"),
   baseball: photo("baseball", "A lit baseball stadium below a city skyline at sunset", "#2a2f52"),
-  basketball: photo("basketball", "A basketball hoop on a cliff above the sea at sunset", "#6b4a35"),
+  // Markus Spiske on Unsplash (Unsplash License), 5650px original: a real arena, the ball dropping through the net.
+  basketball: photo("basketball", "A basketball dropping through the net in a dark arena", "#1c1512"),
   soccer: photo("soccer", "A floodlit football stadium in heavy rain at night", "#141a18"),
   golf: photo("golf", "A golf course in morning mist with the sun through the trees", "#8a8a6a"),
 };

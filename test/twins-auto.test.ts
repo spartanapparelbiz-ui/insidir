@@ -75,3 +75,23 @@ describe("the daily list", () => {
     expect(m.url).toMatch(/\/admin\/twins\?view=auto&day=2026-11-04$/);
   });
 });
+
+describe("twins for the games millionaires bet on, by game (lib/twins/direct.ts)", () => {
+  it("goes from Polymarket's event slug to Kalshi's game tickers, both team orders", async () => {
+    const { gameTickers } = await import("@/lib/twins/direct");
+    const t = gameTickers("nba-phx-gsw-2026-11-02");
+    expect(t.slice(0, 2)).toEqual(["KXNBAGAME-26NOV02PHXGSW", "KXNBAGAME-26NOV02GSWPHX"]);
+    expect(gameTickers("nfl-kc-buf-2026-11-08")[0]).toBe("KXNFLGAME-26NOV08KCBUF");
+    expect(gameTickers("texas-senate-election-winner")).toEqual([]);
+  });
+  it("pairs each market of a game with its one Kalshi market by the five fields: moneyline, every spread, every total", async () => {
+    const { pairByStructure } = await import("@/lib/twins/direct");
+    const uniq = (l: VMarket[]) => [...new Map(l.map(m => [m.id, m])).values()];
+    const pairs = pairByStructure(uniq([...ml.polymarket, ...sp.polymarket, ...tot.polymarket]), uniq([...ml.kalshi, ...sp.kalshi, ...tot.kalshi]));
+    const kinds = new Set(pairs.map(p => autoCheck(p.poly, p.kalshi).kind));
+    expect([...kinds].sort()).toEqual(["moneyline", "spread", "total"]);
+    for (const p of pairs) expect(autoCheck(p.poly, p.kalshi).auto).toBe(true);
+    // One Kalshi market each, never two Polymarket markets on the same Kalshi one.
+    expect(new Set(pairs.map(p => p.kalshi.id)).size).toBe(pairs.length);
+  });
+});

@@ -8,6 +8,7 @@ import { activityFloorFromEnv } from "@/lib/exchanges/venue";
 import { gapsEnabled } from "@/lib/flags";
 import { runMatcher } from "@/lib/gaps/matcher";
 import { buildTwins } from "@/lib/twins/store";
+import { twinsFromBets } from "@/lib/twins/direct";
 import { createLayeredCache, createOpenRouterConfirm, llmEnv, matchConfigFromEnv } from "@/lib/matching";
 import { dbMatchCache, dbUsageStore, loadOverrides } from "@/lib/worker/store";
 
@@ -19,6 +20,8 @@ async function main(): Promise<void> {
     log("GAPS_ENABLED is not 1: Price gaps is off; twins from the stored markets only");
     const t = await buildTwins(db, Date.now());
     log(`twins: ${t.candidate} exact candidates (${t.auto} approved themselves from structured data), ${t.review} for review in /admin/twins`);
+    const d = await twinsFromBets(db, { polymarket: new PolymarketClient(), kalshi: new KalshiClient() }, Date.now(), 200);
+    log(`twins from bets: ${d.events} games, ${d.twins} twins (${d.auto} approved themselves)`);
     return;
   }
   const env = llmEnv(process.env);
