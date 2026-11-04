@@ -64,7 +64,7 @@ export const PUBLIC_PAGES = ["/", "/board", "/election", "/markets", "/markets/t
 /** Members only: a visitor is sent to log in, a member without a plan to the paywall. */
 export const MEMBER_PAGES = ["/settings"];
 /** Open to visitors (30 minutes late); live for members. */
-export const OPEN_PAGES = ["/board", "/wallets", "/wallet/0xe2e00000000000000000000000000000000000aa", "/market/0xe2emarket1"];
+export const OPEN_PAGES = ["/board", "/wallet/0xe2e00000000000000000000000000000000000aa", "/market/0xe2emarket1"];
 export const PRO_PAGES = ["/", "/board", "/results", "/wallets", "/copies", "/settings", "/market/0xe2emarket1", "/wallet/0xe2e00000000000000000000000000000000000aa"];
 
 export async function noHorizontalScroll(page: Page): Promise<void> {

@@ -76,7 +76,7 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await page.screenshot({ path: shotName("brand-members", page) });
 
   // A tap on a free bet: the pop-up names what they just saw.
-  await last3.getByTestId("bet-row").first().click();
+  await top.getByTestId("bet-row").first().click();
   const sheet = page.getByTestId("pay-sheet");
   await expect(sheet).toHaveAttribute("data-kind", "free");
   await expect(sheet.getByTestId("paywall-headline")).toHaveText(etMinutes > 95 ? "That was 1 of 6 millionaire bets today. See them all live, with a ping when the next one lands. $1 for 3 days."

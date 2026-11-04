@@ -52,7 +52,7 @@ function Free({ d }: { d: LandingData }) {
           <h3 className="b-panel-h">Today&apos;s #1 millionaire bet</h3>
           {t ? (
             <div style={{ display: "grid", gap: 12 }}>
-              <ul className="b-rows"><li><BetRow bet={t} now={d.now} /></li></ul>
+              <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
               <p className="b-small">The biggest single bet since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
             </div>
           ) : <p className="b-empty">No millionaire bet since midnight ET yet.</p>}

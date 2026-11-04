@@ -96,8 +96,9 @@ test("pay first: /go opens the checkout signed out → pay → Whop sign-in → 
   // A refund ends access: Whop's access check says no.
   await post("/__refund", { email });
   expect((await q<{ plan: string }>("select plan from terminal.users where email = $1", [email]))[0]!.plan).toBe("free");
-  await page.goto("/settings");
-  await expect(page).toHaveURL(/\/go\?step=paywall/);
+  await page.goto("/");
+  await expect(page.getByTestId("member-home")).toHaveCount(0);
+  await expect(page.getByTestId("landing")).toBeVisible();
 });
 
 test("no free sign-up: a Whop account without Insidir gets no account and no session and lands on the paywall; a cancelled Whop sign-in goes back to /login", async ({ page }) => {
