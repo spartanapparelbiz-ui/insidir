@@ -1049,3 +1049,20 @@ export const autopilotBacktests = terminal.table("autopilot_backtests", {
   result: jsonb("result").$type<import("@/lib/autopilot/backtest").Backtest>().notNull(),
   computedAt: timestamp("computed_at", { withTimezone: true }).notNull(),
 });
+
+/** Kalshi's ask for a recorded bet's side at the moment Insidir saw it (terminal.moves.seen_at), from Kalshi's
+ *  candlesticks on the market's approved twin (lib/autopilot/history.ts): what following it on Kalshi would have cost.
+ *  ask is null when Kalshi had no offer then. */
+export const kalshiHistory = terminal.table("kalshi_history", {
+  moveId: text("move_id").primaryKey(),
+  kalshiId: text("kalshi_id").notNull(),
+  ask: doublePrecision("ask"),
+  readAt: timestamp("read_at", { withTimezone: true }).notNull(),
+});
+
+/** Polymarket game slugs already looked up on Kalshi for twins (lib/twins/direct.ts), so history isn't re-read. */
+export const twinAttempts = terminal.table("twin_attempts", {
+  slug: text("slug").primaryKey(),
+  found: boolean("found").notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+});

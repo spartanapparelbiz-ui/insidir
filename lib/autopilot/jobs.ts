@@ -7,10 +7,11 @@ import type { KalshiClient } from "@/lib/exchanges";
 import { sendPush } from "@/lib/alerts/send";
 import { appUrl } from "@/lib/app-url";
 import { claimAlert, dropPush, pushTargets } from "@/lib/worker/store";
-import { backtest, backtestRows, specKey } from "./backtest";
+import { backtest, backtestRows, specKey, type Backtest } from "./backtest";
 import { runAutopilot, type Quote } from "./engine";
 import { cleanSpec } from "./rules";
 import { STARTERS } from "./starters";
+import { REPORT_KEY, rulesReport } from "./report";
 
 export async function autopilotOnce(db: Db, kalshi: KalshiClient, now: number, log: (s: string) => void): Promise<void> {
   const r = await runAutopilot(db, now, {
@@ -33,8 +34,15 @@ export async function autopilotBacktestsOnce(db: Db, now: number): Promise<numbe
   const specs = [...STARTERS.map(s => s.spec), ...(await db.select({ spec: autopilotRules.spec }).from(autopilotRules).where(eq(autopilotRules.active, true))).map(r => cleanSpec(r.spec))];
   const fresh = new Set((await db.execute(sql`select key from terminal.autopilot_backtests where computed_at > ${new Date(now - STALE_MS)}`)).rows.map(r => String((r as { key: string }).key)));
   const due = new Map(specs.map(s => [specKey(s), s]).filter(([k]) => !fresh.has(k as string)) as Array<[string, typeof specs[number]]>);
-  if (!due.size) return 0;
+  // The report refreshes every 30 minutes: the Kalshi price history behind it is still filling in.
+  const reportDue = !((await db.execute(sql`select 1 from terminal.autopilot_backtests where key = ${REPORT_KEY} and computed_at > ${new Date(now - 30 * 60_000)}`)).rowCount);
+  if (!due.size && !reportDue) return 0;
   const rows = await backtestRows(db, now);
+  if (reportDue) {
+    // Stored next to the backtests (same table, its own key); read back as a RulesReport.
+    const report = rulesReport(rows, now) as unknown as Backtest;
+    await db.insert(autopilotBacktests).values({ key: REPORT_KEY, result: report, computedAt: new Date(now) }).onConflictDoUpdate({ target: autopilotBacktests.key, set: { result: report, computedAt: new Date(now) } });
+  }
   for (const [key, spec] of due) {
     const result = backtest(spec, rows, now);
     await db.insert(autopilotBacktests).values({ key, result, computedAt: new Date(now) }).onConflictDoUpdate({ target: autopilotBacktests.key, set: { result, computedAt: new Date(now) } });

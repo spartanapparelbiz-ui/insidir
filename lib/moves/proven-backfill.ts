@@ -124,10 +124,19 @@ export interface BackfillRun { wallets: number; requests: number; reqPerSec: num
 /** One run: spends up to its request budget within runMs, reading wallets concurrently in backfill order. */
 export async function provenBackfillOnce(db: Db, poly: Poly, now: number, runMs = 50_000): Promise<BackfillRun> {
   const http = venueHttp("polymarket_data"), limit = bucketConfig("polymarket_data").ratePerSec;
-  const before = http.stats().rateLimited, t0 = Date.now();
+  const before = http.stats().rateLimited;
   const budget = budgetFor(limit, share, runMs);
-  // Every wallet costs at least 2 requests; take enough to fill the budget.
-  const list = await walletsToBackfill(db, now, PROVEN_RECORD_TTL_MS, Math.ceil(budget / 2));
+  // Every wallet costs at least 2 requests; take enough to fill the budget. The queue (wallets a Read or the watchlist
+  // needs) first, from a cheap query; the full ordering only when it is empty: on a large moves table that query alone
+  // can outlast a run, which left the backfill reading nothing.
+  const want = Math.ceil(budget / 2);
+  const queued = ((await db.execute(sql`select q.wallet from terminal.wallet_pnl_queue q left join terminal.wallet_pnl p on p.wallet = q.wallet
+      where p.wallet is null or p.read_at < ${new Date(now - PROVEN_RECORD_TTL_MS)} order by q.queued_at limit ${want}`)).rows as Array<{ wallet: string }>).map(x => x.wallet);
+  // Wallets already read in the last day leave the queue.
+  await db.execute(sql`delete from terminal.wallet_pnl_queue q using terminal.wallet_pnl p where p.wallet = q.wallet and p.read_at >= ${new Date(now - PROVEN_RECORD_TTL_MS)}`);
+  const list = queued.length >= want ? queued : [...queued, ...(await walletsToBackfill(db, now, PROVEN_RECORD_TTL_MS, want)).filter(w => !queued.includes(w))].slice(0, want);
+  // The run's clock starts once the list is in hand.
+  const t0 = Date.now();
   let spent = 0, wallets = 0, failed = 0, next = 0;
   const lanes = Math.max(1, Math.min(16, Math.ceil(limit * share)));
   await Promise.all(Array.from({ length: lanes }, async () => {

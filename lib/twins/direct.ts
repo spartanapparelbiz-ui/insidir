@@ -66,24 +66,53 @@ export async function twinsFromBets(db: Db, c: DirectClients, now: number, maxEv
   const games = [...new Set(slugs.values())].filter(s => gameTickers(s).length && (noGame.get(s) ?? 0) < now - 6 * 3_600_000).slice(0, maxEvents);
   const counts = { events: 0, twins: 0, auto: 0 };
   for (const slug of games) {
-    const pe = await c.polymarket.getEventBySlug(slug).catch(() => null);
-    if (!pe?.markets.length) continue;
-    let game: { ticker: string; markets: VMarket[] } | null = null;
-    for (const t of gameTickers(slug)) {
-      const ev = await c.kalshi.getEvent(t).catch(() => null);
-      if (ev?.markets.length) { game = { ticker: t, markets: ev.markets }; break; }
-    }
-    if (!game) { noGame.set(slug, now); continue; }
-    counts.events++;
-    const kalshi = [...game.markets];
-    for (const type of ["SPREAD", "TOTAL"]) {
-      const ev = await c.kalshi.getEvent(game.ticker.replace(/GAME-/, `${type}-`)).catch(() => null);
-      if (ev) kalshi.push(...ev.markets);
-    }
-    for (const t of pairByStructure(pe.markets, kalshi)) {
-      counts.twins++;
-      if (await saveTwin(db, t, now)) counts.auto++;
-    }
+    const r = await twinGame(db, c, slug, now);
+    if (r === null) { noGame.set(slug, now); continue; }
+    counts.events++; counts.twins += r.twins; counts.auto += r.auto;
+  }
+  return counts;
+}
+
+/** One game's twins: its Polymarket markets against Kalshi's GAME, SPREAD and TOTAL events for it. Null when Kalshi
+ *  has no such game (or Polymarket no such event). */
+export async function twinGame(db: Db, c: DirectClients, slug: string, now: number): Promise<{ twins: number; auto: number } | null> {
+  const pe = await c.polymarket.getEventBySlug(slug).catch(() => null);
+  if (!pe?.markets.length) return null;
+  let game: { ticker: string; markets: VMarket[] } | null = null;
+  for (const t of gameTickers(slug)) {
+    const ev = await c.kalshi.getEvent(t).catch(() => null);
+    if (ev?.markets.length) { game = { ticker: t, markets: ev.markets }; break; }
+  }
+  if (!game) return null;
+  const kalshi = [...game.markets];
+  for (const type of ["SPREAD", "TOTAL"]) {
+    const ev = await c.kalshi.getEvent(game.ticker.replace(/GAME-/, `${type}-`)).catch(() => null);
+    if (ev) kalshi.push(...ev.markets);
+  }
+  const out = { twins: 0, auto: 0 };
+  for (const t of pairByStructure(pe.markets, kalshi)) {
+    out.twins++;
+    if (await saveTwin(db, t, now)) out.auto++;
+  }
+  return out;
+}
+
+/** Twins for the games behind the last 180 days of recorded big bets (terminal.moves), each game looked up once
+ *  (terminal.twin_attempts): what lets the record be priced on Kalshi. */
+export async function twinsFromHistory(db: Db, c: DirectClients, now: number, maxEvents = 20): Promise<{ events: number; twins: number; auto: number; left: number }> {
+  const rows = (await db.execute(sql`select distinct m.market_id from terminal.moves m
+      where m.source = 'polymarket' and m.at > ${new Date(now - 180 * DAY)} and m.seen_price is not null
+        and not exists (select 1 from terminal.market_twins t where t.polymarket_id = m.market_id)
+      limit 400`)).rows as Array<{ market_id: string }>;
+  const slugs = await slugsOf(rows.map(r => r.market_id).filter(id => /^0x[0-9a-f]{64}$/i.test(id)));
+  const tried = new Set(((await db.execute(sql`select slug from terminal.twin_attempts`)).rows as Array<{ slug: string }>).map(r => r.slug));
+  const all = [...new Set(slugs.values())].filter(s => gameTickers(s).length && !tried.has(s));
+  const counts = { events: 0, twins: 0, auto: 0, left: Math.max(0, all.length - maxEvents) };
+  for (const slug of all.slice(0, maxEvents)) {
+    const r = await twinGame(db, c, slug, now);
+    await db.execute(sql`insert into terminal.twin_attempts (slug, found, at) values (${slug}, ${r !== null}, ${new Date(now)}) on conflict (slug) do update set found = excluded.found, at = excluded.at`);
+    if (!r) continue;
+    counts.events++; counts.twins += r.twins; counts.auto += r.auto;
   }
   return counts;
 }

@@ -14,8 +14,7 @@
  *   whales    every WHALE_MS:  Polymarket trades over $10K
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
  *             and resolved positions every 5 min, the public leaderboard's wallets every 6 h, profile pictures daily (lib/moves/jobs.ts)
- *   stocks    with SEC_USER_AGENT: Form 4 insider buys every 2 min, 13F fund adds every 6 h (lib/stocks/jobs.ts);
- *             for profiles, buyers' and companies' Form 4 histories every 5 min and funds' quarters every 30 min
+ *   stocks    off: no SEC or stock-price jobs
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *   follow:seen every minute: the price Insidir showed each position at and the tag times of Momentum / Early / Late
  *             (lib/follow/seen.ts), new positions first, then the backlog
@@ -31,8 +30,6 @@ import { tagOnce } from "@/lib/trackers-tag";
 import { marketInfoOnce } from "@/lib/markets/info";
 import { seenOnce, seenProgress } from "@/lib/follow/seen";
 import { followableCsv } from "@/lib/follow/report";
-import { stockPricesOnce } from "@/lib/stocks/prices";
-import { cusipOnce } from "@/lib/stocks/cusip";
 import { marketSplitsOnce, newlyFlagged, provenOpenOnce, resolveSplitsOnce, stockSplitsOnce } from "@/lib/smart/store";
 import { splitMessage } from "@/lib/smart/text";
 import { inQuietHours } from "@/lib/alerts/quiet";
@@ -43,8 +40,6 @@ import { MarketDirectory } from "@/lib/moves/directory";
 import { provenBackfillOnce } from "@/lib/moves/proven-backfill";
 import { refreshWatchlist, WATCHLIST_MS, WatchCache, watchlistAge } from "@/lib/millionaires/watchlist";
 import { avatarsOnce, dedupeOnce, leagueBackfillOnce, repairSwappedOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
-import { form13fOnce, form4Once, fundHistoriesOnce, STOCKS_13F_MS, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
-import { historyOnce } from "@/lib/stocks/history";
 import { SecClient } from "@/lib/stocks/sec";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
@@ -59,6 +54,8 @@ import { screenWallets } from "@/lib/millionaires/proven";
 import { autopilotBacktestsOnce, autopilotOnce } from "@/lib/autopilot/jobs";
 import { settleMatches } from "@/lib/autopilot/engine";
 import { bookDailyOnce } from "@/lib/book/daily";
+import { kalshiAsksOnce } from "@/lib/autopilot/history";
+import { twinsFromHistory } from "@/lib/twins/direct";
 import { twinOf } from "@/lib/entities/market";
 import { freshBigBets, freshBigSells, pingUsers, pricesNow, recordKalshiPings } from "@/lib/millionaires/ping-store";
 import { recordsFor } from "@/lib/moves/store";
@@ -266,7 +263,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi, watch) : null;
   const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
   const sec = SecClient.fromEnv();
-  if (!sec) log("stocks: SEC_USER_AGENT not set (name and email), Stocks ingest is off");
+  // The SEC client stays for the accuracy audit of older stock moves; the stock jobs are gone.
   const stops = [
     ...(gaps ? [every("gaps", BOOKS_MS, () => gapsOnce(gaps, lastTickAt))] : []),
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
@@ -297,6 +294,18 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         async push(u, msg) { for (const t of await pushTargets(db, u)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint); } });
       if (n) log(`book:daily: ${n} sent`);
     }),
+    // The record on Kalshi: twins for the games behind 180 days of recorded bets, then Kalshi's ask when each was seen.
+    ...(clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? [
+      every("twins:history", 2 * 60_000, async () => {
+        const r = await twinsFromHistory(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
+        await heartbeat(getDb(), "twins:history", true, null, { games: r.events, twins: r.twins, left: r.left });
+      }),
+      every("kalshi:asks", 60_000, async () => {
+        const k = clients.kalshi as KalshiClient;
+        const r = await kalshiAsksOnce(getDb(), { candles: (series, t, from, to, p) => k.getCandlesticks(series, t, from, to, p) }, Date.now());
+        if (r.read) await heartbeat(getDb(), "kalshi:asks", true, null, r);
+      }),
+    ] : []),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
@@ -337,6 +346,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       }),
       every("moves:records", 5 * 60_000, async () => {
         const n = await recordsOnce(getDb(), clients.polymarket as PolymarketClient, Date.now());
+        await heartbeat(getDb(), "moves:records", true, null, { refreshed: n });
         if (n) log(`moves: ${n} trader records refreshed`);
       }),
       every("moves:proven-backfill", 60_000, async () => {
@@ -409,43 +419,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         log(`moves: ${n} leaderboard wallets tracked`);
       }),
     ] : []),
-    // Stocks (docs/INSIDIR-V2.md): SEC Form 4 insider buys and 13F fund adds, only with SEC_USER_AGENT set.
-    ...(sec && stocksIngestOn() ? [
-      every("stocks:form4", STOCKS_FORM4_MS, async () => {
-        try {
-          const r = await form4Once(getDb(), sec);
-          await heartbeat(getDb(), "stocks:form4", r.errors === 0 || r.read > 0, r.errors ? `${r.errors} filings failed` : null, r);
-          if (r.moves) log(`stocks: ${r.moves} insider buys from ${r.read} Form 4 filings`);
-        } catch (e) { await heartbeat(getDb(), "stocks:form4", false, errMsg(e)).catch(() => undefined); throw e; }
-      }),
-      every("stocks:13f", STOCKS_13F_MS, async () => {
-        try {
-          const r = await form13fOnce(getDb(), sec);
-          await heartbeat(getDb(), "stocks:13f", r.errors < r.funds, r.errors ? `${r.errors} funds failed` : null, r);
-          if (r.moves) log(`stocks: ${r.moves} fund adds from 13F filings`);
-        } catch (e) { await heartbeat(getDb(), "stocks:13f", false, errMsg(e)).catch(() => undefined); throw e; }
-      }),
-      // Profiles: each $100k+ buyer's and company's Form 4 history, and each fund's last 8 quarters (lib/stocks/history.ts).
-      every("stocks:history", 5 * 60_000, async () => {
-        const r = await historyOnce(getDb(), sec, Date.now());
-        if (r.read || r.errors) log(`stocks: ${r.read} history filings read, ${r.done} histories complete, ${r.errors} errors`);
-      }),
-      // Daily closes for the tickers insiders bought, and SPY (lib/stocks/prices.ts).
-      every("stocks:prices", 30 * 60_000, async () => {
-        const r = await stockPricesOnce(getDb(), Date.now());
-        await heartbeat(getDb(), "stocks:prices", r.missing < r.tickers || r.tickers === 0, r.missing ? `${r.missing} tickers had no closes` : null, r);
-        if (r.tickers) log(`stocks: ${r.closes} closes for ${r.tickers} tickers (${r.missing} missing)`);
-      }),
-      // Tickers for the CUSIPs funds add (lib/stocks/cusip.ts), so their prices can be read.
-      every("stocks:cusips", 30 * 60_000, async () => {
-        const n = await cusipOnce(getDb(), Date.now());
-        if (n) log(`stocks: ${n} CUSIPs mapped to tickers`);
-      }),
-      every("stocks:funds", 30 * 60_000, async () => {
-        const r = await fundHistoriesOnce(getDb(), sec, Date.now());
-        if (r.read || r.errors) log(`stocks: ${r.read} fund quarters read, ${r.errors} errors`);
-      }),
-    ] : []),
+    // Stocks are off: no SEC or stock-price jobs.
     every("ratelimits", 60_000, async () => {
       const s = rateLimitStats();
       log("rate limits:", Object.entries(s).map(([k, v]) => `${k} ${v.requests} req, ${v.rateLimited} 429s, ${v.retries} retries`).join(" | "));
