@@ -1,0 +1,120 @@
+/* Auto-approval for a twin: all five fields must match from the venues' own structured data (VMarket.ids, the event
+ * slug and ticker, the resolution sources, the close times), never from a title. Pure.
+ *   sports      Polymarket's event slug "nba-atl-was-2026-11-04" and Kalshi's event ticker "KXNBAGAME-26NOV04ATLWAS"
+ *               give the league, both teams' codes and the game date: the same game.
+ *               Outcome: Polymarket's outcome name (a team, or Over) against Kalshi's ticker suffix ("-ATL", "-WAS27",
+ *               "-231") and strike type ("greater" = Over / wins by more than).
+ *               Line: Polymarket's line field and Kalshi's floor_strike, the same exact number.
+ *   candidates  Polymarket's event slug "texas-senate-election-winner" and Kalshi's event ticker "SENATETX-26": the same
+ *               state, office and year; Polymarket's group item "James Talarico (D)" and Kalshi's yes subtitle "James
+ *               Talarico": the same candidate.
+ *   rules       both venues state a resolution source, on the same domain.
+ *   close       both state a close time, within 36 hours.
+ * Any field that can't be read this way (missing, or only in the title) leaves the twin for a person in /admin/twins. */
+import type { VMarket } from "@/lib/types";
+import { TEAMS, type League } from "@/lib/matching/aliases";
+
+export type Field = "event" | "outcome" | "line" | "rules" | "close";
+export type Basis = "match" | "differs" | "unknown";
+export interface AutoCheck { auto: boolean; kind: "moneyline" | "spread" | "total" | "candidate" | null; fields: Record<Field, Basis>; notes: string[] }
+
+const MONTHS: Record<string, string> = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
+const CLOSE_MS = 36 * 3_600_000;
+
+/** A team code as either venue writes it ("atl", "WAS", "BKN"/"BRK") → its first code in TEAMS. */
+function teamCode(league: League, code: string): string | null {
+  const c = code.toUpperCase();
+  return TEAMS[league].find(r => r.abbr.includes(c))?.abbr[0] ?? null;
+}
+
+interface Game { league: League; date: string; teams: string[] }
+
+/** "nba-atl-was-2026-11-04" → { nba, 2026-11-04, [ATL, WAS] }. */
+export function polyGame(slug: string | null | undefined): Game | null {
+  const m = /^(nba|nfl|mlb|nhl)-([a-z]{2,4})-([a-z]{2,4})-(\d{4})-(\d{2})-(\d{2})$/.exec(slug ?? "");
+  if (!m) return null;
+  const league = m[1] as League, a = teamCode(league, m[2]!), b = teamCode(league, m[3]!);
+  return a && b ? { league, date: `${m[4]}-${m[5]}-${m[6]}`, teams: [a, b].sort() } : null;
+}
+
+/** "KXNBAGAME-26NOV04ATLWAS" → { nba, 2026-11-04, [ATL, WAS], GAME }. The two team codes split where both halves are
+ *  codes of that league. */
+export function kalshiGame(eventTicker: string): (Game & { type: "GAME" | "SPREAD" | "TOTAL" }) | null {
+  const m = /^KX(NBA|NFL|MLB|NHL)(GAME|SPREAD|TOTAL)-(\d{2})([A-Z]{3})(\d{2})([A-Z]{4,8})$/.exec(eventTicker);
+  if (!m || !MONTHS[m[4]!]) return null;
+  const league = m[1]!.toLowerCase() as League, codes = m[6]!;
+  for (let i = 2; i <= codes.length - 2; i++) {
+    const a = teamCode(league, codes.slice(0, i)), b = teamCode(league, codes.slice(i));
+    if (a && b) return { league, date: `20${m[3]}-${MONTHS[m[4]!]}-${m[5]}`, teams: [a, b].sort(), type: m[2] as "GAME" | "SPREAD" | "TOTAL" };
+  }
+  return null;
+}
+
+/** A team named exactly as the venue's outcome ("Hawks", or "Atlanta Hawks") → its code. */
+function teamByName(league: League, name: string): string | null {
+  const n = name.trim().toLowerCase();
+  const hit = TEAMS[league].filter(r => r.name.toLowerCase() === n || `${r.city} ${r.name}`.toLowerCase() === n);
+  return hit.length === 1 ? hit[0]!.abbr[0]! : null;
+}
+
+const STATES: Record<string, string> = { AL: "alabama", AK: "alaska", AZ: "arizona", AR: "arkansas", CA: "california", CO: "colorado", CT: "connecticut", DE: "delaware", FL: "florida", GA: "georgia", HI: "hawaii", ID: "idaho", IL: "illinois", IN: "indiana", IA: "iowa", KS: "kansas", KY: "kentucky", LA: "louisiana", ME: "maine", MD: "maryland", MA: "massachusetts", MI: "michigan", MN: "minnesota", MS: "mississippi", MO: "missouri", MT: "montana", NE: "nebraska", NV: "nevada", NH: "new-hampshire", NJ: "new-jersey", NM: "new-mexico", NY: "new-york", NC: "north-carolina", ND: "north-dakota", OH: "ohio", OK: "oklahoma", OR: "oregon", PA: "pennsylvania", RI: "rhode-island", SC: "south-carolina", SD: "south-dakota", TN: "tennessee", TX: "texas", UT: "utah", VT: "vermont", VA: "virginia", WA: "washington", WV: "west-virginia", WI: "wisconsin", WY: "wyoming" };
+
+/** "SENATETX-26" / "KXGOVFL-26" → texas senate 2026; "texas-senate-election-winner" → texas senate (the year from the
+ *  close time, both venues). */
+export function kalshiRace(eventTicker: string): { state: string; office: "senate" | "governor"; year: string } | null {
+  const m = /^(?:KX)?(SENATE|GOV)([A-Z]{2})-(\d{2})$/.exec(eventTicker);
+  return m && STATES[m[2]!] ? { state: STATES[m[2]!]!, office: m[1] === "GOV" ? "governor" : "senate", year: `20${m[3]}` } : null;
+}
+export function polyRace(slug: string | null | undefined): { state: string; office: "senate" | "governor" } | null {
+  const m = /^([a-z-]+)-(senate|governor)-election-winner$/.exec(slug ?? "");
+  return m && Object.values(STATES).includes(m[1]!) ? { state: m[1]!, office: m[2] as "senate" | "governor" } : null;
+}
+/** "James Talarico (D)" → "james talarico". */
+const person = (s: string | null | undefined) => (s ?? "").replace(/\s*\((?:D|R|I|L|G)\)\s*$/i, "").trim().toLowerCase().replace(/\s+/g, " ");
+
+const domain = (s: string | null | undefined): string[] => [...(s ?? "").matchAll(/(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)].map(m => m[1]!.toLowerCase());
+
+export function autoCheck(poly: VMarket, kalshi: VMarket): AutoCheck {
+  const fields: Record<Field, Basis> = { event: "unknown", outcome: "unknown", line: "unknown", rules: "unknown", close: "unknown" };
+  const notes: string[] = [];
+  const p = poly.ids ?? {}, k = kalshi.ids ?? {};
+  let kind: AutoCheck["kind"] = null;
+  const pg = polyGame(p.eventSlug), kg = kalshiGame(kalshi.eventId);
+  if (pg && kg) {
+    fields.event = pg.league === kg.league && pg.date === kg.date && pg.teams.join() === kg.teams.join() ? "match" : "differs";
+    const suffix = kalshi.id.slice(kalshi.eventId.length + 1);
+    const kTeam = teamCode(kg.league, suffix.replace(/\d+$/, ""));
+    const outcomes = p.outcomes ?? [];
+    if (p.sportsMarketType === "moneyline" && kg.type === "GAME") {
+      kind = "moneyline";
+      const yes = outcomes[0] ? teamByName(pg.league, outcomes[0]) : null;
+      fields.outcome = yes && kTeam ? (yes === kTeam ? "match" : "differs") : "unknown";
+      fields.line = "match"; // a moneyline has no line on either venue
+    } else if (p.sportsMarketType === "spreads" && kg.type === "SPREAD") {
+      kind = "spread";
+      const yes = outcomes[0] ? teamByName(pg.league, outcomes[0]) : null;
+      fields.outcome = yes && kTeam && k.strikeType === "greater" && typeof p.line === "number" && p.line < 0 ? (yes === kTeam ? "match" : "differs") : "unknown";
+      fields.line = typeof p.line === "number" && typeof k.floorStrike === "number" ? (Math.abs(p.line) === k.floorStrike ? "match" : "differs") : "unknown";
+    } else if (p.sportsMarketType === "totals" && kg.type === "TOTAL") {
+      kind = "total";
+      fields.outcome = outcomes[0]?.toLowerCase() === "over" && k.strikeType === "greater" ? "match" : outcomes[0]?.toLowerCase() === "under" ? "differs" : "unknown";
+      fields.line = typeof p.line === "number" && typeof k.floorStrike === "number" ? (p.line === k.floorStrike ? "match" : "differs") : "unknown";
+    } else notes.push("Not a full-game moneyline, spread or total on both venues");
+  } else {
+    const pr = polyRace(p.eventSlug), kr = kalshiRace(kalshi.eventId);
+    if (pr && kr) {
+      kind = "candidate";
+      const pYear = poly.closeTime ? String(new Date(poly.closeTime).getUTCFullYear()) : null;
+      fields.event = pr.state === kr.state && pr.office === kr.office && pYear === kr.year ? "match" : "differs";
+      fields.outcome = p.group && k.yesSub ? (person(p.group) === person(k.yesSub) ? "match" : "differs") : "unknown";
+      fields.line = "match"; // a race winner has no line
+    } else notes.push("No structured game or race id on both venues");
+  }
+  const dp = domain(poly.resolutionSource), dk = domain(kalshi.resolutionSource);
+  fields.rules = dp.length && dk.length ? (dp.some(d => dk.some(e => d === e || d.endsWith(`.${e}`) || e.endsWith(`.${d}`))) ? "match" : "differs") : "unknown";
+  if (fields.rules === "unknown") notes.push("A venue states no resolution source");
+  fields.close = poly.closeTime !== null && kalshi.closeTime !== null ? (Math.abs(poly.closeTime - kalshi.closeTime) <= CLOSE_MS ? "match" : "differs") : "unknown";
+  if (fields.close === "differs") notes.push("Close times more than 36 hours apart");
+  const auto = kind !== null && Object.values(fields).every(b => b === "match");
+  return { auto, kind, fields, notes };
+}

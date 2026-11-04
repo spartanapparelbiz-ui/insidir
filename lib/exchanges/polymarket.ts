@@ -193,6 +193,11 @@ export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, ve
     category,
     fee,
     url: urlFor(ev?.slug ?? null, str(m.slug)),
+    ids: {
+      eventSlug: ev?.slug ?? str(embeddedEvent(m)?.slug) ?? null, group, outcomes: outcomes.length ? outcomes : null,
+      gameId: m.gameId != null ? String(m.gameId) : null, sportsMarketType: str(m.sportsMarketType) ?? null,
+      line: typeof m.line === "number" ? m.line : typeof m.line === "string" && m.line.trim() !== "" && Number.isFinite(Number(m.line)) ? Number(m.line) : null,
+    },
     yesTokenId,
     noTokenId,
     strike: yesNo ? ((group ? strikeFromText(group, ev?.title ?? question) : null) ?? strikeFromText(question, ev?.title ?? "")) : null,

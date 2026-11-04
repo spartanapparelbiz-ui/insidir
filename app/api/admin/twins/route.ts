@@ -1,5 +1,6 @@
-/* POST /api/admin/twins: approve, deny or reopen twins (form fields: id (repeatable), action = approve | deny | pending;
- * or action = approve-candidates to approve every exact candidate on the page). Admin only. */
+/* POST /api/admin/twins: approve, deny (revoke) or reopen twins (form fields: id (repeatable), action = approve | deny |
+ * pending, or approve-candidates to approve every exact candidate on the page; back = the admin page to return to).
+ * Admin only. */
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin";
 import { appUrl } from "@/lib/app-url";
@@ -17,5 +18,8 @@ export async function POST(req: NextRequest) {
   const status = action === "approve" || action === "approve-candidates" ? "approved" : action === "deny" ? "denied" : action === "pending" ? "pending" : null;
   if (!status) return NextResponse.redirect(new URL("/admin/twins?error=action", appUrl()), 303);
   const n = await decideTwins(getDb(), ids, status, "admin", Date.now());
-  return NextResponse.redirect(new URL(`/admin/twins?saved=${n}`, appUrl()), 303);
+  // Back where the decision was made (the day's self-approved list), else the pending list.
+  const back = String(form?.get("back") ?? "");
+  const to = /^\/admin\/twins(\?[\w=&-]*)?$/.test(back) ? back : "/admin/twins";
+  return NextResponse.redirect(new URL(`${to}${to.includes("?") ? "&" : "?"}saved=${n}`, appUrl()), 303);
 }

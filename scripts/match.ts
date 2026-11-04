@@ -18,7 +18,7 @@ async function main(): Promise<void> {
   if (!gapsEnabled()) {
     log("GAPS_ENABLED is not 1: Price gaps is off; twins from the stored markets only");
     const t = await buildTwins(db, Date.now());
-    log(`twins: ${t.candidate} exact candidates, ${t.review} for review (all wait for /admin/twins)`);
+    log(`twins: ${t.candidate} exact candidates (${t.auto} approved themselves from structured data), ${t.review} for review in /admin/twins`);
     return;
   }
   const env = llmEnv(process.env);
@@ -32,9 +32,9 @@ async function main(): Promise<void> {
   });
   log(`match run ${stats.runId}: ${(stats.ms / 1000).toFixed(1)}s, peak ${stats.peakRssMb} MB, ${stats.rescored} re-scored, ${stats.candidates} candidates, ` +
     `${stats.llmAsked} LLM questions ($${stats.llmCostUsd.toFixed(4)}), ${stats.pairs} pairs + ${stats.multi} multi-outcome sets = ${stats.targets} targets`);
-  // Market twins (lib/twins) from the markets this run just swept: strict, and nothing is used until approved.
+  // Market twins (lib/twins) from the markets this run just swept: strict; only structured all-five matches approve themselves.
   const t = await buildTwins(db, Date.now());
-  log(`twins: ${t.candidate} exact candidates, ${t.review} for review (all wait for /admin/twins)`);
+  log(`twins: ${t.candidate} exact candidates (${t.auto} approved themselves from structured data), ${t.review} for review in /admin/twins`);
 }
 
 main().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => closeDb());

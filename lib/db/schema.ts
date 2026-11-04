@@ -938,5 +938,8 @@ export const marketTwins = terminal.table("market_twins", {
   kalshiClose: timestamp("kalshi_close", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
+  /** "auto" when it approved itself (lib/twins/structured.ts), else the admin who decided. */
   decidedBy: text("decided_by"),
-}, t => [index("market_twins_status_idx").on(t.status), index("market_twins_kalshi_idx").on(t.kalshiId)]);
+  /** The structured check, field by field, behind an auto-approval (or why it waits for a person). */
+  auto: jsonb("auto").$type<{ auto: boolean; kind: string | null; fields: Record<string, string>; notes: string[] }>(),
+}, t => [index("market_twins_status_idx").on(t.status), index("market_twins_kalshi_idx").on(t.kalshiId), index("market_twins_decided_idx").on(t.decidedBy, t.decidedAt)]);

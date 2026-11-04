@@ -1,0 +1,569 @@
+{
+ "recordedAt": "2026-11-04T02:14:00.063Z",
+ "kalshi": [
+  {
+   "venue": "kalshi",
+   "id": "SENATETX-26-R",
+   "eventId": "SENATETX-26",
+   "seriesId": "SENATETX",
+   "title": "Will Republicans win the Senate race in Texas?",
+   "eventTitle": "Texas Senate winner?",
+   "yesLabel": "Ken Paxton",
+   "noLabel": "No",
+   "rules": "If a representative of the Republican party is sworn in as a Senator of Texas for the term beginning in 2027, then the market resolves to Yes.\n\nThis market is eligible for accelerated determination after a consensus of media organizations project the winner. See full rules for details.",
+   "resolutionSource": "United States Congress (https://www.congress.gov/)",
+   "closeTime": 1799074800000,
+   "category": "politics",
+   "fee": {
+    "venue": "kalshi",
+    "multiplier": 1
+   },
+   "url": "https://kalshi.com/markets/senatetx/texas-senate-race/senatetx-26",
+   "yesTokenId": null,
+   "noTokenId": null,
+   "strike": null,
+   "ids": {
+    "yesSub": "Ken Paxton",
+    "strikeType": "structured",
+    "floorStrike": null,
+    "capStrike": null
+   },
+   "active": true,
+   "result": null,
+   "volume24h": 41650533.83,
+   "yesPrice": 0.028,
+   "startTime": null,
+   "openInterest": 73720091.96
+  },
+  {
+   "venue": "kalshi",
+   "id": "SENATETX-26-D",
+   "eventId": "SENATETX-26",
+   "seriesId": "SENATETX",
+   "title": "Will Democratics win the Senate race in Texas?",
+   "eventTitle": "Texas Senate winner?",
+   "yesLabel": "James Talarico",
+   "noLabel": "No",
+   "rules": "If a representative of the Democratic party is sworn in as a Senator of Texas for the term beginning in 2027, then the market resolves to Yes.\n\nThis market is eligible for accelerated determination after a consensus of media organizations project the winner. See full rules for details.",
+   "resolutionSource": "United States Congress (https://www.congress.gov/)",
+   "closeTime": 1799074800000,
+   "category": "politics",
+   "fee": {
+    "venue": "kalshi",
+    "multiplier": 1
+   },
+   "url": "https://kalshi.com/markets/senatetx/texas-senate-race/senatetx-26",
+   "yesTokenId": null,
+   "noTokenId": null,
+   "strike": null,
+   "ids": {
+    "yesSub": "James Talarico",
+    "strikeType": "structured",
+    "floorStrike": null,
+    "capStrike": null
+   },
+   "active": true,
+   "result": null,
+   "volume24h": 12172236.05,
+   "yesPrice": 0.972,
+   "startTime": null,
+   "openInterest": 24144740.68
+  }
+ ],
+ "polymarket": [
+  {
+   "venue": "polymarket",
+   "id": "0x34918035a590555ba1fb1d6a019d766ab6e557d63e7f3140b63b4550eee7f417",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will the Democrats win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "James Talarico (D)",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-the-democrats-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "James Talarico (D)",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "15290572385458522370285732869432740297199321382471116558439914335588167718663",
+   "noTokenId": "25172545206000541692667496253531562288536270988826888609620735617040533835056",
+   "strike": null,
+   "active": true,
+   "result": null,
+   "volume24h": 3712738.9112049993,
+   "yesPrice": 0.98,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x94521176f57d2ce81dde01e0b7699ca4279423042d37ed53908f0c8bfefe7e14",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will the Republicans win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Ken Paxton (R)",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-the-republicans-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Ken Paxton (R)",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "21265207456609426291246075480390336499088453711419597084147957999650569091884",
+   "noTokenId": "9846414914422486942750462555692240718767368950832862364324602361738794436048",
+   "strike": null,
+   "active": true,
+   "result": null,
+   "volume24h": 2641163.6476759994,
+   "yesPrice": 0.0195,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x272b2f7ed8e43c047415da1e7fe195336fdb6d2404c143d2edfde9983d0056fd",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person A win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person A",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-a-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person A",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "27118606220017336072956860540742213251846919026962789400037514873928866544111",
+   "noTokenId": "23139814268933400748773459305550661925367292434000821036649481239434884726861",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x973e36e4a2c4bbf9dea5e527922a10721223b8d533affa960bf0b06862b69035",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person B win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person B",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-b-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person B",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "62312140372851034672824465016994855560010925366077106061997362358668521565716",
+   "noTokenId": "87835068413499573649203477546584455789585989009825598640715595103643854758015",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x67f4550910a684de321a635a4a4d54e1ef5c0be612a9c59db77fdd4939ea3dea",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person C win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person C",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-c-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person C",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "52968908371004916507906805246509400537638229288118401471557467910039299770490",
+   "noTokenId": "20333276754712682139503097372442148937776058060852773094429167223088101711165",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x9c79b6a7e04152e6b0fe333fc02fb2f3bec37e22a69da760e17ac665c2df2de3",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person D win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person D",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-d-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person D",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "80711484521819451395949839171465414138352110548519045104777228313713297556768",
+   "noTokenId": "11443884548606375771786977041766345574906491053258078782955351538212052355428",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x8ac0361f2473ab00fc3f58c1921e8869073947ef2302b690b17820ffd58739da",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person E win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person E",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-e-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person E",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "103418187869648941666437780875571975091198630917164100062602131221238251388377",
+   "noTokenId": "45688755489652439628694100612455275180883418898047514513260246503185750849208",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0xb301b62a05ff2d2f72e2b0eec08d57750c42b9bce31826a995549d334f997992",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person F win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person F",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-f-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person F",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "79372664677495948685726695136587609643260527300173873880578089750315326147353",
+   "noTokenId": "62121105995828314040284106967818192404441952974381304996246531270016388560795",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x570e6933eacddd563e894dcb1d68b5e62039fcc1783e0082f972d08ca1dc9d89",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person G win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person G",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-g-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person G",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "11629844613891682482033127396436074337166919752874444953695217929397552607979",
+   "noTokenId": "90751277883087726297119356412652436487539217885025657793782917014928033410339",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0xf35b231d5544c560c0ebc2bdfd6229defa83fa6764088c1bb2ff1edb94126a85",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person H win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person H",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-h-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person H",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "85389826916745693277865909598218077908091567524623539446371132308215605489603",
+   "noTokenId": "48216300834469681476664888597382403847169881895696750369566628229952309795975",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x3d00b2e83fc9ecb3b73c8909ea26e37b888a16fc61a9fbf2b9804eea52e25f13",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person I win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person I",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-i-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person I",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "100353303349009846042593477975255485302790056240839372202330352792559939470103",
+   "noTokenId": "66453962279773452064175355141582028351444128861275740043669365758822247290347",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0xc9588c74c2e714306045b8f4af3153ad1653b8742e7431d592815fe1d6d75448",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will Person J win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Person J",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-person-j-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Person J",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "94843889661079591023319212026905823351833106385471263489663627228823547199648",
+   "noTokenId": "11167868725553006122329271736965566751929059609001965215000179930080932236081",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  },
+  {
+   "venue": "polymarket",
+   "id": "0x6d4202082cc318a7a655e2f371784321f8a67cd29904daddc8cd66edf749e643",
+   "eventId": "57672",
+   "seriesId": null,
+   "title": "Will a candidate not listed above win the Texas Senate race in 2026?",
+   "eventTitle": "Texas Senate Election Winner",
+   "yesLabel": "Other",
+   "noLabel": "No",
+   "rules": "This market will resolve according to the winner of the 2026 midterm Texas U.S. Senate election, inclusive of any run-offs.\n\nA candidate shall be considered to represent a party in the event that he or she is the nominee of the party in question. Candidates other than the Democratic or Republican nominee (e.g., Greens, Libertarian, independent) may be added at a later date.\n\nCandidates who run as independents will not be encompassed by the “Democrat” or “Republican” options regardless of any affiliation they may have with the party.\n\nThe candidates may be named in the contract for the convenience of traders. In the event that any named candidate is replaced as the nominee of their respective party prior to election day, the name in the contract will be updated and the market will resolve based on the replacement nominee of the party.\n\nThe resolution source for this market is the Associated Press, Fox News, and NBC. This market will resolve once all three sources call the race for the same candidate. If all three sources haven’t called the race in this state for the same candidate, this market will resolve based on the official certification.",
+   "resolutionSource": null,
+   "closeTime": 1793768340000,
+   "category": "politics",
+   "fee": {
+    "venue": "polymarket",
+    "rate": 0.04
+   },
+   "url": "https://polymarket.com/event/texas-senate-election-winner/will-a-candidate-not-listed-above-win-the-texas-senate-race-in-2026",
+   "ids": {
+    "eventSlug": "texas-senate-election-winner",
+    "group": "Other",
+    "outcomes": [
+     "Yes",
+     "No"
+    ],
+    "gameId": null,
+    "sportsMarketType": null,
+    "line": null
+   },
+   "yesTokenId": "75289461657911006016649907934351369034017958094880288123193583677795559639860",
+   "noTokenId": "103256382240530750513763349603411838017277336730093172141949238363534497034287",
+   "strike": null,
+   "active": false,
+   "result": null,
+   "volume24h": 0,
+   "yesPrice": 0,
+   "startTime": null
+  }
+ ]
+}
