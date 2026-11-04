@@ -129,7 +129,7 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await page.goto("/go?utm_source=e2e&utm_campaign=brand");
   const go = page.getByTestId("go");
   await expect(go).toHaveAttribute("data-step", "hook");
-  await expect(page.getByTestId("go-hook-bet")).toContainText(/A \+\$[\d.]+[MK] wallet just bet \$[\d.]+K on E2E fixture/);
+  await expect(page.getByTestId("go-hook-bet")).toContainText(/A \$1M\+ wallet just bet \$[\d.]+K on E2E fixture/); // a visitor never gets the wallet's record
   await page.screenshot({ path: shotName("go-1-hook", page) });
   await page.getByTestId("go-next").click();
   await expect(go).toHaveAttribute("data-step", "cats");
