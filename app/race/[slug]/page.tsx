@@ -100,7 +100,7 @@ export default async function RacePage({ params }: { params: Promise<{ slug: str
         </Stage>
       ) : null}
       <p className="b-small b-center">Information, not advice. Millionaires lose bets too. Insidir never places a bet or holds money.</p>
-      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={name} path={raceHref(race)} description={`Who the wallets up $1M+ back in ${name}, the Kalshi price, and every bet.`} sources={["https://polymarket.com", "https://kalshi.com"]} />
+      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={name} path={raceHref(race)} description={`Who the wallets up $1M+ back in ${name}, the Kalshi price, and every bet.`} sources={["https://kalshi.com"]} />
       <ScrollFx />
     </Frame>
   );

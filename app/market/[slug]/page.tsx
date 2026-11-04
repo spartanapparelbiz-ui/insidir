@@ -109,7 +109,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         </Stage>
       ) : null}
       <p className="b-small b-center">Information, not advice. Millionaires lose bets too. Insidir never places a bet or holds money.</p>
-      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={m.title} path={canonical} description={"Every bet from wallets up $100K+ on “" + m.title + "”, and the Kalshi price."} sources={["https://polymarket.com", "https://kalshi.com"]} />
+      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={m.title} path={canonical} description={"Every bet from wallets up $100K+ on “" + m.title + "”, and the Kalshi price."} sources={["https://kalshi.com"]} />
       <ScrollFx />
     </Frame>
   );

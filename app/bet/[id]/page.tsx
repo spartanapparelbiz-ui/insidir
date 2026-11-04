@@ -118,7 +118,7 @@ export default async function BetPage({ params }: { params: Promise<{ id: string
           <RelatedLinks kind="bet" items={(others.rows as Array<{ id: string; market_title: string; amount: number }>).map(o => ({ href: betPath(o.id), title: o.market_title, sub: dollars(Number(o.amount)) }))} testid="bet-others" />
         </Panel>
       </Stage>
-      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={`${dollars(t.amount)} on ${t.title}`} path={betPath(id)} description={`A bet from a wallet up ${t.tier === "millionaire" ? "$1M+" : "$100K+"} on "${t.title}".`} sources={["https://polymarket.com"]} />
+      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={`${dollars(t.amount)} on ${t.title}`} path={betPath(id)} description={`A bet from a wallet up ${t.tier === "millionaire" ? "$1M+" : "$100K+"} on "${t.title}".`} sources={["https://kalshi.com"]} />
       <ScrollFx />
     </Frame>
   );

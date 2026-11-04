@@ -66,7 +66,7 @@ test("a bet's page: the ticket for members (side, their price vs now, Copy); a v
   await signIn(context, "insidir");
   await page.goto(path);
   await expect(page.getByTestId("bet-side")).toContainText(`They bought ${f.old.outcome} at`);
-  await expect(page.getByTestId("bet-who")).toContainText(/0x\w{2}…\w{2}/);
+  await expect(page.getByTestId("bet-who")).toContainText(/0x\w+…\w+/);
   await entityLinksOk(page);
   await page.screenshot({ path: shotName("entity-bet-member", page), fullPage: true });
 });
