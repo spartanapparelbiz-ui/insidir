@@ -5,6 +5,8 @@ import { PAST } from "@/lib/copy";
 import { loadFonts, OG, OgLogo } from "@/lib/share-card";
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
+/** The entity pages' share card: portrait, 4:5 (a phone's feed). */
+export const OG_PORTRAIT = { width: 1080, height: 1350 } as const;
 
 export interface EntityOg {
   kicker: string;
@@ -15,24 +17,25 @@ export interface EntityOg {
 
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
-export async function entityOg(d: EntityOg): Promise<ImageResponse> {
+export async function entityOg(d: EntityOg, size: { width: number; height: number } = OG_SIZE): Promise<ImageResponse> {
+  const tall = size.height > size.width;
   const fonts = await loadFonts();
   const tone = d.figure?.tone === "pos" ? OG.money : d.figure?.tone === "neg" ? OG.loss : OG.ink;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: OG.paper, color: OG.ink, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "56px 72px", fontFamily: "Sans" }}>
+      <div style={{ width: "100%", height: "100%", background: OG.paper, color: OG.ink, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: tall ? "88px 80px" : "56px 72px", fontFamily: "Sans" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <OgLogo height={44} color={OG.ink} />
           <div style={{ display: "flex", fontSize: 26, color: OG.grey3 }}>{d.kicker}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", fontSize: d.title.length > 48 ? 60 : 76, fontWeight: 700, lineHeight: 1.04, letterSpacing: -2 }}>{clip(d.title, 90)}</div>
-          {d.line ? <div style={{ display: "flex", fontSize: 30, color: OG.grey3, maxWidth: 1000 }}>{clip(d.line, 120)}</div> : null}
+          <div style={{ display: "flex", fontSize: tall ? (d.title.length > 48 ? 76 : 96) : d.title.length > 48 ? 60 : 76, fontWeight: 700, lineHeight: 1.04, letterSpacing: -2 }}>{clip(d.title, tall ? 120 : 90)}</div>
+          {d.line ? <div style={{ display: "flex", fontSize: tall ? 36 : 30, color: OG.grey3, maxWidth: 1000 }}>{clip(d.line, 160)}</div> : null}
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", borderTop: `2px solid ${OG.grey2}`, paddingTop: 28 }}>
           {d.figure ? (
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", fontSize: 64, fontWeight: 700, color: tone, letterSpacing: -1 }}>{d.figure.value}</div>
+              <div style={{ display: "flex", fontSize: tall ? 88 : 64, fontWeight: 700, color: tone, letterSpacing: -1 }}>{d.figure.value}</div>
               <div style={{ display: "flex", fontSize: 24, color: OG.grey3 }}>{d.figure.label}</div>
             </div>
           ) : <div style={{ display: "flex" }} />}
@@ -43,6 +46,6 @@ export async function entityOg(d: EntityOg): Promise<ImageResponse> {
         </div>
       </div>
     ),
-    { ...OG_SIZE, fonts },
+    { ...size, fonts },
   );
 }

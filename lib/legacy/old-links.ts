@@ -1,5 +1,6 @@
 /* Old /check/<id> and /read/<id> links (the bet checker, now gone): each goes to its market's page when the saved check
  * names one, else to the board. Always a 301. */
+import { marketPath } from "@/lib/entities/slug";
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { appUrl } from "@/lib/app-url";
@@ -19,5 +20,5 @@ export async function oldMarket(kind: "read" | "check", id: string): Promise<str
 
 export async function oldLinkRedirect(kind: "read" | "check", id: string): Promise<NextResponse> {
   const m = await oldMarket(kind, id).catch(() => null);
-  return NextResponse.redirect(new URL(m ? `/market/${encodeURIComponent(m)}` : "/board", appUrl()), 301);
+  return NextResponse.redirect(new URL(m ? marketPath(m, "") : "/board", appUrl()), 301);
 }

@@ -1,10 +1,12 @@
-/* A wallet's page (/p/0x…), in the homepage's stages. Each stage opens with a sentence computed from its record:
- *   1 Who        "E2E-Top made money on 41 of 63 resolved markets." (members) / the name and Follow (visitors)
+/* A wallet's page (/wallet/0x…), in the homepage's stages. Each stage opens with a sentence computed from its record:
+ *   1 Who        "0xe2…aa made money on 41 of 63 resolved markets." (members) / the short address and Follow (visitors)
+ *   1b Lately    the last 10 and the last 30 closed markets: won, lost (losses included) and the net (members)
+ *   1c Today     the wallet's bets since midnight ET (visitors: 60 minutes late, without the side)
  *   2 Profit     "+$1.2M all-time, a 95% return on $1.3M put in.": the line of net profit, then the figures
  *   3 Where      "Best in NFL: 20–8, +$410K.": by category as bars, the biggest gains and losses
  *   4 Holding    "Holding 6 positions worth $340K now.": open positions, entry → now
  *   5 History    every large position we've seen, newest first, a page at a time
- * A public Polymarket username or a short address; never a face, never who is behind it. The numbers are for members
+ * Only ever the short address: never a name, a username, a face or who is behind it. The numbers are for members
  * and never reach a visitor's browser. The Polymarket profile is linked outside the US only. */
 import type { Viewer } from "@/lib/auth/viewer";
 import type { Db } from "@/lib/db";
@@ -17,6 +19,10 @@ import { walletLabel } from "@/lib/moves/records";
 import { followList } from "@/lib/moves/store";
 import { dollars } from "@/lib/money";
 import { isPaid, TRIAL } from "@/lib/plans";
+import { BetRow } from "@/components/brand/BetRow";
+import { Crumbs } from "./Entity";
+import { betPath } from "@/lib/entities/slug";
+import { midnightET, recentBets, VISITOR_DELAY_MS, type BoardBet } from "@/lib/millionaires/queries";
 import { marketsFor, profitRank, recordOf, walletMoves, walletSettled } from "@/lib/profiles/store";
 import { showStats, traderStats } from "@/lib/profiles/trader";
 import { NOT_ENOUGH, perf } from "@/lib/stats";
@@ -40,6 +46,11 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
     db && paid ? marketsFor(db, wallet).catch(() => []) : Promise.resolve([]),
     db && paid ? walletSettled(db, wallet).catch(() => []) : Promise.resolve([]),
   ]);
+  const today: BoardBet[] = db ? await recentBets(db, { now, wallets: [wallet], since: midnightET(now), all: true, limit: 50, member: paid, delayMs: paid ? 0 : VISITOR_DELAY_MS }).catch(() => []) : [];
+  // The last 10 and 30 closed markets, newest first, losses included.
+  const closed = [...markets].filter(m => m.resolvedAt).sort((a, b) => b.resolvedAt! - a.resolvedAt!);
+  const lastN = (n: number) => { const l = closed.slice(0, n); return { n: l.length, won: l.filter(m => m.pnl > 0).length, lost: l.filter(m => m.pnl < 0).length, net: l.reduce((a, m) => a + m.pnl, 0) }; };
+  const last10 = lastN(10), last30 = lastN(30);
   const name = walletLabel(wallet, rec?.name ?? hist.moves.find(m => m.walletName)?.walletName ?? null);
   const following = follows.some(f => f.kind === "trader" && f.target === wallet);
   const s = paid ? traderStats(markets, now) : null;
@@ -60,6 +71,7 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
     <>
       <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="wallet-hero" labelledBy="w-h">
         <div className="b-head">
+          <Crumbs trail={[["Wallets", "/wallets"], [name, `/wallet/${wallet}`]]} />
           <p className="b-label" data-m="lift">Polymarket wallet{rec?.name ? ` · ${wallet.slice(0, 6)}…${wallet.slice(-4)}` : ""}</p>
           {lead ? <Insight id="w-h" text={lead} fallback={[name]} size={56} /> : <Lines as="h1" id="w-h" lines={[name]} size={64} />}
           <p className="b-sub" data-m="lift">One person can use several wallets; these numbers cover this wallet only. Insidir never says who is behind a wallet.</p>
@@ -74,6 +86,23 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
             <div className="b-ctas"><Pill href="/go" data-checkout="profile-locked">Start for ${TRIAL.fee}</Pill></div>
           </Panel>
         ) : stats ? null : <p className="b-empty">{NOT_ENOUGH}: we show a record once a wallet has 20 resolved markets{s && s.resolved ? ` (this one has ${s.resolved})` : ""}.</p>}
+      </Stage>
+
+      {paid && last10.n ? (
+        <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.65 }} testid="wallet-lately" labelledBy="w-l">
+          <div className="b-head"><Lines as="h2" id="w-l" lines={["Lately, losses included."]} size={48} /></div>
+          <StatTiles label="Lately" tiles={[
+            { label: `Last ${last10.n} closed`, value: `${last10.won}–${last10.lost}, ${signed(last10.net)}` },
+            ...(last30.n > last10.n ? [{ label: `Last ${last30.n} closed`, value: `${last30.won}–${last30.lost}, ${signed(last30.net)}` }] : []),
+          ]} />
+          <Panel className="s-col s-col--wide"><Rows label="The last 10 closed" testid="wallet-last10" rows={closed.slice(0, 10).map(m => ({ key: m.marketId, title: m.title, sub: `${dollars(m.moneyIn)} in`, right: signed(m.pnl) }))} /></Panel>
+        </Stage>
+      ) : null}
+
+      <Stage bg={{ kind: "globe", dark: 0.65 }} testid="wallet-today" labelledBy="w-t">
+        <div className="b-head"><Lines as="h2" id="w-t" lines={["Today's bets."]} size={48} />{paid ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
+        {today.length ? <ul className="b-rows s-board" data-testid="wallet-today-rows">{today.map(b => <li key={b.id} data-entity="bet"><BetRow bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
+          : <p className="b-empty b-center">No bets from this wallet since midnight ET{paid ? "" : " (an hour late)"}.</p>}
       </Stage>
 
       {stats ? (

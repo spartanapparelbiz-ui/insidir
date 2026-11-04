@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { RETIRED } from "../next.config";
 import { PAGES } from "@/lib/seo/sitemaps";
 
-const KEEP_MAIN = ["/", "/election", "/board", "/markets", "/markets/[category]", "/market/[id]", "/race/[slug]", "/wallet/[address]", "/bet/[id]",
+const KEEP_MAIN = ["/", "/election", "/board", "/markets", "/markets/[category]", "/market/[slug]", "/race/[slug]", "/wallet/[address]", "/bet/[id]",
   "/wallets", "/copies", "/copies/yours", "/copy/[id]", "/go", "/login", "/settings", "/results"];
 const KEEP_TEXT = ["/faq", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog", "/about", "/help"];
 const KEEP = new Set([...KEEP_MAIN, ...KEEP_TEXT]);

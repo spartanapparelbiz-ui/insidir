@@ -73,12 +73,15 @@ export interface BetFilter {
   withSide?: boolean;
   /** Only bets in markets still open. */
   open?: boolean;
+  /** Every bet, however long ago it settled (a market's or a wallet's own page). */
+  all?: boolean;
   since?: number;
 }
 
 /** The newest bets matching the filter, newest first. */
 export async function recentBets(db: Db, f: BetFilter): Promise<BoardBet[]> {
-  const w: SQL[] = [sql`b.at <= ${new Date(f.now - (f.delayMs ?? 0))}`, sql`b.result is null or b.settled_at > ${new Date(f.now - DAY)}`];
+  const w: SQL[] = [sql`b.at <= ${new Date(f.now - (f.delayMs ?? 0))}`];
+  if (!f.all) w.push(sql`b.result is null or b.settled_at > ${new Date(f.now - DAY)}`);
   if (f.since !== undefined) w.push(sql`b.at >= ${new Date(f.since)}`);
   if (f.categories?.length) w.push(sql`b.category in (${sql.join(f.categories.map(c => sql`${c}`), sql`, `)})`);
   if (f.wallets?.length) w.push(sql`b.wallet in (${sql.join(f.wallets.map(x => sql`${x.toLowerCase()}`), sql`, `)})`);
