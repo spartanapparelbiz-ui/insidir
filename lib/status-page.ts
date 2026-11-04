@@ -42,6 +42,8 @@ const JOBS: Array<[RegExp, string, number]> = [
   [/^moves:proven-backfill$/, "Proven-wallet backfill", MIN],
   [/^markets:info$/, "Market prices", 3 * MIN],
   [/^twins:bets$/, "Kalshi twins", 4 * MIN],
+  [/^twins:history$/, "Record: Kalshi twins of past games", 2 * MIN],
+  [/^kalshi:asks$/, "Record: Kalshi prices at past bets", MIN],
   [/^accuracy$/, "Accuracy check", HOUR],
   [/^monitor:money-path$/, "Live tests", 15 * MIN],
   [/^smart:splits$/, "Positioning", 5 * MIN],
