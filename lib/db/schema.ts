@@ -989,3 +989,61 @@ export const kalshiPings = terminal.table("kalshi_pings", {
   kalshiPrice: doublePrecision("kalshi_price").notNull(),
   at: timestamp("at", { withTimezone: true }).notNull(),
 }, t => [index("kalshi_pings_at_idx").on(t.at)]);
+
+/** A member's Autopilot rules (lib/autopilot/rules.ts RuleSpec). `starter` names the one-tap starter it came from. */
+export const autopilotRules = terminal.table("autopilot_rules", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  starter: text("starter"),
+  active: boolean("active").notNull().default(true),
+  spec: jsonb("spec").$type<import("@/lib/autopilot/rules").RuleSpec>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("autopilot_rules_user_idx").on(t.userId), index("autopilot_rules_active_idx").on(t.active)]);
+
+/** Every time a rule met a wallet's move (lib/autopilot/engine.ts), once per rule and move: the finished Kalshi ticket
+ *  and whether it was pushed ("sent"), held for quiet hours ("quiet"), stopped by the price guard ("skipped") or by the
+ *  daily/weekly cap ("capped"). Sent and quiet ones are the rule's paper portfolio: Kalshi's ask then + 1¢, held to
+ *  settlement or to the wallet's exit. member_status / fill_price are the member's own log (Book). */
+export const autopilotMatches = terminal.table("autopilot_matches", {
+  id: serial("id").primaryKey(),
+  ruleId: integer("rule_id").notNull(),
+  userId: text("user_id").notNull(),
+  eventId: text("event_id").notNull(),
+  status: text("status").$type<"sent" | "quiet" | "skipped" | "capped">().notNull(),
+  reason: text("reason"),
+  wallet: text("wallet").notNull(),
+  marketId: text("market_id").notNull(),
+  kalshiId: text("kalshi_id").notNull(),
+  kalshiUrl: text("kalshi_url").notNull(),
+  side: text("side").$type<"yes" | "no">().notNull(),
+  outcome: text("outcome").notNull(),
+  title: text("title").notNull(),
+  category: text("category").notNull(),
+  amount: doublePrecision("amount").notNull(),
+  theirPrice: doublePrecision("their_price").notNull(),
+  ask: doublePrecision("ask"),
+  limitPrice: doublePrecision("limit_price"),
+  contracts: integer("contracts"),
+  stake: doublePrecision("stake"),
+  paperEntry: doublePrecision("paper_entry"),
+  tradeAt: timestamp("trade_at", { withTimezone: true }).notNull(),
+  matchedAt: timestamp("matched_at", { withTimezone: true }).notNull(),
+  latencyMs: integer("latency_ms").notNull(),
+  exitEventId: text("exit_event_id"),
+  exitAt: timestamp("exit_at", { withTimezone: true }),
+  exitPrice: doublePrecision("exit_price"),
+  result: text("result").$type<"won" | "lost" | "void">(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+  memberStatus: text("member_status").$type<"placed" | "skipped">(),
+  fillPrice: doublePrecision("fill_price"),
+}, t => [uniqueIndex("autopilot_matches_rule_event").on(t.ruleId, t.eventId), index("autopilot_matches_user_idx").on(t.userId, t.matchedAt),
+  index("autopilot_matches_market_idx").on(t.marketId, t.side)]);
+
+/** A rule's backtest (lib/autopilot/backtest.ts), by the rule's spec hash; recomputed by the worker. */
+export const autopilotBacktests = terminal.table("autopilot_backtests", {
+  key: text("key").primaryKey(),
+  result: jsonb("result").$type<import("@/lib/autopilot/backtest").Backtest>().notNull(),
+  computedAt: timestamp("computed_at", { withTimezone: true }).notNull(),
+});

@@ -288,6 +288,13 @@
       "when": 1793860000000,
       "tag": "0040_proven",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793870000000,
+      "tag": "0041_autopilot",
+      "breakpoints": true
     }
   ]
 }

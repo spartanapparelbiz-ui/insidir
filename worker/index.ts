@@ -56,6 +56,8 @@ import { pingJobs, pingMessage } from "@/lib/millionaires/pings";
 import { twinsDailyOnce } from "@/lib/twins/daily";
 import { twinsFromBets } from "@/lib/twins/direct";
 import { screenWallets } from "@/lib/millionaires/proven";
+import { autopilotBacktestsOnce, autopilotOnce } from "@/lib/autopilot/jobs";
+import { settleMatches } from "@/lib/autopilot/engine";
 import { twinOf } from "@/lib/entities/market";
 import { freshBigBets, freshBigSells, pingUsers, pricesNow, recordKalshiPings } from "@/lib/millionaires/ping-store";
 import { recordsFor } from "@/lib/moves/store";
@@ -282,6 +284,10 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         .filter(a => a.conditionId && a.side).map(a => ({ marketId: a.conditionId!, outcomeSide: a.outcomeIndex === 1 ? "no" as const : "yes" as const, side: a.side!, at: a.timestamp })) }, Date.now());
       if (r.screened) log(`millionaires:screen: ${r.screened} screened, ${r.proven} proven, ${r.excluded} excluded`);
     })] : []),
+    // Autopilot: every active rule against each wallet move within seconds; settle; backtests for starters and rules.
+    ...(clients.kalshi instanceof KalshiClient ? [every("autopilot", 3_000, async () => { await autopilotOnce(getDb(), clients.kalshi as KalshiClient, Date.now(), log); })] : []),
+    every("autopilot:settle", 5 * 60_000, async () => { await settleMatches(getDb()); }),
+    every("autopilot:backtests", 30 * 60_000, async () => { const n = await autopilotBacktestsOnce(getDb(), Date.now()); if (n) log(`autopilot:backtests: ${n} computed`); }),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
