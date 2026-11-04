@@ -115,7 +115,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
             <Photo n={SPOT.resultsEmpty} className="empty__photo" wideOnly />
             <p className="empty__h">Nothing settled yet{topOnly ? " from top-ranked traders" : ""}.</p>
             <p className="empty__p">Positions show up here, won or lost, as their markets settle.</p>
-            <Link className="btn btn--secondary" href={member ? "/feed" : "/start"}>{member ? "Open Activity" : GET_CTA}</Link>
+            <Link className="btn btn--secondary" href={member ? "/board" : "/go"}>{member ? "The board" : GET_CTA}</Link>
           </div>
         )}
       </main>

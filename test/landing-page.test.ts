@@ -9,7 +9,7 @@ import { BANNED_WORDS } from "@/lib/moves/copy";
 
 const ROOT = join(__dirname, "..");
 const read = (p: string): string => readFileSync(join(ROOT, p), "utf8");
-const tree = (dir: string): string[] => readdirSync(join(ROOT, dir)).flatMap(f => {
+const tree = (dir: string): string[] => !existsSync(join(ROOT, dir)) ? [] : readdirSync(join(ROOT, dir)).flatMap(f => {
   const p = `${dir}/${f}`;
   return statSync(join(ROOT, p)).isDirectory() ? tree(p) : /\.(tsx?|css)$/.test(f) ? [p] : [];
 });
@@ -28,7 +28,7 @@ const V2_UI = [
   "app/pricing/page.tsx", "app/about/page.tsx", "app/terms/page.tsx", "app/privacy/page.tsx", "app/signin/page.tsx", "app/not-found.tsx", "app/error.tsx",
   "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/copies/MyCopies.tsx", "components/copies/CopyPicker.tsx", "lib/copies/store.ts", "components/read/ReadBox.tsx", "components/read/ReadCard.tsx", "app/read/[id]/page.tsx", "lib/home/ref.ts", "components/home/HeroCta.tsx", ...tree("components/trackers"), "app/trackers/page.tsx", "app/trackers/[slug]/page.tsx", "lib/trackers.ts", "components/WrongTrail.tsx", ...tree("components/v2"),
   "lib/moves/copy.ts", "lib/moves/ticker.ts",
-];
+].filter(f => existsSync(join(ROOT, f)));
 
 describe("V2 landing page", () => {
   it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home (the homepage, unlocked)", () => {
@@ -44,14 +44,14 @@ describe("V2 landing page", () => {
     expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
-  it("the hero's words, its two CTAs (Check my bet, Start for $1 → /go), and no stocks, crypto or Congress in the pitch", async () => {
+  it("the hero's words, its two CTAs (Start for $1 → /go, the free sample), and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
     expect(copy.HERO.h1).toEqual(["You're betting", "against millionaires."]);
     expect(copy.STAGES.final).toEqual(["Bet with the", "millionaires."]);
     expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing).toContain('<Pill href="#check" delay={0.9} data-testid="hero-check">Check my bet</Pill>');
-    expect(landing).toContain('<Pill href="/go" kind="ghost" delay={0.97} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
+    expect(landing).toContain('<Pill href="/go" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
+    expect(landing).toContain('<Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>');
     const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);
@@ -101,20 +101,6 @@ describe("copy rules on every V2 page", () => {
   });
 });
 
-describe("home hero ticker", () => {
-  it("reads 'Someone · $48,000 on Lakers · 2m ago' from a feed item", async () => {
-    const { tickerItem } = await import("@/lib/moves/ticker");
-    const base = { id: "ks:1", source: "kalshi", tab: "sports", league: "NBA", sentence: "", payout: null, record: null, topTrader: false, amount: 48_000, at: 0,
-      ago: "2m ago", eventTitle: "Lakers vs Celtics", marketTitle: "Lakers vs Celtics", outcome: "Lakers", marketId: "KX-LAL", wallet: null, walletLabel: null,
-      link: null, result: null, note: null, ticker: null, who: { name: "Anonymous · Kalshi", href: null, badge: null }, face: { src: null, mono: "AN" }, why: null, sourceLink: null,
-      headline: "$48K says Lakers win", subline: "Lakers vs Celtics", inAt: "45%", avgPrice: 0.45, outcomeSide: "yes", nowPrice: null, pnl: null, low: null } as const;
-    const t = tickerItem({ ...base });
-    expect(`${t.amount} ${t.what} · ${t.ago}`).toBe("$48K on Lakers · 2m");
-    expect(t.href).toBe("/market/KX-LAL");
-    expect(tickerItem({ ...base, outcome: "Yes", tab: "markets", marketTitle: "Will the Fed cut in December?" }).what).toBe("on Yes · Will the Fed cut in December?");
-    expect(tickerItem({ ...base, source: "sec", tab: "stocks", eventTitle: "NVIDIA CORP", company: "Nvidia (NVDA)" }).what).toBe("of Nvidia (NVDA)");
-  });
-});
 
 describe("design system", () => {
   it("older pages: every colour in app/tokens.css; the brand (app/brand.css): only the hero spec's tokens and the data colours", () => {

@@ -110,7 +110,7 @@ export function PlanPromises() {
   const items: Array<[string, string, string]> = [
     ["M12 3v18M3 12h18", "Cancel anytime", "On your Whop orders page (Account → Manage subscription). You keep access until the month you paid for ends."],
     ["M5 12l4 4L19 6", "Secure sign-in and payments by Whop", "Checkout runs right on this site. We never see your card."],
-    ["M12 8v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z", "Real data, checked hourly", "Public records only, and every card links its source."],
+    ["M12 8v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z", "Real data, verified hourly", "Public records only, and every card links its source."],
   ];
   return (
     <section className="sec2 promise" aria-label="Our promises">

@@ -18,6 +18,9 @@ import { MoneyCard } from "../MoneyCard";
 import { PAY_BULLETS, Paywall } from "../Paywall";
 import { BrandFoot } from "../Nav";
 
+type WhopCheckout = { checkout: { create: (o: Record<string, unknown>) => { create: (k: "checkout", p?: Record<string, unknown>) => { mount: (sel: string | HTMLElement) => void } } } };
+declare global { interface Window { WhopElements?: (o?: Record<string, unknown>) => WhopCheckout } }
+
 export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "follow" | "push";
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
@@ -27,7 +30,7 @@ const KEY = "insidir_go";
 
 interface Answers { cats: CategorySlug[]; where: Where | null; size: Size | null; remind: boolean; /** Where to land at the end (a check they paid from). */ next?: string | null }
 const load = (): Answers => { try { return { cats: [], where: null, size: null, remind: true, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return { cats: [], where: null, size: null, remind: true }; } };
-/** Only our own pages: "/" or "/read/<id>". */
+/** Only our own pages. */
 export const safeNextPath = (v: string | null | undefined): string | null => (v && /^\/(read\/[A-Za-z0-9]{4,40})?$/.test(v) ? v : null);
 const store = (a: Answers) => { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch { /* private mode */ } };
 const st = (d: number, extra: CSSProperties = {}): { "data-m": "settle"; style: CSSProperties } => ({ "data-m": "settle", style: { ...extra, "--d": `${d}s` } as CSSProperties });
@@ -67,7 +70,7 @@ function Checkout({ elementsUrl, ageConfirmed }: { elementsUrl: string; ageConfi
       </label>
       {state === "opening" ? <div className="b-glass b-pad b-skel" aria-busy="true" style={{ minHeight: 320 }}><p className="b-small" role="status">Opening secure checkout…</p><span className="b-skel__line" style={{ height: 44 }} /><span className="b-skel__line" style={{ height: 44 }} /><span className="b-skel__line" style={{ height: 44, width: "60%" }} /></div> : null}
       {state === "error" ? <p className="b-msg" role="alert">The checkout didn&apos;t open. <button type="button" className="b-btn b-panel-pill" onClick={() => void open()}>Try again</button></p> : null}
-      {state === "unconfigured" ? <p className="b-msg" role="alert">Checkout isn&apos;t open yet. Check back soon.</p> : null}
+      {state === "unconfigured" ? <p className="b-msg" role="alert">Checkout isn&apos;t open yet. Come back soon.</p> : null}
       <div ref={box} className="b-glass" style={{ overflow: "hidden", padding: 8, background: "#fff", color: "#000", minHeight: state === "ready" ? 320 : 0 }} hidden={state !== "ready"} data-testid="go-checkout-frame" />
       <p className="b-small">Apple Pay, Google Pay or card · Secure checkout by Whop · Cancel anytime in Account</p>
     </div>
@@ -218,7 +221,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     }
     case "building": {
       const lines = [
-        `Checking ${d.build.wallets.toLocaleString("en-US")} millionaire wallets`,
+        `Reading ${d.build.wallets.toLocaleString("en-US")} millionaire wallets`,
         `${cats.reduce((s, c) => s + (d.build.perCat[c] ?? 0), 0)} bets in ${names(cats.length ? cats : [])} today`,
         a.where === "kalshi" || a.where === "sportsbook" ? "Pricing on Kalshi" : "Pricing on Kalshi and Polymarket",
       ];

@@ -127,9 +127,9 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
             }))} />
             {pages > 1 ? (
               <nav className="b-ctas" aria-label="Pages">
-                {page > 1 ? <Pill href={`/p/${wallet}?page=${page - 1}#moves-h`} kind="ghost">Newer</Pill> : null}
+                {page > 1 ? <Pill href={`/wallet/${wallet}?page=${page - 1}#moves-h`} kind="ghost">Newer</Pill> : null}
                 <span className="b-small">Page {page} of {pages}</span>
-                {page < pages ? <Pill href={`/p/${wallet}?page=${page + 1}#moves-h`} kind="ghost">Older</Pill> : null}
+                {page < pages ? <Pill href={`/wallet/${wallet}?page=${page + 1}#moves-h`} kind="ghost">Older</Pill> : null}
               </nav>
             ) : null}
           </Panel>

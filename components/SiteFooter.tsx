@@ -17,10 +17,10 @@ export function SiteFooter() {
         </div>
         <div className="foot__cols">
           <nav className="foot__links" aria-label="Product">
-            <Link href="/trackers">Trackers</Link>
-            <Link href="/sports">Sports</Link>
-            <Link href="/markets">Prediction markets</Link>
-            <Link href="/top">Leaderboard</Link>
+            <Link href="/board">Board</Link>
+            <Link href="/election">Election</Link>
+            <Link href="/markets">Markets</Link>
+            <Link href="/wallets">Wallets</Link>
             <Link href="/results">Track record</Link>
             <Link href="/pricing">Pricing</Link>
           </nav>

@@ -33,7 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <h1 className="astart__h">Welcome back.</h1>
         {sp.error && ERRORS[sp.error] ? <p className="aerr" role="alert">{ERRORS[sp.error]}</p> : null}
         <div className="astart__cta"><ContinueButton next={next} /></div>
-        <p className="astart__alt">New here? <Link href="/start">Start for $1</Link></p>
+        <p className="astart__alt">New here? <Link href="/go">Start for $1</Link></p>
       </div>
     </AuthSplit>
   );

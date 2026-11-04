@@ -20,7 +20,7 @@ export default async function FaqPage() {
         <PageHead kicker="FAQ" title="Questions" sub={<>Short, honest answers. Anything else: <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</>} />
         <FaqV2 title="Everything people ask" items={FAQ_ALL} />
         <Sec id="end-h" title="See it for yourself.">
-          <div className="mkt__ctas"><Link className="btn btn--primary" href="/start">Start for $1</Link><Link className="btn btn--secondary" href="/methodology">Methodology</Link></div>
+          <div className="mkt__ctas"><Link className="btn btn--primary" href="/go">Start for $1</Link><Link className="btn btn--secondary" href="/methodology">Methodology</Link></div>
         </Sec>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaV2(FAQ_ALL) }} />
       </main>

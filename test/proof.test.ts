@@ -49,13 +49,13 @@ describe("the trust block", () => {
     settled: { won: 877, lost: 298, refunded: 3, soldEarly: 12, oddsPct: 61.4, net: 1_234_000 },
     accuracy: { runAt, ok: 47, checked: 48, hidden: 1 },
   });
-  it("a fresh check: 'Checked every hour', the time in ET, matched of checked, hidden, and How we check → /data", () => {
+  it("a fresh audit: 'Verified every hour', the time in ET, matched of checked, hidden, and How we verify → /data", () => {
     const html = renderToStaticMarkup(createElement(TrustBlock, { facts: facts(NOW), now: NOW + 5 * 60_000 }));
     const text = html.replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
-    expect(html).toContain("Checked every hour");
-    expect(text).toMatch(/Last check 7:55\s?PM ET: 47 of 48 matched\. 1 hidden until it matches\./);
+    expect(html).toContain("Verified every hour");
+    expect(text).toMatch(/Last audit 7:55\s?PM ET: 47 of 48 matched\. 1 hidden until it matches\./);
     expect(html).toContain('href="/data"');
-    expect(html).toContain("How we check");
+    expect(html).toContain("How we verify");
     expect(text).toContain("877 won, 298 lost");
     expect(text).toContain("Average entry: 61%");
     expect(text).toContain("12 closed before settlement");
@@ -65,11 +65,11 @@ describe("the trust block", () => {
     expect(res).toMatch(/Net for these traders: \+\$1\.2M/);
     expect(res).toContain("What these positions realized");
   });
-  it("a check more than 2 hours old never claims hourly", () => {
+  it("an audit more than 2 hours old never claims hourly", () => {
     const html = renderToStaticMarkup(createElement(TrustBlock, { facts: facts(NOW), now: NOW + 2 * 3_600_000 + 60_000 }));
     const text = html.replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
     expect(html).not.toContain("every hour");
-    expect(html).toContain("Last check");
+    expect(html).toContain("Last audit");
     expect(text).toContain("47 of 48 matched");
   });
 });

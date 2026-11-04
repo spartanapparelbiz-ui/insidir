@@ -1,7 +1,7 @@
 /* The money-path monitor (server only), every MONEY_PATH_MS from the worker, against the live site (APP_URL):
  *   landing   GET /: 200 with the headline
- *   read      POST /api/read for an open market we hold (the newest large position's), then GET /read/<id>: the card
- *   checkout  GET /start: the checkout page; POST /api/checkout/start: the plan is open
+ *   market    GET /market/<id> for an open market we hold (the newest millionaire bet's): the market page
+ *   checkout  GET /go: the funnel; POST /api/checkout/start: the plan is open
  *   sign-in   GET /login/start: a redirect to Whop's authorize URL; GET that URL: Whop accepts it (no
  *             "redirect_uri is invalid", no error redirect)
  * Each run is kept (terminal.monitor_runs) and shown on /status. A failure is sent as a web push (lib/alerts/send.ts) to
@@ -19,7 +19,7 @@ import { monitorRuns } from "@/lib/db/schema";
 export const MONEY_PATH_MS = 10 * 60_000;
 const STEP_MS = 15_000;
 export const MONITOR_VISITOR = /^monitor-/;
-export interface Step { step: "landing" | "read" | "checkout" | "sign-in"; ok: boolean; ms: number; detail?: string }
+export interface Step { step: "landing" | "market" | "checkout" | "sign-in"; ok: boolean; ms: number; detail?: string }
 export interface Alert { title: string; body: string; url: string }
 /** "sent" to at least one device; "no_subscription" when no owner has a device subscribed; "failed" otherwise. */
 export type NotifyOutcome = "sent" | "no_subscription" | "failed";
@@ -47,11 +47,9 @@ class StepFailed extends Error {}
 const must = (cond: unknown, why: string): void => { if (!cond) throw new StepFailed(why); };
 
 /** The market the monitor reads: the newest large position's, on a market still open. */
-async function marketToRead(db: Db, now: number): Promise<string | null> {
-  const r = await db.execute(sql`select source, market_id from terminal.moves where source in ('polymarket', 'kalshi') and result is null and hidden_at is null
-    and at > ${new Date(now - 3 * 86_400_000)} order by at desc limit 1`);
-  const x = r.rows[0] as { source: string; market_id: string } | undefined;
-  return x ? `${x.source}:${x.market_id}` : null;
+async function marketToOpen(db: Db, now: number): Promise<string | null> {
+  const r = await db.execute(sql`select market_id from terminal.millionaire_bets where at > ${new Date(now - 3 * 86_400_000)} order by at desc limit 1`);
+  return (r.rows[0] as { market_id: string } | undefined)?.market_id ?? null;
 }
 
 /** Runs the path once; returns each step (stops at the first failure). */
@@ -70,19 +68,15 @@ export async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
     must(r.status === 200, `GET / answered ${r.status}`);
     must((await r.text()).includes(HEADLINE), "the home page doesn't show the headline");
   })) return steps;
-  if (!await run("read", async () => {
-    const pick = await marketToRead(db, now);
-    must(pick, "no open market to read in the last 3 days");
-    const body = new FormData(); body.set("pick", pick!);
-    const r = await get("/api/read", { method: "POST", body });
-    const j = (await r.json().catch(() => ({}))) as { id?: string; error?: string };
-    must(r.status === 200 && j.id, `POST /api/read answered ${r.status}${j.error ? `: ${j.error}` : ""}`);
-    const page = await get(`/read/${j.id}`);
-    must(page.status === 200 && (await page.text()).includes('data-testid="read-card"'), `GET /read/${j.id} answered ${page.status} without the card`);
+  if (!await run("market", async () => {
+    const id = await marketToOpen(db, now);
+    must(id, "no millionaire bet in the last 3 days");
+    const page = await get(`/market/${encodeURIComponent(id!)}`);
+    must(page.status === 200 && (await page.text()).includes('data-testid="market-page"'), `GET /market/${id} answered ${page.status} without the market`);
   })) return steps;
   if (!await run("checkout", async () => {
-    const page = await get("/start");
-    must(page.status === 200 && (await page.text()).includes('data-testid="start-pay"'), `GET /start answered ${page.status} without the checkout`);
+    const page = await get("/go");
+    must(page.status === 200 && (await page.text()).includes('data-testid="go-hook"'), `GET /go answered ${page.status} without the funnel`);
     const r = await get("/api/checkout/start", { method: "POST", body: JSON.stringify({ age18: true }), headers: { "content-type": "application/json" } });
     const j = (await r.json().catch(() => ({}))) as { planId?: string; message?: string };
     must(r.status === 200 && j.planId, `the checkout didn't open (${r.status}${j.message ? `: ${j.message}` : ""})`);

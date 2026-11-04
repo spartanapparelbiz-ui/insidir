@@ -832,7 +832,7 @@ html.bm .b-stage.b-pre:not(.is-in) :is(.s-draw) { stroke-dashoffset: 1; stroke-d
 .s-cmd__spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--glass-line); border-top-color: var(--ink); animation: spin .8s linear infinite; }
 .s-cmd__pop { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; right: 0; padding: 20px; border-radius: var(--r); background: var(--panel); border: 1px solid var(--glass-line); }
 .s-choices { list-style: none; margin: 0; padding: 0; } .s-choices li + li { border-top: 1px solid var(--glass-line); }
-.s-choices button { display: flex; width: 100%; justify-content: space-between; gap: 12px; padding: 12px 0; text-align: left; color: var(--ink); background: none; border: 0; font: inherit; cursor: pointer; }
+.s-choices button, .s-choices a { display: flex; width: 100%; justify-content: space-between; gap: 12px; padding: 12px 0; text-align: left; color: var(--ink); background: none; border: 0; font: inherit; cursor: pointer; }
 .s-cmdres__q { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
 .s-cmdres__v { margin: 0 0 12px; } .s-strong { color: var(--ink); font-weight: 600; }
 .s-cmdres__sides { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--glass-line); }

@@ -20,12 +20,12 @@ export default function TermsPage() {
       <h2>No promise of results</h2>
       <ul>
         <li>{PAST} A tracker or a wallet that made money before can lose it next.</li>
-        <li>Data can be late, incomplete or wrong. Each card links its source, and the source is the record. How we check: <Link href="/data">Our data</Link>.</li>
+        <li>Data can be late, incomplete or wrong. Each card links its source, and the source is the record. How we verify: <Link href="/data">Our data</Link>.</li>
         <li>Followable returns assume a price you may not get. How they&apos;re computed: <Link href="/methodology">Methodology</Link>.</li>
       </ul>
 
       <h2>Who can use it</h2>
-      <p>You must be 18 or older, and you confirm it before checkout (we keep that confirmation with your account). You must also be old enough to use prediction markets or sportsbooks where you live if you use them. It&apos;s up to you to check that each venue is legal and available to you, and to follow its rules.</p>
+      <p>You must be 18 or older, and you confirm it before checkout (we keep that confirmation with your account). You must also be old enough to use prediction markets or sportsbooks where you live if you use them. It&apos;s up to you to confirm that each venue is legal and available to you, and to follow its rules.</p>
 
       <h2>Your account and payment</h2>
       <ul>

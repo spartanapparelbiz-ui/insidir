@@ -82,7 +82,7 @@ export default function MethodologyPage() {
         <li>13F holdings are a quarter-end snapshot: not when a fund bought, what it paid, or what it has done since.</li>
         <li>It&apos;s a record of what happened, not advice. See <Link href="/disclosures">Disclosures</Link>.</li>
       </ul>
-      <p>How we check every number against its source: <Link href="/data">Our data</Link>. Live health of every source: <Link href="/status">Status</Link>.</p>
+      <p>How we verify every number against its source: <Link href="/data">Our data</Link>. Live health of every source: <Link href="/status">Status</Link>.</p>
     </TrustPage>
   );
 }

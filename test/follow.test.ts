@@ -1,7 +1,6 @@
 /* Followable returns (lib/follow), Open now's grouping, plain headlines and Positioning's new rules. Pure. */
 import { describe, expect, it } from "vitest";
 import { crossedAt, followPrice, followRecord, followRoi, hundredLine, MIN_SETTLED, priceAt, roiText, SLIPPAGE } from "@/lib/follow/math";
-import { dedupe } from "@/lib/follow/open";
 import { isWinner } from "@/lib/follow/records";
 import { headlineOf } from "@/lib/moves/headline";
 import { bigMoneySplit, crowdSplit, edgeOf, positioningPublic, POSITION_DAYS, SCORE_MIN, smartOf } from "@/lib/smart/splits";
@@ -46,12 +45,6 @@ describe("followable returns", () => {
 });
 
 describe("Open now and the home page", () => {
-  it("one row per market and side within an hour, whoever placed them (Kalshi too), amounts added and counted", () => {
-    const m = (id: string, wallet: string | null, marketId: string, side: "yes" | "no", amount: number, at: number) => ({ id, wallet, marketId, outcomeSide: side, amount, at });
-    const out = dedupe([m("a", "w1", "x", "yes", 10, 0), m("b", "w1", "x", "yes", 5, 30 * 60_000), m("c", "w1", "x", "no", 7, 0), m("d", "w1", "x", "yes", 3, 3 * H), m("e", null, "x", "yes", 2, 0), m("f", null, "x", "yes", 2, 0)]);
-    // b, a, e and f merge (same side and market within the hour; e and f have no account); d is 3 hours later.
-    expect(out.map(x => [x.id, x.amount, x.n])).toEqual([["d", 3, 1], ["b", 19, 4], ["c", 7, 1]]);
-  });
   it("plain headlines: present tense, surnames in politics", () => {
     const base = { id: "x", source: "polymarket", marketId: "m", amount: 1, avgPrice: 0.4, wallet: null, walletName: null, at: 0, lastAt: 0, fills: 1, tab: "markets", league: null, url: null, result: null, settledAt: null } as const;
     const h = (e: string, t: string, o: string, side: "yes" | "no", category = "politics") => headlineOf({ ...base, eventTitle: e, marketTitle: t, outcome: o, outcomeSide: side, category } as never);

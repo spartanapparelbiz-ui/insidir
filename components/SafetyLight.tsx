@@ -1,7 +1,7 @@
 import type { Safety } from "@/lib/types";
 
 /** The "Same rules?" answer, in one word (docs/BRIEF.md §4.6): Yes (check), Check (alert), No (x). */
-export const SAFETY_LABEL: Record<Safety, string> = { green: "Yes", yellow: "Check", red: "No" };
+export const SAFETY_LABEL: Record<Safety, string> = { green: "Yes", yellow: "Maybe", red: "No" };
 export const SAFETY_MEANING: Record<Safety, string> = {
   green: "Both apps settle this the same way: same event, same date, same source.",
   yellow: "Small differences in the rules. Read both before you buy.",

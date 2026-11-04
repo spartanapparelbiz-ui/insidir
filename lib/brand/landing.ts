@@ -13,7 +13,7 @@ import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 
 let clients: { kalshi: KalshiClient; polymarket: PolymarketClient } | null = null;
 const gapClients = () => (clients ??= { kalshi: new KalshiClient(), polymarket: new PolymarketClient() });
-import { bestRecord, electionBoard, electionDay, priceGaps, pulseData, walletSpotlight, type ElectionBoard, type PriceGap, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
+import { bestRecord, electionBoard, electionDay, priceGaps, pulseData, walletSpotlight, type ElectionBoard, type PriceGap, type Race, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
 
 const DAY = 86_400_000;
 
@@ -25,8 +25,10 @@ export interface LandingData {
   now: number;
   member: boolean;
   pulse: Pulse;
-  /** The busiest markets (the free check's chips). */
-  chips: Array<{ pick: string; label: string }>;
+  /** The free live sample: today's #1 millionaire bet (the biggest since midnight ET), whole, side included. */
+  topBet: BoardBet | null;
+  /** The free live sample: one race in full (the race with the most watchlist money this week). */
+  race: Race | null;
   /** Today's #1 millionaire market (most $1M+ money since midnight ET, else the last 24 hours), whole. */
   top: { m: MarketMoney; positions: Position[]; window: "today" | "24h" } | null;
   /** The last three millionaire-tier bets, sides included, and how many more there were today. */
@@ -90,18 +92,19 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   const wallet = w ? { ...w, results: await safe(lastResults(db, w.wallet, 5), []) } : null;
   const b = [...recent].sort((x, y) => y.amount - x.amount)[0];
   const pool = todayTop.length ? todayTop : dayTop;
-  const [pulse2, election, spotlight, stake, gaps, lead] = await Promise.all([
+  const topBet = [...recent].filter(x => x.at >= midnight).sort((x, y) => y.amount - x.amount)[0] ?? null;
+  const [pulse2, election, spotlight, stake, gaps, lead, races] = await Promise.all([
     safe(pulseData(db, now, p.sinceMidnight, pool), { today: p.sinceMidnight, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
     electionDay(now) ? safe(electionBoard(db, now, member), null) : Promise.resolve(null),
     safe(walletSpotlight(db), null),
     safe(bestRecord(db, now), null),
     safe(priceGaps(db, gapClients(), now), [] as PriceGap[]),
-    electionDay(now) ? Promise.resolve([] as BoardBet[]) : safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
+    safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
+    electionDay(now) ? Promise.resolve(null) : safe(electionBoard(db, now, false), null),
   ]);
   return {
-    pulse2, election, spotlight, stake, gaps, lead,
+    pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
     now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, proof: pr, bestPrice: best,
-    chips: day.slice(0, 5).map(m => ({ pick: `polymarket:${m.marketId}`, label: m.title })),
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
     brief: pool.slice(0, 3),
     wallet,
@@ -116,7 +119,7 @@ export function landingFor(db: Db, now: number): Promise<LandingData> {
 
 /** No database (local preview): every stage in its empty state. */
 export const emptyLanding = (now: number): LandingData => ({
-  now, member: false, pulse: EMPTY_PULSE, chips: [], top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
+  now, member: false, pulse: EMPTY_PULSE, topBet: null, race: null, top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, proof: null, bestPrice: null,
   pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
 });

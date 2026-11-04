@@ -14,7 +14,7 @@ export function beatState(live: boolean, agoS: number | null): BeatState {
 
 export function beatText(state: BeatState, agoS: number | null): string {
   if (state === "paused") return "Live data paused. Retrying now.";
-  if (state === "stale") return `Prices last checked ${agoS}s ago. Checking again.`;
+  if (state === "stale") return `Prices last read ${agoS}s ago. Reading again.`;
   return `Scanning live. Last scan ${agoS ?? 0}s ago.`;
 }
 

@@ -13,7 +13,7 @@ export function WalletCards({ wallets, today, biggest = false, testid }: { walle
     <div className="s-cards" data-stagger="" data-testid={testid}>
       {wallets.map(w => (
         <Panel key={w.wallet} className="s-wcard" testid="wallet-card">
-          <a className="s-wcard__id b-num s-link" href={`/p/${w.wallet}`}>{w.short}</a>
+          <a className="s-wcard__id b-num s-link" href={`/wallet/${w.wallet}`}>{w.short}</a>
           {w.pnl !== null ? <p className="s-big b-num">{signed(w.pnl)}</p> : null}
           <p className="b-small">all-time profit</p>
           {w.last10 ? (

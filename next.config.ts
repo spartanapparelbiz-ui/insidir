@@ -1,5 +1,19 @@
 import type { NextConfig } from "next";
 
+/** Retired routes and where each one goes now. /check/<id>, /read/<id> and /read/open resolve the market (app/check,
+ *  app/read). Query strings carry over (/welcome?status=succeeded lands on /go?status=succeeded). */
+export const RETIRED: ReadonlyArray<readonly [string, string]> = [
+  ["/check", "/board"], ["/check/history", "/board"], ["/check/:id/:rest+", "/board"], ["/read/:id/:rest+", "/board"],
+  ["/trader/:wallet", "/wallet/:wallet"], ["/p/:id", "/wallet/:id"], ["/top", "/wallets"], ["/whales", "/wallets"],
+  ["/trackers", "/wallets"], ["/trackers/:slug*", "/wallets"], ["/sports", "/board?cat=sports"],
+  ["/stocks", "/board"], ["/company/:t*", "/board"], ["/insider-trading/:t*", "/board"], ["/insiders/:id*", "/board"],
+  ["/funds/:id*", "/board"], ["/deal/:id*", "/board"], ["/terminal", "/board"], ["/research", "/board"],
+  ["/discover", "/markets"], ["/feed", "/board"], ["/gaps", "/board"], ["/splits", "/board"], ["/splits/:rest*", "/board"],
+  ["/open", "/board"], ["/position/:id*", "/board"], ["/pnl", "/copies"], ["/receipts", "/results"], ["/receipts/:rest*", "/results"],
+  ["/library", "/copies"], ["/following", "/copies"], ["/alerts", "/settings"], ["/onboarding", "/settings"],
+  ["/start", "/go"], ["/welcome", "/go"], ["/signin", "/login"],
+];
+
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -32,6 +46,8 @@ const config: NextConfig = {
   async redirects() {
     return [
       { source: "/how-it-works", destination: "/methodology", permanent: true },
+      // Retired routes (the old product). Every one is a 301; see test/routes.test.ts for the keep list.
+      ...RETIRED.map(([source, destination]) => ({ source, destination, permanent: true })),
     ];
   },
   // Apple Pay's domain verification file (from Whop, public/.well-known): exactly as is, as plain text.

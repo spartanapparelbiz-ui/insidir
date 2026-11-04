@@ -15,7 +15,7 @@ import "../landing.css";
 import { RevealGroup } from "@/components/motion/Reveal";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Our data", description: "Every source behind Insidir with its live freshness, how late each can be, its limits, and the hourly accuracy checks." };
+export const metadata: Metadata = { title: "Our data", description: "Every source behind Insidir with its live freshness, how late each can be, its limits, and the hourly accuracy audits." };
 
 export default async function DataPage() {
   const now = Date.now();
@@ -45,8 +45,8 @@ export default async function DataPage() {
 
           <h2>How late it can be</h2>
           <ul>
-            <li><strong>Polymarket and Kalshi</strong>: we check every 15 seconds, so a large position usually shows within a minute. The public preview on our home page shows positions 30 minutes after they happen.</li>
-            <li><strong>Form 4 (insider trades)</strong>: insiders have up to 2 business days after a trade to file. We check EDGAR every 2 minutes, so a card shows both dates: the day they traded and the day they filed.</li>
+            <li><strong>Polymarket and Kalshi</strong>: we poll every 15 seconds, so a large position usually shows within a minute. The public preview on our home page shows positions 30 minutes after they happen.</li>
+            <li><strong>Form 4 (insider trades)</strong>: insiders have up to 2 business days after a trade to file. We read EDGAR every 2 minutes, so a card shows both dates: the day they traded and the day they filed.</li>
             <li><strong>13F (fund holdings)</strong>: funds file up to 45 days after the quarter ends, so a 13F card can describe holdings more than six weeks old. Each card says which quarter it covers and the day it was filed, for example &ldquo;Q3 2026 holdings · filed Nov 14&rdquo;.</li>
             <li>When a source is more than 5 minutes behind, the feed says &ldquo;Catching up&rdquo; with the time of the last update, instead of &ldquo;Live&rdquo;.</li>
           </ul>
@@ -60,10 +60,10 @@ export default async function DataPage() {
             <li><strong>It&apos;s a record of what happened, not advice.</strong> Large positions lose too: the <Link href="/results">Track record</Link> page shows every settled position, losses included.</li>
           </ul>
 
-          <h2 id="checks">How we check it</h2>
+          <h2 id="checks">How we verify it</h2>
           <p>Every hour we re-read 20 random positions and 20 profile numbers from their sources. Anything that doesn&apos;t match is hidden until it does, and we get an email. Spotted something wrong? Write to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
           {status?.checks.length ? <>
-            <h3>The last checks</h3>
+            <h3>The latest verifications</h3>
             <ul className="stat__list" data-testid="data-checks">
               {status.checks.slice(0, 24).map(c => <li key={c.runAt} className="stat__row"><span className={`stat__dot stat__dot--${c.mismatch ? "amber" : "green"}`} aria-hidden="true" /><span className="stat__name">{dateTimeET(c.runAt)}</span><span className="stat__note">{c.ok} of {c.checked} matched the source{c.mismatch ? `, ${c.mismatch} hidden until ${c.mismatch === 1 ? "it matches" : "they match"}` : ""}</span></li>)}
             </ul>
@@ -71,7 +71,7 @@ export default async function DataPage() {
           <p>The rules behind every number: <Link href="/methodology">Methodology</Link>.</p>
         </RevealGroup>
         <div className="lp-legal__next">
-          <Link className="btn btn--primary" href="/start">Start for ${TRIAL.fee}</Link>
+          <Link className="btn btn--primary" href="/go">Start for ${TRIAL.fee}</Link>
         </div>
       </main>
     </>

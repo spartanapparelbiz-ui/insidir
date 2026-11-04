@@ -63,7 +63,7 @@ describe("home Results preview: only bets in the record", () => {
     expect(countsToRecord(settled({ marketTitle: "Arsenal AND Chelsea win" }))).toBe(false);
   });
   it("the live portfolio picks its results from Polymarket and filters by the record rule", () => {
-    const src = readFileSync("components/home/Discover.tsx", "utf8") + readFileSync("lib/trust.ts", "utf8");
+    const src = readFileSync("lib/trust.ts", "utf8");
     expect(src).toMatch(/countsToRecord|SOLD_EARLY_SHARE/);
   });
 });

@@ -26,7 +26,7 @@ export async function TrustPage({ path, title, updated, lead, children, cta = tr
         </RevealGroup>
         {cta && !viewer.user ? (
           <div className="lp-legal__next">
-            <Link className="btn btn--primary" href="/start">Start for ${TRIAL.fee}</Link>
+            <Link className="btn btn--primary" href="/go">Start for ${TRIAL.fee}</Link>
             <p className="lp-legal__fine">{TRIAL_LINE}, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.</p>
           </div>
         ) : null}

@@ -50,7 +50,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
                   <Panel key={x.marketId} className="s-pin__card" testid="disagree-card">
                     <h3 className="s-ticket__mkt">{x.title}</h3>
                     <Meter d={x} />
-                    <Pill href={`/read/open?pick=polymarket:${x.marketId}`} kind="ghost">See the market</Pill>
+                    <Pill href={`/market/${encodeURIComponent(x.marketId)}`} kind="ghost">See the market</Pill>
                   </Panel>
                 ))}
               </div>

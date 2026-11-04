@@ -59,7 +59,6 @@ import { appUrl } from "@/lib/app-url";
 import { closeDb, getDb } from "@/lib/db";
 import { ACCURACY_MS, runAccuracyCheck } from "@/lib/accuracy/check";
 import { moneyPathOnce, MONEY_PATH_MS } from "@/lib/monitor/money-path";
-import { refreshWatched } from "@/lib/read/member";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import { notesOnce } from "@/lib/analyst/store";
@@ -306,11 +305,6 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         if (r.wallets) log(`moves: ${r.wallets} public records backfilled, ${r.requests} requests at ${r.reqPerSec}/s (limit ${r.limitPerSec}/s, share ${r.share}), ${r.queued} queued, ${r.due} due`);
       }),
       every("accuracy", ACCURACY_MS, () => accuracyOnce(clients.polymarket as PolymarketClient, clients.kalshi as KalshiClient, sec)),
-      // Your markets (lib/read/member.ts): a fresh Read of every market members read in the last 14 days, every 15 minutes.
-      every("read:refresh", 15 * 60_000, async () => {
-        const n = await refreshWatched(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
-        await heartbeat(getDb(), "read:refresh", true, null, { refreshed: n });
-      }),
       // The money path, as a visitor would walk it, against the live site (off with MONEY_PATH_MONITOR=off).
       ...(process.env.MONEY_PATH_MONITOR === "off" ? [] : [every("monitor:money-path", MONEY_PATH_MS, async () => {
         const r = await moneyPathOnce(getDb(), { base: appUrl(), log });

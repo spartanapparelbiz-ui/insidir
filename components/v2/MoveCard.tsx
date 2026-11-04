@@ -88,7 +88,7 @@ export function MoveCard({ m, follow, followFor, trialHref, fresh = false, compa
         <span className="move__kind">{tag.text}{sub ? ` · ${sub}` : ""}</span>
       </div>
       <div className="move__hrow">
-        <h3 className="move__head"><Link className="move__headlink" href={`/position/${encodeURIComponent(m.id)}`}>{m.headline}</Link></h3>
+        <h3 className="move__head"><Link className="move__headlink" href={`/market/${encodeURIComponent(m.marketId)}`}>{m.headline}</Link></h3>
         <CardResult m={m} />
       </div>
       <p className="move__meta"><span>{short(m.amount)}</span> · <span>{m.who.name}</span> · <TimeAgo className="move__ago" at={m.at} initial={m.ago} /></p>

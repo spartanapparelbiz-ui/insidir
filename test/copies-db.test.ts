@@ -37,12 +37,13 @@ describe.skipIf(!URL0)("copy the winners, in Postgres", () => {
     for (let i = 0; i < 32; i++) await move(`old_${i}`, { market: `0xold${i}`, at: START - (100 - i) * H, seen: 0.49, result: i < 20 ? "won" : "lost", settled: START - (90 - i) * H });
     await pool.query(`insert into terminal.users (id, email, plan, region) values ('usr_us', 'us@example.test', 'insidir', 'us')`);
     await pool.query(`insert into terminal.follows (user_id, kind, target, created_at) values ('usr_us', 'trader', $1, $2)`, [W, new Date(START)]);
-    // After the copy began: one matched to Kalshi (inverted), one with no match, one settled (won at 39¢ → 40¢).
+    // After the copy began: one matched to Kalshi (an approved twin, YES for YES), one with no match, one settled (won at 39¢ → 40¢).
     await move("m_matched", { market: "0xp1", at: NOW - 2 * H, seen: 0.5 });
     await move("m_unmatched", { market: "0xp2", at: NOW - H, seen: 0.6 });
     await move("m_settled", { market: "0xp3", at: START + H, seen: 0.39, result: "won", settled: START + 5 * H });
-    await pool.query(`insert into terminal.markets (venue, id, data) values ('kalshi', 'KXNBA-LAL', $1)`, [JSON.stringify({ venue: "kalshi", id: "KXNBA-LAL", url: "https://kalshi.com/markets/kxnbagame/lal", yesPrice: 0.3, active: true })]);
-    await pool.query(`insert into terminal.pairs (id, data, safety) values ('p1', $1, 'green')`, [JSON.stringify({ id: "p1", a: { venue: "polymarket", id: "0xp1" }, b: { venue: "kalshi", id: "KXNBA-LAL" }, inverted: true, method: "llm", confidence: 0.9, safety: "green", safetyNotes: [], blocked: false })]);
+    await pool.query(`insert into terminal.markets (venue, id, data) values ('kalshi', 'KXNBA-LAL', $1)`, [JSON.stringify({ venue: "kalshi", id: "KXNBA-LAL", url: "https://kalshi.com/markets/kxnbagame/lal", yesPrice: 0.7, active: true })]);
+    await pool.query(`insert into terminal.market_twins (polymarket_id, kalshi_id, kalshi_url, polymarket_title, kalshi_title, kind, verdict, status, confidence, checks)
+      values ('0xp1', 'KXNBA-LAL', 'https://kalshi.com/markets/kxnbagame/lal', 'Lakers vs. Celtics', 'Los Angeles L wins', 'winner', 'candidate', 'approved', 0.99, '{}'::jsonb)`);
     await pool.query(`insert into terminal.market_info (source, market_id, yes_price) values ('polymarket', '0xp1', 0.55), ('polymarket', '0xp2', 0.62)`);
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
@@ -62,7 +63,7 @@ describe.skipIf(!URL0)("copy the winners, in Postgres", () => {
     expect(moves.map(m => m.id)).toEqual(["m_unmatched", "m_matched", "m_settled"]);
     const matched = moves.find(m => m.id === "m_matched")!;
     expect(matched.open).toEqual({ venue: "kalshi", href: "https://kalshi.com/markets/kxnbagame/lal" });
-    expect(matched.yourPrice).toBeCloseTo(0.7, 6); // YES on Polymarket = NO on Kalshi: 1 − 0.30
+    expect(matched.yourPrice).toBeCloseTo(0.7, 6); // the twin pays YES for YES: Kalshi's YES at 70¢
     expect(matched.theirPrice).toBe(0.48);
     expect(moves.find(m => m.id === "m_unmatched")).toMatchObject({ open: null, yourPrice: null });
     for (const m of moves) expect(m.open?.href ?? "").not.toMatch(/polymarket\.com/);

@@ -83,7 +83,7 @@ export function Leaderboard({ leaders, label }: { leaders: Leader[]; label: stri
   return (
     <Table label={label} head={["Trader", "Settled", "W–L", "Win rate", "Net P&L"]} numeric={[1, 2, 3, 4]}
       rows={leaders.map(l => [
-        <Link key="n" className="dtable__link" href={`/p/${l.wallet}`}>{walletLabel(l.wallet, l.name)}</Link>,
+        <Link key="n" className="dtable__link" href={`/wallet/${l.wallet}`}>{walletLabel(l.wallet, l.name)}</Link>,
         l.moves.toLocaleString("en-US"), `${l.perf.won}–${l.perf.lost}`,
         l.perf.winRate !== null ? pct(l.perf.winRate) : <span className="tile__na">Under {MIN_SETTLED} settled</span>,
         l.perf.net !== null ? <span className={tone(l.perf.net)}>{signed(l.perf.net)}</span> : "—",

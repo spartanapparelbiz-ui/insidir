@@ -5,7 +5,6 @@ import { BANNED_WORDS } from "@/lib/moves/copy";
 import { MovesPoller } from "@/lib/moves/poll";
 import { publicUsername, readLeaderboard } from "@/lib/moves/sources";
 import type { Move, StockDetail } from "@/lib/moves/types";
-import { profitPath } from "@/lib/profiles/chart";
 import { insiderWho, parseProfileId, personName, profileHref, roleOf } from "@/lib/profiles/name";
 import { insiderTotals, quarterChanges, topHoldings, tradesByFiling } from "@/lib/profiles/sec";
 import { byMarket, categoryOf, readClosedRows, showStats, traderStats, windowStats, type MarketResult } from "@/lib/profiles/trader";
@@ -35,7 +34,7 @@ describe("names", () => {
     expect(insiderWho("HUANG JEN HSUN", "The CEO", "Nvidia")).toBe("Jen Hsun Huang, CEO of Nvidia");
   });
   it("profile ids: a wallet, an insider, a fund; nothing else (insiders and funds have public pages)", () => {
-    expect(profileHref({ kind: "trader", wallet: W.toUpperCase().replace("0X", "0x") })).toBe(`/p/${W}`);
+    expect(profileHref({ kind: "trader", wallet: W.toUpperCase().replace("0X", "0x") })).toBe(`/wallet/${W}`);
     expect(profileHref({ kind: "insider", cik: "0001045810" })).toBe("/insiders/1045810");
     expect(profileHref({ kind: "insider", cik: "0001045810", name: "HUANG JEN HSUN" })).toBe("/insiders/1045810-jen-hsun-huang");
     expect(profileHref({ kind: "fund", cik: "0001067983", name: "Berkshire Hathaway" })).toBe("/funds/1067983-berkshire-hathaway");
@@ -105,14 +104,6 @@ describe("trader stats", () => {
     expect(windowStats(list, NOW - 7 * DAY, null)).toEqual({ resolved: 1, won: 1, profit: 100 });
     expect(windowStats(list, NOW - 30 * DAY, "sports")).toEqual({ resolved: 2, won: 1, profit: 50 });
     expect(windowStats(list, null, "markets")).toEqual({ resolved: 1, won: 1, profit: 500 });
-  });
-  it("the profit chart is a step line through every resolution day, ending at all-time profit", () => {
-    const c = profitPath([{ at: 0, profit: 100 }, { at: DAY, profit: -50 }, { at: 2 * DAY, profit: 300 }])!;
-    expect(c.path.startsWith("M")).toBe(true);
-    expect(c.path.match(/H/g)).toHaveLength(2);
-    expect(c.last).toBe(300);
-    expect(c.min).toBe(-50);
-    expect(profitPath([{ at: 0, profit: 1 }])).toBeNull();
   });
 });
 

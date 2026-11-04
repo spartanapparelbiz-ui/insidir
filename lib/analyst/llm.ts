@@ -5,7 +5,6 @@
  * REASONING_HEADROOM tokens on top of the answer's own budget. A reply with no text (and no tool calls) is asked again
  * once; if it is still empty the result says so (`empty`), so callers count it instead of validating "". `f` is
  * injected for tests. */
-import { callCost } from "@/lib/check/extract";
 import { DEFAULT_MODEL } from "@/lib/matching/llm";
 
 export const analystModel = (): string => process.env.OPENROUTER_ANALYST_MODEL || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
@@ -67,4 +66,10 @@ async function once(messages: ChatMessage[], model: string, o: { maxTokens?: num
   } catch (e) {
     return { ok: false, text: "", toolCalls: [], costUsd: 0, model, error: e instanceof Error ? e.name : "network" };
   }
+}
+
+/** What one model call cost, in dollars: the provider's own figure, else from the tokens at $3 / $15 per million. */
+export function callCost(usage: { cost?: number | null; prompt_tokens?: number; completion_tokens?: number } | null | undefined): number {
+  if (typeof usage?.cost === "number" && Number.isFinite(usage.cost)) return usage.cost;
+  return ((usage?.prompt_tokens ?? 1600) * 3 + (usage?.completion_tokens ?? 1000) * 15) / 1e6;
 }

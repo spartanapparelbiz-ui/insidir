@@ -53,7 +53,7 @@ export const faqLd = (): string => JSON.stringify({
 
 /** What members get, said once: the five rows on the landing, the five tabs of their home. */
 export const MEMBERS = [
-  { k: "before", when: "Before you bet", tab: "Check", t: "Check any bet. See if millionaires are with you or against you, plus the better price on Kalshi or Polymarket." },
+  { k: "before", when: "Any time", tab: "Search", t: "Search any market, race or wallet, or paste a Polymarket or Kalshi link: who is on each side, and the price now." },
   { k: "allday", when: "All day", tab: "Board", t: "The live board of every millionaire bet, and a ping the second one lands in your categories. Unusual bets flagged." },
   { k: "morning", when: "Every morning", tab: "Brief", t: "The Daily Brief: the 3 markets with the most millionaire money today, and how yesterday's went." },
   { k: "overtime", when: "Over time", tab: "Following", t: "Follow a wallet that's up millions and get pinged on every bet it makes. Every result public, losses included." },

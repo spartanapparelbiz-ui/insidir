@@ -129,10 +129,10 @@ export function MembersStage({ d }: { d: LandingData }) {
   const side = t ? heavierSide({ ...t.m.millionaire, yesLabel: t.m.yesLabel, noLabel: t.m.noLabel }) : null;
   const v = t && side ? verdict({ yes: t.m.millionaire.yes, no: t.m.millionaire.no, yesLabel: t.m.yesLabel, noLabel: t.m.noLabel }, side) : null;
   const screens: ReactNode[] = [
-    // The check verdict
+    // A market: who the millionaires back, and the price
     t && v ? (
-      <div className="b-ph" data-testid="screen-check">
-        <span className="b-ph__label">Check a bet</span>
+      <div className="b-ph" data-testid="screen-market">
+        <span className="b-ph__label">A market</span>
         <span className="b-ph__title">{t.m.title}</span>
         <span className="b-ph__pills"><span className="b-ph__pill is-on">{side === "yes" ? t.m.yesLabel : t.m.noLabel}</span><span className="b-ph__pill">{side === "yes" ? t.m.noLabel : t.m.yesLabel}</span></span>
         <span className="b-ph__verdict" style={{ color: v.kind === "agree" ? "var(--up)" : v.kind === "against" ? "var(--down)" : "#fff" }}>{v.kind === "agree" ? "✓ " : v.kind === "against" ? "✕ " : ""}{v.headline}</span>
@@ -142,7 +142,7 @@ export function MembersStage({ d }: { d: LandingData }) {
         <div className="b-ph__row"><span>{t.m.yesLabel}</span><b className="b-num">{t.m.millionaire.yes.dollars ? dollars(t.m.millionaire.yes.dollars) : "no money yet"}</b></div>
         <div className="b-ph__row"><span>{t.m.noLabel}</span><b className="b-num">{t.m.millionaire.no.dollars ? dollars(t.m.millionaire.no.dollars) : "no money yet"}</b></div>
       </div>
-    ) : <div className="b-ph"><span className="b-ph__small">The check shows here once a market has millionaire money.</span></div>,
+    ) : <div className="b-ph"><span className="b-ph__small">A market shows here once one has millionaire money.</span></div>,
     // The live board, a ping sliding in
     <div className="b-ph" data-testid="screen-board" key="board">
       <span className="b-ph__label"><span className="b-dot" aria-hidden="true" /> Live board</span>
@@ -261,7 +261,7 @@ export function GapsStage({ d }: { d: LandingData }) {
           </li>
         ))}
       </ul>
-      <p className="b-small" style={{ textAlign: "center", marginTop: 14 }}>What buying it costs on each venue now, refreshed every minute. Fees and rules differ by venue: check both before you bet. Information, not advice.</p>
+      <p className="b-small" style={{ textAlign: "center", marginTop: 14 }}>What buying it costs on each venue now, refreshed every minute. Fees and rules differ by venue. Information, not advice.</p>
     </Stage>
   );
 }

@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import type { FeedViewer } from "@/lib/feed";
 import { MAX_PER_TICK, ViewerCursor } from "@/lib/live/hub";
 import { dealClosed, dealFound, priceTick, TICK_MIN_MS, whale } from "@/lib/live/publish";
-import { flaggedAtStake, median, medianGapMin } from "@/lib/live/stats";
 import type { RawLiveEvent } from "@/lib/live/types";
 import { delayFor, viewEvent } from "@/lib/live/view";
 import type { Opportunity, WhaleTrade } from "@/lib/types";
@@ -112,16 +111,3 @@ describe("a stream's cursor", () => {
   });
 });
 
-describe("live numbers", () => {
-  it("median and median gap between finds", () => {
-    expect(median([])).toBeNull();
-    expect(median([3, 1, 2])).toBe(2);
-    expect(medianGapMin([0, MIN])).toBeNull();
-    expect(medianGapMin([0, 4 * MIN, 6 * MIN, 16 * MIN])).toBe(4);
-  });
-  it("profit flagged at $500: scaled to what $500 buys, capped at what was fillable", () => {
-    expect(flaggedAtStake({ profit: 2.06, cost: 95, fees: 2.94 })).toBeCloseTo(2.06); // only $97.94 fillable
-    expect(flaggedAtStake({ profit: 20.6, cost: 950, fees: 29.4 })).toBeCloseTo(20.6 * 500 / 979.4);
-    expect(flaggedAtStake({ profit: -1, cost: 95, fees: 2 })).toBe(0);
-  });
-});

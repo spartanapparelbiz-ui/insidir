@@ -44,7 +44,7 @@ export function LateBar() {
     <div className={`latebar${on ? " latebar--on" : ""}`} role="region" aria-label="Live data" aria-hidden={!on} data-testid="late-bar">
       <div className="pg latebar__in">
         <p className="latebar__t">You&apos;re seeing data 30 minutes late. <b>Live: {TRIAL_LINE}.</b></p>
-        <Link className="btn btn--primary latebar__cta" href={`/start?next=${encodeURIComponent(path)}&from=latebar`} tabIndex={on ? 0 : -1} data-checkout="latebar">Start for $1</Link>
+        <Link className="btn btn--primary latebar__cta" href={`/go?from=latebar`} tabIndex={on ? 0 : -1} data-checkout="latebar">Start for $1</Link>
         <button type="button" className="latebar__x" aria-label="Hide for this visit" tabIndex={on ? 0 : -1} onClick={close}>×</button>
       </div>
     </div>

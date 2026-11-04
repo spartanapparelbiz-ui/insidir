@@ -43,7 +43,7 @@ export function TrustBlock({ facts, now = Date.now(), children }: { facts: Trust
         <header className="sec2__head">
           <p className="sec2__label">Proof</p>
           <h2 id="trust-h" className="sec2__h">Where the data comes from</h2>
-          <p className="sec2__sub">Public records only, checked against the source. Nothing typed in by hand.</p>
+          <p className="sec2__sub">Public records only, verified against the source. Nothing typed in by hand.</p>
         </header>
         <div className="trust__grid">
           <article className="trust__card">
@@ -64,11 +64,11 @@ export function TrustBlock({ facts, now = Date.now(), children }: { facts: Trust
             <Link className="trust__link" href="/results">See every result</Link>
           </article>
           <article className="trust__card" data-testid="trust-check">
-            <h3 className="trust__h">{fresh ? "Checked every hour" : "Accuracy check"}</h3>
+            <h3 className="trust__h">{fresh ? "Verified every hour" : "Accuracy audit"}</h3>
             {a ? (
-              <p className="trust__p">Last check {fresh ? clockET(a.runAt) : dateTimeET(a.runAt)}: <b className="num">{a.ok} of {a.checked}</b> matched.{a.hidden ? ` ${a.hidden} hidden until ${a.hidden === 1 ? "it matches" : "they match"}.` : ""}</p>
+              <p className="trust__p">Last audit {fresh ? clockET(a.runAt) : dateTimeET(a.runAt)}: <b className="num">{a.ok} of {a.checked}</b> matched.{a.hidden ? ` ${a.hidden} hidden until ${a.hidden === 1 ? "it matches" : "they match"}.` : ""}</p>
             ) : <p className="trust__p">We re-read random positions and trader stats from the source. Anything that doesn&apos;t match is hidden until it does.</p>}
-            <Link className="trust__link" href="/data">How we check</Link>
+            <Link className="trust__link" href="/data">How we verify</Link>
           </article>
           <article className="trust__card">
             <h3 className="trust__h">Who builds it</h3>
