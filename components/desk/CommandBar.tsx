@@ -28,10 +28,10 @@ export function CommandBar({ open: open0 = false }: { open?: boolean }) {
     setBusy(true); setMsg(null); setHits(null);
     try {
       const r = await fetch(`/api/search?q=${encodeURIComponent(text)}`, { cache: "no-store" });
-      const j = await r.json().catch(() => ({})) as { go?: string | null; hits?: Hit[]; error?: string };
+      const j = await r.json().catch(() => ({})) as { go?: string | null; hits?: Hit[]; error?: string; note?: string };
       if (j.go) { window.location.assign(j.go); return; }
       if (j.hits?.length) setHits(j.hits);
-      else setMsg(j.error ?? "Nothing found. Try a team, a race, a wallet address, or paste a Polymarket or Kalshi link.");
+      else setMsg(j.note ?? j.error ?? "Nothing found. Try a team, a race, a wallet address, or paste a Polymarket or Kalshi link.");
     } catch { setMsg("Couldn't reach Insidir. Try again."); }
     setBusy(false);
   }

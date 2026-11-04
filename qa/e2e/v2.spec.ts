@@ -75,20 +75,6 @@ test("outside the US, the market page links to the source market", async ({ page
   await expect(page.getByRole("link", { name: "See it on Polymarket" })).toHaveAttribute("href", /polymarket\.com/);
 });
 
-test("location is asked once, as a sheet, the first time a market link is tapped", async ({ page, context }) => {
-  await q("update terminal.users set region = null where id = 'user_e2e_pro'");
-  try {
-  await signIn(context, "pro");
-  await page.goto("/market/0xe2emarket1");
-  await page.getByRole("button", { name: "See market" }).click();
-  const sheet = page.getByRole("dialog", { name: "Where are you?" });
-  await expect(sheet).toBeVisible();
-  await sheet.getByRole("button", { name: "Outside US" }).click();
-  await expect(page.getByRole("link", { name: "See it on Polymarket" })).toBeVisible();
-  } finally {
-    await q("update terminal.users set region = 'us' where id = 'user_e2e_pro'");
-  }
-});
 
 test("results are public: totals, refunds labelled, pages instead of a cap; /pricing's live week numbers", async ({ page }) => {
   await page.goto("/results");

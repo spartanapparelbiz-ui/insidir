@@ -4,6 +4,7 @@
  * red never appear here: they belong to price changes. */
 import { candidateMoney, type RaceCard } from "@/lib/market/races";
 import { dollars } from "@/lib/money";
+import { racePath, raceSlugOf } from "@/lib/entities/slug";
 import { Face, Panel, Party } from "./index";
 
 const cents = (p: number | null) => (p === null ? "" : `${Math.round(p * 100)}¢`);
@@ -13,7 +14,7 @@ export function RaceCards({ races, testid = "races" }: { races: RaceCard[]; test
     <div className="s-races" data-testid={testid} data-stagger="">
       {races.map(r => (
         <Panel key={r.key} className="s-race" testid="race-card" data-race={r.key}>
-          <h3 className="s-race__t">{r.title.replace(/ Election Winner$/, "")}</h3>
+          <h3 className="s-race__t"><a className="s-link" href={racePath(raceSlugOf(r.key, r.title))} data-entity="race">{r.title.replace(/ Election Winner$/, "")}</a></h3>
           {r.candidates.length ? (
             <ul className="s-cands">{r.candidates.map(c => (
               <li key={c.marketId} data-testid="candidate" data-market={c.marketId} data-face={c.image ? "photo" : "initials"} data-result={c.result ?? undefined}>

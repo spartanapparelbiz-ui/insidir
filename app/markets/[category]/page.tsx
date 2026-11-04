@@ -1,5 +1,6 @@
 /* /markets/<category>: the category's photo as the stage, its markets with millionaire money (tap one for its page), and
  * the live bets in it. */
+import { marketPath } from "@/lib/entities/slug";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
@@ -47,7 +48,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
             <p className="b-label">Markets with millionaire money this week</p>
             <Rows label={`${c.name} markets`} rows={markets.map(m => {
               const mil = milOf(m), pro = m.pro.yes.dollars + m.pro.no.dollars;
-              return { key: m.marketId, title: <a className="s-link" href={`/market/${encodeURIComponent(m.marketId)}`} data-entity="market">{m.title}</a>,
+              return { key: m.marketId, title: <a className="s-link" href={marketPath(m.marketId, m.title)} data-entity="market">{m.title}</a>,
                 sub: `${m.millionaire.yes.wallets + m.millionaire.no.wallets} millionaire · ${m.pro.yes.wallets + m.pro.no.wallets} Pro wallets`, right: `${dollars(mil || pro)} ${mil ? "millionaire" : "Pro"}` };
             })} />
           </Panel>

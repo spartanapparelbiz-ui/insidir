@@ -8,6 +8,7 @@
  *   5 Wallets     "Wallets worth following": last 10 closed, all-time profit, today's bets, Follow
  *   6 Gaps        "Same bet, two prices": Kalshi against Polymarket, per $100
  *   7 Your desk   open copies, the wallets they follow, pings */
+import { marketPath } from "@/lib/entities/slug";
 import { Frame } from "@/components/brand/app/Frame";
 import { CommandBar } from "@/components/desk/CommandBar";
 import { PingsLink } from "@/components/desk/Act";
@@ -50,7 +51,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
                   <Panel key={x.marketId} className="s-pin__card" testid="disagree-card">
                     <h3 className="s-ticket__mkt">{x.title}</h3>
                     <Meter d={x} />
-                    <Pill href={`/market/${encodeURIComponent(x.marketId)}`} kind="ghost">See the market</Pill>
+                    <Pill href={marketPath(x.marketId, x.title)} kind="ghost">See the market</Pill>
                   </Panel>
                 ))}
               </div>

@@ -767,6 +767,9 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 .s-ticket__act { justify-content: flex-start; align-items: center; gap: 20px; }
 .s-big { font-size: 28px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
 .s-ticket .s-big { font-size: 28px; }
+.s-crumbs ol { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.s-crumbs li + li::before { content: "›"; margin-right: 6px; color: var(--ink-muted); }
+.s-kfirst { gap: 14px; }
 .s-disc { flex: none; display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--ink); overflow: hidden; }
 .s-disc img { width: 80% !important; height: 80% !important; object-fit: contain; }
 .s-chart { margin: 4px 0 0; }

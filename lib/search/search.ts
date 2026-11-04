@@ -6,13 +6,14 @@
  *               busiest first; the major races among them (control of a chamber, a Senate or governor seat).
  *   0x…         watchlist wallets by address. Only the short address, never a name.
  * Data, never advice. */
+import { marketPath } from "@/lib/entities/slug";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { majorRace } from "@/lib/brand/pulse";
 import { humanLine } from "@/lib/markets/title";
 
 export interface Hit { kind: "market" | "race" | "wallet"; title: string; sub: string | null; href: string }
-export interface SearchResult { go: string | null; hits: Hit[] }
+export interface SearchResult { go: string | null; hits: Hit[]; note?: string }
 
 export type Pasted = { venue: "polymarket"; slug: string; market: string | null } | { venue: "kalshi"; ticker: string };
 
@@ -25,26 +26,26 @@ export function parseLink(text: string): Pasted | null {
   return null;
 }
 
-export const marketHref = (id: string): string => `/market/${encodeURIComponent(id)}`;
+const marketHref = (id: string, title = ""): string => marketPath(id, title);
 const short = (w: string) => `${w.slice(0, 6)}…${w.slice(-4)}`;
 
 interface Row { id: string; title: string; event: string | null; vol: number }
 
 function hitOf(r: Row): Hit {
   const title = humanLine({ title: r.title });
-  return { kind: majorRace(r.title) ? "race" : "market", title, sub: r.event && r.event !== r.title ? humanLine({ title: r.event }) : null, href: marketHref(r.id) };
+  return { kind: majorRace(r.title) ? "race" : "market", title, sub: r.event && r.event !== r.title ? humanLine({ title: r.event }) : null, href: marketHref(r.id, r.title) };
 }
 
 async function byLink(db: Db, p: Pasted): Promise<SearchResult> {
   if (p.venue === "kalshi") {
-    const r = await db.execute(sql`select id, data->>'title' as title, data->>'eventTitle' as event, coalesce((data->>'volume24h')::float, 0) as vol
-      from terminal.markets where venue = 'kalshi' and (upper(id) = ${p.ticker} or upper(data->>'eventId') = ${p.ticker} or upper(coalesce(data->>'seriesId', '')) = ${p.ticker})
-      order by (upper(id) = ${p.ticker}) desc, vol desc limit 8`);
+    // A Kalshi market has a page through its approved Polymarket twin (the market, event or series the link names).
+    const r = await db.execute(sql`select polymarket_id as id, polymarket_title as title, null as event, 0::float as vol from terminal.market_twins
+      where status = 'approved' and (upper(kalshi_id) = ${p.ticker} or upper(kalshi_id) like ${`${p.ticker}-%`}) order by (upper(kalshi_id) = ${p.ticker}) desc limit 8`);
     const rows = r.rows as unknown as Row[];
-    const exact = rows.find(x => x.id.toUpperCase() === p.ticker);
-    if (exact || rows.length === 1) return { go: marketHref((exact ?? rows[0]!).id), hits: [] };
-    return { go: rows.length ? null : marketHref(p.ticker), hits: rows.map(hitOf) };
+    if (rows.length === 1) return { go: marketHref(rows[0]!.id, rows[0]!.title), hits: [] };
+    return { go: null, hits: rows.map(hitOf), ...(rows.length ? {} : { note: "That Kalshi market isn't matched to a Polymarket market yet, so there is no page for it." }) };
   }
+
   const like = `%/event/${p.slug}${p.market ? `/${p.market}` : ""}%`;
   const r = await db.execute(sql`select id, max(title) as title, max(event) as event, max(vol) as vol, bool_or(named) as named from (
       select id, data->>'title' as title, data->>'eventTitle' as event, coalesce((data->>'volume24h')::float, 0) as vol,
