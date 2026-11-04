@@ -1,5 +1,6 @@
 /* Pieces every entity page (market, race, wallet, bet) shares: the breadcrumb (visible, and as schema.org JSON-LD by
  * EntityLd), the Kalshi-first price panel, and the related stage's links. Server components. */
+import type { Nearest } from "@/lib/twins/nearest";
 import type { ReactNode } from "react";
 import type { MarketTwin } from "@/lib/entities/market";
 import type { Region } from "@/lib/types";
@@ -17,8 +18,10 @@ export function Crumbs({ trail }: { trail: ReadonlyArray<readonly [string, strin
 
 /** Kalshi first: the twin's market and price, one tap to it; then Polymarket's price. No approved twin: it says so and
  *  shows no Kalshi link. A US viewer never gets a Polymarket link. */
-export function KalshiFirst({ twin, yesLabel, noLabel, polyYes, polyUrl, region, result, testid = "kalshi-first" }: {
+export function KalshiFirst({ twin, yesLabel, noLabel, polyYes, polyUrl, region, result, near = null, testid = "kalshi-first" }: {
   twin: MarketTwin | null; yesLabel: string; noLabel: string; polyYes: number | null; polyUrl: string | null; region: Region | null; result?: ReactNode; testid?: string;
+  /** No exact twin: the nearest lines Kalshi lists for this game, as labelled alternatives (lib/twins/nearest.ts). */
+  near?: Nearest | null;
 }) {
   return (
     <Panel className="s-col s-kfirst" testid={testid} data-twin={twin ? "yes" : "no"}>
@@ -33,6 +36,13 @@ export function KalshiFirst({ twin, yesLabel, noLabel, polyYes, polyUrl, region,
           </div>
           <div className="b-ctas"><a className="b-btn b-btn-lg b-primary" href={twin.url} target="_blank" rel="noopener noreferrer" data-testid="open-kalshi">Open on Kalshi</a></div>
         </>
+      ) : near ? (
+        <div data-testid="kalshi-near">
+          <p className="b-small">Kalshi doesn&apos;t list {near.team ? `${near.team} −${near.line}` : `${near.line} points`}. Kalshi has {near.alternatives.map(a => a.line).join(" and ")}{near.kind === "total" ? " points" : ""}: a different line, so a different bet.</p>
+          <ul className="s-lockrows">{near.alternatives.map(a => (
+            <li key={a.url}><a className="s-link" href={a.url} target="_blank" rel="noopener noreferrer" data-testid="kalshi-near-line">{a.title}</a>{a.yes !== null ? <span className="b-small b-num"> · {cents(a.yes)}</span> : null}</li>
+          ))}</ul>
+        </div>
       ) : <p className="b-small" data-testid="no-twin">No Kalshi twin for this market. It shows here once Kalshi lists the same market and we have matched it.</p>}
       <p className="b-small" data-testid="poly-price">On Polymarket, where the wallets bet: {polyYes !== null ? <><b className="b-num">{cents(polyYes)}</b> {yesLabel}</> : "no price yet"}
         {region === "non_us" && polyUrl ? <> · <a className="s-link" href={polyUrl} target="_blank" rel="noopener noreferrer">See it on Polymarket</a></> : null}</p>

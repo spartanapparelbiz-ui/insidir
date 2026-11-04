@@ -61,7 +61,7 @@ describe.skipIf(!URL0)("millionaires, in Postgres", () => {
     expect((await pool.query(`select pnl, closed from terminal.wallet_pnl where wallet = '${W(1)}'`)).rows[0]).toEqual({ pnl: 3e6, closed: 40 });
     expect((await pool.query("select count(*)::int n from terminal.wallet_pnl_queue")).rows[0].n).toBe(999);
     const cols = (await pool.query("select column_name from information_schema.columns where table_schema = 'terminal' and table_name = 'watchlist'")).rows.map(x => x.column_name);
-    expect(cols.sort()).toEqual(["pnl", "refreshed_at", "tier", "wallet"]);
+    expect(cols.sort()).toEqual(["exclusion", "pnl", "refreshed_at", "screen", "screened_at", "settled", "tier", "wallet"]); // no name or face columns
   });
 
   it("a short leaderboard read keeps yesterday's list", async () => {

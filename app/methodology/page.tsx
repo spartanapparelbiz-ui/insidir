@@ -13,11 +13,19 @@ import { dollars } from "@/lib/money";
 import { RECORD_MIN_RESOLVED } from "@/lib/moves/records";
 import { analystModel } from "@/lib/analyst/llm";
 import { NOTE_VERSION } from "@/lib/analyst/types";
+import { ARB_MIN_MARKETS, ARB_SHARE, exclusions, MM_MARKETS, PROVEN_MIN_SETTLED, SCREEN_DAYS } from "@/lib/millionaires/proven";
+import { MAX_TRADES_PER_DAY } from "@/lib/moves/detect";
+import { shortWallet } from "@/lib/millionaires/watchlist";
+import { getDb, hasDatabase } from "@/lib/db";
+import { memo } from "@/lib/memo";
 
 export const metadata: Metadata = { title: "Methodology", description: "Where every Insidir number comes from: the watchlist, the bets, how a Polymarket market is matched to its Kalshi twin, the delays and the known limits." };
 
-export default function MethodologyPage() {
+export const dynamic = "force-dynamic";
+
+export default async function MethodologyPage() {
   const late = Math.round(VISITOR_DELAY_MS / 60_000);
+  const ex = hasDatabase() ? await memo("methodology:exclusions", 5 * 60_000, () => exclusions(getDb())).catch(() => null) : null;
   return (
     <TrustPage path="/methodology" title="Methodology" updated="November 4, 2026"
       lead="Every number on Insidir is computed from public records by the rules on this page. Nothing is typed in by hand.">
@@ -35,6 +43,25 @@ export default function MethodologyPage() {
         <li><strong>Millionaire</strong>: up {dollars(MILLIONAIRE_MIN)} or more all-time. <strong>Pro</strong>: up {dollars(PRO_MIN)} or more.</li>
         <li>Only the wallet address, its tier and its profit are kept. Names, pictures and leaderboard ranks are never stored: Insidir never shows who is behind a wallet.</li>
       </ul>
+
+      <h2 id="proven">Proven wallets</h2>
+      <p>Insidir follows proven wallets only: up {dollars(MILLIONAIRE_MIN)}+ all time <em>and</em> {PROVEN_MIN_SETTLED} or more settled positions. Every day each one&apos;s last {SCREEN_DAYS} days of trades are screened, and these are left out, because they win without picking a side:</p>
+      <ul>
+        <li><strong>Market makers</strong>: bought both sides of the same market within an hour, in {MM_MARKETS} or more markets.</li>
+        <li><strong>High-frequency accounts</strong>: {MAX_TRADES_PER_DAY} or more trades in a day.</li>
+        <li><strong>Pure arbitrage</strong>: holding both sides in {Math.round(ARB_SHARE * 100)}% or more of the markets traded ({ARB_MIN_MARKETS}+ markets).</li>
+      </ul>
+      {ex && ex.screened ? (
+        <>
+          <p data-testid="proven-counts">Today: {ex.proven} proven of {ex.screened} screened. Left out: {Object.entries(ex.byReason).map(([r, n]) => `${n} ${r}`).join(", ") || "none"}.</p>
+          {ex.excluded.length ? (
+            <table data-testid="proven-excluded">
+              <thead><tr><th scope="col">Wallet</th><th scope="col">All-time profit</th><th scope="col">Why it&apos;s left out</th></tr></thead>
+              <tbody>{ex.excluded.slice(0, 60).map(e => <tr key={e.wallet}><th scope="row" className="b-num">{shortWallet(e.wallet)}</th><td className="b-num">{dollars(e.pnl)}</td><td>{e.reason === "under 30 settled" ? `Fewer than ${PROVEN_MIN_SETTLED} settled positions` : e.reason[0]!.toUpperCase() + e.reason.slice(1)}</td></tr>)}</tbody>
+            </table>
+          ) : null}
+        </>
+      ) : <p data-testid="proven-counts">The first screen is running; the list shows here once it has screened the wallets.</p>}
 
       <h2 id="bets">What counts as a bet</h2>
       <ul>

@@ -864,6 +864,11 @@ export const watchlist = terminal.table("watchlist", {
   tier: text("tier").$type<"millionaire" | "pro">().notNull(),
   pnl: doublePrecision("pnl").notNull(),
   refreshedAt: timestamp("refreshed_at", { withTimezone: true }).notNull(),
+  /** The daily screen (lib/millionaires/proven.ts): when, the settled count it used, why it isn't proven (null: it is). */
+  screenedAt: timestamp("screened_at", { withTimezone: true }),
+  settled: integer("settled"),
+  exclusion: text("exclusion"),
+  screen: jsonb("screen").$type<{ reason: string | null; trades: number; markets: number; bothSides: number; mmMarkets: number; busiestDay: number }>(),
 }, t => [index("watchlist_tier_idx").on(t.tier)]);
 
 /** Every bet of $5K+ by a watchlist wallet (lib/millionaires/bets.ts): the moves poller's Polymarket fills, merged the
