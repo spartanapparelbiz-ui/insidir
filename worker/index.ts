@@ -299,11 +299,14 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("twins:history", 2 * 60_000, async () => {
         const r = await twinsFromHistory(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
         await heartbeat(getDb(), "twins:history", true, null, { games: r.events, twins: r.twins, left: r.left });
+        if (r.events) log(`twins:history: ${r.events} past games looked up, ${r.twins} twins, ${r.left} games left`);
       }),
       every("kalshi:asks", 60_000, async () => {
         const k = clients.kalshi as KalshiClient;
         const r = await kalshiAsksOnce(getDb(), { candles: (series, t, from, to, p) => k.getCandlesticks(series, t, from, to, p) }, Date.now());
-        if (r.read) await heartbeat(getDb(), "kalshi:asks", true, null, r);
+        // Beats every run, so /status shows it working once every past bet is priced too.
+        await heartbeat(getDb(), "kalshi:asks", true, null, r);
+        if (r.read) log(`kalshi:asks: ${r.read} past bets read, ${r.priced} priced at Kalshi's ask`);
       }),
     ] : []),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),

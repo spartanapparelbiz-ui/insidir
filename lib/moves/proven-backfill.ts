@@ -32,23 +32,33 @@ type Poly = Pick<PolymarketClient, "getClosedPositionsPage" | "getLeaderboardUse
 
 /* ---------- reading one wallet ---------- */
 
+/** The backfill pages at most this far: 500 settled markets is far past the 30 a proven wallet needs, and a wallet
+ *  with more is stored as "at least". A full read of the most active wallets (up to 101 requests) outlasted a run, was
+ *  thrown away, and kept the head of the queue: every run read nothing. */
+export const BACKFILL_MAX_PAGES = 10;
+/** A read cut off by its deadline is still stored when it already shows this many settled markets (as "at least"). */
+export const PARTIAL_MIN = 30;
+
 /** One wallet's record, and how many requests it took. Throws when Polymarket can't be read (the wallet stays due).
- *  With a deadline, stops starting new pages after it and returns null (nothing saved). */
-export async function readWalletPnl(poly: Poly, wallet: string, o: { priority?: Priority; deadline?: number } = {}): Promise<{ v: WalletPnl; requests: number } | null> {
+ *  With a deadline, stops starting new pages after it and returns null (nothing saved), or with `partial` the markets
+ *  read so far as "at least" (no profit read). `onRequest` hears every request, kept or not. */
+export async function readWalletPnl(poly: Poly, wallet: string, o: { priority?: Priority; deadline?: number; maxPages?: number; partial?: boolean; onRequest?: () => void } = {}): Promise<{ v: WalletPnl; requests: number } | null> {
   const markets = new Set<string>();
   let complete = false, requests = 0;
   let cursor: string | null = null;
-  for (let page = 0; page < RECORD_MAX_PAGES; page++) {
-    if (o.deadline !== undefined && Date.now() > o.deadline) return null;
+  const late = () => o.deadline !== undefined && Date.now() > o.deadline;
+  const cut = () => (o.partial && markets.size >= PARTIAL_MIN ? { v: { closed: markets.size, closedAtLeast: true, pnl: null }, requests } : null);
+  for (let page = 0; page < (o.maxPages ?? RECORD_MAX_PAGES); page++) {
+    if (late()) return cut();
     const raw: unknown = await poly.getClosedPositionsPage(wallet, { limit: 50, cursor, priority: o.priority });
-    requests++;
+    requests++; o.onRequest?.();
     for (const p of readClosedRows(raw)) markets.add(p.marketId);
     cursor = tradesCursor(raw);
     if (!cursor) { complete = true; break; }
   }
-  if (o.deadline !== undefined && Date.now() > o.deadline) return null;
+  if (late()) return cut();
   const pnl = readUserPnl(await poly.getLeaderboardUser(wallet, o.priority), wallet);
-  requests++;
+  requests++; o.onRequest?.();
   return { v: { closed: markets.size, closedAtLeast: !complete, pnl }, requests };
 }
 
@@ -143,9 +153,17 @@ export async function provenBackfillOnce(db: Db, poly: Poly, now: number, runMs 
     while (next < list.length && spent < budget && Date.now() - t0 < runMs) {
       const w = list[next++]!;
       try {
-        const r = await readWalletPnl(poly, w, { priority: "normal", deadline: t0 + runMs });
-        if (!r) continue;
-        spent += r.requests;
+        const r = await readWalletPnl(poly, w, { priority: "normal", deadline: t0 + runMs, maxPages: BACKFILL_MAX_PAGES, partial: true, onRequest: () => { spent++; } });
+        if (!r) {
+          // Cut off with too little read: to the back of the queue, so the next run starts on other wallets.
+          await db.execute(sql`update terminal.wallet_pnl_queue set queued_at = ${new Date(Date.now())} where wallet = ${w}`);
+          continue;
+        }
+        if (r.v.pnl === null) {
+          // A partial read keeps the profit the wallet already has on record.
+          const had = ((await db.execute(sql`select pnl from terminal.wallet_pnl where wallet = ${w}`)).rows[0] as { pnl: number | null } | undefined)?.pnl ?? null;
+          r.v.pnl = had;
+        }
         await store(db, w, r.v, now);
         wallets++;
       } catch { failed++; spent += 1; }
