@@ -1,7 +1,7 @@
 /* Proven wallets (lib/millionaires/proven.ts) and the nearest Kalshi lines (lib/twins/nearest.ts). */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { provenReason, screenTrades, type Trade } from "@/lib/millionaires/proven";
+import { provenReason, screenTrades, settledCount, type Trade } from "@/lib/millionaires/proven";
 import { lineOf, nearestLines } from "@/lib/twins/nearest";
 import type { VMarket } from "@/lib/types";
 
@@ -15,6 +15,11 @@ describe("proven wallets", () => {
     expect(provenReason(screenTrades(trades), 41)).toBeNull();
     expect(provenReason(screenTrades(trades), 12)).toBe("under 30 settled");
     expect(provenReason(screenTrades(trades), null)).toBe("under 30 settled");
+    // Settled: the larger of the record and the closed-market count; null only when neither has been read.
+    expect(settledCount(12, 340)).toBe(340);
+    expect(settledCount(null, 31)).toBe(31);
+    expect(settledCount(41, null)).toBe(41);
+    expect(settledCount(null, null)).toBeNull();
   });
   it("a market maker buys both sides within the hour, in 3+ markets", () => {
     const trades = ["a", "b", "c"].flatMap((m, i) => [t(m, "yes", i * D), t(m, "no", i * D + 20 * 60_000)]);

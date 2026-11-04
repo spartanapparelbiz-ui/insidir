@@ -1,10 +1,12 @@
 /* Proven wallets: the ones Insidir follows. A wallet is proven when it is up $1M+ all time (the watchlist), has
- * PROVEN_MIN_SETTLED or more settled positions (its record, terminal.trader_records), and its last SCREEN_DAYS of trades
+ * PROVEN_MIN_SETTLED or more settled positions (the larger of its record, terminal.trader_records, and its count of
+ * closed markets, terminal.wallet_pnl), and its last SCREEN_DAYS of trades
  * show it isn't one of these, which win without picking sides:
  *   market maker    it bought both sides of the same market within an hour, in MM_MARKETS or more markets
  *   high frequency  MAX_TRADES_PER_DAY or more trades in a day
  *   arbitrage       it holds both sides in ARB_SHARE or more of the markets it traded (ARB_MIN_MARKETS or more)
- * Screened once a day, a few wallets a run (worker millionaires:screen). Only proven wallets keep the "millionaire" tier,
+ * Screened once a day, a few wallets a run (worker millionaires:screen), once either count has been read: until then
+ * a wallet keeps its tier. Only proven wallets keep the "millionaire" tier,
  * so pings, Autopilot and the board's default follow them only; a wallet not screened yet keeps its tier until it is.
  * /methodology lists who is excluded and why, by short address. */
 import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
@@ -54,19 +56,29 @@ export function provenReason(screen: Screen | null, settled: number | null): Exc
   return null;
 }
 
+/** Settled positions: the larger of the record's resolved markets and the closed-market count; null when neither is read. */
+export function settledCount(resolved: number | null, closed: number | null): number | null {
+  if (resolved === null && closed === null) return null;
+  return Math.max(Number(resolved ?? 0), Number(closed ?? 0));
+}
+
 export interface ScreenSource { trades(wallet: string, sinceMs: number): Promise<Trade[]> }
 
 /** Screens the $1M+ wallets screened longest ago (or never), `perRun` at a time, each at most once a day. */
 export async function screenWallets(db: Db, src: ScreenSource, now: number, perRun = 15): Promise<{ screened: number; proven: number; excluded: number }> {
   const due = await db.select({ wallet: watchlist.wallet }).from(watchlist)
-    .where(and(sql`${watchlist.pnl} >= 1000000`, or(isNull(watchlist.screenedAt), lt(watchlist.screenedAt, new Date(now - 86_400_000)))))
+    .where(and(sql`${watchlist.pnl} >= 1000000`, or(isNull(watchlist.screenedAt), lt(watchlist.screenedAt, new Date(now - 86_400_000)),
+        // A short record is re-read sooner: its count may just not have been read yet.
+        and(eq(watchlist.exclusion, "under 30 settled"), lt(watchlist.screenedAt, new Date(now - 30 * 60_000)))),
+      sql`(exists (select 1 from terminal.trader_records r where r.wallet = ${watchlist.wallet}) or exists (select 1 from terminal.wallet_pnl p where p.wallet = ${watchlist.wallet}))`))
     .orderBy(asc(sql`coalesce(${watchlist.screenedAt}, 'epoch')`)).limit(perRun);
   let proven = 0, excluded = 0;
   for (const { wallet } of due) {
     let s: Screen;
     try { s = screenTrades(await src.trades(wallet, now - SCREEN_DAYS * 86_400_000)); } catch { continue; }
-    const rec = (await db.execute(sql`select resolved from terminal.trader_records where wallet = ${wallet}`)).rows[0] as { resolved: number } | undefined;
-    const settled = rec ? Number(rec.resolved) : null;
+    const rec = (await db.execute(sql`select (select resolved from terminal.trader_records where wallet = ${wallet}) as resolved,
+      (select closed from terminal.wallet_pnl where wallet = ${wallet}) as closed`)).rows[0] as { resolved: number | null; closed: number | null } | undefined;
+    const settled = settledCount(rec?.resolved ?? null, rec?.closed ?? null);
     const reason = provenReason(s, settled);
     await db.update(watchlist).set({ screenedAt: new Date(now), exclusion: reason, settled, screen: s, tier: reason ? "pro" : "millionaire" }).where(eq(watchlist.wallet, wallet));
     if (reason) excluded++; else proven++;
