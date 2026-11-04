@@ -499,7 +499,7 @@ body:has(.viewas) .b-topbar, body:has(.viewas) .b-nav--fixed { top: 48px; }
 /* A row whose title is its link: the whole row opens it (the locked-side chip stays on top and opens the paywall). */
 .b-row:has(.b-row__link) { position: relative; }
 .b-row__link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
-.b-row:has(.b-row__link) .b-lock { z-index: 2; }
+.b-row:has(.b-row__link) .b-lock, .b-row:has(.b-row__link) .s-lockside { position: relative; z-index: 2; }
 .b-row:has(.b-row__link):hover { border-color: rgba(255, 255, 255, .2); }
 .b-row__link:focus-visible { outline: none; }
 .b-row:has(.b-row__link:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
