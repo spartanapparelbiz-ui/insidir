@@ -69,9 +69,22 @@ async function checkPage(page: Page, path: string, width: number): Promise<{ fin
     if (!res || res.status() >= 400) add(`HTTP ${res?.status() ?? "none"}`, BASE + path);
     for (let y = 0; y < 12; y++) { await page.mouse.wheel(0, 900); await page.waitForTimeout(120); }
     await page.waitForTimeout(600);
-    const r = await page.evaluate(() => {
+    const r = await page.evaluate(async () => {
       const de = document.documentElement;
-      const imgs = [...document.images].filter(i => i.getBoundingClientRect().width > 0).map(i => ({ src: i.currentSrc || i.src, ok: i.complete && i.naturalWidth > 0, nat: i.naturalWidth, shown: i.getBoundingClientRect().width }));
+      // Each shown image, once it has loaded or failed (5s at most); its real pixels from the file itself, since a
+      // srcset image reports its width scaled to the layout.
+      const shown = [...document.images].filter(i => i.getBoundingClientRect().width > 0);
+      await Promise.all(shown.map(i => i.complete ? null : new Promise(res => { i.addEventListener("load", res, { once: true }); i.addEventListener("error", res, { once: true }); setTimeout(res, 5000); })));
+      const real = (src: string) => new Promise<number>(res => { const p = new Image(); p.onload = () => res(p.naturalWidth); p.onerror = () => res(0); p.src = src; });
+      const imgs = await Promise.all(shown.map(async i => {
+        const src = i.currentSrc || i.src;
+        const ok = i.complete && i.naturalWidth > 0;
+        // A cover image is cropped: the file only needs to fill the larger of its box's sides at the image's aspect.
+        const box = i.getBoundingClientRect(), fit = getComputedStyle(i).objectFit;
+        const nat = ok ? await real(src) : 0, ratio = i.naturalWidth && i.naturalHeight ? i.naturalWidth / i.naturalHeight : 1;
+        const need = fit === "cover" ? Math.max(box.width, box.height * ratio) : box.width;
+        return { src, ok, nat, shown: need };
+      }));
       const trunc = [...document.querySelectorAll("h1, h2, h3")].filter(h => { const s = getComputedStyle(h); return h.scrollWidth > h.clientWidth + 1 && s.overflow !== "visible"; }).map(h => (h.textContent ?? "").trim().slice(0, 80));
       const links = [...document.querySelectorAll("a[href]")].map(a => (a as HTMLAnchorElement).href).filter(h => h.startsWith(location.origin));
       return { sideways: de.scrollWidth - de.clientWidth, imgs, trunc, text: document.body.innerText, links, dpr: devicePixelRatio };
@@ -79,7 +92,8 @@ async function checkPage(page: Page, path: string, width: number): Promise<{ fin
     if (r.sideways > 0) add("sideways scroll", `${r.sideways}px wider than the screen`);
     for (const i of r.imgs) {
       if (!i.ok) add("broken image", i.src);
-      else if (!i.src.endsWith(".svg") && i.nat < i.shown * r.dpr * 0.9) add("blurry image", `${i.src} is ${i.nat}px wide, shown at ${Math.round(i.shown)}px × ${r.dpr}`);
+      // Sharp enough: at least the box's pixels at 2× (3× screens get the 2× file; the eye can't tell), and never upscaled past 1×.
+      else if (!i.src.endsWith(".svg") && i.nat < Math.min(i.shown * Math.min(r.dpr, 2), 3840) * 0.9) add("blurry image", `${i.src} is ${i.nat}px wide, needs ${Math.round(i.shown * Math.min(r.dpr, 2))}px`);
     }
     for (const t of r.trunc) add("truncated heading", t);
     for (const t of textFindings(r.text)) add("text", t);
