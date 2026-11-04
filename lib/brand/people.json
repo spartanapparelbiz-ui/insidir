@@ -1,1 +1,54 @@
-[]
+[
+ {
+  "name": "James Talarico",
+  "party": "D",
+  "office": "TX Senate",
+  "race": "Texas Senate Election Winner",
+  "state": "TX",
+  "bioguide": null,
+  "file": "james-talarico-tx",
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-james-talarico-texas-senate-bb6cdef1aa.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
+ },
+ {
+  "name": "Byron Donalds",
+  "party": "R",
+  "office": "FL Governor",
+  "race": "Florida Governor Election Winner",
+  "state": "FL",
+  "bioguide": "D000032",
+  "file": "byron-donalds-fl",
+  "kind": "congress",
+  "source": "https://github.com/unitedstates/images (bioguide D000032)",
+  "license": "public domain",
+  "author": "U.S. Congress (official portrait)"
+ },
+ {
+  "name": "David Jolly",
+  "party": "D",
+  "office": "FL Governor",
+  "race": "Florida Governor Election Winner",
+  "state": "FL",
+  "bioguide": null,
+  "file": "david-jolly-fl",
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-david-jolly-florida-governor-2026-30dbb47771.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
+ },
+ {
+  "name": "Ken Paxton",
+  "party": "R",
+  "office": "TX Senate",
+  "race": "Texas Senate Election Winner",
+  "state": "TX",
+  "bioguide": null,
+  "file": "ken-paxton-tx",
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:K_Paxton.jpg",
+  "license": "CC BY-SA 4.0",
+  "author": "Gage Skidmore"
+ }
+]
