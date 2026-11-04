@@ -50,3 +50,16 @@ describe("the ping's words", () => {
       .toBe("A $1M+ wallet just put $120K on Yes in “Will the Republicans win the Iowa Senate race?” at 60¢ (still there now). Copy?");
   });
 });
+
+describe("a ping on a market with a Kalshi twin", () => {
+  it("leads with both prices and opens the bet's page (Kalshi first)", () => {
+    const b = bet({ id: "b9", outcome: "Hawks", price: 0.79, pnl: 11_200_000, side: "yes", marketId: "0xm" });
+    const m = pingMessage(b, 0.8, "https://insidir.com", { yes: 0.81 });
+    expect(m.body).toBe("A +$11M wallet bought Hawks at 79¢ on Polymarket. Kalshi: 81¢.");
+    expect(m.url).toBe("https://insidir.com/bet/b9");
+    // NO on Polymarket is NO on Kalshi: 1 − Kalshi's YES.
+    expect(pingMessage({ ...b, side: "no" }, null, "https://insidir.com", { yes: 0.81 }).body).toContain("Kalshi: 19¢.");
+    // No twin, or no Kalshi price yet: the copy ticket as before.
+    expect(pingMessage(b, 0.8, "https://insidir.com", null).url).toBe("https://insidir.com/copy/b9");
+  });
+});

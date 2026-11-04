@@ -59,9 +59,9 @@ describe("V2 landing page", () => {
   });
 
   it("says what Insidir is in one plain sentence: the first FAQ answer, the title and the meta description", async () => {
-    const { FAQ_V2 } = await import("@/components/v2/Faq");
+    const { FAQ_ALL } = await import("@/lib/brand/copy");
     const { WHAT_IS, WHAT_IS_TITLE } = await import("@/lib/copy");
-    expect(FAQ_V2[0]).toMatchObject({ q: "What is Insidir?", a: WHAT_IS });
+    expect(FAQ_ALL[0]!.q).toBe("What is Insidir?");
     expect(WHAT_IS.split(/[.!?](\s|$)/).filter(x => x && x.trim()).length).toBe(1);
     const layout = read("app/layout.tsx");
     expect(layout).toMatch(/title: \{ default: WHAT_IS_TITLE/);

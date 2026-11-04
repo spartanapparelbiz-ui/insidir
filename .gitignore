@@ -8,3 +8,4 @@ qa/e2e/.out/
 qa/reports/lighthouse-*.json
 qa/reports/audit.log
 .cache/
+public/brand/gen/

@@ -1,13 +1,15 @@
-/* Log in (/login): "Welcome back.", one "Continue" to Whop's sign-in (app/login/start → Whop → app/reset/callback),
- * in the sign-up frame (components/auth/AuthSplit.tsx). Members go on to where they were going; a signed-in account
- * without Insidir goes to /start step 2. Errors are one sentence with the button to try again. */
+/* Log in (/login), on the homepage's system: "Welcome back.", one Continue to Whop's sign-in (app/login/start → Whop →
+ * app/login/callback) on a black stage, no white panel. Members go on to where they were going; a signed-in account
+ * without Insidir goes to the paywall. Errors are one sentence with the button to try again. New here? Start for $1
+ * goes to /go. */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AuthSplit } from "@/components/auth/AuthSplit";
 import { ContinueButton } from "@/components/auth/ContinueButton";
+import { Lines, Stage } from "@/components/system";
+import { BrandFoot, BrandNav } from "@/components/brand/Nav";
 import { safeNext } from "@/lib/auth/next";
 import { getViewer } from "@/lib/auth/viewer";
+import { slotPhoto } from "@/lib/brand/images";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -28,13 +30,19 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (viewer.user && isPaid(viewer.plan)) redirect(next);
   if (viewer.user) redirect("/go?step=paywall"); // signed in without Insidir: the paywall, never an empty app
   return (
-    <AuthSplit>
-      <div className="astart rise-in login">
-        <h1 className="astart__h">Welcome back.</h1>
-        {sp.error && ERRORS[sp.error] ? <p className="aerr" role="alert">{ERRORS[sp.error]}</p> : null}
-        <div className="astart__cta"><ContinueButton next={next} /></div>
-        <p className="astart__alt">New here? <Link href="/go">Start for $1</Link></p>
-      </div>
-    </AuthSplit>
+    <main className="b-root" data-testid="login-page">
+      <BrandNav fixed start={false} />
+      <Stage bg={{ kind: "photo", photo: slotPhoto("cta"), dark: 0.55, priority: true }} first testid="login" labelledBy="login-h">
+        <div className="b-head b-center">
+          <Lines as="h1" id="login-h" lines={["Welcome back."]} size={64} />
+          <p className="b-sub" data-m="lift">Sign in with the Whop account you paid with.</p>
+          {sp.error && ERRORS[sp.error] ? <p className="b-msg aerr" role="alert">{ERRORS[sp.error]}</p> : null}
+          <div className="b-ctas"><ContinueButton next={next} /></div>
+          <p className="b-small">No password here.</p>
+          <p className="b-small" data-testid="login-new">New here? <a className="s-link" href="/go" data-checkout="login">Start for $1</a></p>
+        </div>
+      </Stage>
+      <BrandFoot inline />
+    </main>
   );
 }

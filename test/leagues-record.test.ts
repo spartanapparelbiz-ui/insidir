@@ -41,9 +41,6 @@ describe("every sports move says its league", () => {
     expect(classify("sports", ["Will SSC Napoli win on 2026-10-28?"]).league).toBe("soccer");
     expect(classify("sports", ["Arsenal vs. Chelsea"]).league).toBe("soccer");
   });
-  it("cards show it", () => {
-    for (const f of ["components/v2/MoveCard.tsx"]) expect(readFileSync(f, "utf8")).toContain("m.leagueLabel");
-  });
 });
 
 const settled = (o: Partial<Move>): Move => ({

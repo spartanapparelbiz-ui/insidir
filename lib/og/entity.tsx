@@ -1,5 +1,6 @@
-/* The link preview for one tracker, market, trader or company (each route's opengraph-image.tsx): white, the logo, what
- * kind of page it is, its name, one line, and one figure with what it means. Real numbers only; none is a promise. */
+/* The link preview for one market, race, wallet or bet (each route's opengraph-image.tsx), in the brand's black: the
+ * logo, what kind of page it is, its name, one line, and one figure with what it means. Real numbers only; none is a
+ * promise. */
 import { ImageResponse } from "next/og";
 import { PAST } from "@/lib/copy";
 import { loadFonts, OG, OgLogo } from "@/lib/share-card";
@@ -20,12 +21,12 @@ const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trim
 export async function entityOg(d: EntityOg, size: { width: number; height: number } = OG_SIZE): Promise<ImageResponse> {
   const tall = size.height > size.width;
   const fonts = await loadFonts();
-  const tone = d.figure?.tone === "pos" ? OG.money : d.figure?.tone === "neg" ? OG.loss : OG.ink;
+  const tone = d.figure?.tone === "pos" ? OG.money : d.figure?.tone === "neg" ? OG.loss : OG.paper;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: OG.paper, color: OG.ink, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: tall ? "88px 80px" : "56px 72px", fontFamily: "Sans" }}>
+      <div style={{ width: "100%", height: "100%", background: OG.ink, color: OG.paper, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: tall ? "88px 80px" : "56px 72px", fontFamily: "Sans" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <OgLogo height={44} color={OG.ink} />
+          <OgLogo height={44} color={OG.paper} />
           <div style={{ display: "flex", fontSize: 26, color: OG.grey3 }}>{d.kicker}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

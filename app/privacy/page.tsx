@@ -13,14 +13,13 @@ export default function PrivacyPage() {
     <TrustPage path="/privacy" title="Privacy" updated="November 1, 2026"
       lead={`Insidir is operated by ${COMPANY.name}, ${COMPANY.place}, which decides what is kept and is responsible for it. This page says what we keep about you, why, who else sees it, and how to delete it. We don't sell your data and we don't use ad trackers.`}>
       <h2>The data we show</h2>
-      <p>Positions, prices and records come from public sources: Polymarket&apos;s and Kalshi&apos;s public trade data and SEC EDGAR. A Polymarket wallet is shown by its public username or a short address; we never try to work out who is behind it. Kalshi trades carry no name.</p>
+      <p>Bets, prices and records come from public sources: Polymarket&apos;s public trade data and Kalshi&apos;s public market data. A Polymarket wallet is only ever shown by its short address; we never try to work out who is behind it.</p>
 
       <h2>What we keep about you</h2>
       <ul>
-        <li><strong>Your account</strong>: email and Whop user id (from signing in with Whop), your plan and membership status, your US or outside-the-US answer, when you confirmed you are 18 or older, the Reads you run, and the reason you gave if you cancel. We never have a password or card number for you.</li>
-        <li><strong>What you follow</strong>: trackers, traders and markets, your alert settings, and push subscriptions for the devices where you turned alerts on.</li>
-        <li><strong>Your searches</strong>: the legs we matched and how they settled. A slip image is sent to an AI model through OpenRouter to read it, and isn&apos;t stored by us. A Kalshi CSV you upload on the P&amp;L page is read and not stored.</li>
-        <li><strong>Heads-ups</strong>: if you sign up to hear when a feature launches, your email and that feature.</li>
+        <li><strong>Your account</strong>: email and Whop user id (from signing in with Whop), your plan and membership status, your US or outside-the-US answer, when you confirmed you are 18 or older, the answers you gave when you joined (categories, where you bet, your usual size), and the reason you gave if you cancel. We never have a password or card number for you.</li>
+        <li><strong>What you follow</strong>: wallets and markets, the bets you logged as copied, your ping settings, and push subscriptions for the devices where you turned pings on.</li>
+                <li><strong>Heads-ups</strong>: if you sign up to hear when a feature launches, your email and that feature.</li>
         <li><strong>Usage</strong>: first-party events (page viewed, checkout started) with a random visitor id from a cookie and, when you&apos;re signed in, your account id; which version of a page you saw; campaign tags (utm) of the link that brought you.</li>
       </ul>
 

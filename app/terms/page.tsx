@@ -5,7 +5,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TrustPage } from "@/components/TrustPage";
 import { ADVICE, COMPANY, DATA_COMPANY, PAST, TRIAL_DAYS } from "@/lib/copy";
-import { isReady } from "@/lib/features";
 
 export const metadata: Metadata = { title: "Terms", description: "The terms for using Insidir, in plain English." };
 
@@ -15,13 +14,13 @@ export default function TermsPage() {
       lead={`Insidir is operated by ${COMPANY.name}, ${COMPANY.place} (the operator: "we" and "us" on this page). By using insidir.com you agree to these terms. They're written to be read; if anything is unclear, write to us.`}>
       <h2>What Insidir is</h2>
       <p>{ADVICE} {DATA_COMPANY}</p>
-      <p>Insidir reads public data, large trades on Polymarket and Kalshi{isReady("stocks") ? " and Form 4 and 13F filings on SEC EDGAR" : ""}, and shows it with the records of the accounts behind it where the data allows. We don&apos;t place trades or bets, hold money, or hold positions for you, and nothing on the site is a recommendation. You decide what to do, and you do it yourself on each venue, under its own terms.</p>
+      <p>Insidir reads public data, the bets of the most profitable Polymarket wallets and the same markets on Kalshi, and shows it with each wallet&apos;s record. We don&apos;t place trades or bets, hold money, or hold positions for you, and nothing on the site is a recommendation. You decide what to do, and you do it yourself on each venue, under its own terms.</p>
 
       <h2>No promise of results</h2>
       <ul>
-        <li>{PAST} A tracker or a wallet that made money before can lose it next.</li>
+        <li>{PAST} A wallet that made money before can lose it next.</li>
         <li>Data can be late, incomplete or wrong. Each card links its source, and the source is the record. How we verify: <Link href="/data">Our data</Link>.</li>
-        <li>Followable returns assume a price you may not get. How they&apos;re computed: <Link href="/methodology">Methodology</Link>.</li>
+        <li>The price you get may not be the price they paid. How every number is computed: <Link href="/methodology">Methodology</Link>.</li>
       </ul>
 
       <h2>Who can use it</h2>

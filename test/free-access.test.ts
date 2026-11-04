@@ -9,7 +9,6 @@ import { dropOff, FUNNEL_LABEL, FUNNEL } from "@/lib/analytics";
 import { signInAs } from "@/lib/auth/whop-login";
 import { effectivePlan } from "@/lib/billing/access";
 import { freeAccessEmails, isFreeAccess } from "@/lib/billing/free";
-import { comingSoonLine, startList } from "@/components/v2/Pricing";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
@@ -34,18 +33,6 @@ describe("free access", () => {
   });
 });
 
-describe("/start", () => {
-  it("at most five live lines, no repeats, and one quiet line for what's coming", () => {
-    const list = startList();
-    expect(list.length).toBeLessThanOrEqual(5);
-    expect(new Set(list).size).toBe(list.length);
-    expect(list.filter(l => /insider stock trades/i.test(l))).toHaveLength(1);
-    expect(list.join(" ")).not.toMatch(/coming soon/i);
-    process.env.FEATURES_READY = "feed,records,follows,stocks";
-    expect(comingSoonLine()).toBe("More coming: phone alerts, custom alert rules, price gaps, crypto.");
-    delete process.env.FEATURES_READY;
-  });
-});
 
 
 describe("the funnel", () => {

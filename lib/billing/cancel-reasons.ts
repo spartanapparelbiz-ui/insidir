@@ -2,7 +2,7 @@
 export const CANCEL_REASONS = [
   ["price", "Too expensive"],
   ["unused", "I don't use it enough"],
-  ["not_useful", "The Reads weren't useful"],
+  ["not_useful", "The data wasn't useful to me"],
   ["missing", "Missing a market or feature I need"],
   ["other", "Something else"],
 ] as const;

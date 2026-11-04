@@ -44,7 +44,8 @@ describe("copy compliance", () => {
   });
   it("the footer disclaimer is on every page", () => {
     expect(FOOTER).toBe("Information, not financial or betting advice. Insidir shows public trading data and never recommends a trade or a bet. Big traders lose too. Past results don't predict future ones.");
-    expect(readFileSync(join(ROOT, "app", "layout.tsx"), "utf8")).toContain("<SiteFooter />");
-    expect(readFileSync(join(ROOT, "components", "SiteFooter.tsx"), "utf8")).toContain("{FOOTER}");
+    // Every visitor page is framed by components/brand/app/Frame.tsx (or carries the footer itself), and the footer says it.
+    expect(readFileSync(join(ROOT, "components", "brand", "app", "Frame.tsx"), "utf8")).toContain("<BrandFoot");
+    expect(readFileSync(join(ROOT, "components", "brand", "Nav.tsx"), "utf8")).toContain("{FOOTER}");
   });
 });

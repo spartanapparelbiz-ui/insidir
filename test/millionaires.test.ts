@@ -154,9 +154,11 @@ describe("category map", () => {
   });
 
   it("a row of cards never shows the same photo twice while a fallback is free", () => {
-    expect(categoryPhotos(["soccer", "football"]).map(p => p.src)).toEqual(["/brand/soccer.jpg", "/brand/baseball.jpg"]);
-    expect(categoryPhotos(["football"]).map(p => p.src)).toEqual(["/brand/soccer.jpg"]);
-    expect(new Set(categoryPhotos(["politics", "elections", "markets"]).map(p => p.src)).size).toBe(2); // elections' fallbacks are both taken
+    // A row never repeats a photo: a category without its own gets none (a plain card), never a borrowed one.
+    expect(categoryPhotos(["soccer", "football"]).map(p => p?.src ?? null)).toEqual(["/brand/soccer.jpg", null]);
+    expect(categoryPhotos(["weather"]).map(p => p?.src ?? null)).toEqual(["/brand/cta.jpg"]);
+    const all = categoryPhotos(CATEGORY_SLUGS).filter(Boolean).map(p => p!.src);
+    expect(new Set(all).size).toBe(all.length);
   });
 
   // The 6K master is never sent as is: next/image delivers AVIF at the width the screen needs (73KB at 3840 wide).

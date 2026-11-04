@@ -103,33 +103,11 @@ test("Start for $1 in the nav on public pages, home included (the brand nav's pi
   await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   expect(Math.round((await page.getByTestId("nav-start").boundingBox())!.height)).toBeGreaterThanOrEqual(28);
   await page.goto("/pricing");
-  await expect(page.locator(".nav__cta")).toHaveAttribute("href", "/go");
+  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   await page.goto("/login");
-  await expect(page.locator(".nav__cta")).toHaveCount(0);
+  await expect(page.getByTestId("nav-start")).toHaveCount(0);
 });
 
-test("the late bar: after 30% of the page, \"60 minutes late\" + Start for $1; × hides it for the session; never on home or /login", async ({ page }) => {
-  // Home is the tool (a visitor's Read isn't late): never there.
-  await page.goto("/");
-  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-  await expect(page.getByTestId("late-bar")).toHaveCount(0);
-  await page.goto("/pricing");
-  const bar = page.getByTestId("late-bar");
-  await expect(bar).toHaveAttribute("aria-hidden", "true");
-  await page.evaluate(() => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.5));
-  await expect(bar).toHaveAttribute("aria-hidden", "false");
-  await expect(bar).toContainText("You're seeing data 60 minutes late. Live: $1 for your first 3 days.");
-  await expect(bar.getByRole("link", { name: "Start for $1" })).toHaveAttribute("href", /^\/go\?from=latebar/);
-  await bar.getByRole("button", { name: "Hide for this visit" }).click();
-  await expect(bar).toHaveCount(0);
-  await page.goto("/faq");
-  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-  await expect(page.getByTestId("late-bar")).toHaveCount(0);
-  for (const path of ["/login"]) {
-    await page.goto(path);
-    await expect(page.getByTestId("late-bar"), path).toHaveCount(0);
-  }
-});
 
 test("/admin/funnel: the eight steps with the drop-off between each", async ({ page }) => {
   await adminIn(page);

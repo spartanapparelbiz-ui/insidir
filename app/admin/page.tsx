@@ -4,6 +4,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SafetyLight } from "@/components/SafetyLight";
+import { BrandFoot } from "@/components/brand/Nav";
 import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
 import { TRIAL } from "@/lib/plans";
 import { cancelReasonCounts, duration, postFunnel, retention, type PostRow, type Retention } from "@/lib/admin-stats";
@@ -12,7 +13,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { accuracyOverview } from "@/lib/accuracy/store";
 import { adminAvatars, type AdminAvatar } from "@/lib/moves/avatar-store";
 import { monogram } from "@/lib/moves/avatar";
-import { Avatar } from "@/components/v2/Avatar";
+import { Avatar } from "@/components/admin/Avatar";
 import { pct, usd } from "@/lib/format";
 import { pairViews, quarantineCount, quarantineViews, type PairView, type QuarantineView } from "@/lib/queries";
 import type { VMarket } from "@/lib/types";
@@ -196,6 +197,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           {error ? <p className="err small" role="alert">{error}</p> : null}
           <button type="submit" className="btn btn--primary btn--block">Sign in</button>
         </form>
+        <BrandFoot inline />
       </main>
     );
   }
@@ -314,6 +316,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </table></div>
         ) : <p className="muted small">No emails on the list.</p>}
       </section>
+      <BrandFoot inline />
     </main>
   );
 }

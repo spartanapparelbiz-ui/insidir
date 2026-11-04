@@ -8,8 +8,6 @@ import pg from "pg";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { RecordLines, TrustBlock } from "@/components/TrustBlock";
-import { LockedRecord } from "@/components/v2/LockedRecord";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { moveSource } from "@/lib/moves/source";
@@ -44,44 +42,7 @@ describe("the settled record", () => {
   });
 });
 
-describe("the trust block", () => {
-  const facts = (runAt: number): TrustFacts => ({
-    settled: { won: 877, lost: 298, refunded: 3, soldEarly: 12, oddsPct: 61.4, net: 1_234_000 },
-    accuracy: { runAt, ok: 47, checked: 48, hidden: 1 },
-  });
-  it("a fresh audit: 'Verified every hour', the time in ET, matched of checked, hidden, and How we verify → /data", () => {
-    const html = renderToStaticMarkup(createElement(TrustBlock, { facts: facts(NOW), now: NOW + 5 * 60_000 }));
-    const text = html.replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
-    expect(html).toContain("Verified every hour");
-    expect(text).toMatch(/Last audit 7:55\s?PM ET: 47 of 48 matched\. 1 hidden until it matches\./);
-    expect(html).toContain('href="/data"');
-    expect(html).toContain("How we verify");
-    expect(text).toContain("877 won, 298 lost");
-    expect(text).toContain("Average entry: 61%");
-    expect(text).toContain("12 closed before settlement");
-    // The net is on /results only, with what it means.
-    expect(text).not.toContain("Net for");
-    const res = renderToStaticMarkup(createElement(RecordLines, { r: facts(NOW).settled!, net: true })).replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
-    expect(res).toMatch(/Net for these traders: \+\$1\.2M/);
-    expect(res).toContain("What these positions realized");
-  });
-  it("an audit more than 2 hours old never claims hourly", () => {
-    const html = renderToStaticMarkup(createElement(TrustBlock, { facts: facts(NOW), now: NOW + 2 * 3_600_000 + 60_000 }));
-    const text = html.replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
-    expect(html).not.toContain("every hour");
-    expect(html).toContain("Last audit");
-    expect(text).toContain("47 of 48 matched");
-  });
-});
 
-describe("the locked record", () => {
-  it("says what's locked and shows no digits", () => {
-    const html = renderToStaticMarkup(createElement(LockedRecord, {}));
-    expect(html).toContain("Win rate · All-time net P&amp;L");
-    expect(html).toContain("members only");
-    expect(html.replace(/<[^>]+>/g, "")).not.toMatch(/\d|NaN/);
-  });
-});
 
 describe("source links", () => {
   const base = { id: "pm:x", source: "polymarket" as const, marketId: "0xc1", wallet: `0x${"1".padStart(40, "0")}`, at: NOW, url: null };

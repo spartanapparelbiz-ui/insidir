@@ -52,6 +52,7 @@ import { ALERT_MAX_AGE_MS, alertJobs, alertMessage } from "@/lib/moves/alerts";
 import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
 import { pingJobs, pingMessage } from "@/lib/millionaires/pings";
 import { twinsDailyOnce } from "@/lib/twins/daily";
+import { twinOf } from "@/lib/entities/market";
 import { freshBigBets, pingUsers, pricesNow } from "@/lib/millionaires/ping-store";
 import { recordsFor } from "@/lib/moves/store";
 import { isTopTrader } from "@/lib/moves/records";
@@ -155,10 +156,11 @@ async function millionairePingsOnce(): Promise<void> {
   const jobs = pingJobs(users, bets, now);
   if (!jobs.length) return;
   const byId = new Map(bets.map(b => [b.id, b])), prices = await pricesNow(db, [...new Set(jobs.map(j => j.betId))]);
+  const twins = await twinOf(db, [...new Set(bets.map(b => b.marketId).filter((x): x is string => Boolean(x)))]).catch(() => new Map());
   for (const j of jobs) {
     const b = byId.get(j.betId);
     if (!b || !(await claimAlert(db, j.userId, `mil:${b.id}`, "push"))) continue;
-    const msg = pingMessage(b, prices.get(b.id) ?? null, appUrl());
+    const msg = pingMessage(b, prices.get(b.id) ?? null, appUrl(), b.marketId ? twins.get(b.marketId) ?? null : null);
     for (const t of await pushTargets(db, j.userId)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
   }
 }

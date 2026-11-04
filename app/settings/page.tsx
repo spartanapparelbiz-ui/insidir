@@ -5,8 +5,8 @@
 import { GET_CTA, TRIAL_ADJ } from "@/lib/copy";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { ComingSoon } from "@/components/v2/ComingSoon";
-import { LocationPill } from "@/components/v2/LocationPill";
+import { ComingSoon } from "@/components/app/ComingSoon";
+import { LocationPill } from "@/components/app/LocationPill";
 import { isReady } from "@/lib/features";
 import { unlockHref } from "@/components/app/links";
 import { Frame } from "@/components/brand/app/Frame";

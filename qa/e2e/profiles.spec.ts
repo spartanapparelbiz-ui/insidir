@@ -16,7 +16,7 @@ test("a wallet's page: every stat from its resolved positions, for members; neve
   await expect(page.getByRole("heading", { level: 1 })).toContainText("0xe2…aa");
   await expect(page.locator("main")).not.toContainText("E2E-Top");
   // Never a face for a wallet.
-  await expect(page.getByTestId("wallet-hero").locator(":not(.b-stage__bg) > img")).toHaveCount(0);
+  await expect(page.getByTestId("wallet-hero").locator("img:not(.b-stage__bg *)")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "See their Polymarket profile" })).toHaveCount(0);
 });
 
