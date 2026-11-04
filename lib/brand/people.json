@@ -270,11 +270,12 @@
   "race": "Arkansas Governor Election Winner",
   "state": "AR",
   "bioguide": null,
-  "file": "fredrick-love-ar",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-fredrick-love-arkansas-governor-2026-c19342ea09.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Sarah Huckabee Sanders",
@@ -283,11 +284,12 @@
   "race": "Arkansas Governor Election Winner",
   "state": "AR",
   "bioguide": null,
-  "file": "sarah-huckabee-sanders-ar",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-sarah-huckabee-sanders-arkansas-governor-2026-6a4092d774.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Rick Crawford",
@@ -363,10 +365,10 @@
   "state": "AR",
   "bioguide": "W000809",
   "file": "steve-womack-ar",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide W000809)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-steve-womack-ar-03-house-af507e8035.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Bruce Westerman",
@@ -401,11 +403,12 @@
   "race": "Arkansas Senate Election Winner",
   "state": "AR",
   "bioguide": null,
-  "file": "hallie-shoffner-ar",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Hallie_Shoffner_(cropped).jpg",
-  "license": "CC BY-SA 4.0",
-  "author": "Ark. Agricultural Experiment Station"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Tom Cotton",
@@ -596,11 +599,12 @@
   "race": "AZ-07 House Election Winner",
   "state": "AZ",
   "bioguide": "G000606",
-  "file": "adelita-grijalva-az",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Rep._Adelita_Grijalva_Official_Portrait.jpg",
-  "license": "Public domain",
-  "author": "Damien Salas, Office of the Clerk U.S.House of Representatives"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: download failed; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Daniel Butierez",
@@ -744,11 +748,12 @@
   "race": "CA-03 House Election Winner",
   "state": "CA",
   "bioguide": null,
-  "file": "robb-tucker-ca",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-robb-tucker-ca-03-house-331758506f.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Michael Masuda",
@@ -770,11 +775,12 @@
   "race": "CA-05 House Election Winner",
   "state": "CA",
   "bioguide": "M001177",
-  "file": "tom-mcclintock-ca",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Tom_McClintock,_Official_Portrait.JPG",
-  "license": "Public domain",
-  "author": "US House of Representatives"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "John Garamendi",
@@ -783,11 +789,12 @@
   "race": "CA-08 House Election Winner",
   "state": "CA",
   "bioguide": "G000559",
-  "file": "john-garamendi-ca",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide G000559)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Rudy Recile",
@@ -877,10 +884,10 @@
   "state": "CA",
   "bioguide": null,
   "file": "kevin-lincoln-ca",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-kevin-lincoln-ca-13-house-9a00aa24c5.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:KevinLincoln.jpg",
+  "license": "Public domain",
+  "author": "City of Stockton"
  },
  {
   "name": "Charles Hoelter",
@@ -969,11 +976,12 @@
   "race": "CA-18 House Election Winner",
   "state": "CA",
   "bioguide": null,
-  "file": "shane-lewis-ca",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-shane-lewis-ca-18-house-562c43c274.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Zoe Lofgren",
@@ -1048,11 +1056,12 @@
   "race": "CA-21 House Election Winner",
   "state": "CA",
   "bioguide": "C001059",
-  "file": "jim-costa-ca",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jim-costa-ca-21-house-b71c3af910.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: download failed"
  },
  {
   "name": "Kyle Kirkland",
@@ -1140,10 +1149,10 @@
   "state": "CA",
   "bioguide": "R000599",
   "file": "raul-ruiz-ca",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide R000599)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-raul-ruiz-ca-25-house-cef4d8c316.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Jacqui Irwin",
@@ -1205,11 +1214,12 @@
   "race": "CA-30 House Election Winner",
   "state": "CA",
   "bioguide": "F000483",
-  "file": "laura-friedman-ca",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-laura-friedman-ca-30-house-6c1550d9d6.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: download failed"
  },
  {
   "name": "Scott Meyers",
@@ -1483,11 +1493,12 @@
   "race": "CA-43 House Election Winner",
   "state": "CA",
   "bioguide": "W000187",
-  "file": "maxine-waters-ca",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide W000187)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Genevieve Angel",
@@ -1562,11 +1573,12 @@
   "race": "CA-46 House Election Winner",
   "state": "CA",
   "bioguide": null,
-  "file": "lou-correa-ca",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-lou-correa-ca-46-house-b01bbd8395.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Dave Min",
@@ -1722,10 +1734,10 @@
   "state": "CA",
   "bioguide": "V000130",
   "file": "juan-vargas-ca",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-juan-vargas-ca-52-house-b69eda0477.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Juan_Vargas_official_photo.jpg",
+  "license": "Public domain",
+  "author": "United States Congress"
  },
  {
   "name": "Phil Weiser",
@@ -1734,11 +1746,12 @@
   "race": "Colorado Governor Election Winner",
   "state": "CO",
   "bioguide": null,
-  "file": "phil-weiser-co",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:AG_Phil_Weiser_3.png",
-  "license": "Public domain",
-  "author": "Phil Photos"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Victor Marx",
@@ -1747,11 +1760,12 @@
   "race": "Colorado Governor Election Winner",
   "state": "CO",
   "bioguide": null,
-  "file": "victor-marx-co",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-victor-marx-colorado-governor-2026-73a9dbd664.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Christy Peterson",
@@ -1799,11 +1813,12 @@
   "race": "CO-02 House Election Winner",
   "state": "CO",
   "bioguide": null,
-  "file": "kelley-dennison-co",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-kelley-dennison-co-02-house-df508bd1f5.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Dwayne Romero",
@@ -1832,69 +1847,18 @@
   "author": "Polymarket"
  },
  {
-  "name": "Eileen Laubacher",
-  "party": "D",
-  "office": "CO-4 House",
-  "race": "CO-04 House Election Winner",
-  "state": "CO",
-  "bioguide": null,
-  "file": "eileen-laubacher-co",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-eileen-laubacher-co-04-house-5a8ece177f.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Lauren Boebert",
-  "party": "R",
-  "office": "CO-4 House",
-  "race": "CO-04 House Election Winner",
-  "state": "CO",
-  "bioguide": "B000825",
-  "file": "lauren-boebert-co",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide B000825)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Jeff Crank",
-  "party": "R",
-  "office": "CO-5 House",
-  "race": "CO-05 House Election Winner",
-  "state": "CO",
-  "bioguide": "C001137",
-  "file": "jeff-crank-co",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jeff-crank-co-05-house-98e316ddea.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Jessica Killin",
-  "party": "D",
-  "office": "CO-5 House",
-  "race": "CO-05 House Election Winner",
-  "state": "CO",
-  "bioguide": null,
-  "file": "jessica-killin-co",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jessica-killin-co-05-house-123657d51c.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Jason Clark",
   "party": "R",
   "office": "CO-6 House",
   "race": "CO-06 House Election Winner",
   "state": "CO",
   "bioguide": null,
-  "file": "jason-clark-co",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jason-clark-co-06-house-ab91ea3a50.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "reviewed: looking up and away, the top of the head cut off"
  },
  {
   "name": "Jason Crow",
@@ -1969,10 +1933,10 @@
   "state": "CO",
   "bioguide": "H000273",
   "file": "john-hickenlooper-co",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide H000273)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-john-hickenlooper-colorado-senate-ef52903f22.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Mark Baisley",
@@ -2007,11 +1971,12 @@
   "race": "Connecticut Governor Election Winner",
   "state": "CT",
   "bioguide": null,
-  "file": "ryan-fazio-ct",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-ryan-fazio-connecticut-governor-2026-8319e90305.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Amy Chai",
@@ -2034,11 +1999,12 @@
   "race": "CT-01 House Election Winner",
   "state": "CT",
   "bioguide": null,
-  "file": "luke-bronin-ct",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-luke-bronin-ct-01-house-e012ff2693.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "reviewed: too close: the top of the head cut off"
  },
  {
   "name": "George Austin",
@@ -2073,11 +2039,12 @@
   "race": "CT-03 House Election Winner",
   "state": "CT",
   "bioguide": null,
-  "file": "chris-lancia-ct",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-chris-lancia-ct-03-house-0ec1d16504.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Rosa DeLauro",
@@ -2125,11 +2092,12 @@
   "race": "CT-05 House Election Winner",
   "state": "CT",
   "bioguide": null,
-  "file": "chris-shea-ct",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-chris-shea-ct-05-house-41eaf96c62.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Jahana Hayes",
@@ -2169,112 +2137,6 @@
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-david-jolly-florida-governor-2026-30dbb47771.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
- },
- {
-  "name": "Gay Valimont",
-  "party": "D",
-  "office": "FL-1 House",
-  "race": "FL-01 House Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": "gay-valimont-fl",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-gay-valimont-fl-01-house-2f11619e0a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Jimmy Patronis",
-  "party": "R",
-  "office": "FL-1 House",
-  "race": "FL-01 House Election Winner",
-  "state": "FL",
-  "bioguide": "P000622",
-  "file": "jimmy-patronis-fl",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jimmy-patronis-fl-01-house-51f6866b92.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Amanda Green",
-  "party": "D",
-  "office": "FL-2 House",
-  "race": "FL-02 House Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": "amanda-green-fl",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-amanda-green-fl-02-house-a94c72edc2.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Austin Rogers",
-  "party": "R",
-  "office": "FL-2 House",
-  "race": "FL-02 House Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": "austin-rogers-fl",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-austin-rogers-fl-02-house-46ee480bfe.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Kat Cammack",
-  "party": "R",
-  "office": "FL-3 House",
-  "race": "FL-03 House Election Winner",
-  "state": "FL",
-  "bioguide": "C001039",
-  "file": "kat-cammack-fl",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide C001039)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Seth Harp",
-  "party": "D",
-  "office": "FL-3 House",
-  "race": "FL-03 House Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
- },
- {
-  "name": "Aaron Bean",
-  "party": "R",
-  "office": "FL-4 House",
-  "race": "FL-04 House Election Winner",
-  "state": "FL",
-  "bioguide": "B001314",
-  "file": "aaron-bean-fl",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-aaron-bean-fl-04-house-8cce56b809.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "LaShonda Holloway",
-  "party": "D",
-  "office": "FL-4 House",
-  "race": "FL-04 House Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Bale Dalton",
@@ -2324,11 +2186,12 @@
   "race": "FL-09 House Election Winner",
   "state": "FL",
   "bioguide": "S001200",
-  "file": "darren-soto-fl",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide S001200)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Anna Paulina Luna",
@@ -2353,32 +2216,6 @@
   "file": "leela-gray-fl",
   "kind": "polymarket",
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-leela-gray-fl-13-house-4f8c8def06.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Kelly Kirschner",
-  "party": "D",
-  "office": "FL-16 House",
-  "race": "FL-16 House Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": "kelly-kirschner-fl",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-kelly-kirschner-fl-16-house-5be1751970.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Sydney Gruters",
-  "party": "R",
-  "office": "FL-16 House",
-  "race": "FL-16 House Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": "sydney-gruters-fl",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-sydney-gruters-fl-16-house-45adccf2e6.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
  },
@@ -2483,32 +2320,6 @@
   "file": "maria-elvira-salazar-fl",
   "kind": "congress",
   "source": "https://github.com/unitedstates/images (bioguide S000168)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Angie Nixon",
-  "party": "D",
-  "office": "FL Senate",
-  "race": "Florida Senate Election Winner",
-  "state": "FL",
-  "bioguide": null,
-  "file": "angie-nixon-fl",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Angie_Nixon_official_portrait.jpg",
-  "license": "Public domain",
-  "author": "Florida House of Representatives"
- },
- {
-  "name": "Ashley Moody",
-  "party": "R",
-  "office": "FL Senate",
-  "race": "Florida Senate Election Winner",
-  "state": "FL",
-  "bioguide": "M001244",
-  "file": "ashley-moody-fl",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide M001244)",
   "license": "public domain",
   "author": "U.S. Congress (official portrait)"
  },
@@ -2618,33 +2429,6 @@
   "author": "Polymarket"
  },
  {
-  "name": "Austin Scott",
-  "party": "R",
-  "office": "GA-8 House",
-  "race": "GA-08 House Election Winner",
-  "state": "GA",
-  "bioguide": "S001189",
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: none usable"
- },
- {
-  "name": "Kelly Esti",
-  "party": "D",
-  "office": "GA-8 House",
-  "race": "GA-08 House Election Winner",
-  "state": "GA",
-  "bioguide": null,
-  "file": "kelly-esti-ga",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-kelly-esti-ga-08-house-95fa177aa6.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Houston Gaines",
   "party": "R",
   "office": "GA-10 House",
@@ -2745,11 +2529,12 @@
   "race": "GA-14 House Election Winner",
   "state": "GA",
   "bioguide": null,
-  "file": "shawn-harris-ga",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-shawn-harris-ga-14-house-4f21fb2f5d.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Gary Cordery",
@@ -2816,7 +2601,7 @@
   "source": null,
   "license": null,
   "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
+  "note": "polymarket: photo too tight to frame; commons: download failed"
  },
  {
   "name": "Jill Tokuda",
@@ -2838,11 +2623,12 @@
   "race": "Iowa Governor Election Winner",
   "state": "IA",
   "bioguide": null,
-  "file": "rob-sand-ia",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Rob_Sand_For_Iowa_2_(cropped)_(cropped).jpg",
-  "license": "CC0",
-  "author": "Rob Sand for Governor"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Zach Lahn",
@@ -2890,11 +2676,12 @@
   "race": "IA-02 House Election Winner",
   "state": "IA",
   "bioguide": null,
-  "file": "joe-mitchell-ia",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-joe-mitchell-ia-02-house-7d91351bee.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Lindsay James",
@@ -2916,11 +2703,12 @@
   "race": "IA-03 House Election Winner",
   "state": "IA",
   "bioguide": null,
-  "file": "sarah-trone-garriott-ia",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-sarah-trone-garriott-ia-03-house-1028d3d40a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Zach Nunn",
@@ -3101,11 +2889,12 @@
   "race": "IL-01 House Election Winner",
   "state": "IL",
   "bioguide": null,
-  "file": "christian-maxwell-il",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-christian-maxwell-il-01-house-b750ff217a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Jonathan Jackson",
@@ -3307,33 +3096,6 @@
   "author": "Polymarket"
  },
  {
-  "name": "Daniel Biss",
-  "party": "D",
-  "office": "IL-9 House",
-  "race": "IL-09 House Election Winner",
-  "state": "IL",
-  "bioguide": null,
-  "file": "daniel-biss-il",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-daniel-biss-il-09-house-9c65086ce9.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "John Elleson",
-  "party": "R",
-  "office": "IL-9 House",
-  "race": "IL-09 House Election Winner",
-  "state": "IL",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
- },
- {
   "name": "Brad Schneider",
   "party": "D",
   "office": "IL-10 House",
@@ -3353,11 +3115,12 @@
   "race": "IL-10 House Election Winner",
   "state": "IL",
   "bioguide": null,
-  "file": "carl-lambrecht-il",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-carl-lambrecht-il-10-house-a3a1f74599.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Bill Foster",
@@ -3549,11 +3312,12 @@
   "race": "IN-01 House Election Winner",
   "state": "IN",
   "bioguide": null,
-  "file": "barb-regnitz-in",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-barb-regnitz-in-01-house-938cc0e646.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Frank Mrvan",
@@ -3654,11 +3418,12 @@
   "race": "IN-05 House Election Winner",
   "state": "IN",
   "bioguide": null,
-  "file": "j-d-ford-in",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-j-d-ford-in-05-house-a3bfccb0b9.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Victoria Spartz",
@@ -3680,11 +3445,12 @@
   "race": "IN-06 House Election Winner",
   "state": "IN",
   "bioguide": null,
-  "file": "cinde-wirth-in",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-cinde-wirth-in-06-house-c4730b0862.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Jefferson Shreve",
@@ -3698,33 +3464,6 @@
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jefferson-shreve-in-06-house-a94b6954d4.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
- },
- {
-  "name": "André Carson",
-  "party": "D",
-  "office": "IN-7 House",
-  "race": "IN-07 House Election Winner",
-  "state": "IN",
-  "bioguide": "C001072",
-  "file": "andre-carson-in",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Andre_Carson_2009.jpg",
-  "license": "Public domain",
-  "author": "United States Congress"
- },
- {
-  "name": "Patrick McAuley",
-  "party": "R",
-  "office": "IN-7 House",
-  "race": "IN-07 House Election Winner",
-  "state": "IN",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
  },
  {
   "name": "Mark Messmer",
@@ -3852,11 +3591,12 @@
   "race": "KS-02 House Election Winner",
   "state": "KS",
   "bioguide": null,
-  "file": "don-coover-ks",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-don-coover-ks-02-house-1bf700cce6.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Eric Jenkins",
@@ -3879,10 +3619,10 @@
   "state": "KS",
   "bioguide": "D000629",
   "file": "sharice-davids-ks",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide D000629)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-sharice-davids-ks-03-house-3fd87b5259.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Katy Tyndell",
@@ -3904,11 +3644,12 @@
   "race": "KS-04 House Election Winner",
   "state": "KS",
   "bioguide": "E000298",
-  "file": "ron-estes-ks",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide E000298)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Adam Hamilton",
@@ -3935,58 +3676,6 @@
   "source": "https://github.com/unitedstates/images (bioguide M001198)",
   "license": "public domain",
   "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Brett Guthrie",
-  "party": "R",
-  "office": "KY-2 House",
-  "race": "KY-02 House Election Winner",
-  "state": "KY",
-  "bioguide": "G000558",
-  "file": "brett-guthrie-ky",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-brett-guthrie-ky-02-house-e5a6b2e663.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Megan Wingfield",
-  "party": "D",
-  "office": "KY-2 House",
-  "race": "KY-02 House Election Winner",
-  "state": "KY",
-  "bioguide": null,
-  "file": "megan-wingfield-ky",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-megan-wingfield-ky-02-house-8966ecd4c5.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Ed Gallrein",
-  "party": "R",
-  "office": "KY-4 House",
-  "race": "KY-04 House Election Winner",
-  "state": "KY",
-  "bioguide": null,
-  "file": "ed-gallrein-ky",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-ed-gallrein-ky-04-house-c8c467af2e.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Melissa Strange",
-  "party": "D",
-  "office": "KY-4 House",
-  "race": "KY-04 House Election Winner",
-  "state": "KY",
-  "bioguide": null,
-  "file": "melissa-strange-ky",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-melissa-strange-ky-04-house-041065205d.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
  },
  {
   "name": "Ralph Alvarado",
@@ -4022,10 +3711,10 @@
   "state": "KY",
   "bioguide": "B001282",
   "file": "andy-barr-ky",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-andy-barr-kentucky-senate-8cc8191c53.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Andy_Barr,_official_portrait,_113th_Congress.jpg",
+  "license": "Public domain",
+  "author": "US Government"
  },
  {
   "name": "Charles Booker",
@@ -4075,11 +3764,12 @@
   "race": "MA-01 House Election Winner",
   "state": "MA",
   "bioguide": "N000015",
-  "file": "richard-neal-ma",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Richard_Neal_official_photo_(cropped).jpg",
-  "license": "Public domain",
-  "author": "US House Office of Photography"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Gary Grossi",
@@ -4154,11 +3844,12 @@
   "race": "MA-06 House Election Winner",
   "state": "MA",
   "bioguide": null,
-  "file": "micah-jones-ma",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-micah-jones-ma-06-house-251e827466.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Robert Burke",
@@ -4167,11 +3858,12 @@
   "race": "MA-08 House Election Winner",
   "state": "MA",
   "bioguide": null,
-  "file": "robert-burke-ma",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-robert-burke-ma-08-house-9ab3d69136.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Stephen Lynch",
@@ -4226,7 +3918,7 @@
   "source": null,
   "license": null,
   "author": null,
-  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: face too small (156px crop)"
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: download failed"
  },
  {
   "name": "Dan Schwartz",
@@ -4369,11 +4061,12 @@
   "race": "MD-06 House Election Winner",
   "state": "MD",
   "bioguide": null,
-  "file": "robin-ficker-md",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-robin-ficker-md-06-house-13d6edac7a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Kweisi Mfume",
@@ -4423,10 +4116,10 @@
   "state": "MD",
   "bioguide": "R000606",
   "file": "jamie-raskin-md",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide R000606)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Jamie_Raskin_Official_Portrait_2019.jpg",
+  "license": "Public domain",
+  "author": "Leah Herman"
  },
  {
   "name": "Hannah Pingree",
@@ -4570,11 +4263,12 @@
   "race": "MI-01 House Election Winner",
   "state": "MI",
   "bioguide": null,
-  "file": "callie-barr-mi",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-callie-barr-mi-01-house-b9b6a1240b.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Jack Bergman",
@@ -4649,10 +4343,10 @@
   "state": "MI",
   "bioguide": "H001058",
   "file": "bill-huizenga-mi",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-bill-huizenga-mi-04-house-4d73570c96.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Bill_Huizenga,_Official_Portrait,_112th_Congress.jpg",
+  "license": "Public domain",
+  "author": "US House of Representatives"
  },
  {
   "name": "Sean McCann",
@@ -4819,11 +4513,12 @@
   "race": "MI-10 House Election Winner",
   "state": "MI",
   "bioguide": null,
-  "file": "mike-bouchard-mi",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Mike_Bouchard_2006.jpg",
-  "license": "CC BY 2.0",
-  "author": "Mike Bouchard"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Ethan Baker",
@@ -4976,11 +4671,12 @@
   "race": "MN-01 House Election Winner",
   "state": "MN",
   "bioguide": null,
-  "file": "jake-johnson-mn",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jake-johnson-mn-01-house-ed1c7d617d.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Eric Pratt",
@@ -5003,11 +4699,12 @@
   "race": "MN-02 House Election Winner",
   "state": "MN",
   "bioguide": null,
-  "file": "matt-little-mn",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-matt-little-mn-02-house-d3d32839e3.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: two faces"
  },
  {
   "name": "Kelly Morrison",
@@ -5193,32 +4890,6 @@
   "author": "Polymarket"
  },
  {
-  "name": "Paul Berry",
-  "party": "R",
-  "office": "MO-1 House",
-  "race": "MO-01 House Election Winner",
-  "state": "MO",
-  "bioguide": null,
-  "file": "paul-berry-mo",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-paul-berry-mo-01-house-cf30c63204.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Wesley Bell",
-  "party": "D",
-  "office": "MO-1 House",
-  "race": "MO-01 House Election Winner",
-  "state": "MO",
-  "bioguide": "B001324",
-  "file": "wesley-bell-mo",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-wesley-bell-mo-01-house-b961476273.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Ann Wagner",
   "party": "R",
   "office": "MO-2 House",
@@ -5319,11 +4990,12 @@
   "race": "MO-05 House Election Winner",
   "state": "MO",
   "bioguide": null,
-  "file": "rick-brattin-mo",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-rick-brattin-mo-05-house-d79e213140.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Chris Stigall",
@@ -5332,11 +5004,12 @@
   "race": "MO-06 House Election Winner",
   "state": "MO",
   "bioguide": null,
-  "file": "chris-stigall-mo",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-chris-stigall-mo-06-house-6d97b9d77d.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Josh Smead",
@@ -5479,10 +5152,10 @@
   "state": "MS",
   "bioguide": "G000591",
   "file": "michael-guest-ms",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide G000591)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-michael-guest-ms-03-house-82a6742053.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Jeffrey Hulum III",
@@ -5491,11 +5164,12 @@
   "race": "MS-04 House Election Winner",
   "state": "MS",
   "bioguide": null,
-  "file": "jeffrey-hulum-iii-ms",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jeffrey-hulum-iii-ms-04-house-457e73d470.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Mike Ezell",
@@ -5530,11 +5204,12 @@
   "race": "Mississippi Senate Election Winner",
   "state": "MS",
   "bioguide": null,
-  "file": "scott-colom-ms",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-scott-colom-mississippi-senate-9a522b77d1.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Aaron Flint",
@@ -5556,11 +5231,12 @@
   "race": "MT-01 House Election Winner",
   "state": "MT",
   "bioguide": null,
-  "file": "sam-forstag-mt",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-sam-forstag-mt-01-house-24eed636fd.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Brian Miller",
@@ -5569,11 +5245,12 @@
   "race": "MT-02 House Election Winner",
   "state": "MT",
   "bioguide": null,
-  "file": "brian-miller-mt",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-brian-miller-mt-02-house-4332357b4c.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Troy Downing",
@@ -5641,33 +5318,6 @@
   "author": "Polymarket"
  },
  {
-  "name": "Deborah Ross",
-  "party": "D",
-  "office": "NC-2 House",
-  "race": "NC-02 House Election Winner",
-  "state": "NC",
-  "bioguide": "R000305",
-  "file": "deborah-ross-nc",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide R000305)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Eugene Douglass",
-  "party": "R",
-  "office": "NC-2 House",
-  "race": "NC-02 House Election Winner",
-  "state": "NC",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
- },
- {
   "name": "Greg Murphy",
   "party": "R",
   "office": "NC-3 House",
@@ -5693,33 +5343,6 @@
   "license": null,
   "author": null,
   "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
- },
- {
-  "name": "Max Ganorkar",
-  "party": "R",
-  "office": "NC-4 House",
-  "race": "NC-04 House Election Winner",
-  "state": "NC",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
- },
- {
-  "name": "Valerie Foushee",
-  "party": "D",
-  "office": "NC-4 House",
-  "race": "NC-04 House Election Winner",
-  "state": "NC",
-  "bioguide": "F000477",
-  "file": "valerie-foushee-nc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-valerie-foushee-nc-04-house-6080a71043.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
  },
  {
   "name": "Chuck Hubbard",
@@ -5781,10 +5404,10 @@
   "state": "NC",
   "bioguide": "R000603",
   "file": "david-rouzer-nc",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide R000603)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-david-rouzer-nc-07-house-0ab1600955.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Kimberly Hardy",
@@ -5833,10 +5456,10 @@
   "state": "NC",
   "bioguide": "H001067",
   "file": "richard-hudson-nc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-richard-hudson-nc-09-house-1c3ce36b9c.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Richard_Hudson_official_congressional_photo.jpg",
+  "license": "Public domain",
+  "author": "United States Congress"
  },
  {
   "name": "Richard Ojeda",
@@ -5906,32 +5529,6 @@
   "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
-  "name": "Alma Adams",
-  "party": "D",
-  "office": "NC-12 House",
-  "race": "NC-12 House Election Winner",
-  "state": "NC",
-  "bioguide": "A000370",
-  "file": "alma-adams-nc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-alma-adams-nc-12-house-ff95208f82.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Jack Codiga",
-  "party": "R",
-  "office": "NC-12 House",
-  "race": "NC-12 House Election Winner",
-  "state": "NC",
-  "bioguide": null,
-  "file": "jack-codiga-nc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jack-codiga-nc-12-house-19b4224147.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Brad Knott",
   "party": "R",
   "office": "NC-13 House",
@@ -5982,33 +5579,6 @@
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-tim-moore-nc-14-house-f4415df027.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
- },
- {
-  "name": "Michael Whatley",
-  "party": "R",
-  "office": "NC Senate",
-  "race": "North Carolina Senate Election Winner",
-  "state": "NC",
-  "bioguide": null,
-  "file": "michael-whatley-nc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-michael-whatley-north-carolina-senate-5255f3aadd.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Roy Cooper",
-  "party": "D",
-  "office": "NC Senate",
-  "race": "North Carolina Senate Election Winner",
-  "state": "NC",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Jim Pillen",
@@ -6096,11 +5666,12 @@
   "race": "NE-03 House Election Winner",
   "state": "NE",
   "bioguide": "S001172",
-  "file": "adrian-smith-ne",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Adrian_Smith,_official_110th_Congress_photo_portrait.jpg",
-  "license": "Public domain",
-  "author": "Wikimedia Commons"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Becky Stille",
@@ -6162,11 +5733,12 @@
   "race": "NH-01 House Election Winner",
   "state": "NH",
   "bioguide": null,
-  "file": "anthony-dilorenzo-nh",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-anthony-dilorenzo-nh-01-house-bb64bc1b0d.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Stefany Shaheen",
@@ -6232,33 +5804,6 @@
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-zack-mullock-nj-02-house-2c3cc719ec.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
- },
- {
-  "name": "Herb Conaway",
-  "party": "D",
-  "office": "NJ-3 House",
-  "race": "NJ-03 House Election Winner",
-  "state": "NJ",
-  "bioguide": null,
-  "file": "herb-conaway-nj",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-herb-conaway-nj-03-house-e0b8c2e936.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Michael McGuire",
-  "party": "R",
-  "office": "NJ-3 House",
-  "race": "NJ-03 House Election Winner",
-  "state": "NJ",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Chris Smith",
@@ -6393,69 +5938,18 @@
   "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
-  "name": "Carmen Bucco",
-  "party": "R",
-  "office": "NJ-10 House",
-  "race": "NJ-10 House Election Winner",
-  "state": "NJ",
-  "bioguide": null,
-  "file": "carmen-bucco-nj",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-carmen-bucco-nj-10-house-2573da71ab.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "LaMonica McIver",
-  "party": "D",
-  "office": "NJ-10 House",
-  "race": "NJ-10 House Election Winner",
-  "state": "NJ",
-  "bioguide": "M001229",
-  "file": "lamonica-mciver-nj",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-lamonica-mciver-nj-10-house-114f7e2982.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Adam Hamawy",
-  "party": "D",
-  "office": "NJ-12 House",
-  "race": "NJ-12 House Election Winner",
-  "state": "NJ",
-  "bioguide": null,
-  "file": "adam-hamawy-nj",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-adam-hamawy-nj-12-house-f7022272e5.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Gregg Mele",
-  "party": "R",
-  "office": "NJ-12 House",
-  "race": "NJ-12 House Election Winner",
-  "state": "NJ",
-  "bioguide": null,
-  "file": "gregg-mele-nj",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-gregg-mele-nj-12-house-a656d9b660.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Deb Haaland",
   "party": "D",
   "office": "NM Governor",
   "race": "New Mexico Governor Election Winner",
   "state": "NM",
   "bioguide": null,
-  "file": "deb-haaland-nm",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-deb-haaland-new-mexico-governor-2026-0c9617379c.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Gregg Hull",
@@ -6464,11 +5958,12 @@
   "race": "New Mexico Governor Election Winner",
   "state": "NM",
   "bioguide": null,
-  "file": "gregg-hull-nm",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-gregg-hull-new-mexico-governor-2026-5377e889e1.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Didi Okpareke",
@@ -6557,12 +6052,11 @@
   "race": "New Mexico Senate Election Winner",
   "state": "NM",
   "bioguide": "L000570",
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "congress: photo too tight to frame; commons: none usable"
+  "file": "ben-ray-lujan-nm",
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Ben_Lujan_official_photo.jpg",
+  "license": "Public domain",
+  "author": "Office of Congressman Ben Ray Lujan"
  },
  {
   "name": "Larry Marker",
@@ -6584,11 +6078,12 @@
   "race": "Nevada Governor Election Winner",
   "state": "NV",
   "bioguide": null,
-  "file": "aaron-ford-nv",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-aaron-ford-nevada-governor-2026-fe2a16c928.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Joe Lombardo",
@@ -6873,10 +6368,10 @@
   "state": "NY",
   "bioguide": "M001188",
   "file": "grace-meng-ny",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide M001188)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-grace-meng-ny-06-house-51752c093a.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Joseph Chou",
@@ -6913,11 +6408,12 @@
   "race": "NY-07 House Election Winner",
   "state": "NY",
   "bioguide": null,
-  "file": "melvin-rivera-ny",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-melvin-rivera-ny-07-house-7886b06354.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Hakeem Jeffries",
@@ -6939,11 +6435,12 @@
   "race": "NY-08 House Election Winner",
   "state": "NY",
   "bioguide": null,
-  "file": "lewis-mizrahi-ny",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-lewis-mizrahi-ny-08-house-510c037451.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Joel Anabilah-Azumah",
@@ -7046,11 +6543,12 @@
   "race": "NY-12 House Election Winner",
   "state": "NY",
   "bioguide": null,
-  "file": "micah-lasher-ny",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-micah-lasher-ny-12-house-8ab31dca05.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "reviewed: a side-on close-up"
  },
  {
   "name": "Darializa Avila Chevalier",
@@ -7231,11 +6729,12 @@
   "race": "NY-19 House Election Winner",
   "state": "NY",
   "bioguide": null,
-  "file": "peter-oberacker-ny",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:(05-12-25)_NYS_Senator_Peter_Oberacker_(cropped).jpg",
-  "license": "CC BY 2.0",
-  "author": "NY Senate Photo"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Paul Tonko",
@@ -7551,11 +7050,12 @@
   "race": "OH-05 House Election Winner",
   "state": "OH",
   "bioguide": null,
-  "file": "brian-shaver-oh",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-brian-shaver-oh-05-house-9adec3fd54.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Elizabeth Kirtley",
@@ -7660,10 +7160,10 @@
   "state": "OH",
   "bioguide": "K000009",
   "file": "marcy-kaptur-oh",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-marcy-kaptur-oh-09-house-f1b2fce51a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Marcy_Kaptur,_official_photo_portrait,_color.jpg",
+  "license": "Public domain",
+  "author": "United States Congress"
  },
  {
   "name": "Kristina Knickerbocker",
@@ -7805,10 +7305,10 @@
   "state": "OK",
   "bioguide": null,
   "file": "cyndi-munson-ok",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-cyndi-munson-oklahoma-governor-2026-b8092276b1.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Munson,_Cyndie.jpg",
+  "license": "Public domain",
+  "author": "Oklahoma Legislative Service Bureau"
  },
  {
   "name": "Mike Mazzei",
@@ -7818,10 +7318,10 @@
   "state": "OK",
   "bioguide": null,
   "file": "mike-mazzei-ok",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-mike-mazzei-oklahoma-governor-2026-8396430c59.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Mike_Mazzei_OK_Senate_Headshot.jpg",
+  "license": "Public domain",
+  "author": "Oklahoma State Senate"
  },
  {
   "name": "John Croisant",
@@ -7849,33 +7349,6 @@
   "license": null,
   "author": null,
   "note": "polymarket: photo too tight to frame; commons: none usable"
- },
- {
-  "name": "Brandon Wade",
-  "party": "D",
-  "office": "OK-2 House",
-  "race": "OK-02 House Election Winner",
-  "state": "OK",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
- },
- {
-  "name": "Josh Brecheen",
-  "party": "R",
-  "office": "OK-2 House",
-  "race": "OK-02 House Election Winner",
-  "state": "OK",
-  "bioguide": "B001317",
-  "file": "josh-brecheen-ok",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-josh-brecheen-ok-02-house-446cfe9b90.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
  },
  {
   "name": "Frank Lucas",
@@ -7996,7 +7469,7 @@
   "source": null,
   "license": null,
   "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Tina Kotek",
@@ -8005,11 +7478,12 @@
   "race": "Oregon Governor Election Winner",
   "state": "OR",
   "bioguide": null,
-  "file": "tina-kotek-or",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-tina-kotek-oregon-governor-2026-48454fffd9.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Barbara Kahl",
@@ -8031,11 +7505,12 @@
   "race": "OR-01 House Election Winner",
   "state": "OR",
   "bioguide": "B001278",
-  "file": "suzanne-bonamici-or",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-suzanne-bonamici-or-01-house-95100b62e9.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: download failed"
  },
  {
   "name": "Chris Beck",
@@ -8175,11 +7650,12 @@
   "race": "Oregon Senate Election Winner",
   "state": "OR",
   "bioguide": null,
-  "file": "david-brock-smith-or",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-david-brock-smith-oregon-senate-a0c2e7ea25.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: face too small (170px crop)"
  },
  {
   "name": "Jeff Merkley",
@@ -8219,99 +7695,6 @@
   "source": "https://github.com/unitedstates/images (bioguide F000466)",
   "license": "public domain",
   "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Brendan Boyle",
-  "party": "D",
-  "office": "PA-2 House",
-  "race": "PA-02 House Election Winner",
-  "state": "PA",
-  "bioguide": "B001296",
-  "file": "brendan-boyle-pa",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-brendan-boyle-pa-02-house-38ef930791.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Jessica Arriaga",
-  "party": "R",
-  "office": "PA-2 House",
-  "race": "PA-02 House Election Winner",
-  "state": "PA",
-  "bioguide": null,
-  "file": "jessica-arriaga-pa",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jessica-arriaga-pa-02-house-e38be62316.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Chris Rabb",
-  "party": "D",
-  "office": "PA-3 House",
-  "race": "PA-03 House Election Winner",
-  "state": "PA",
-  "bioguide": null,
-  "file": "chris-rabb-pa",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-chris-rabb-pa-03-house-3b66567680.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Aurora Stuski",
-  "party": "R",
-  "office": "PA-4 House",
-  "race": "PA-04 House Election Winner",
-  "state": "PA",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
- },
- {
-  "name": "Madeleine Dean",
-  "party": "D",
-  "office": "PA-4 House",
-  "race": "PA-04 House Election Winner",
-  "state": "PA",
-  "bioguide": "D000631",
-  "file": "madeleine-dean-pa",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide D000631)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Mary Gay Scanlon",
-  "party": "D",
-  "office": "PA-5 House",
-  "race": "PA-05 House Election Winner",
-  "state": "PA",
-  "bioguide": "S001205",
-  "file": "mary-gay-scanlon-pa",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide S001205)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
- },
- {
-  "name": "Nicholas Manganaro",
-  "party": "R",
-  "office": "PA-5 House",
-  "race": "PA-05 House Election Winner",
-  "state": "PA",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Chrissy Houlahan",
@@ -8372,11 +7755,12 @@
   "race": "PA-08 House Election Winner",
   "state": "PA",
   "bioguide": null,
-  "file": "paige-cognetti-pa",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-paige-cognetti-pa-08-house-ab921ff516.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Rob Bresnahan",
@@ -8467,33 +7851,6 @@
   "file": "nancy-mannion-pa",
   "kind": "polymarket",
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-nancy-mannion-pa-11-house-0191279413.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "James Hayes",
-  "party": "R",
-  "office": "PA-12 House",
-  "race": "PA-12 House Election Winner",
-  "state": "PA",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
- },
- {
-  "name": "Summer Lee",
-  "party": "D",
-  "office": "PA-12 House",
-  "race": "PA-12 House Election Winner",
-  "state": "PA",
-  "bioguide": "L000602",
-  "file": "summer-lee-pa",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-summer-lee-pa-12-house-3e1febecfe.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
  },
@@ -8644,59 +8001,6 @@
   "author": "Polymarket"
  },
  {
-  "name": "Gabe Amo",
-  "party": "D",
-  "office": "RI-1 House",
-  "race": "RI-01 House Election Winner",
-  "state": "RI",
-  "bioguide": "A000380",
-  "file": "gabe-amo-ri",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-gabe-amo-ri-01-house-07ba15773c.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Kellie Keenan",
-  "party": "R",
-  "office": "RI-1 House",
-  "race": "RI-01 House Election Winner",
-  "state": "RI",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
- },
- {
-  "name": "Seth Magaziner",
-  "party": "D",
-  "office": "RI-2 House",
-  "race": "RI-02 House Election Winner",
-  "state": "RI",
-  "bioguide": "M001223",
-  "file": "seth-magaziner-ri",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-seth-magaziner-ri-02-house-27ef31542a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Victor Mellor",
-  "party": "R",
-  "office": "RI-2 House",
-  "race": "RI-02 House Election Winner",
-  "state": "RI",
-  "bioguide": null,
-  "file": "victor-mellor-ri",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-victor-mellor-ri-02-house-d0ffff7538.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Alan Wilson",
   "party": "R",
   "office": "SC Governor",
@@ -8717,11 +8021,12 @@
   "race": "South Carolina Governor Election Winner",
   "state": "SC",
   "bioguide": null,
-  "file": "jermaine-johnson-sc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jermaine-johnson-south-carolina-governor-2026-fef3b7f18a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Jenny Costa Honeycutt",
@@ -8743,11 +8048,12 @@
   "race": "SC-01 House Election Winner",
   "state": "SC",
   "bioguide": null,
-  "file": "nancy-lacore-sc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-nancy-lacore-sc-01-house-def37649e9.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Joe Wilson",
@@ -8775,33 +8081,6 @@
   "license": null,
   "author": null,
   "note": "polymarket: photo too tight to frame; commons: none usable"
- },
- {
-  "name": "Eunice Lehmacher",
-  "party": "D",
-  "office": "SC-3 House",
-  "race": "SC-03 House Election Winner",
-  "state": "SC",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
- },
- {
-  "name": "Sheri Biggs",
-  "party": "R",
-  "office": "SC-3 House",
-  "race": "SC-03 House Election Winner",
-  "state": "SC",
-  "bioguide": "B001325",
-  "file": "sheri-biggs-sc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-sheri-biggs-sc-03-house-88b1f70232.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
  },
  {
   "name": "Courtney McClain",
@@ -8856,32 +8135,6 @@
   "license": null,
   "author": null,
   "note": "polymarket: photo too tight to frame; commons: none usable"
- },
- {
-  "name": "Jim Clyburn",
-  "party": "D",
-  "office": "SC-6 House",
-  "race": "SC-06 House Election Winner",
-  "state": "SC",
-  "bioguide": "C000537",
-  "file": "jim-clyburn-sc",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Jim_Clyburn_official_portrait_116th_Congress.jpg",
-  "license": "Public domain",
-  "author": "Donald Baker"
- },
- {
-  "name": "John Peterson",
-  "party": "R",
-  "office": "SC-6 House",
-  "race": "SC-06 House Election Winner",
-  "state": "SC",
-  "bioguide": null,
-  "file": "john-peterson-sc",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-john-peterson-sc-06-house-16555b95c6.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
  },
  {
   "name": "John Vincent",
@@ -9102,10 +8355,10 @@
   "state": "TN",
   "bioguide": "D000616",
   "file": "scott-desjarlais-tn",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-scott-desjarlais-tn-04-house-71007a995a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Scott_DesJarlais,_Official_Portrait,_112th_Congress.jpg",
+  "license": "Public domain",
+  "author": "US House of Representatives"
  },
  {
   "name": "Victoria Broderick",
@@ -9114,11 +8367,12 @@
   "race": "TN-04 House Election Winner",
   "state": "TN",
   "bioguide": null,
-  "file": "victoria-broderick-tn",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-victoria-broderick-tn-04-house-bfd9356cf4.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Charlie Hatcher",
@@ -9141,11 +8395,12 @@
   "race": "TN-05 House Election Winner",
   "state": "TN",
   "bioguide": null,
-  "file": "chaz-molder-tn",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-chaz-molder-tn-05-house-9f1268375a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Johnny Garrett",
@@ -9181,11 +8436,12 @@
   "race": "TN-07 House Election Winner",
   "state": "TN",
   "bioguide": null,
-  "file": "darden-copeland-tn",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-darden-copeland-tn-07-house-0c98f53020.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Matt Van Epps",
@@ -9248,10 +8504,10 @@
   "state": "TN",
   "bioguide": null,
   "file": "justin-pearson-tn",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-justin-pearson-tn-09-house-26f41bb875.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Justin_J_Pearson_August_2023.jpg",
+  "license": "CC BY-SA 4.0",
+  "author": "TrentBenge"
  },
  {
   "name": "Bill Hagerty",
@@ -9273,11 +8529,12 @@
   "race": "Tennessee Senate Election Winner",
   "state": "TN",
   "bioguide": null,
-  "file": "marquita-bradshaw-tn",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Marquita_Bradshaw_at_Morristown_(cropped).jpg",
-  "license": "CC BY-SA 4.0",
-  "author": "Walker Kinsler"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "reviewed: wearing a face mask"
  },
  {
   "name": "Gina Hinojosa",
@@ -9286,11 +8543,12 @@
   "race": "Texas Governor Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "gina-hinojosa-tx",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Gina_Hinojosa_16_February_2017_(cropped).jpg",
-  "license": "Public domain",
-  "author": "LBJ Library from Austin"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Greg Abbott",
@@ -9299,11 +8557,12 @@
   "race": "Texas Governor Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "greg-abbott-tx",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Greg_Abbott_at_NASA_2024_(cropped).jpg",
-  "license": "Public domain",
-  "author": "NASA Johnson Space Center / NASA-JSC/ROBERT MARKOWITZ"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Nathaniel Moran",
@@ -9352,10 +8611,10 @@
   "state": "TX",
   "bioguide": null,
   "file": "steve-toth-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-steve-toth-tx-02-house-672df68e53.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:SteveTothTheWoodlandsTX07JUNE2019.jpg",
+  "license": "CC BY-SA 4.0",
+  "author": "CharlesShirley"
  },
  {
   "name": "Evan Hunt",
@@ -9602,11 +8861,12 @@
   "race": "TX-12 House Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "angela-rodriguez-prilliman-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-angela-rodriguez-prilliman-tx-12-house-327e0a1ad2.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Craig Goldman",
@@ -9667,11 +8927,12 @@
   "race": "TX-14 House Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "thurman-bartie-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-thurman-bartie-tx-14-house-b85093dae4.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Bobby Pulido",
@@ -9755,33 +9016,6 @@
   "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: download failed"
  },
  {
-  "name": "Christian Menefee",
-  "party": "D",
-  "office": "TX-18 House",
-  "race": "TX-18 House Election Winner",
-  "state": "TX",
-  "bioguide": "M001245",
-  "file": "christian-menefee-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-christian-menefee-tx-18-house-1532484744.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Ronald Whitfield",
-  "party": "R",
-  "office": "TX-18 House",
-  "race": "TX-18 House Election Winner",
-  "state": "TX",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: none usable"
- },
- {
   "name": "Kyle Rable",
   "party": "D",
   "office": "TX-19 House",
@@ -9808,32 +9042,6 @@
   "author": "Polymarket"
  },
  {
-  "name": "Edgardo Rafael Baez",
-  "party": "R",
-  "office": "TX-20 House",
-  "race": "TX-20 House Election Winner",
-  "state": "TX",
-  "bioguide": null,
-  "file": "edgardo-rafael-baez-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-edgardo-rafael-baez-tx-20-house-f44ea35154.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Joaquin Castro",
-  "party": "D",
-  "office": "TX-20 House",
-  "race": "TX-20 House Election Winner",
-  "state": "TX",
-  "bioguide": "C001091",
-  "file": "joaquin-castro-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-joaquin-castro-tx-20-house-9d95a50c46.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Kristin Hook",
   "party": "D",
   "office": "TX-21 House",
@@ -9853,11 +9061,12 @@
   "race": "TX-21 House Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "mark-teixeira-tx",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Mark_Teixeira_basepaths_2011.jpg",
-  "license": "CC BY-SA 2.0",
-  "author": "Keith Allison"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "reviewed: a game photo in a batting helmet, not a portrait"
  },
  {
   "name": "Marquette Greene-Scott",
@@ -9946,11 +9155,12 @@
   "race": "TX-25 House Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "dione-sims-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-dione-sims-tx-25-house-50eb786c51.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Roger Williams",
@@ -10090,11 +9300,12 @@
   "race": "TX-31 House Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "justin-early-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-justin-early-tx-31-house-04a8f083f7.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Dan Barrios",
@@ -10183,10 +9394,10 @@
   "state": "TX",
   "bioguide": "B001291",
   "file": "brian-babin-tx",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide B001291)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-brian-babin-tx-36-house-0a19ca72fe.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Rhonda Hart",
@@ -10195,11 +9406,12 @@
   "race": "TX-36 House Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "rhonda-hart-tx",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-rhonda-hart-tx-36-house-d8a5aa3759.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Greg Casar",
@@ -10275,11 +9487,12 @@
   "race": "Texas Senate Election Winner",
   "state": "TX",
   "bioguide": null,
-  "file": "ken-paxton-tx",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:K_Paxton.jpg",
-  "license": "CC BY-SA 4.0",
-  "author": "Gage Skidmore"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Ben McAdams",
@@ -10341,10 +9554,10 @@
   "state": "UT",
   "bioguide": "M001228",
   "file": "celeste-maloy-ut",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide M001228)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-celeste-maloy-ut-03-house-464edfb81e.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Kent Udell",
@@ -10406,11 +9619,12 @@
   "race": "VA-01 House Election Winner",
   "state": "VA",
   "bioguide": null,
-  "file": "shannon-taylor-va",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-shannon-taylor-va-01-house-633a6435c1.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Elaine Luria",
@@ -10437,33 +9651,6 @@
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jen-kiggans-va-02-house-3f61b40e96.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
- },
- {
-  "name": "Jennifer McClellan",
-  "party": "D",
-  "office": "VA-4 House",
-  "race": "VA-04 House Election Winner",
-  "state": "VA",
-  "bioguide": "M001227",
-  "file": "jennifer-mcclellan-va",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-jennifer-mcclellan-va-04-house-f145808193.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Robert Murray",
-  "party": "R",
-  "office": "VA-4 House",
-  "race": "VA-04 House Election Winner",
-  "state": "VA",
-  "bioguide": null,
-  "file": null,
-  "kind": null,
-  "source": null,
-  "license": null,
-  "author": null,
-  "note": "commons: download failed"
  },
  {
   "name": "John McGuire",
@@ -10514,58 +9701,6 @@
   "file": "beth-macy-va",
   "kind": "polymarket",
   "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-beth-macy-va-06-house-48a17e820b.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Doug Ollivant",
-  "party": "R",
-  "office": "VA-7 House",
-  "race": "VA-07 House Election Winner",
-  "state": "VA",
-  "bioguide": null,
-  "file": "doug-ollivant-va",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-doug-ollivant-va-07-house-b63bb78a8a.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Eugene Vindman",
-  "party": "D",
-  "office": "VA-7 House",
-  "race": "VA-07 House Election Winner",
-  "state": "VA",
-  "bioguide": "V000138",
-  "file": "eugene-vindman-va",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-eugene-vindman-va-07-house-3c5bb1398c.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Joy Powers",
-  "party": "D",
-  "office": "VA-9 House",
-  "race": "VA-09 House Election Winner",
-  "state": "VA",
-  "bioguide": null,
-  "file": "joy-powers-va",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-joy-powers-va-09-house-d9b0654a57.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Morgan Griffith",
-  "party": "R",
-  "office": "VA-9 House",
-  "race": "VA-09 House Election Winner",
-  "state": "VA",
-  "bioguide": null,
-  "file": "morgan-griffith-va",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-morgan-griffith-va-09-house-f1edc86ea4.jpg",
   "license": "Polymarket candidate image",
   "author": "Polymarket"
  },
@@ -10708,11 +9843,12 @@
   "race": "WA-04 House Election Winner",
   "state": "WA",
   "bioguide": null,
-  "file": "amanda-mckinney-wa",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-amanda-mckinney-wa-04-house-aa4c75e0d1.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "John Duresky",
@@ -10841,11 +9977,12 @@
   "race": "WA-09 House Election Winner",
   "state": "WA",
   "bioguide": "S000510",
-  "file": "adam-smith-wa",
-  "kind": "commons",
-  "source": "https://commons.wikimedia.org/wiki/File:Adam_Smith_WA-9.jpg",
-  "license": "Public domain",
-  "author": "Unknown authorUnknown author"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "congress: photo too tight to frame; polymarket: photo too tight to frame; commons: photo too tight to frame"
  },
  {
   "name": "Doug Basler",
@@ -10895,11 +10032,12 @@
   "race": "Wisconsin Governor Election Winner",
   "state": "WI",
   "bioguide": null,
-  "file": "david-crowley-wi",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-david-crowley-wisconsin-governor-2026-38fa7ef4ac.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: two faces"
  },
  {
   "name": "Tom Tiffany",
@@ -10949,10 +10087,10 @@
   "state": "WI",
   "bioguide": "P000607",
   "file": "mark-pocan-wi",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-mark-pocan-wi-02-house-db4da19a1e.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "kind": "commons",
+  "source": "https://commons.wikimedia.org/wiki/File:Mark_Pocan,_official_portrait,_113th_Congress.jpg",
+  "license": "Public domain",
+  "author": "United States Congress"
  },
  {
   "name": "Derrick Van Orden",
@@ -10988,10 +10126,10 @@
   "state": "WI",
   "bioguide": "M001160",
   "file": "gwen-moore-wi",
-  "kind": "congress",
-  "source": "https://github.com/unitedstates/images (bioguide M001160)",
-  "license": "public domain",
-  "author": "U.S. Congress (official portrait)"
+  "kind": "polymarket",
+  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-gwen-moore-wi-04-house-b02c167079.jpg",
+  "license": "Polymarket candidate image",
+  "author": "Polymarket"
  },
  {
   "name": "Tim Rogers",
@@ -11040,11 +10178,12 @@
   "race": "WI-06 House Election Winner",
   "state": "WI",
   "bioguide": null,
-  "file": "brad-smith-wi",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-brad-smith-wi-06-house-f0d13772a3.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Glenn Grothman",
@@ -11079,11 +10218,12 @@
   "race": "WI-07 House Election Winner",
   "state": "WI",
   "bioguide": null,
-  "file": "michael-alfonso-wi",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-michael-alfonso-wi-07-house-73776361ce.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Rick Crosson",
@@ -11166,43 +10306,18 @@
   "author": "Polymarket"
  },
  {
-  "name": "Rachel Fetty Anderson",
-  "party": "D",
-  "office": "WV Senate",
-  "race": "West Virginia Senate Election Winner",
-  "state": "WV",
-  "bioguide": null,
-  "file": "rachel-fetty-anderson-wv",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-rachel-fetty-anderson-west-virginia-senate-ee7a73940c.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
-  "name": "Shelley Moore Capito",
-  "party": "R",
-  "office": "WV Senate",
-  "race": "West Virginia Senate Election Winner",
-  "state": "WV",
-  "bioguide": "C001047",
-  "file": "shelley-moore-capito-wv",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-shelley-moore-capito-west-virginia-senate-bb0824abb4.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
- },
- {
   "name": "Eric Barlow",
   "party": "R",
   "office": "WY Governor",
   "race": "Wyoming Governor Election Winner",
   "state": "WY",
   "bioguide": null,
-  "file": "eric-barlow-wy",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-eric-barlow-wyoming-governor-2026-eac7602973.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "reviewed: a side-on close-up"
  },
  {
   "name": "Kenneth Casner",
@@ -11211,11 +10326,12 @@
   "race": "Wyoming Governor Election Winner",
   "state": "WY",
   "bioguide": null,
-  "file": "kenneth-casner-wy",
-  "kind": "polymarket",
-  "source": "https://polymarket-upload.s3.us-east-2.amazonaws.com/midterms-26-kenneth-casner-wyoming-governor-2026-b154b758ca.jpg",
-  "license": "Polymarket candidate image",
-  "author": "Polymarket"
+  "file": null,
+  "kind": null,
+  "source": null,
+  "license": null,
+  "author": null,
+  "note": "polymarket: photo too tight to frame; commons: none usable"
  },
  {
   "name": "Harriet Hageman",
