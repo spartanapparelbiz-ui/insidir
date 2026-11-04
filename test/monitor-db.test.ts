@@ -70,13 +70,13 @@ describe.skipIf(!URL0)("the money-path monitor", () => {
     expect(r.ok).toBe(false);
     expect(r.steps.at(-1)).toMatchObject({ step: "sign-in", ok: false, detail: 'Whop said "redirect_uri is invalid" (https://insidir.com/login/callback)' });
     expect(mails).toHaveLength(1);
-    expect(mails[0]).toMatchObject({ title: "Money path failing: sign-in", body: 'Whop said "redirect_uri is invalid" (https://insidir.com/login/callback)', url: "https://insidir.test/status" });
+    expect(mails[0]).toMatchObject({ title: "Live test failing: sign-in", body: 'Whop said "redirect_uri is invalid" (https://insidir.com/login/callback)', url: "https://insidir.test/status" });
     await moneyPathOnce(db, { base: B, f: site("invalid").f, now: NOW + 1_200_000, notify });
     expect(mails).toHaveLength(1);
     await moneyPathOnce(db, { base: B, f: site("invalid").f, now: NOW + 600_000 + 3_600_000, notify });
     expect(mails).toHaveLength(2);
     await moneyPathOnce(db, { base: B, f: site("ok").f, now: NOW + 600_000 + 4_200_000, notify });
-    expect(mails.at(-1)!.title).toBe("Money path working again");
+    expect(mails.at(-1)!.title).toBe("Live tests passing again");
     const v = await monitorView(db, NOW + 600_000 + 4_200_000);
     expect(v.last).toMatchObject({ ok: true });
     expect(v.failures24h.map(x => x.step)).toEqual(["sign-in", "sign-in", "sign-in"]);
@@ -87,7 +87,7 @@ describe.skipIf(!URL0)("the money-path monitor", () => {
     const prev = process.env.FREE_ACCESS_EMAILS;
     process.env.FREE_ACCESS_EMAILS = "Owner@Example.test, partner@example.test";
     try {
-      const alert: Alert = { title: "Money path failing: sign-in", body: "x", url: "https://insidir.test/status" };
+      const alert: Alert = { title: "Live test failing: sign-in", body: "x", url: "https://insidir.test/status" };
       const pushed: string[] = [];
       const send = async (t: { endpoint: string }) => { pushed.push(t.endpoint); return t.endpoint.endsWith("/gone") ? "gone" as const : "sent" as const; };
       expect(await pushOwners(db, alert, send)).toBe("no_subscription");

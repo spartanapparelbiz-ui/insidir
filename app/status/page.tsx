@@ -1,5 +1,6 @@
 /* Status (/status): is Insidir working right now? Each source's freshness, each worker job's last heartbeat, the
- * hourly accuracy audits, the money-path monitor (every 10 minutes: landing → a market → checkout → Whop sign-in), and this
+ * hourly accuracy audits, freshness of trades, twins and prices (stale over 5 minutes), the production checks (every 15
+ * minutes: landing → a market → checkout → Whop sign-in → a member's Today → search → a fixture Autopilot match → an exit ping), and this
  * web server's uptime and deploy, all from real checks (lib/status-page.ts). Green
  * means working, amber behind, red failing. Incidents are the failures those checks recorded in the last 7 days. */
 import type { Metadata } from "next";
@@ -8,6 +9,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { clockET, dateTimeET } from "@/lib/moves/copy";
 import { ago, readStatus, STARTED_AT, type Light, type Status } from "@/lib/status-page";
 import { monitorView, type MonitorView } from "@/lib/monitor/money-path";
+import { freshness, type Freshness } from "@/lib/monitor/product";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Status", description: "Live status of every Insidir data source, the worker jobs, the hourly accuracy audits and the web app." };
@@ -19,9 +21,10 @@ export default async function StatusPage() {
   const now = Date.now();
   const s: Status | null = hasDatabase() ? await readStatus(getDb(), now).catch(() => null) : null;
   const mp: MonitorView | null = hasDatabase() ? await monitorView(getDb(), now).catch(() => null) : null;
+  const fr: Freshness[] | null = hasDatabase() ? await freshness(getDb(), now).catch(() => null) : null;
   const incidents = s ? [
     ...s.jobs.filter(j => j.light === "red").map(j => ({ at: j.lastRunAt, text: `${j.label}: ${j.error ?? "last run failed"}` })),
-    ...(mp?.failures24h ?? []).map(f => ({ at: f.at, text: `Money path failed at ${f.step ?? "a step"}: ${f.detail ?? "no detail"}` })),
+    ...(mp?.failures24h ?? []).map(f => ({ at: f.at, text: `Live test failed at ${f.step ?? "a step"}: ${f.detail ?? "no detail"}` })),
     ...s.checks.filter(c => c.mismatch > 0).map(c => ({ at: c.runAt, text: `Accuracy audit: ${c.mismatch} of ${c.checked} didn't match the source and were hidden until they do` })),
   ].sort((a, b) => b.at - a.at) : [];
   const overall = s?.overall ?? "red";
@@ -35,16 +38,25 @@ export default async function StatusPage() {
         </ul>
         <p className="stat__fine">Sources: each job's own last successful read of Polymarket and Kalshi.</p>
 
-        <h2>Money path</h2>
+        <h2>Freshness</h2>
+        {fr ? (
+          <ul className="stat__list" data-testid="status-freshness">
+            {fr.map(x => <li key={x.key} className="stat__row" data-stale={x.stale ? "1" : "0"}><Dot l={x.stale ? "red" : "green"} /><span className="stat__name">{x.label}</span>
+              <span className="stat__note">{x.at === null ? "Never read" : `Read ${ago(x.at, now)}`}</span><span className="stat__word">{x.stale ? "Stale" : "Fresh"}</span></li>)}
+          </ul>
+        ) : null}
+        <p className="stat__fine">Stale means not read in the last 5 minutes. The owners get a push when anything is.</p>
+
+        <h2>Live tests</h2>
         <div data-testid="status-money-path">
           {mp?.last ? (
             <ul className="stat__list">
-              <li className="stat__row"><Dot l={mp.last.ok ? "green" : "red"} /><span className="stat__name">Landing → a market → checkout → Whop sign-in</span>
+              <li className="stat__row"><Dot l={mp.last.ok ? "green" : "red"} /><span className="stat__name">Landing → a market → checkout → sign-in → Today → search → Autopilot → exit ping → freshness</span>
                 <span className="stat__note">{mp.last.ok ? `Every step passed ${ago(mp.last.at, now)} (${mp.last.ms} ms)` : `Failed ${ago(mp.last.at, now)} at ${mp.last.failedStep}: ${mp.last.detail ?? ""}`}</span><span className="stat__word">{mp.last.ok ? "Working" : "Failing"}</span></li>
               {mp.last.steps.map(st => <li key={st.step} className="stat__row"><Dot l={st.ok ? "green" : "red"} /><span className="stat__name">{st.step}</span><span className="stat__note">{st.ok ? `${st.ms} ms` : st.detail}</span><span className="stat__word" /></li>)}
             </ul>
-          ) : <p>The money-path monitor hasn&apos;t run yet.</p>}
-          {mp ? <p className="stat__fine">Checked every 10 minutes: {mp.runs24h} runs in the last 24 hours, {mp.failures24h.length} failed. A failure is sent as a push alert to the owners&apos; devices.</p> : null}
+          ) : <p>The live tests haven&apos;t run yet.</p>}
+          {mp ? <p className="stat__fine">Checked every 15 minutes: {mp.runs24h} runs in the last 24 hours, {mp.failures24h.length} failed. A failure is sent as a push alert to the owners&apos; devices.</p> : null}
         </div>
 
         <h2>Worker jobs</h2>

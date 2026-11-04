@@ -274,8 +274,9 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("millionaires:pings", 30_000, millionairePingsOnce),
     // Twins that approved themselves yesterday: one push to the owners after 9am ET, with a one-click Revoke list.
     // Twins for the games with millionaire bets, found by game (the sweep only sees what's open on both venues now).
-    ...(clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? [every("twins:bets", 20 * 60_000, async () => {
+    ...(clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? [every("twins:bets", 4 * 60_000, async () => {
       const r = await twinsFromBets(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
+      await heartbeat(getDb(), "twins:bets", true, null, { games: r.events, twins: r.twins });
       if (r.twins) log(`twins:bets: ${r.events} games, ${r.twins} twins, ${r.auto} approved themselves`);
     })] : []),
     // Proven wallets only: market makers, high-frequency accounts and arbitrage screened out daily.
@@ -346,7 +347,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("accuracy", ACCURACY_MS, () => accuracyOnce(clients.polymarket as PolymarketClient, clients.kalshi as KalshiClient, sec)),
       // The money path, as a visitor would walk it, against the live site (off with MONEY_PATH_MONITOR=off).
       ...(process.env.MONEY_PATH_MONITOR === "off" ? [] : [every("monitor:money-path", MONEY_PATH_MS, async () => {
-        const r = await moneyPathOnce(getDb(), { base: appUrl(), log });
+        const k = clients.kalshi instanceof KalshiClient ? clients.kalshi : null;
+        const r = await moneyPathOnce(getDb(), { base: appUrl(), log, ...(k ? { yesAsk: async (id: string) => (await k.getOrderbook(id, "hot"))?.yesAsks[0]?.price ?? null } : {}) });
         const bad = r.steps.find(s => !s.ok);
         await heartbeat(getDb(), "monitor:money-path", r.ok, bad ? `${bad.step}: ${bad.detail ?? "failed"}` : null, Object.fromEntries(r.steps.map(s => [s.step, s.ms])));
         if (bad) log(`money path FAILED at ${bad.step}: ${bad.detail}`);
@@ -363,7 +365,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         do { k = await tagOnce(getDb()); n += k; } while (k > 0 && n < 200_000);
         if (n) log(`trackers: ${n} moves tagged`);
       }),
-      every("markets:info", 5 * 60_000, async () => {
+      every("markets:info", 3 * 60_000, async () => {
         const r = await marketInfoOnce(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
         await heartbeat(getDb(), "markets:info", true, null, r);
         if (r.read || r.tagged) log(`markets: ${r.read} markets read, ${r.tagged} moves got Steam / Early / Late tags`);

@@ -5,6 +5,7 @@
  * advice. */
 import { nearestKalshi } from "@/lib/twins/nearest";
 import type { Metadata } from "next";
+import { humanLine } from "@/lib/markets/title";
 import { notFound } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
 import { BetRow } from "@/components/brand/BetRow";
@@ -69,7 +70,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         <div className="b-head">
           <Crumbs trail={trail} />
           {teams ? <Matchup teams={teams} /> : null}
-          {m.event && m.event !== m.title ? <p className="b-label" data-m="lift">{m.event}</p> : null}
+          {m.event && humanLine({ title: m.event }) !== m.title ? <p className="b-label" data-m="lift">{humanLine({ title: m.event })}</p> : null}
           <Lines as="h1" id="m-h" lines={[m.title]} size={m.title.length > 44 ? 40 : 56} />
           <p className="b-sub" data-m="lift" data-testid="market-sub">{subLine}</p>
         </div>

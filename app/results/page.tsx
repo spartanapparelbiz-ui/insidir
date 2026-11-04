@@ -24,6 +24,9 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "The record", description: "Following the pings on Kalshi, and how every settled millionaire bet did, losses included: won and lost, $100 on every one. Past results, not a promise." };
 
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
+const DAYF = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+/** "2026-11-04" → "Wed, Nov 4". */
+const dayLabel = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? DAYF.format(new Date(`${d}T12:00:00Z`)) : d);
 const tallyText = (t: Tally) => `${t.won} won, ${t.lost} lost${t.void ? `, ${t.void} voided` : ""}`;
 
 export default async function ResultsPage() {
@@ -104,7 +107,7 @@ export default async function ResultsPage() {
           <Panel className="s-col s-prose">
             <table data-testid="results-by-day">
               <thead><tr><th scope="col">Day (ET)</th><th scope="col">Record</th><th scope="col">${STAKE} a bet</th></tr></thead>
-              <tbody>{rec.byDay.slice(0, 14).map(d => <tr key={d.day}><th scope="row">{d.day}</th><td>{tallyText(d)}</td><td className="b-num">{signed(d.back - d.staked)}</td></tr>)}</tbody>
+              <tbody>{rec.byDay.slice(0, 14).map(d => <tr key={d.day}><th scope="row">{dayLabel(d.day)}</th><td>{tallyText(d)}</td><td className="b-num">{signed(d.back - d.staked)}</td></tr>)}</tbody>
             </table>
           </Panel>
         </Stage>

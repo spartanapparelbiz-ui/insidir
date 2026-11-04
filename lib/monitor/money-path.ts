@@ -15,15 +15,18 @@ import { freeAccessEmails } from "@/lib/billing/free";
 import { LANDING_MARK } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { monitorRuns } from "@/lib/db/schema";
+import { runProduct } from "./product";
 
-export const MONEY_PATH_MS = 10 * 60_000;
+export const MONEY_PATH_MS = 15 * 60_000;
 const STEP_MS = 15_000;
 export const MONITOR_VISITOR = /^monitor-/;
-export interface Step { step: "landing" | "market" | "checkout" | "sign-in"; ok: boolean; ms: number; detail?: string }
+export interface Step { step: "landing" | "market" | "checkout" | "sign-in" | "today" | "search" | "fresh-bets" | "autopilot" | "exit-ping" | "freshness"; ok: boolean; ms: number; detail?: string }
 export interface Alert { title: string; body: string; url: string }
 /** "sent" to at least one device; "no_subscription" when no owner has a device subscribed; "failed" otherwise. */
 export type NotifyOutcome = "sent" | "no_subscription" | "failed";
-export interface MonitorDeps { base: string; f?: typeof fetch; notify?: (a: Alert) => Promise<NotifyOutcome>; now?: number; log?: (s: string) => void }
+export interface MonitorDeps { base: string; f?: typeof fetch; notify?: (a: Alert) => Promise<NotifyOutcome>; now?: number; log?: (s: string) => void;
+  /** With it, the product checks run after the money path (lib/monitor/product.ts): Kalshi's YES ask now. */
+  yesAsk?: (kalshiId: string) => Promise<number | null>; sleep?: (ms: number) => Promise<void> }
 
 /** The alert as a web push to every device subscribed by an account on FREE_ACCESS_EMAILS. Subscriptions the browser
  *  has dropped are deleted. */
@@ -99,6 +102,7 @@ export async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
 export async function moneyPathOnce(db: Db, d: MonitorDeps): Promise<{ ok: boolean; steps: Step[]; notified: NotifyOutcome | null }> {
   const t0 = Date.now(), now = d.now ?? t0;
   const steps = await runMoneyPath(db, d);
+  if (d.yesAsk) steps.push(...await runProduct(db, { base: d.base, f: d.f, now, yesAsk: d.yesAsk, sleep: d.sleep }));
   const failed = steps.find(s => !s.ok) ?? null, ok = !failed;
   const prev = (await db.select().from(monitorRuns).orderBy(desc(monitorRuns.at)).limit(1))[0];
   const lastAlert = (await db.select({ at: monitorRuns.at }).from(monitorRuns).where(sql`notified and not ok`).orderBy(desc(monitorRuns.at)).limit(1))[0];
@@ -109,8 +113,8 @@ export async function moneyPathOnce(db: Db, d: MonitorDeps): Promise<{ ok: boole
     const status = `${d.base.replace(/\/+$/, "")}/status`;
     const notify = d.notify ?? ((a: Alert) => pushOwners(db, a));
     notified = await notify(breaks
-      ? { title: `Money path failing: ${failed!.step}`, body: (failed!.detail ?? "no detail").slice(0, 180), url: status }
-      : { title: "Money path working again", body: `Every step passed: ${steps.map(s => `${s.step} ${s.ms} ms`).join(", ")}.`, url: status }).catch(() => "failed" as const);
+      ? { title: `Live test failing: ${failed!.step}`, body: (failed!.detail ?? "no detail").slice(0, 180), url: status }
+      : { title: "Live tests passing again", body: `Every step passed: ${steps.map(s => `${s.step} ${s.ms} ms`).join(", ")}.`, url: status }).catch(() => "failed" as const);
     if (notified === "no_subscription") d.log?.(`money path: ${breaks ? "failing" : "recovered"}; no owner device subscribed to push (FREE_ACCESS_EMAILS), shown on /status only`);
     else if (notified === "failed") d.log?.("money path: the push alert didn't go through; shown on /status");
   }
