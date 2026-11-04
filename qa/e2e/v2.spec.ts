@@ -5,7 +5,7 @@ import { captureBodies, q, signIn } from "./helpers";
 
 test("landing: final on first paint, the hero's words and its CTAs, the nav, no stocks, no pop-up on arrival, no visitor bar", async ({ page }) => {
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain("You&#x27;re betting");
+  expect(html).toContain("Bet with the people");
   expect(html).toContain("who actually win.");
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1 });

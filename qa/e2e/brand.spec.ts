@@ -162,6 +162,9 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("paywall-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise.");
   await expect(page.getByTestId("paywall-timeline")).toContainText("Today $1");
   await expect(page.getByTestId("paywall-remind")).toBeChecked();
+  // The panel fades in (st 0.3s + its own transition): capture it settled, not mid-entrance.
+  await page.getByTestId("go-paywall").evaluate(el => Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished)));
+  await page.waitForTimeout(800);
   await page.screenshot({ path: shotName("go-7-paywall", page) });
   await page.getByTestId("paywall-start").click();
   await expect(go).toHaveAttribute("data-step", "checkout");
