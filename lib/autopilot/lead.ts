@@ -7,8 +7,8 @@ import type { Db } from "@/lib/db";
 import { autopilotBacktests } from "@/lib/db/schema";
 import { memo } from "@/lib/memo";
 import { leaders, REPORT_KEY, type RulesReport } from "./report";
-
-export interface Lead { key: string; name: string; settled: number; won: number; lost: number; net: number; roi: number; perBet: number; days: number }
+import type { Lead } from "./lead-line";
+export { leadLine, type Lead } from "./lead-line";
 
 /** The leading rule of a report, or null. Pure. */
 export function leadOf(r: RulesReport | null): Lead | null {
@@ -23,10 +23,4 @@ export function leadRule(db: Db): Promise<Lead | null> {
     const row = (await db.select().from(autopilotBacktests).where(eq(autopilotBacktests.key, REPORT_KEY)).limit(1))[0];
     return leadOf((row?.result ?? null) as unknown as RulesReport | null);
   });
-}
-
-/** "“Bets of $50K+”: +$412 on $25 a bet, 61 won of 118 settled on Kalshi in 180 days." Pure. */
-export function leadLine(l: Lead): string {
-  const net = `${l.net >= 0 ? "+" : "−"}$${Math.abs(Math.round(l.net)).toLocaleString("en-US")}`;
-  return `“${l.name}”: ${net} on $${l.perBet} a bet, ${l.won} won of ${l.settled.toLocaleString("en-US")} settled on Kalshi in ${l.days} days, at the ask + 1¢.`;
 }
