@@ -12,7 +12,7 @@ const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m"
 
 const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["Record", "/results"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
 /** Members: the same bar, their places. No sidebar anywhere. */
-const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Your copies", "/copies/yours"]];
+const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Autopilot", "/autopilot"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Your copies", "/copies/yours"]];
 
 export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
   /** The Start for $1 pill (off on /login, which has its own way in). */
