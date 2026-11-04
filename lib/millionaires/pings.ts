@@ -1,4 +1,5 @@
-/* Millionaire pings, pure. A web push the moment a $1M+ wallet bets $25K+ in one of a member's categories:
+/* Millionaire pings, pure. A web push the moment a $1M+ wallet opens, adds to, trims or exits a position with $25K+ in
+ * one of a member's categories (trims and exits only on a market with a Kalshi twin), with Kalshi's price when it has one:
  *   "A +$3.1M wallet just put $120K on Republicans in the Iowa Senate race at 60¢ (now 61¢). Copy?"
  * Tapping it opens the copy ticket (/copy/<bet>). Rules: paid members with push on; their /go categories (none chosen =
  * every category), Elections on for everyone through Election week; at most PING_DAILY_MAX in any 24 hours; nothing in
@@ -14,7 +15,13 @@ export const DEFAULT_QUIET = { start: "23:00", end: "08:00" } as const;
 export const ELECTIONS_ON_UNTIL = Date.parse("2026-11-05T05:00:00Z");
 
 export interface PingUser { id: string; push: boolean; cats: readonly string[]; quietStart: string | null; quietEnd: string | null; timeZone: string | null; sentLast24h: number }
-export interface PingBet { id: string; marketId?: string; side?: "yes" | "no"; tier: string; amount: number; category: string; title: string; outcome: string; price: number; pnl: number | null }
+export interface PingBet { id: string; marketId?: string; side?: "yes" | "no"; tier: string; amount: number; category: string; title: string; outcome: string; price: number; pnl: number | null;
+  /** What it did to the position (lib/millionaires/positions.ts); a bet without one is an open. */
+  kind?: "open" | "add" | "trim" | "exit";
+  /** A trim: the share of the position it sold, 0..1. */
+  sold?: number;
+  /** Where a sell's ping opens (the market's page; a buy opens its bet). */
+  path?: string }
 /** The market's approved Kalshi twin (lib/twins) and Kalshi's YES price now, when it has one. */
 export interface PingTwin { yes: number | null }
 
@@ -55,6 +62,17 @@ export function pingMessage(b: PingBet, priceNow: number | null, appUrl: string,
   // Kalshi first when the market has a twin: its price for the same side now, and the tap opens the bet's page, which
   // leads with the Kalshi market.
   const kalshi = twin && twin.yes !== null ? c(b.side === "no" ? 1 - twin.yes : twin.yes) : null;
-  if (kalshi) return { title: "Insidir", body: `${who} bought ${b.outcome} at ${c(b.price)} on Polymarket. Kalshi: ${kalshi}.`, url: `${appUrl}/bet/${encodeURIComponent(b.id)}` };
+  const k = kalshi ? ` Kalshi: ${kalshi}.` : "";
+  // A sell: what share of the position went, at what price, and Kalshi's price for that side now. Opens the market.
+  if (b.kind === "trim" || b.kind === "exit") {
+    const share = b.kind === "trim" && b.sold !== undefined ? ` (about ${Math.max(1, Math.round(b.sold * 100))}% of it)` : "";
+    const did = b.kind === "exit" ? `sold out of ${b.outcome}` : `sold ${dollars(b.amount)} of ${b.outcome}${share}`;
+    return { title: "Insidir", body: `${who} ${did} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}${b.path ?? `/bet/${encodeURIComponent(b.id)}`}` };
+  }
+  if (b.kind === "add") {
+    if (kalshi) return { title: "Insidir", body: `${who} added ${dollars(b.amount)} to ${b.outcome} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}/bet/${encodeURIComponent(b.id)}` };
+    return { title: "Insidir", body: `${who} just added ${dollars(b.amount)} to ${what} at ${c(b.price)}${now}. Copy?`, url: `${appUrl}/copy/${encodeURIComponent(b.id)}` };
+  }
+  if (kalshi) return { title: "Insidir", body: `${who} bought ${b.outcome} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}/bet/${encodeURIComponent(b.id)}` };
   return { title: "Insidir", body: `${who} just put ${dollars(b.amount)} on ${what} at ${c(b.price)}${now}. Copy?`, url: `${appUrl}/copy/${encodeURIComponent(b.id)}` };
 }

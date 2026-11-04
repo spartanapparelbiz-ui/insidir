@@ -943,3 +943,44 @@ export const marketTwins = terminal.table("market_twins", {
   /** The structured check, field by field, behind an auto-approval (or why it waits for a person). */
   auto: jsonb("auto").$type<{ auto: boolean; kind: string | null; fields: Record<string, string>; notes: string[] }>(),
 }, t => [index("market_twins_status_idx").on(t.status), index("market_twins_kalshi_idx").on(t.kalshiId), index("market_twins_decided_idx").on(t.decidedBy, t.decidedAt)]);
+
+/** What a watched wallet did to its position in a market and side (lib/millionaires/positions.ts): a buy run opens or
+ *  adds, a sell run trims or exits, with the shares held after it as far as we've seen them build. */
+export const positionEvents = terminal.table("position_events", {
+  /** A buy is its bet's id (pm:…); a sell run is ps:<wallet>:<market>:<side>:<first fill ms>. */
+  id: text("id").primaryKey(),
+  wallet: text("wallet").notNull(),
+  tier: text("tier").$type<"millionaire" | "pro">().notNull(),
+  marketId: text("market_id").notNull(),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  outcome: text("outcome").notNull(),
+  marketTitle: text("market_title").notNull(),
+  eventTitle: text("event_title").notNull(),
+  category: text("category").notNull(),
+  url: text("url"),
+  kind: text("kind").$type<"open" | "add" | "trim" | "exit">().notNull(),
+  /** Dollars bought or sold, the average price and the shares. */
+  amount: doublePrecision("amount").notNull(),
+  price: doublePrecision("price").notNull(),
+  shares: doublePrecision("shares").notNull(),
+  /** Shares held after it, by the buys and sells we've seen. */
+  heldAfter: doublePrecision("held_after").notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+  lastAt: timestamp("last_at", { withTimezone: true }).notNull(),
+}, t => [index("position_events_pos_idx").on(t.wallet, t.marketId, t.outcomeSide, t.at), index("position_events_at_idx").on(t.at)]);
+
+/** Every ping on a market with a Kalshi twin that told a member to buy (an open or an add), with Kalshi's price for
+ *  that side at that moment: the record of following the pings on Kalshi (/results). Settles with the bet. */
+export const kalshiPings = terminal.table("kalshi_pings", {
+  eventId: text("event_id").primaryKey(),
+  marketId: text("market_id").notNull(),
+  kalshiId: text("kalshi_id").notNull(),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  kind: text("kind").$type<"open" | "add">().notNull(),
+  title: text("title").notNull(),
+  outcome: text("outcome").notNull(),
+  category: text("category").notNull(),
+  polyPrice: doublePrecision("poly_price").notNull(),
+  kalshiPrice: doublePrecision("kalshi_price").notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+}, t => [index("kalshi_pings_at_idx").on(t.at)]);

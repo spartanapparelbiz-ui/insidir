@@ -53,6 +53,14 @@ export default function MethodologyPage() {
       </ul>
       <p>A twin approves itself only when all five are read from the venues&apos; own structured data: the game&apos;s league, teams and date from Polymarket&apos;s event slug and Kalshi&apos;s event ticker, the line as a number on both venues, the candidate&apos;s exact name, both stated resolution sources and both close times. Anything matched from a market&apos;s title, or with any field missing, waits for a person to approve it. Only approved twins show a Kalshi link or a Kalshi price; a market with no twin says so.</p>
 
+      <h2 id="pings">Pings</h2>
+      <ul>
+        <li>A ping goes out when a wallet up $1M+ buys, adds to, trims or sells out of a position of $25K or more in one of your categories: at most 8 a day, never in your quiet hours.</li>
+        <li><strong>Buys</strong> open a position (it held none of that side we&apos;d seen) or add to one. <strong>Sells</strong> trim it, or sell out when they sell 90% or more of what we&apos;ve seen it hold. A sale of a position we never saw it open isn&apos;t pinged: we can&apos;t tell a trim from a sale.</li>
+        <li>Trims and sells are pinged only on markets with a Kalshi twin, with Kalshi&apos;s price for that side. Buys carry Kalshi&apos;s price whenever the market has one.</li>
+        <li>Every buy ping on a Kalshi market is kept with Kalshi&apos;s price at that moment; <a className="s-link" href="/results">the record</a> shows how $100 at that price did, before Kalshi&apos;s fees.</li>
+      </ul>
+
       <h2 id="delays">Delays</h2>
       <ul>
         <li><strong>Members</strong> see every bet live: Polymarket is read every 15 seconds, so a bet usually shows within a minute.</li>

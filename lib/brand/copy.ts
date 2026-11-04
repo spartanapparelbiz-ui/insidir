@@ -45,7 +45,7 @@ export const FAQ_ALL: Array<{ id: string; q: string; a: string }> = [
   { id: "kalshi", q: "What about Kalshi?", a: "Kalshi's trades are anonymous, so the bets come from Polymarket wallets. When Kalshi lists the same market (the same game, side, line, source and close date), its page leads with Kalshi's price and one tap to it. In the US, Kalshi is the only venue we link." },
   { id: "who-wallet", q: "Do you say who is behind a wallet?", a: "No: a wallet is its tier and a short address, never a username, a picture or a person." },
   { id: "advice", q: "Is this betting advice?", a: "No: Insidir shows the data, millionaires lose bets too, and every loss stays on the record." },
-  { id: "get", q: "What do members get?", a: `Every millionaire bet live with its side and price, a ping when one lands in your categories (with the Kalshi price when Kalshi lists the market), every race, every wallet's record, and a copy ticket for any bet. $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month.` },
+  { id: "get", q: "What do members get?", a: `Every millionaire bet live with its side and price, a ping when one buys, adds to, trims or sells out of a position in your categories (with Kalshi's price when Kalshi lists the market), every race, every wallet's record, and a copy ticket for any bet. $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month.` },
   { id: "late", q: "What do visitors see?", a: "The board 60 minutes late without the side, one race in full, and today's biggest millionaire bet whole." },
   { id: "place", q: "Do you place bets for me?", a: "Never. Insidir never places a bet, holds money or holds keys. A copy ticket opens the market on Kalshi (or Polymarket outside the US) and you decide there." },
   { id: "record", q: "Where's the record?", a: "Every wallet's page shows its settled markets, losses included, and the record page shows how the bets settled. Past results, not a promise." },
@@ -69,7 +69,7 @@ export const MEMBERS = [
 
 /** What a member gets, said once. */
 export const MEMBER_GETS = [
-  "A ping the moment a millionaire bets in your categories, with the Kalshi price when Kalshi lists the market",
+  "A ping when a millionaire buys, adds, trims or sells out in your categories, with Kalshi's price beside it",
   "Every millionaire bet, live, with the side and the price they paid",
   "Every race: who the millionaires back, and where",
   "Every wallet's record, losses included",

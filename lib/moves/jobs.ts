@@ -16,6 +16,7 @@ import { MovesPoller } from "./poll";
 import { recordFrom } from "./records";
 import { leaderboardCursor, readLeaderboard } from "./sources";
 import { betsFrom, recategorizeBets, saveBets } from "@/lib/millionaires/bets";
+import { recordPositions } from "@/lib/millionaires/positions";
 
 /** Stored bets get re-read with the current category rules once per worker process. */
 let recategorized = false;
@@ -71,7 +72,10 @@ export async function movesOnce(db: Db, poller: MovesPoller, directory: MarketDi
         const watched = poller.lastWatchedBets();
         // The outcome names, from the directory (already in memory: the poll just looked these markets up).
         const labels = watched.length ? await directory.lookup("polymarket", [...new Set(watched.map(m => m.marketId))], now).catch(() => new Map()) : new Map();
-        await saveBets(db, betsFrom(watched, w => watch.tier(w), labels));
+        const rows = betsFrom(watched, w => watch.tier(w), labels);
+        await saveBets(db, rows);
+        // Opens, adds, trims and exits (lib/millionaires/positions.ts), for pings and the Kalshi record.
+        await recordPositions(db, rows, poller.lastWatchedSells(), w => watch.tier(w)).catch(e => console.error("positions", e instanceof Error ? e.message : e));
         // Once per process: stored bets re-read with the current category rules (esports out of Golf).
         if (!recategorized) { recategorized = true; await recategorizeBets(db, now).catch(e => console.error("recategorize", e instanceof Error ? e.message : e)); }
         await beat("millionaires:bets", true);
