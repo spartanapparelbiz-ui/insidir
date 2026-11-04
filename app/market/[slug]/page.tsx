@@ -3,6 +3,7 @@
  * related markets. Visitors: the board's rules (no side) and its 60-minute delay; members see everything live. An old
  * id link, a Kalshi ticker or a slug whose words changed opens it too, with the canonical link on the human slug. Not
  * advice. */
+import { nearestKalshi } from "@/lib/twins/nearest";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
@@ -59,6 +60,8 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   const subLine = n ? n.toLocaleString("en-US") + (n === 1 ? " bet" : " bets") + " from wallets up $100K+, " + dollars(m.money.total || m.bets.reduce((a, b) => a + b.amount, 0)) + " in all." : "No watchlist wallet has bet on it yet.";
   // A game: both teams' logos (the registry, by the game in the market's URL; a monogram when a team has none).
   const teams = matchupFor(m.url, m.event || m.title);
+  // No exact Kalshi twin for a spread or total: the nearest Kalshi lines for the game, labelled as alternatives.
+  const near = m.twin ? null : await nearestKalshi(m.url, m.title).catch(() => null);
   const trail = [["Markets", "/markets"], [cat.name, `/markets/${m.category}`], [m.title, canonical]] as const;
   return (
     <Frame member={member} current="markets" testid="market-page">
@@ -71,7 +74,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
           <p className="b-sub" data-m="lift" data-testid="market-sub">{subLine}</p>
         </div>
         <div className="s-col">
-          <KalshiFirst twin={m.twin} yesLabel={m.yesLabel} noLabel={m.noLabel} polyYes={m.priceNow} polyUrl={m.url} region={viewer.region} result={won ? won + " won." : m.result === "void" ? "Voided: every bet refunded." : null} />
+          <KalshiFirst twin={m.twin} near={near} yesLabel={m.yesLabel} noLabel={m.noLabel} polyYes={m.priceNow} polyUrl={m.url} region={viewer.region} result={won ? won + " won." : m.result === "void" ? "Voided: every bet refunded." : null} />
         </div>
       </Stage>
 

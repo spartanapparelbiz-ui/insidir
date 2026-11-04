@@ -6,6 +6,7 @@
  *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
  *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
  *   millionaires:pings every 30 s: a $1M+ wallet opening, adding to, trimming or exiting $25K+ in a member's categories (max 8 a day, quiet hours); the Kalshi ping record
+ *   millionaires:screen every 5 min: 15 $1M+ wallets screened (market makers, high frequency, arbitrage, under 30 settled), each daily (lib/millionaires/proven.ts)
  *   twins:bets every 20 min: Kalshi twins for the games millionaires bet on, looked up by game (lib/twins/direct.ts)
  *   twins:daily every 15 min: after 9am ET, once, the twins that approved themselves yesterday, pushed to the owners
  *   moves:daily  every 10 min:  the 8am ET daily email (yesterday's top 5 moves and how top-trader moves settled)
@@ -54,6 +55,7 @@ import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
 import { pingJobs, pingMessage } from "@/lib/millionaires/pings";
 import { twinsDailyOnce } from "@/lib/twins/daily";
 import { twinsFromBets } from "@/lib/twins/direct";
+import { screenWallets } from "@/lib/millionaires/proven";
 import { twinOf } from "@/lib/entities/market";
 import { freshBigBets, freshBigSells, pingUsers, pricesNow, recordKalshiPings } from "@/lib/millionaires/ping-store";
 import { recordsFor } from "@/lib/moves/store";
@@ -272,6 +274,13 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     ...(clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? [every("twins:bets", 20 * 60_000, async () => {
       const r = await twinsFromBets(getDb(), { polymarket: clients.polymarket as PolymarketClient, kalshi: clients.kalshi as KalshiClient }, Date.now());
       if (r.twins) log(`twins:bets: ${r.events} games, ${r.twins} twins, ${r.auto} approved themselves`);
+    })] : []),
+    // Proven wallets only: market makers, high-frequency accounts and arbitrage screened out daily.
+    ...(clients.polymarket instanceof PolymarketClient ? [every("millionaires:screen", 5 * 60_000, async () => {
+      const poly = clients.polymarket as PolymarketClient;
+      const r = await screenWallets(getDb(), { trades: async (wallet, since) => (await poly.getActivity(wallet, { type: "TRADE", start: since, maxPages: 4, priority: "normal" }))
+        .filter(a => a.conditionId && a.side).map(a => ({ marketId: a.conditionId!, outcomeSide: a.outcomeIndex === 1 ? "no" as const : "yes" as const, side: a.side!, at: a.timestamp })) }, Date.now());
+      if (r.screened) log(`millionaires:screen: ${r.screened} screened, ${r.proven} proven, ${r.excluded} excluded`);
     })] : []),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),
     every("whales", WHALE_MS, () => whalesOnce(clients)),

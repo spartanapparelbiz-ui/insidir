@@ -61,7 +61,10 @@ export async function refreshWatchlist(db: Db, poly: BoardSource, now: number): 
   await db.transaction(async tx => {
     for (let i = 0; i < top.length; i += 500) {
       await tx.insert(watchlist).values(top.slice(i, i + 500).map(t => ({ ...t, refreshedAt: at })))
-        .onConflictDoUpdate({ target: watchlist.wallet, set: { tier: sql`excluded.tier`, pnl: sql`excluded.pnl`, refreshedAt: at } });
+        .onConflictDoUpdate({ target: watchlist.wallet, set: {
+          // A screened $1M+ wallet keeps the screen's verdict (lib/millionaires/proven.ts): millionaire only when proven.
+          tier: sql`case when excluded.tier = 'millionaire' and ${watchlist.screenedAt} is not null and ${watchlist.exclusion} is not null then 'pro' else excluded.tier end`,
+          pnl: sql`excluded.pnl`, refreshedAt: at } });
     }
     await tx.delete(watchlist).where(notInArray(watchlist.wallet, top.map(t => t.wallet)));
     const have = new Set((await tx.select({ w: walletPnl.wallet }).from(walletPnl).where(inArray(walletPnl.wallet, top.map(t => t.wallet)))).map(r => r.w));
