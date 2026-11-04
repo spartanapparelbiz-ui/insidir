@@ -73,10 +73,18 @@ export async function readStatus(db: Db, now: number): Promise<Status> {
   ]);
   const fr = (f.rows[0] ?? {}) as Record<string, string | null>;
   const t = (v: string | null | undefined) => (v ? new Date(v).getTime() : null);
-  // Stocks are off: only the two venues' trades.
+  // Stocks are off: only the two venues' trades. A source is lit by its poller's own last successful read: a quiet
+  // stretch with no large bet (Nov 4: 22 minutes) isn't the poller falling behind. The newest stored bet is the note.
+  const beats = h.rows as Array<{ job: string; last_ok_at: string | null }>;
+  const POLLER: Record<"polymarket" | "kalshi", RegExp> = { polymarket: JOBS[0]![0], kalshi: JOBS[1]![0] };
   const sources: SourceFresh[] = (["polymarket", "kalshi"] as const).map(key => {
-    const lastAt = t(fr[key]);
-    return { key, label: LABELS[key], lastAt, light: lightOf(lastAt === null ? null : now - lastAt, LIMITS[key]), note: lastAt === null ? "Nothing stored yet" : `Latest seen ${ago(lastAt, now)}` };
+    const betAt = t(fr[key]);
+    const reads = beats.filter(r => POLLER[key].test(r.job)).map(r => t(r.last_ok_at)).filter((x): x is number => x !== null);
+    const readAt = reads.length ? Math.max(...reads) : null;
+    const lastAt = readAt ?? betAt;
+    const bet = betAt === null ? "no bet stored yet" : `latest bet ${ago(betAt, now)}`;
+    return { key, label: LABELS[key], lastAt, light: lightOf(lastAt === null ? null : now - lastAt, LIMITS[key]),
+      note: readAt !== null ? `Read ${ago(readAt, now)}; ${bet}` : betAt === null ? "Nothing stored yet" : `Latest seen ${ago(betAt, now)}` };
   });
   const jobs: JobBeat[] = [];
   for (const row of h.rows as Array<{ job: string; last_run_at: string; last_ok_at: string | null; ok: boolean; error: string | null }>) {

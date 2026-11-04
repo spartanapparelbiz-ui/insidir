@@ -9,8 +9,7 @@ import pg from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { RECORD_MAX_PAGES } from "@/lib/moves/jobs";
-import { budgetFor, enqueueWallets, INLINE_MAX, nextShare, PROVEN_RECORD_TTL_MS, provenBackfillOnce, resetShare, SHARE_MAX, SHARE_MIN, SHARE_START, walletsToBackfill } from "@/lib/moves/proven-backfill";
+import { BACKFILL_MAX_PAGES, budgetFor, enqueueWallets, INLINE_MAX, nextShare, PROVEN_RECORD_TTL_MS, provenBackfillOnce, resetShare, SHARE_MAX, SHARE_MIN, SHARE_START, walletsToBackfill } from "@/lib/moves/proven-backfill";
 import { recordsFor, saveWalletPnl, walletPnlFor } from "@/lib/moves/store";
 
 const URL0 = process.env.E2E_DATABASE_URL;
@@ -92,13 +91,40 @@ describe.skipIf(!URL0)("proven-wallet backfill, in Postgres", () => {
     await move("d1", { market: "0xm", wallet: D, amount: 10_000, at: NOW - 2 * H });
     const poly = fakePoly({ closed: w => (w === C ? 1e9 : 35), pnl: w => (w === C ? 1_234_567.891 : null) });
     const run = await provenBackfillOnce(db, poly, NOW, 10_000);
-    expect(poly.calls.filter(c => c === `closed:${C}`)).toHaveLength(RECORD_MAX_PAGES);
+    expect(poly.calls.filter(c => c === `closed:${C}`)).toHaveLength(BACKFILL_MAX_PAGES);
     const got = await walletPnlFor(db, [C, D]);
-    expect(got.get(C)).toEqual({ closed: RECORD_MAX_PAGES * 50, closedAtLeast: true, pnl: 1_234_567.89 });
+    expect(got.get(C)).toEqual({ closed: BACKFILL_MAX_PAGES * 50, closedAtLeast: true, pnl: 1_234_567.89 });
     expect(got.get(D)).toEqual({ closed: 35, closedAtLeast: false, pnl: null }); // no leaderboard row: no profit
-    expect(run).toMatchObject({ wallets: 2, requests: RECORD_MAX_PAGES + 1 + 2, rateLimited: 0, queued: 0, due: 0, share: SHARE_START });
+    expect(run).toMatchObject({ wallets: 2, requests: BACKFILL_MAX_PAGES + 1 + 2, rateLimited: 0, queued: 0, due: 0, share: SHARE_START });
     expect(run.reqPerSec).toBeGreaterThan(0);
     expect((await recordsFor(db, [C, D])).size).toBe(0);
+  });
+
+  it("a read cut off by the run's end: kept as \"at least\" past 30 markets, otherwise sent to the back of the queue; every request counts", async () => {
+    // Production, Nov 4: the oldest queued wallets each needed more pages than a run allows. Every run threw their
+    // reads away, reported 0 wallets and 0 requests, and started on the same wallets again.
+    // A wallet too big for one run, cut off past 30 markets: kept as "at least", with the profit already on record.
+    await enqueueWallets(db, [A], NOW - 3 * H);
+    await saveWalletPnl(db, A, { closed: 3, closedAtLeast: false, pnl: 2_000_000 }, NOW - 2 * DAY);
+    const p1 = fakePoly({ closed: w => (w === A ? 1e9 : 0), pnl: () => 5_000_000, delayMs: 40 });
+    const a = await provenBackfillOnce(db, p1, NOW, 250);
+    const got = (await walletPnlFor(db, [A])).get(A)!;
+    expect(got).toMatchObject({ closedAtLeast: true, pnl: 2_000_000 });
+    expect(got.closed).toBeGreaterThanOrEqual(50);
+    expect(a.wallets).toBe(1);
+    expect(a.requests).toBe(p1.calls.length);
+    expect((await pool.query("select count(*)::int n from terminal.wallet_pnl_queue")).rows[0].n).toBe(0);
+    // Cut off under 30: nothing stored, and it goes behind a wallet queued after it.
+    await enqueueWallets(db, [B], NOW - 2 * H);
+    await enqueueWallets(db, [E], NOW - H);
+    const p2 = fakePoly({ closed: () => 20, pnl: () => 5_000_000, delayMs: 40 });
+    resetShare();
+    const b = await provenBackfillOnce(db, { ...p2, getLeaderboardUser: async (w: string) => { await new Promise(ok => setTimeout(ok, 100)); return p2.getLeaderboardUser(w); } }, NOW, 30);
+    expect(b.wallets).toBe(0);
+    expect(b.requests).toBeGreaterThan(0);
+    expect((await walletPnlFor(db, [B, E])).size).toBe(0);
+    const order = (await pool.query("select wallet from terminal.wallet_pnl_queue order by queued_at")).rows.map(r => r.wallet);
+    expect(order).toHaveLength(2);
   });
 
   it("the request budget: the Data API rate × share × run length; the share grows on clean runs and halves after a 429", () => {
