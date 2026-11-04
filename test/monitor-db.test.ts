@@ -6,7 +6,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { HEADLINE } from "@/lib/copy";
+import { LANDING_MARK } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { moneyPathOnce, monitorView, pushOwners, type Alert } from "@/lib/monitor/money-path";
@@ -24,7 +24,7 @@ function site(whop: "ok" | "invalid") {
     seen.push(`${m} ${u.pathname}`);
     const html = (s: string, status = 200) => new Response(s, { status, headers: { "content-type": "text/html" } });
     if (u.host === "insidir.test") {
-      if (u.pathname === "/") return html(`<h1>${HEADLINE}</h1>`);
+      if (u.pathname === "/") return html(`<main ${LANDING_MARK}></main>`);
       if (u.pathname.startsWith("/market/")) return html('<main data-testid="market-page"></main>');
       if (u.pathname === "/go") return html('<section data-testid="go-hook"></section>');
       if (u.pathname === "/api/checkout/start") return Response.json({ planId: "plan_1" });

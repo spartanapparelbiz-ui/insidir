@@ -1,5 +1,5 @@
 /* Status (/status): is Insidir working right now? Each source's freshness, each worker job's last heartbeat, the
- * hourly accuracy checks, the money-path check (every 10 minutes: landing → Read → checkout → Whop sign-in), and this
+ * hourly accuracy audits, the money-path monitor (every 10 minutes: landing → a market → checkout → Whop sign-in), and this
  * web server's uptime and deploy, all from real checks (lib/status-page.ts). Green
  * means working, amber behind, red failing. Incidents are the failures those checks recorded in the last 7 days. */
 import type { Metadata } from "next";
@@ -33,13 +33,13 @@ export default async function StatusPage() {
         <ul className="stat__list" data-testid="status-sources">
           {s.sources.map(x => <li key={x.key} className="stat__row"><Dot l={x.light} /><span className="stat__name">{x.label}</span><span className="stat__note">{x.note}</span><span className="stat__word">{WORD[x.light]}</span></li>)}
         </ul>
-        <p className="stat__fine">Sources: each job's own last successful read of Polymarket, Kalshi and SEC EDGAR. 13F filings arrive quarterly, so a quiet week there is normal and doesn&apos;t change the overall status.</p>
+        <p className="stat__fine">Sources: each job's own last successful read of Polymarket and Kalshi.</p>
 
         <h2>Money path</h2>
         <div data-testid="status-money-path">
           {mp?.last ? (
             <ul className="stat__list">
-              <li className="stat__row"><Dot l={mp.last.ok ? "green" : "red"} /><span className="stat__name">Landing → Read → checkout → Whop sign-in</span>
+              <li className="stat__row"><Dot l={mp.last.ok ? "green" : "red"} /><span className="stat__name">Landing → a market → checkout → Whop sign-in</span>
                 <span className="stat__note">{mp.last.ok ? `Every step passed ${ago(mp.last.at, now)} (${mp.last.ms} ms)` : `Failed ${ago(mp.last.at, now)} at ${mp.last.failedStep}: ${mp.last.detail ?? ""}`}</span><span className="stat__word">{mp.last.ok ? "Working" : "Failing"}</span></li>
               {mp.last.steps.map(st => <li key={st.step} className="stat__row"><Dot l={st.ok ? "green" : "red"} /><span className="stat__name">{st.step}</span><span className="stat__note">{st.ok ? `${st.ms} ms` : st.detail}</span><span className="stat__word" /></li>)}
             </ul>
@@ -58,7 +58,7 @@ export default async function StatusPage() {
           <p className="stat__fine" data-testid="status-backfill">
             Proven-wallet backfill, last run {ago(s.backfill.at, now)}: {s.backfill.wallets.toLocaleString("en-US")} wallets, {s.backfill.requests.toLocaleString("en-US")} requests at {s.backfill.reqPerSec}/s
             (Data API limit {s.backfill.limitPerSec}/s, using up to {Math.round(s.backfill.share * 100)}%), {s.backfill.rateLimited ? `${s.backfill.rateLimited} rate-limited` : "no rate limiting"}.
-            {" "}{s.backfill.queued.toLocaleString("en-US")} queued by Reads, {s.backfill.due.toLocaleString("en-US")} due.
+            {" "}{s.backfill.queued.toLocaleString("en-US")} queued, {s.backfill.due.toLocaleString("en-US")} due.
           </p>
         ) : null}
 

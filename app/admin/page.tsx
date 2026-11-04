@@ -12,7 +12,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { accuracyOverview } from "@/lib/accuracy/store";
 import { adminAvatars, type AdminAvatar } from "@/lib/moves/avatar-store";
 import { monogram } from "@/lib/moves/avatar";
-import { Avatar } from "@/components/v2/Avatar";
+import { Avatar } from "@/components/admin/Avatar";
 import { pct, usd } from "@/lib/format";
 import { pairViews, quarantineCount, quarantineViews, type PairView, type QuarantineView } from "@/lib/queries";
 import type { VMarket } from "@/lib/types";

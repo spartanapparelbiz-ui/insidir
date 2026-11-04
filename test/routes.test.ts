@@ -58,7 +58,7 @@ describe("routes", () => {
   });
 
   it("nothing in the nav, the footer or the sitemap points at a retired route", () => {
-    const shells = ["components/brand/Nav.tsx", "components/SiteHeader.tsx", "components/SiteFooter.tsx", "components/brand/app/Frame.tsx"];
+    const shells = ["components/brand/Nav.tsx", "components/brand/app/Frame.tsx", "components/brand/app/Shell.tsx"];
     for (const f of shells) {
       const hrefs = [...readFileSync(f, "utf8").matchAll(/href[=:]\s*\{?["'`](\/[^"'`$]*)/g)].map(m => m[1]!);
       expect(hrefs.filter(retired), f).toEqual([]);
@@ -92,5 +92,25 @@ describe("the bet checker is gone", () => {
       for (const t of text) bad.push(`${f}: ${t}`);
     }
     expect(bad).toEqual([]);
+  });
+});
+
+describe("the old product's names are gone", () => {
+  /** "Read"/"Reads" as a product name: "Reads", "a Read", "your Read", "Read a market". The verb ("we read
+   *  Polymarket") is fine. */
+  const READ = /\bReads\b|\b(?:a|the|your|free|one|first|every|another|their|this|unlimited)\s+Read\b|\bRead (?:a|any|every) (?:market|bet)\b/;
+  it("'Read' never appears as a product name in user-facing copy", () => {
+    const bad: string[] = [];
+    for (const f of [...files("app", /\.tsx$/), ...files("components", /\.tsx$/), "lib/brand/copy.ts", "lib/copy.ts", "lib/billing/cancel-reasons.ts"]) {
+      if (f.startsWith("app/admin") || f.startsWith("app/dev")) continue;
+      const src = readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+      const m = READ.exec(src);
+      if (m) bad.push(`${f}: ${m[0]}`);
+    }
+    expect(bad).toEqual([]);
+  });
+  it("catches each form, and leaves the verb alone", () => {
+    for (const t of ["Unlimited Reads on any market", "your Read", "Read a market"]) expect(READ.test(t), t).toBe(true);
+    for (const t of ["We read Polymarket every 15 seconds.", "Read the rules"]) expect(READ.test(t), t).toBe(false);
   });
 });

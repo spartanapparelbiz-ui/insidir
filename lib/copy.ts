@@ -2,7 +2,7 @@ import { TRIAL } from "./plans";
 
 /* Copy rules in one place. Never "guaranteed" or "risk-free" for anything we show. */
 
-/** Under every Read, at the top of the footer, and wherever data could be mistaken for a tip. */
+/** Under every bet and market, at the top of the footer, and wherever data could be mistaken for a tip. */
 export const ADVICE = "Information, not financial or betting advice.";
 
 /** On every page. */
@@ -73,13 +73,5 @@ export const OPEN_TERMINAL = "See today's live deals";
 /** Change any member setting: confirmed with this toast. */
 export const SAVED = "Saved";
 
-/** What a member gets, in the copy product's words: the home page's $1 block, /pricing and /start. */
-export const INCLUDED = [
-  "Unlimited Reads on any Polymarket or Kalshi market",
-  "Proven money on each side, and how many wallets",
-  "Every big bet of the last 24 hours, unusual ones flagged",
-  "The best price now, and one analyst line on what the data shows",
-] as const;
-
-/** The home page's headline: the one tool. */
-export const HEADLINE = "Paste any bet. See where the smart money is.";
+/** What the money-path monitor looks for on the home page: the landing's own marker (components/brand/landing). */
+export const LANDING_MARK = 'data-testid="landing"';

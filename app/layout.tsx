@@ -4,8 +4,6 @@ import { Suspense, type ReactNode } from "react";
 import { RegisterSW } from "@/components/app/RegisterSW";
 import { Motion } from "@/components/motion/Motion";
 import { NavProgress } from "@/components/motion/NavProgress";
-import { SiteFooter } from "@/components/SiteFooter";
-import { LateBar } from "@/components/paywall/LateBar";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { JsonLd, organizationLd } from "@/lib/seo/jsonld";
@@ -15,7 +13,7 @@ import { Beacons } from "@/components/landing/Beacons";
 import { ToastProvider } from "@/components/ui/Toast";
 import { LockProvider } from "@/components/lock/Lock";
 import { unlockHref } from "@/components/app/links";
-import { insidirUnlocks } from "@/components/v2/Pricing";
+import { MEMBER_GETS } from "@/lib/brand/copy";
 import { WHAT_IS, WHAT_IS_TITLE } from "@/lib/copy";
 import "./tokens.css";
 import "./globals.css";
@@ -63,14 +61,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <ToastProvider>
-          <LockProvider unlocks={insidirUnlocks()} trialHref={unlockHref()}>
+          <LockProvider unlocks={[...MEMBER_GETS]} trialHref={unlockHref()}>
             {children}
-            <SiteFooter />
           </LockProvider>
         </ToastProvider>
         <JsonLd data={organizationLd()} />
         <RegisterSW />
-        {visitor ? <LateBar /> : null}
         <Motion />
         <Suspense fallback={null}><NavProgress /></Suspense>
         <Beacons />

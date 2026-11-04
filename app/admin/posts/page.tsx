@@ -3,7 +3,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CopyCaption } from "@/components/admin/CopyCaption";
-import { SiteHeader } from "@/components/SiteHeader";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { dollars, onWhat } from "@/lib/moves/copy";
@@ -23,7 +22,6 @@ export default async function PostsPage() {
   const records = db ? await recordsFor(db, top.map(m => m.wallet ?? "")) : new Map();
   return (
     <>
-      <SiteHeader plan={viewer.plan} signedIn />
       <main className="wrap app acct">
         <h1 className="page__h">Posts</h1>
         <p className="asum asum--lead">The 10 largest positions of the last 24 hours, ready to post.</p>

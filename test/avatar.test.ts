@@ -19,7 +19,7 @@ import { avatarsOnce } from "@/lib/moves/jobs";
 import { readLeaderboard } from "@/lib/moves/sources";
 import { upsertMoves } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
-import { Avatar } from "@/components/v2/Avatar";
+import { Avatar } from "@/components/admin/Avatar";
 
 const W = "0xabc0000000000000000000000000000000000001";
 const PIC = `https://${AVATAR_HOST}/profile-image-123.png`;

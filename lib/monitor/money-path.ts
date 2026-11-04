@@ -1,5 +1,5 @@
 /* The money-path monitor (server only), every MONEY_PATH_MS from the worker, against the live site (APP_URL):
- *   landing   GET /: 200 with the headline
+ *   landing   GET /: 200 with the landing
  *   market    GET /market/<id> for an open market we hold (the newest millionaire bet's): the market page
  *   checkout  GET /go: the funnel; POST /api/checkout/start: the plan is open
  *   sign-in   GET /login/start: a redirect to Whop's authorize URL; GET that URL: Whop accepts it (no
@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import { desc, sql } from "drizzle-orm";
 import { sendPush } from "@/lib/alerts/send";
 import { freeAccessEmails } from "@/lib/billing/free";
-import { HEADLINE } from "@/lib/copy";
+import { LANDING_MARK } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { monitorRuns } from "@/lib/db/schema";
 
@@ -66,7 +66,7 @@ export async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
   if (!await run("landing", async () => {
     const r = await get("/");
     must(r.status === 200, `GET / answered ${r.status}`);
-    must((await r.text()).includes(HEADLINE), "the home page doesn't show the headline");
+    must((await r.text()).includes(LANDING_MARK), "the home page doesn't show the landing");
   })) return steps;
   if (!await run("market", async () => {
     const id = await marketToOpen(db, now);

@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
-import { COMPANY, DATA_COMPANY, GAMBLER } from "@/lib/copy";
+import { COMPANY, DATA_COMPANY, GAMBLER, FOOTER } from "@/lib/copy";
 
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
 const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m": kind, style: { "--d": `${d}s` } as CSSProperties } : {});
@@ -74,7 +74,7 @@ export function BrandFoot({ inline = false }: { inline?: boolean }) {
         <span>{COMPANY.name} · {COMPANY.place} · <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span>
         <span>{DATA_COMPANY}</span>
         <span>{GAMBLER}</span>
-        <span>Information, not financial or betting advice. Operated by Aethric LLC.</span>
+        <span>{FOOTER} Operated by Aethric LLC.</span>
       </div>
     </footer>
   );

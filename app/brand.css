@@ -949,3 +949,20 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 /* A locked side: a plain label, not a blurred pill. */
 .s-lockside { font: inherit; font-size: 13px; color: var(--dim); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--glass-line); text-underline-offset: 3px; }
 .s-lockside:hover { color: var(--ink); }
+
+/* Text pages (components/TrustPage.tsx): the article on a glass panel, in the homepage's type. */
+.s-prose { text-align: left; line-height: 1.6; font-size: 16px; color: var(--ink-muted); }
+.s-prose h2 { margin: 28px 0 10px; font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+.s-prose h2:first-child, .s-prose article > h2:first-child { margin-top: 0; }
+.s-prose h3 { margin: 20px 0 8px; font-size: 17px; font-weight: 600; color: var(--ink); }
+.s-prose p, .s-prose li { margin: 0 0 12px; }
+.s-prose ul, .s-prose ol { margin: 0 0 14px; padding-left: 20px; }
+.s-prose a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.s-prose strong, .s-prose b { color: var(--ink); font-weight: 600; }
+.s-prose table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 0 0 16px; }
+.s-prose th, .s-prose td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--glass-line); vertical-align: top; }
+.s-prose .stat__list { list-style: none; padding: 0; margin: 0 0 16px; }
+.s-prose .stat__row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--glass-line); }
+.s-prose .stat__name { color: var(--ink); font-weight: 600; }
+.s-prose .stat__note, .s-prose .stat__fine { font-size: 14px; }
+.s-prose .stat__dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--up); margin-right: 8px; }
