@@ -192,7 +192,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               return (
                 <button key={c.slug} type="button" className="b-tile" aria-pressed={on} data-testid="go-tile" data-cat={c.slug} {...st(0.4 + i * 0.03)}
                   onClick={() => put({ cats: on ? a.cats.filter(x => x !== c.slug) : [...a.cats, c.slug] })}>
-                  <span className="b-tile__img"><BrandPicture src={categoryPhoto(c.slug).src} fill sizes="(max-width: 552px) 66vw, (max-width: 1160px) 50vw, 440px" /></span>
+                  
                   <span className="b-tile__check" aria-hidden="true"><svg viewBox="0 0 11 9" fill="none"><path d="M1 4.5 4 7.5 10 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                   <span className="b-tile__name">{c.name}</span>
                 </button>

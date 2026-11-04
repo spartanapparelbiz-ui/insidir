@@ -9,7 +9,8 @@ import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import type { VMarket } from "@/lib/types";
 import { TEAMS, type League } from "@/lib/matching/aliases";
-import { pairByStructure } from "./structured";
+import { pairByStructure, polySoccer, SOCCER_SERIES } from "./structured";
+import { memo } from "@/lib/memo";
 import { saveTwin } from "./store";
 export { pairByStructure, structuredResult } from "./structured";
 
@@ -63,7 +64,7 @@ export async function twinsFromBets(db: Db, c: DirectClients, now: number, maxEv
       where b.source = 'polymarket' and b.at > ${new Date(now - 14 * DAY)}
         and not exists (select 1 from terminal.market_twins t where t.polymarket_id = b.market_id and (t.status <> 'pending' or t.decided_by is not null))`)).rows as Array<{ market_id: string }>;
   const slugs = await slugsOf(rows.map(r => r.market_id).filter(id => /^0x[0-9a-f]{64}$/i.test(id)));
-  const games = [...new Set(slugs.values())].filter(s => gameTickers(s).length && (noGame.get(s) ?? 0) < now - 6 * 3_600_000).slice(0, maxEvents);
+  const games = [...new Set(slugs.values())].filter(s => (gameTickers(s).length || polySoccer(s)) && (noGame.get(s) ?? 0) < now - 6 * 3_600_000).slice(0, maxEvents);
   const counts = { events: 0, twins: 0, auto: 0 };
   for (const slug of games) {
     const r = await twinGame(db, c, slug, now);
@@ -78,6 +79,7 @@ export async function twinsFromBets(db: Db, c: DirectClients, now: number, maxEv
 export async function twinGame(db: Db, c: DirectClients, slug: string, now: number): Promise<{ twins: number; auto: number } | null> {
   const pe = await c.polymarket.getEventBySlug(slug).catch(() => null);
   if (!pe?.markets.length) return null;
+  if (polySoccer(slug)) return soccerGame(db, c, slug, pe.markets, now);
   let game: { ticker: string; markets: VMarket[] } | null = null;
   for (const t of gameTickers(slug)) {
     const ev = await c.kalshi.getEvent(t).catch(() => null);
@@ -97,6 +99,42 @@ export async function twinGame(db: Db, c: DirectClients, slug: string, now: numb
   return out;
 }
 
+/** A soccer game's twins. Kalshi's club codes aren't Polymarket's ("SLA" vs "slp"), so the game is found among the
+ *  league's Kalshi events on that date (or the day before), and the structured check pairs the clubs by name. */
+async function soccerGame(db: Db, c: DirectClients, slug: string, poly: readonly VMarket[], now: number): Promise<{ twins: number; auto: number } | null> {
+  const g = polySoccer(slug)!, series = SOCCER_SERIES[g.league]!;
+  const day = Date.parse(`${g.date}T12:00:00Z`);
+  const codes = [day, day - DAY].map(d => { const x = new Date(d); return `${String(x.getUTCFullYear()).slice(2)}${MON[x.getUTCMonth()]}${String(x.getUTCDate()).padStart(2, "0")}`; });
+  const tickers = (await seriesEvents(series)).filter(t => codes.some(code => t.startsWith(`${series}-${code}`)));
+  const out = { twins: 0, auto: 0 };
+  let found = false;
+  for (const t of tickers) {
+    const ev = await c.kalshi.getEvent(t).catch(() => null);
+    if (!ev?.markets.length) continue;
+    const pairs = pairByStructure(poly, ev.markets);
+    if (!pairs.length) continue;
+    found = true;
+    for (const p of pairs) { out.twins++; if (await saveTwin(db, p, now)) out.auto++; }
+  }
+  return found ? out : null;
+}
+
+/** Every event ticker in a Kalshi series (open and settled), cached 30 minutes. */
+function seriesEvents(series: string): Promise<string[]> {
+  return memo(`kalshi:series-events:${series}`, 30 * 60_000, async () => {
+    const out: string[] = [];
+    let cursor = "";
+    for (let page = 0; page < 20; page++) {
+      const r = await fetch(`https://api.elections.kalshi.com/trade-api/v2/events?series_ticker=${series}&limit=200${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, { signal: AbortSignal.timeout(10_000) }).catch(() => null);
+      const j = r?.ok ? ((await r.json().catch(() => null)) as { events?: Array<{ event_ticker: string }>; cursor?: string } | null) : null;
+      for (const e of j?.events ?? []) out.push(e.event_ticker);
+      if (!j?.cursor) break;
+      cursor = j.cursor;
+    }
+    return out;
+  });
+}
+
 /** Twins for the games behind the last 180 days of recorded big bets (terminal.moves), each game looked up once
  *  (terminal.twin_attempts): what lets the record be priced on Kalshi. */
 export async function twinsFromHistory(db: Db, c: DirectClients, now: number, maxEvents = 20): Promise<{ events: number; twins: number; auto: number; left: number }> {
@@ -106,7 +144,7 @@ export async function twinsFromHistory(db: Db, c: DirectClients, now: number, ma
       limit 400`)).rows as Array<{ market_id: string }>;
   const slugs = await slugsOf(rows.map(r => r.market_id).filter(id => /^0x[0-9a-f]{64}$/i.test(id)));
   const tried = new Set(((await db.execute(sql`select slug from terminal.twin_attempts`)).rows as Array<{ slug: string }>).map(r => r.slug));
-  const all = [...new Set(slugs.values())].filter(s => gameTickers(s).length && !tried.has(s));
+  const all = [...new Set(slugs.values())].filter(s => (gameTickers(s).length || polySoccer(s)) && !tried.has(s));
   const counts = { events: 0, twins: 0, auto: 0, left: Math.max(0, all.length - maxEvents) };
   for (const slug of all.slice(0, maxEvents)) {
     const r = await twinGame(db, c, slug, now);

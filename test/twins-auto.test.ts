@@ -4,7 +4,7 @@
  * closes at the swearing-in, a year later). */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { autoCheck, kalshiGame, kalshiRace, polyGame, polyRace } from "@/lib/twins/structured";
+import { autoCheck, clubName, kalshiGame, kalshiRace, kalshiSoccer, polyGame, polyRace, polySoccer } from "@/lib/twins/structured";
 import { dailyMessage, etBounds, etDay } from "@/lib/twins/daily";
 import type { VMarket } from "@/lib/types";
 
@@ -93,5 +93,21 @@ describe("twins for the games millionaires bet on, by game (lib/twins/direct.ts)
     for (const p of pairs) expect(autoCheck(p.poly, p.kalshi).auto).toBe(true);
     // One Kalshi market each, never two Polymarket markets on the same Kalshi one.
     expect(new Set(pairs.map(p => p.kalshi.id)).size).toBe(pairs.length);
+  });
+});
+
+describe("soccer: the same game by league, date and clubs; win for win, draw for tie", () => {
+  const ucl = load("ucl-moneyline");
+  it("reads soccer games and club names", () => {
+    expect(polySoccer("ucl-slp-ars-2026-11-04")).toEqual({ league: "ucl", date: "2026-11-04" });
+    expect(kalshiSoccer("KXUCLGAME-26NOV04SLAARS")).toEqual({ league: "ucl", date: "2026-11-04" });
+    expect(polySoccer("nba-mia-lal-2026-11-04")).toBeNull();
+    expect(clubName("SK Slavia Praha")).toBe(clubName("Slavia Prague"));
+    expect(clubName("Arsenal FC")).toBe("arsenal");
+    expect(clubName("FC Bayern München")).toBe(clubName("Bayern Munich"));
+  });
+  it("Slavia–Arsenal: exactly the three true pairs auto-approve", () => {
+    const auto = ucl.polymarket.flatMap(p => ucl.kalshi.filter(k => autoCheck(p, k).auto).map(k => `${p.ids?.group} → ${k.id.split("-").pop()}`));
+    expect(auto.sort()).toEqual(["Arsenal FC → ARS", "Draw (SK Slavia Praha vs. Arsenal FC) → TIE", "SK Slavia Praha → SLA"]);
   });
 });

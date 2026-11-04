@@ -39,11 +39,7 @@ export function ElectionLive({ initial, member }: { initial: ElectionBoard; memb
         {b.free.map(r => <RaceRow key={r.marketId} r={r} />)}
         {member ? null : b.locked.map((r, i) => (
           <li key={`l${i}`}>
-            <button type="button" className="b-lockrow" data-locked="race" data-testid="race-locked">
-              <span className="b-race__title">{partyOf(r.title) ? <span className={`b-party b-party--${partyOf(r.title)}`} aria-label={partyOf(r.title) === "d" ? "Democrats" : "Republicans"}>{partyOf(r.title) === "d" ? "D" : "R"}</span> : null}<span className="b-row__title" style={{ textAlign: "left" }}>{r.title}</span></span>
-              <span className="b-small b-num">{dollars(r.total)} in<span className="b-sr">. The split and price are for members: start for $1 to see them.</span></span>
-              <span className="b-lock" aria-hidden="true">Locked</span>
-            </button>
+            <p className="b-small" data-locked="race" data-testid="race-locked"><span className="b-row__title">{r.title}</span>: members see which side the {dollars(r.total)} is on.</p>
           </li>
         ))}
       </ul>

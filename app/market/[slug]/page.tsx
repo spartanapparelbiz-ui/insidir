@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!ref) return { title: "Market", robots: { index: false } };
   const title = h?.title ?? ref.title;
   const description = h && h.total > 0
-    ? dollars(h.total) + " from " + walletsText(h.wallets) + " up $100K+ on “" + title + "”, with the Kalshi price when Kalshi lists it. Every bet, live for members."
+    ? "Proven $1M+ wallets on “" + title + "”, with the Kalshi price when Kalshi lists it. Every bet, live for members."
     : "“" + title + "”: the Kalshi price when Kalshi lists it, and every bet from wallets up $1M+.";
   return { title: { absolute: `${title}: who's betting · Insidir` }, description, alternates: { canonical: marketPath(ref.id, ref.title) }, openGraph: { title, description } };
 }
@@ -58,7 +58,9 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   const share = (t: typeof mil) => (t.yes.dollars + t.no.dollars > 0 ? t.yes.dollars / (t.yes.dollars + t.no.dollars) : 0);
   const sideText = (t: typeof mil, s: "yes" | "no") => dollars(t[s].dollars) + " · " + walletsText(t[s].wallets);
   const n = m.betCount;
-  const subLine = n ? n.toLocaleString("en-US") + (n === 1 ? " bet" : " bets") + " from wallets up $100K+, " + dollars(m.money.total || m.bets.reduce((a, b) => a + b.amount, 0)) + " in all." : "No watchlist wallet has bet on it yet.";
+  // The product follows proven $1M+ wallets: the page leads with their money; smaller wallets are a footnote for members.
+  const provenBets = m.bets.filter(b => b.tier === "millionaire").length;
+  const subLine = milTotal > 0 ? `${dollars(milTotal)} from proven $1M+ wallets${provenBets ? `, ${provenBets.toLocaleString("en-US")} ${provenBets === 1 ? "bet" : "bets"}` : ""}.` : n ? "No proven $1M+ wallet has bet on it yet." : "No watchlist wallet has bet on it yet.";
   // A game: both teams' logos (the registry, by the game in the market's URL; a monogram when a team has none).
   const teams = matchupFor(m.url, m.event || m.title);
   // No exact Kalshi twin for a spread or total: the nearest Kalshi lines for the game, labelled as alternatives.
@@ -84,13 +86,12 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         <Panel className="s-col">
           {member ? (
             <>
-              {milTotal > 0 ? <><p className="b-label">Wallets up $1M+</p><Bars label="Wallets up $1M+" rows={[{ key: "y", name: m.yesLabel, share: share(mil), text: sideText(mil, "yes") }, { key: "n", name: m.noLabel, share: 1 - share(mil), text: sideText(mil, "no") }]} /></> : <p className="b-small">No wallet up $1M+ has bet on it.</p>}
-              {proTotal > 0 ? <><p className="b-label">Wallets up $100K+ (Pro)</p><Bars label="Wallets up $100K+" rows={[{ key: "y", name: m.yesLabel, share: share(pro), text: sideText(pro, "yes") }, { key: "n", name: m.noLabel, share: 1 - share(pro), text: sideText(pro, "no") }]} /></> : null}
+              {milTotal > 0 ? <><p className="b-label">Proven wallets, up $1M+</p><Bars label="Proven wallets up $1M+" rows={[{ key: "y", name: m.yesLabel, share: share(mil), text: sideText(mil, "yes") }, { key: "n", name: m.noLabel, share: 1 - share(mil), text: sideText(mil, "no") }]} /></> : <p className="b-small">No proven $1M+ wallet has bet on it.</p>}
+              {proTotal > 0 ? <><p className="b-label">Smaller wallets, up $100K+ (not followed)</p><Bars label="Wallets up $100K+" rows={[{ key: "y", name: m.yesLabel, share: share(pro), text: sideText(pro, "yes") }, { key: "n", name: m.noLabel, share: 1 - share(pro), text: sideText(pro, "no") }]} /></> : null}
             </>
           ) : (
             <>
-              <p className="b-small">{dollars(milTotal + proTotal)} from wallets up $100K+.</p>
-              <button type="button" className="b-lockrow" data-locked="split"><span className="b-label">Which side<span className="b-sr">: the money per side is for members. Start for $1.</span></span><span className="b-blur" aria-hidden="true">$000K on Xxxxx</span><span className="b-lock" aria-hidden="true">Locked</span></button>
+              {milTotal > 0 ? <p className="b-small" data-locked="split">{dollars(milTotal)} from proven $1M+ wallets. Members see which side it is on.</p> : <p className="b-small">No proven $1M+ wallet has bet on it yet.</p>}
               <div className="b-ctas"><Pill href="/go" data-checkout="market">Start for $1</Pill></div>
             </>
           )}
@@ -118,7 +119,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         </Stage>
       ) : null}
       <p className="b-small b-center">Information, not advice. Millionaires lose bets too. Insidir never places a bet or holds money.</p>
-      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={m.title} path={canonical} description={"Every bet from wallets up $100K+ on “" + m.title + "”, and the Kalshi price."} sources={["https://kalshi.com"]} />
+      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={m.title} path={canonical} description={"Every bet from proven $1M+ wallets on “" + m.title + "”, and the Kalshi price."} sources={["https://kalshi.com"]} />
       <ScrollFx />
     </Frame>
   );

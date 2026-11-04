@@ -31,10 +31,11 @@ export function KalshiFirst({ twin, yesLabel, noLabel, polyYes, polyUrl, region,
           <p className="b-label">On Kalshi</p>
           <p className="s-strong" data-testid="kalshi-title">{twin.title}</p>
           <div className="s-ticket__px">
-            <span><span className="b-small">{yesLabel}</span><br /><span className="s-big b-num" data-testid="kalshi-yes">{twin.yes !== null ? cents(twin.yes) : "No price yet"}</span></span>
-            <span><span className="b-small">{noLabel}</span><br /><span className="s-big b-num" data-testid="kalshi-no">{twin.yes !== null ? cents(1 - twin.yes) : "No price yet"}</span></span>
+            <span><span className="b-small">{yesLabel}</span><br /><span className="s-big b-num" data-testid="kalshi-yes">{(twin.yesAsk ?? twin.yes) !== null ? cents((twin.yesAsk ?? twin.yes)!) : "No offer now"}</span></span>
+            <span><span className="b-small">{noLabel}</span><br /><span className="s-big b-num" data-testid="kalshi-no">{twin.noAsk !== null ? cents(twin.noAsk) : twin.yes !== null ? cents(1 - twin.yes) : "No offer now"}</span></span>
           </div>
           <div className="b-ctas"><a className="b-btn b-btn-lg b-primary" href={twin.url} target="_blank" rel="noopener noreferrer" data-testid="open-kalshi">Open on Kalshi</a></div>
+          {/(SPREAD|TOTAL)-/.test(twin.kalshiId) ? <p className="b-small" data-testid="kalshi-line">Kalshi lists every line for this game on one page: pick “{twin.title}”.</p> : null}
         </>
       ) : near ? (
         <div data-testid="kalshi-near">

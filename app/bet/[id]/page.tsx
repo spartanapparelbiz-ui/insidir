@@ -102,7 +102,7 @@ export default async function BetPage({ params }: { params: Promise<{ id: string
           </Panel>
         ) : (
           <Panel className="s-col" testid="bet-locked">
-            <button type="button" className="b-lockrow" data-locked="side"><span className="b-label">Their side<span className="b-sr">: which side they took, their price and Copy are for members. Start for $1.</span></span><span className="b-blur" aria-hidden="true">Xxxxx at 00¢</span><span className="b-lock" aria-hidden="true">Locked</span></button>
+            <p className="b-small" data-locked="side">Members see which side they took, their price, and the bet on Kalshi.</p>
             <div className="b-ctas"><Pill href="/go" data-testid="bet-start" data-checkout="bet">Start for $1</Pill></div>
           </Panel>
         )}

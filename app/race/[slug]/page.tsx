@@ -4,7 +4,7 @@
  * the board's rules (60 minutes late, no side) and, outside the three free races, the money per candidate locked.
  * Indexable. Not advice. */
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
 import { BetRow } from "@/components/brand/BetRow";
 import { Lines, Panel, Pill, ScrollFx, Stage } from "@/components/system";
@@ -41,6 +41,7 @@ export default async function RacePage({ params }: { params: Promise<{ slug: str
   const [{ slug }, viewer] = await Promise.all([params, getViewer()]);
   const found = await raceBySlug(db, slug, now).catch(() => null);
   if (!found) notFound();
+  if (found.redirect) permanentRedirect(found.redirect);
   const { race, others, free } = found;
   const member = isPaid(viewer.plan) && Boolean(viewer.user);
   const name = cap(raceName(race));
@@ -67,7 +68,7 @@ export default async function RacePage({ params }: { params: Promise<{ slug: str
           <>
             <ul className="s-lockrows s-wrows s-col" data-testid="race-candidates">{cands.map(c => <li key={c.marketId}><span className="s-strong">{c.name}{c.result ? ` · ${c.result === "won" ? "Won" : "Lost"}` : ""}</span><span className="b-num">{c.price !== null ? `${Math.round(c.price * 100)}¢` : ""}</span></li>)}</ul>
             <div className="s-col">
-              <button type="button" className="b-lockrow" data-locked="race"><span className="b-label">The money on each candidate<span className="b-sr">: for members. Start for $1.</span></span><span className="b-blur" aria-hidden="true">$000K on Xxxxx</span><span className="b-lock" aria-hidden="true">Locked</span></button>
+              <p className="b-small" data-locked="race">Members see the millionaire money on each candidate.</p>
               <div className="b-ctas"><Pill href="/go" data-checkout="race">Start for $1</Pill></div>
             </div>
           </>

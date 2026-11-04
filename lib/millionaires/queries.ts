@@ -184,12 +184,14 @@ export interface MarketMoney {
 const sides = () => ({ yes: { dollars: 0, wallets: 0 }, no: { dollars: 0, wallets: 0 } });
 
 /** Watchlist money per market (all bets still open), for the given market ids or the top markets in some categories. */
-export async function marketMoney(db: Db, opts: { marketIds?: readonly string[]; categories?: readonly string[]; since?: number; limit?: number; now: number }): Promise<MarketMoney[]> {
-  const w: SQL[] = [sql`b.result is null`];
+export async function marketMoney(db: Db, opts: { marketIds?: readonly string[]; categories?: readonly string[]; since?: number; limit?: number; now: number; settled?: boolean }): Promise<MarketMoney[]> {
+  // Open markets only, unless `settled` (race pages keep settled races, with their result).
+  const w: SQL[] = opts.settled ? [] : [sql`b.result is null`];
   if (opts.marketIds) { if (!opts.marketIds.length) return []; w.push(sql`b.market_id in (${sql.join(opts.marketIds.map(x => sql`${x}`), sql`, `)})`); }
   if (opts.categories?.length) w.push(sql`b.category in (${sql.join(opts.categories.map(c => sql`${c}`), sql`, `)})`);
   if (opts.since !== undefined) w.push(sql`b.at > ${new Date(opts.since)}`);
-  if (!opts.marketIds) w.push(sql`(i.closed is null or not i.closed)`);
+  if (!opts.marketIds && !opts.settled) w.push(sql`(i.closed is null or not i.closed)`);
+  if (!w.length) w.push(sql`true`);
   const r = await db.execute(sql`select b.market_id, b.tier, b.outcome_side,
       max(b.market_title) as title, max(b.event_title) as event, max(b.category) as category,
       coalesce(max(b.yes_label), max(case when b.outcome_side = 'yes' then b.outcome end)) as yes_label,

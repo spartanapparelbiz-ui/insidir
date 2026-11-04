@@ -90,13 +90,14 @@ export async function pulseData(db: Db, now: number, today: number, pool: readon
 
 /* ---------- Election Day board ---------- */
 
-/** Election Day and the night after: Nov 3–4, 2026 in ET (the board shows only then). ELECTION_BOARD=on or off
- *  overrides the dates (an operator switch: early on a busy election eve, or off if something is wrong). */
+/** Election Day: Nov 3, 2026 in ET (the board shows only then; the election is over after it, and /election keeps the
+ *  results). ELECTION_BOARD=off turns it off; =on turns it on only before Nov 4 (an election-eve switch), so a leftover
+ *  setting can't bring it back. */
 export function electionDay(now: number, env: string | undefined = process.env.ELECTION_BOARD): boolean {
-  if (env === "on") return true;
-  if (env === "off") return false;
   const d = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
-  return d === "2026-11-03" || d === "2026-11-04";
+  if (env === "off" || d >= "2026-11-04") return false;
+  if (env === "on") return true;
+  return d === "2026-11-03";
 }
 
 export interface Race { marketId: string; title: string; yesLabel: string; noLabel: string; millionaire: MarketMoney["millionaire"]; pro: MarketMoney["pro"]; priceNow: number | null; total: number }
@@ -114,11 +115,12 @@ export function majorRace(title: string): "control" | "race" | null {
 
 /** The major races with watchlist money this week: control of the Senate and House first, then the Senate and governor
  *  races by money. Visitors get the top 3 whole and the rest by title and total (their split and price are members'). */
-export async function electionBoard(db: Db, now: number, member = false): Promise<ElectionBoard> {
-  const list = await marketMoney(db, { categories: ["elections", "politics"], since: now - 7 * DAY, limit: 80, now });
+/** `settled`: settled races too, from the last 90 days (race pages and /election's results keep them). */
+export async function electionBoard(db: Db, now: number, member = false, settled = false): Promise<ElectionBoard> {
+  const list = await marketMoney(db, { categories: ["elections", "politics"], since: now - (settled ? 90 : 7) * DAY, limit: settled ? 400 : 80, now, settled });
   const all = (m: MarketMoney) => mil(m) + m.pro.yes.dollars + m.pro.no.dollars;
   const races = list.map(m => ({ m, kind: majorRace(m.title) })).filter((x): x is { m: MarketMoney; kind: "control" | "race" } => x.kind !== null && all(x.m) > 0)
-    .sort((a, b) => (a.kind === b.kind ? all(b.m) - all(a.m) : a.kind === "control" ? -1 : 1)).slice(0, 16)
+    .sort((a, b) => (a.kind === b.kind ? all(b.m) - all(a.m) : a.kind === "control" ? -1 : 1)).slice(0, settled ? 80 : 16)
     .map(({ m }) => ({ marketId: m.marketId, title: m.title, yesLabel: m.yesLabel, noLabel: m.noLabel, millionaire: m.millionaire, pro: m.pro, priceNow: m.priceNow, total: all(m) }));
   const open = member ? races.length : 3;
   return { at: now, free: races.slice(0, open), locked: races.slice(open).map(r => ({ title: r.title, total: r.total })) };
