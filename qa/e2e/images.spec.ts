@@ -17,11 +17,15 @@ test("no broken or soft images, and nothing above 3840", async ({ page }) => {
     for (let y = 0; y < 30; y++) { await page.mouse.wheel(0, 900); await page.waitForTimeout(60); }
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(800);
-    const imgs = await page.evaluate(() => [...document.images].filter(i => i.getBoundingClientRect().width > 0 && getComputedStyle(i).visibility !== "hidden").map(i => ({
-      src: i.currentSrc || i.src, natural: i.naturalWidth, shown: Math.round(i.getBoundingClientRect().width), complete: i.complete, svg: /\.svg(\?|$)|image\/svg/.test(i.currentSrc || i.src),
+    // naturalWidth of a srcset image is divided by its density, so each file's real width is read on its own.
+    const imgs = await page.evaluate(() => Promise.all([...document.images].filter(i => i.getBoundingClientRect().width > 0 && getComputedStyle(i).visibility !== "hidden").map(async i => {
+      const src = i.currentSrc || i.src;
+      let natural = i.naturalWidth;
+      if (natural > 0 && src) { const im = new Image(); im.src = src; await im.decode().catch(() => undefined); natural = im.naturalWidth || natural; }
+      return { src, natural, broken: i.complete && i.naturalWidth === 0, shown: Math.round(i.getBoundingClientRect().width), svg: /\.svg(\?|$)|image\/svg/.test(src) };
     })));
     for (const i of imgs) {
-      if (i.complete && i.natural === 0) bad.push(`${path}: broken ${i.src}`);
+      if (i.broken) bad.push(`${path}: broken ${i.src}`);
       // The stages are cropped to cover (object-fit), so they're measured against their box's width.
       else if (!i.svg && i.natural > 0 && i.natural < 1.5 * i.shown) bad.push(`${path}: ${i.natural}px for ${i.shown}px (${i.src.slice(0, 120)})`);
     }

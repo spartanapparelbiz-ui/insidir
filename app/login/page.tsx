@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="b-sub" data-m="lift">Sign in with the Whop account you paid with.</p>
           {sp.error && ERRORS[sp.error] ? <p className="b-msg aerr" role="alert">{ERRORS[sp.error]}</p> : null}
           <div className="b-ctas"><ContinueButton next={next} /></div>
-          <p className="b-small">Secure sign-in and payments by Whop. No password here.</p>
+          <p className="b-small">No password here.</p>
           <p className="b-small" data-testid="login-new">New here? <a className="s-link" href="/go" data-checkout="login">Start for $1</a></p>
         </div>
       </Stage>

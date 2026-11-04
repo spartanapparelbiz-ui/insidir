@@ -174,7 +174,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
             <div className="b-glass b-pad"  {...st(0.6, { marginTop: 26, maxWidth: 560, width: "100%", textAlign: "left", display: "grid", gap: 8 })} data-testid="go-hook-bet">
               <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "bet" : "bets"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
               <p style={{ margin: 0, fontSize: 18, fontWeight: 500, letterSpacing: "-0.3px", lineHeight: 1.35 }}>
-                A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : ""}wallet just bet <span className="b-num">{dollars(hook.amount)}</span> on {hook.title}.
+                A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : "$1M+ "}wallet just bet <span className="b-num">{dollars(hook.amount)}</span> on {hook.title}.
               </p>
             </div>
           ) : <p className="b-sub" {...m("lift", 0.58)}>Every big bet on Polymarket and Kalshi, from wallets that made $1M+.</p>}

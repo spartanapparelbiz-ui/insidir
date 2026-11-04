@@ -5,7 +5,7 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { CATEGORY_SLUGS, isCategory, type CategorySlug } from "@/lib/brand/categories";
-import { betsToday, marketMoney, positions, proof, pulse, recentBets, topWallets, type BoardBet, type MarketMoney, type Position, type Proof, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
+import { betsToday, marketMoney, positions, proof, pulse, recentBets, topWallets, VISITOR_DELAY_MS, type BoardBet, type MarketMoney, type Position, type Proof, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
 
 const DAY = 86_400_000;
 
@@ -57,7 +57,8 @@ export async function goData(db: Db, cats: readonly CategorySlug[], now: number,
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("go", e instanceof Error ? e.message : e); return d; });
   const [p, hooks, perCat, today, week, pr, wallets] = await Promise.all([
     safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }),
-    safe(recentBets(db, { now, limit: 1, tier: "millionaire", member: paid }), [] as BoardBet[]),
+    // A visitor's hook is an hour late, like the board (it is prefetched on every page).
+    safe(recentBets(db, { now, limit: 1, tier: "millionaire", member: paid, delayMs: paid ? 0 : VISITOR_DELAY_MS }), [] as BoardBet[]),
     safe(betsToday(db, cats, now), new Map<string, number>()),
     safe(marketMoney(db, { categories: cats.length ? cats : undefined, since: now - DAY, limit: 20, now }), [] as MarketMoney[]),
     safe(marketMoney(db, { categories: cats.length ? cats : undefined, since: now - 7 * DAY, limit: 3, now }), [] as MarketMoney[]),
@@ -72,7 +73,7 @@ export async function goData(db: Db, cats: readonly CategorySlug[], now: number,
     cards.push({ m: open ? m : lockMoney(m), positions: open ? await safe(positions(db, m.marketId), []) : [], locked: !open });
   }
   return {
-    now, paid, pulse: p, hook: hooks[0] ?? null,
+    now, paid, pulse: p, hook: hooks[0] ? (paid ? hooks[0] : { ...hooks[0], pnl: null }) : null, // a wallet's record is for members
     build: { wallets: p.wallets, perCat: Object.fromEntries(perCat) },
     aha: { cards, more: Math.max(0, today.length - 3) },
     proof: pr,
