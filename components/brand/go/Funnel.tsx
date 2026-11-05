@@ -8,7 +8,7 @@
 import { BrandPicture } from "@/components/brand/BrandPicture";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { beacon } from "@/components/app/beacon";
-import { enablePush } from "@/components/app/push";
+import { PingSetup } from "@/components/app/PingSetup";
 import { CATEGORIES, category as categoryInfo, categoryPhoto, type CategorySlug } from "@/lib/brand/categories";
 import type { AhaCard, GoData } from "@/lib/go/data";
 import { SIZES, WHERE, stakeFor, type Size, type Where } from "@/lib/go/data";
@@ -298,13 +298,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     case "push":
       body = (
         <GoStage testid="go-push">
-          <Lines as="h1" lines={["Ping me when", "they bet."]} size={64} />
-          <p className="b-sub" {...m("lift", 0.58)}>A push the moment a $1M+ wallet bets $25K+ in your categories (Elections on this week), with one tap to copy. At most 8 a day, never 11pm–8am.</p>
-          <div className="b-ctas">
-            <button type="button" className="b-btn b-btn-lg b-primary" data-testid="go-push-on" {...st(0.9)}
-              onClick={async () => { if (vapidKey) await enablePush(vapidKey).catch(() => null); go("follow"); }}>Ping me when they bet<Arrow /></button>
-            <button type="button" className="b-btn b-btn-lg b-ghost" onClick={() => go("follow")} data-testid="go-push-skip" {...st(0.97)}>Not now</button>
-          </div>
+          <PingSetup variant="stage" vapidKey={vapidKey} categories={cats.length ? names(cats) : undefined} onContinue={() => go("follow")} />
         </GoStage>
       );
       break;

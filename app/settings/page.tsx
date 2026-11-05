@@ -10,7 +10,7 @@ import { LocationPill } from "@/components/app/LocationPill";
 import { isReady } from "@/lib/features";
 import { unlockHref } from "@/components/app/links";
 import { Frame } from "@/components/brand/app/Frame";
-import { PingsLink } from "@/components/desk/Act";
+import { PingSetup } from "@/components/app/PingSetup";
 import { Insight, Panel, Pill, Stage } from "@/components/system";
 import { getViewer } from "@/lib/auth/viewer";
 import { fetchMemberships, MANAGE_URL, type MembershipLite } from "@/lib/billing/whop";
@@ -80,13 +80,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           ) : null}
 
           <Panel className="s-form">
-            <h2 className="b-label">Pings</h2>
+            <h2 id="alerts" className="b-label">Pings</h2>
             {!alertsReady ? (
               <div className="b-ctas"><ComingSoon feature="alerts_push" className={BTN}>Phone alerts</ComingSoon><ComingSoon feature="alerts_email" className={BTN}>Email alerts</ComingSoon></div>
             ) : paid ? (
               <>
                 <p className="s-strong">{s.alertPush && devices ? `On for ${devices} ${devices === 1 ? "device" : "devices"}` : s.alertEmail ? "Email alerts on" : "Off"}{s.quietStart && s.quietEnd ? ` · quiet ${s.quietStart}–${s.quietEnd}` : ""}</p>
-                <div className="b-ctas"><PingsLink /></div>
+                <PingSetup variant="panel" />
                 <form method="post" action="/api/settings" className="s-form" data-testid="alert-settings">
                   <label className="s-form b-small">Email pings
                     <select name="alertEmail" defaultValue={s.alertEmail ? "on" : "off"} className="s-input"><option value="on">On</option><option value="off">Off</option></select>

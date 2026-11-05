@@ -41,7 +41,7 @@ test("pay first: /go opens the checkout signed out → pay → Whop sign-in → 
   await expect(page).toHaveURL(/\/go\?step=unlocked/, { timeout: 20_000 });
   await page.getByTestId("go-signin").click();
   await expect(page.getByTestId("go")).toHaveAttribute("data-step", "push", { timeout: 25_000 });
-  await page.getByTestId("go-push-skip").click();
+  await page.getByTestId("ping-next").click();
   await page.getByTestId("go-next").click();
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
   const made = (await q<{ id: string; plan: string; whop_user_id: string; visitor_id: string | null }>("select id, plan, whop_user_id, visitor_id from terminal.users where email = $1", [email]))[0]!;
