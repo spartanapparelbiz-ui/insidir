@@ -36,7 +36,8 @@ const LABELS: Record<SourceFresh["key"], string> = { polymarket: "Polymarket tra
  *  amber). */
 const JOBS: Array<[RegExp, string, number]> = [
   [/^moves$|^moves:polymarket|^poll:polymarket|^polymarket/, "Polymarket trades", 2 * MIN],
-  [/^moves:kalshi|^poll:kalshi|^kalshi/, "Kalshi trades", 2 * MIN],
+  // Not ^kalshi: kalshi:asks (the record's past prices) is its own row and must not light the trades source.
+  [/^moves:kalshi|^poll:kalshi/, "Kalshi trades", 2 * MIN],
   [/^moves:settle$/, "Settlements", 10 * MIN],
   [/^moves:records$/, "Trader records", 5 * MIN],
   [/^moves:proven-backfill$/, "Proven-wallet backfill", MIN],

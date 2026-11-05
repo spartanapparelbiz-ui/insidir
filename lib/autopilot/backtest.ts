@@ -14,6 +14,7 @@ import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { mismatch, stakeLeft, tooLate, type Move, type RuleSpec } from "./rules";
+import { categoryOf } from "@/lib/brand/categories";
 
 export const BACKTEST_DAYS = 180;
 const DAY = 86_400_000;
@@ -113,7 +114,7 @@ const EXCLUDED = new Set(["market maker", "high frequency", "arbitrage"]);
 export async function backtestRows(db: Db, now: number, days = BACKTEST_DAYS): Promise<BtRow[]> {
   const r = await db.execute(sql`
     with m as (
-      select id, wallet, market_id, outcome_side, category, url, market_title, event_title, outcome, amount, avg_price, seen_price, at, result
+      select id, wallet, market_id, outcome_side, category, tab, url, market_title, event_title, outcome, amount, avg_price, seen_price, at, result
       from terminal.moves
       where source = 'polymarket' and hidden_at is null and seen_src = 'history' and seen_price is not null and avg_price > 0
         and at > ${new Date(now - days * DAY)} and wallet in (select wallet from terminal.trader_records)
@@ -128,7 +129,9 @@ export async function backtestRows(db: Db, now: number, days = BACKTEST_DAYS): P
   return (r.rows as Array<Record<string, unknown>>).map(x => {
     const settledThen = Number(x.settled_then ?? 0);
     return {
-      id: String(x.id), wallet: String(x.wallet), marketId: String(x.market_id), side: x.outcome_side === "no" ? "no" as const : "yes" as const, category: String(x.category),
+      id: String(x.id), wallet: String(x.wallet), marketId: String(x.market_id), side: x.outcome_side === "no" ? "no" as const : "yes" as const,
+      // The site's category (what rules filter on: "basketball"), not the move classifier's label ("NBA", "Markets").
+      category: categoryOf({ title: String(x.market_title), event: x.event_title ? String(x.event_title) : null, url: x.url ? String(x.url) : null, tab: x.tab ? String(x.tab) : null }),
       url: x.url ? String(x.url) : null, title: String(x.market_title), eventTitle: String(x.event_title), outcome: String(x.outcome), amount: Number(x.amount),
       theirPrice: Number(x.avg_price), seenPrice: Number(x.seen_price), at: new Date(String(x.at)).getTime(),
       result: x.result === "won" || x.result === "lost" || x.result === "void" ? x.result : null,
