@@ -15,6 +15,11 @@ export interface Candidate { marketId: string; name: string; party: "D" | "R" | 
 export interface RaceCard { key: string; title: string; kind: "control" | "race"; candidates: Candidate[]; total: number; fallback: Race | null }
 export interface ElectionDay { races: RaceCard[]; locked: Array<{ title: string; total: number }>; at: number }
 
+/** Polymarket's unpriced placeholder outcomes ("Party A", "Person B", "Option C"), by their name or their question
+ *  ("Will Party A win the House?"). The letter is a lone capital, so "Option Alpha" or "Party UK" stay. Pure. */
+export const isPlaceholderOutcome = (name: string | null, question: string): boolean =>
+  /^(party|person|option|candidate) [a-z]$/i.test((name ?? question).trim()) || /\b([Pp]arty|[Pp]erson|[Oo]ption|[Cc]andidate) [A-Z]\b/.test(question);
+
 const mil = (m: MarketMoney | undefined) => ({ yes: m?.millionaire.yes.dollars ?? 0, no: m?.millionaire.no.dollars ?? 0 });
 
 export async function electionDay(db: Db, now: number, member: boolean, settled = false): Promise<ElectionDay> {
@@ -32,7 +37,7 @@ export async function electionDay(db: Db, now: number, member: boolean, settled 
     const kind = /\b(control|balance of power|which party)\b/i.test(`${race.title} ${event ?? ""}`) ? "control" : "race";
     const markets = slug ? await eventMarkets(slug).catch(() => []) : [];
     // Polymarket's unpriced placeholder outcomes ("Person A", "Option A") are left out.
-    const top = markets.filter(m => m.price !== null && !/^(party|person|option|candidate) [a-z]$/i.test((m.name ?? m.question).trim()) && !/\b(party|person|option) [A-Z]\b/.test(m.question)).sort((a, b) => (b.price ?? 0) - (a.price ?? 0)).slice(0, 3);
+    const top = markets.filter(m => m.price !== null && !isPlaceholderOutcome(m.name, m.question)).sort((a, b) => (b.price ?? 0) - (a.price ?? 0)).slice(0, 3);
     if (!top.length) return { key: race.marketId, title: race.title, kind, candidates: [], total: race.total, fallback: race };
     const money = new Map((await marketMoney(db, { marketIds: top.map(m => m.marketId), now }).catch(() => [])).map(m => [m.marketId, m]));
     const candidates = top.map(m => ({
