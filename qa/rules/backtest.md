@@ -69,6 +69,6 @@ Categories with no settled bets on Kalshi (elections, politics, baseball, tennis
 
 ## What this means
 
-- Copying proven $1M+ wallets onto Kalshi has lost money in the last 180 days, at every entry rule tested: consensus, first entry, bigger bets, the too-late guard at 3/5/8¢, by entry price, by category.
+- Every rule with 100+ settled bets lost money on Kalshi over the last 180 days: every bet, first entry, tonight's games, the too-late guard at 3/5/8¢, the 50–70¢ band and basketball. Consensus (2+ wallets) lost 24% over 31. The three positive rows (bets of $50K+, Big bets, 70–85¢) have 36 to 67 settled bets, too few to lead.
 - The 50–70¢ entry band holds most of the settled bets (175 of 283) and loses 17.3%.
 - Insidir makes no return claim until a rule clears 100+ settled bets in profit. The report recomputes every 30 minutes; a rule that qualifies leads automatically with its real numbers.
