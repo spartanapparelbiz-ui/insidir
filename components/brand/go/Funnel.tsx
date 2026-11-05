@@ -11,7 +11,8 @@ import { beacon } from "@/components/app/beacon";
 import { PingSetup } from "@/components/app/PingSetup";
 import { CATEGORIES, category as categoryInfo, categoryPhoto, type CategorySlug } from "@/lib/brand/categories";
 import type { AhaCard, GoData } from "@/lib/go/data";
-import { SIZES, WHERE, stakeFor, type Size, type Where } from "@/lib/go/data";
+import { SIZES, WHERE, type Size, type Where } from "@/lib/go/answers";
+import { leadLine } from "@/lib/autopilot/lead-line";
 import { dollars } from "@/lib/money";
 import { Arrow, Lines, m, signedDollars, TierBadge } from "../Bits";
 import { MoneyCard } from "../MoneyCard";
@@ -162,7 +163,8 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
   const hook = d.hook;
   const cats = a.cats.length ? a.cats : [];
   const firstCat = cats[0] ? categoryInfo(cats[0]).name : "your categories";
-  const stake = stakeFor(a.size), rec = d.proof?.record;
+  // The record line: the best rule positive over 100+ settled bets on Kalshi, or none (never "every bet": it lost).
+  const lead = d.lead ? leadLine(d.lead) : null;
 
   let body: ReactNode = null;
   switch (step) {
@@ -241,7 +243,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
         <GoStage testid={unlocked ? "go-unlocked" : "go-aha"}>
           <div className="b-head"><Lines as="h1" lines={unlocked ? ["You're in."] : ["Where they're", "betting now."]} size={64} /></div>
           {waiting ? <p className="b-sub" role="status" data-testid="go-confirming">Confirming your payment with Whop…</p> : d.aha.cards.length ? <AhaCards cards={d.aha.cards} more={d.aha.more} /> : <p className="b-empty">No millionaire money in {firstCat} in the last week yet.</p>}
-          {rec && !unlocked ? <p className="b-small" style={{ marginTop: 16 }} {...m("quiet", 1)} data-testid="go-stake">${stake} on every {d.proof!.label}: {signedDollars(rec.net * stake / 100)} over {rec.n.toLocaleString("en-US")} settled. Past results, not a promise.</p> : null}
+          {lead && !unlocked ? <p className="b-small" style={{ marginTop: 16 }} {...m("quiet", 1)} data-testid="go-record">{lead} Past results, not a promise. <a href="/results">Every rule we tested</a>.</p> : null}
           <div className="b-ctas">
             {unlocked
               ? <a className="b-btn b-btn-lg b-primary" href={signedIn ? "/go?step=save" : `/login/start?next=${encodeURIComponent("/go?step=save")}`} data-testid="go-signin" aria-disabled={waiting}  {...st(1.1, { opacity: waiting ? 0.5 : 1 })}>{signedIn ? "Continue" : "Sign in with Whop"}<Arrow /></a>
@@ -255,7 +257,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       body = (
         <GoStage testid="go-paywall">
           <div className="b-glass b-pad"  {...st(0.3, { width: "100%", maxWidth: 480, textAlign: "left" })}>
-            <Paywall now={now} href="/go?step=checkout" testid="paywall" bullets={PAY_BULLETS}
+            <Paywall now={now} href="/go?step=checkout" testid="paywall" bullets={PAY_BULLETS} record={lead}
               headline={cats.length ? `See which side they took in ${names(cats)}.` : "See which side the millionaires took."}
               onStart={remind => put({ remind })} />
           </div>

@@ -32,6 +32,7 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
       <BrandNav motion election={electionDay(Date.now())} />
       <div className="b-hero-inner">
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
+        <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
         <HeroLine initial={d.pulse} />
         <div className="b-ctas">
           <Pill href="/go" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
@@ -106,14 +107,16 @@ function Markets({ d }: { d: LandingData }) {
   );
 }
 
+/** The record: the leading rule from the Kalshi backtest (positive over 100+ settled at Kalshi's ask + 1¢), or nothing. */
 function Proof({ d }: { d: LandingData }) {
-  if (!d.proof) return null;
-  const r = d.proof.record, net = `${r.net >= 0 ? "+" : "−"}$${Math.abs(Math.round(r.net)).toLocaleString("en-US")}`;
+  if (!d.record) return null;
+  const r = d.record, net = `${r.net >= 0 ? "+" : "−"}$${Math.abs(Math.round(r.net)).toLocaleString("en-US")}`;
   return (
     <Stage bg={{ kind: "photo", photo: slotPhoto("space") }} testid="proof" label="The record">
       <div className="b-center">
         <p className="b-giant b-num" data-testid="proof-net"><span className="ln"><span className="ln-i">{net}</span></span></p>
-        <p className="b-sub" {...m("lift", 0.5)}>$100 on every {d.proof.label} · {r.n.toLocaleString("en-US")} settled</p>
+        <p className="b-sub" {...m("lift", 0.5)}>“{r.name}” on Kalshi · ${r.perBet} a bet · {r.won} won of {r.settled.toLocaleString("en-US")} settled · {r.days} days</p>
+        <p className="b-small" style={{ marginTop: 8 }}><a href="/results">Every rule we tested, losses included</a></p>
         <p className="b-small" style={{ marginTop: 14 }} {...m("quiet", 0.8)}>{PAST}</p>
       </div>
     </Stage>

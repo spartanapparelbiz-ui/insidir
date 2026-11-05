@@ -22,8 +22,10 @@ export function Timeline({ now }: { now: number }) {
   );
 }
 
-export function Paywall({ headline, bullets = PAY_BULLETS, now, href, testid = "paywall", onStart }: {
+export function Paywall({ headline, bullets = PAY_BULLETS, now, href, testid = "paywall", onStart, record = null }: {
   headline: React.ReactNode; bullets?: readonly string[]; now: number; href: string; testid?: string; onStart?: (remind: boolean) => void;
+  /** The leading rule's line (lib/autopilot/lead.ts leadLine), only when one is positive over 100+ settled bets. */
+  record?: string | null;
 }) {
   const [remind, setRemind] = useState(true);
   const go = `${href}${href.includes("?") ? "&" : "?"}remind=${remind ? 1 : 0}`;
@@ -31,6 +33,7 @@ export function Paywall({ headline, bullets = PAY_BULLETS, now, href, testid = "
     <div style={{ display: "grid", gap: 14 }} data-testid={testid}>
       <h2 className="b-modal__h" data-testid="paywall-headline">{headline}</h2>
       <ul className="b-bullets">{bullets.map(b => <li key={b}><Arrow /><span>{b}</span></li>)}</ul>
+      {record ? <p className="b-small" data-testid="paywall-record">{record} Past results, not a promise.</p> : null}
       <Timeline now={now} />
       <label className="b-toggle"><span>Remind me before I&apos;m charged</span><input type="checkbox" checked={remind} onChange={e => setRemind(e.target.checked)} data-testid="paywall-remind" /></label>
       <p className="b-small" style={{ color: "var(--ink-muted)" }} data-testid="paywall-price">${TRIAL.fee} today, then ${PLANS.insidir.price}/month from {chargeDate(now)}. Cancel anytime. 18+ only.</p>

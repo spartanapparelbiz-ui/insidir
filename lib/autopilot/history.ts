@@ -34,24 +34,45 @@ export function askAt(candles: readonly Candle[], side: "yes" | "no", at: number
 
 export interface CandleSource { candles(series: string, ticker: string, fromMs: number, toMs: number, periodMin: 1 | 60): Promise<unknown> }
 
-/** Kalshi asks for recorded bets on twinned markets that don't have one yet, newest first. */
-export async function kalshiAsksOnce(db: Db, src: CandleSource, now: number, batch = 60): Promise<{ read: number; priced: number }> {
+/** Rows with no ask read before this were possibly a failed request saved as "no price" (fixed Nov 4): read again. */
+export const RECHECK_EMPTY_BEFORE = Date.parse("2026-11-05T00:00:00Z");
+/** A run's time budget and one candle request's timeout: a run always ends (a hung run held the job for good). */
+export const ASKS_RUN_MS = 45_000, CANDLE_TIMEOUT_MS = 10_000;
+
+/** Kalshi asks for recorded bets on twinned markets that don't have one yet, newest first. A bet is stored with no ask
+ *  only when Kalshi answered with no candle at that time; a failed or timed-out request stores nothing, so the bet is
+ *  read again later instead of counted off Kalshi for good. */
+export async function kalshiAsksOnce(db: Db, src: CandleSource, now: number, batch = 200, lanes = 6, o: { runMs?: number; timeoutMs?: number } = {}): Promise<{ read: number; priced: number; failed: number }> {
+  const runMs = o.runMs ?? ASKS_RUN_MS, timeoutMs = o.timeoutMs ?? CANDLE_TIMEOUT_MS;
   const r = await db.execute(sql`select m.id, m.outcome_side, m.seen_at, t.kalshi_id from terminal.moves m
       join terminal.market_twins t on t.polymarket_id = m.market_id and t.status = 'approved'
     where m.source = 'polymarket' and m.seen_at is not null and m.at > ${new Date(now - 181 * 86_400_000)}
-      and not exists (select 1 from terminal.kalshi_history h where h.move_id = m.id)
+      and not exists (select 1 from terminal.kalshi_history h where h.move_id = m.id and (h.ask is not null or h.read_at >= ${new Date(RECHECK_EMPTY_BEFORE)}))
     order by m.seen_at desc limit ${batch}`);
-  let priced = 0;
-  for (const x of r.rows as Array<{ id: string; outcome_side: string; seen_at: string; kalshi_id: string }>) {
-    const at = new Date(x.seen_at).getTime(), series = x.kalshi_id.split("-")[0]!;
-    let ask: number | null = null;
-    for (const [from, to, period] of [[at - 10 * MIN, at + 2 * MIN, 1], [at - 3 * 60 * MIN, at + 60 * MIN, 60]] as const) {
-      const c = readCandles(await src.candles(series, x.kalshi_id, from, to, period).catch(() => null));
-      ask = askAt(c, x.outcome_side === "no" ? "no" : "yes", at);
-      if (ask !== null) break;
+  const t0 = Date.now();
+  let priced = 0, failed = 0, read = 0, next = 0;
+  const list = r.rows as Array<{ id: string; outcome_side: string; seen_at: string; kalshi_id: string }>;
+  type Got = { ok: true; raw: unknown } | { ok: false };
+  const timed = (p: Promise<unknown>): Promise<Got> =>
+    Promise.race([p.then((raw): Got => ({ ok: true, raw }), (): Got => ({ ok: false })), new Promise<Got>(ok => setTimeout(() => ok({ ok: false }), timeoutMs))]);
+  // A few bets at once: one at a time left the 180-day fill hours behind; Kalshi's limiter still sets the pace.
+  await Promise.all(Array.from({ length: Math.min(lanes, list.length) }, async () => {
+    while (next < list.length && Date.now() - t0 < runMs) {
+      const x = list[next++]!;
+      const at = new Date(x.seen_at).getTime(), series = x.kalshi_id.split("-")[0]!;
+      let ask: number | null = null, bad = false;
+      for (const [from, to, period] of [[at - 10 * MIN, at + 2 * MIN, 1], [at - 3 * 60 * MIN, at + 60 * MIN, 60]] as const) {
+        const got = await timed(src.candles(series, x.kalshi_id, from, to, period));
+        if (!got.ok) { bad = true; break; }
+        ask = askAt(readCandles(got.raw), x.outcome_side === "no" ? "no" : "yes", at);
+        if (ask !== null) break;
+      }
+      if (bad) { failed++; continue; }
+      await db.execute(sql`insert into terminal.kalshi_history (move_id, kalshi_id, ask, read_at) values (${x.id}, ${x.kalshi_id}, ${ask}, ${new Date(now)})
+        on conflict (move_id) do update set ask = excluded.ask, read_at = excluded.read_at`);
+      read++;
+      if (ask !== null) priced++;
     }
-    await db.execute(sql`insert into terminal.kalshi_history (move_id, kalshi_id, ask, read_at) values (${x.id}, ${x.kalshi_id}, ${ask}, ${new Date(now)}) on conflict (move_id) do nothing`);
-    if (ask !== null) priced++;
-  }
-  return { read: r.rows.length, priced };
+  }));
+  return { read, priced, failed };
 }

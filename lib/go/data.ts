@@ -1,22 +1,17 @@
 /* The /go funnel's data, all live (lib/millionaires/queries.ts): the hook (the newest millionaire bet, its side removed
  * for anyone who hasn't paid), the building screen's real counts, the three aha markets from their categories (the
  * first whole; the other two with their money merged into one total, so which side it is on is never sent), their
- * stake line from the real record, and the wallets to follow. Server only. */
+ * leading rule from the Kalshi backtest (lib/autopilot/lead.ts; none positive over 100+ settled → none), and the wallets
+ * to follow. Server only. */
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { CATEGORY_SLUGS, isCategory, type CategorySlug } from "@/lib/brand/categories";
-import { betsToday, marketMoney, positions, proof, pulse, recentBets, topWallets, VISITOR_DELAY_MS, type BoardBet, type MarketMoney, type Position, type Proof, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
+import { betsToday, marketMoney, positions, pulse, recentBets, topWallets, VISITOR_DELAY_MS, type BoardBet, type MarketMoney, type Position, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
+import { leadRule, type Lead } from "@/lib/autopilot/lead";
 
 const DAY = 86_400_000;
 
-export const WHERE = [["kalshi", "Kalshi"], ["polymarket", "Polymarket"], ["sportsbook", "A sportsbook"], ["watch", "I just watch"]] as const;
-export const SIZES = [["lt25", "Under $25", 20], ["25-100", "$25–100", 50], ["100-500", "$100–500", 250], ["500+", "$500+", 500]] as const;
-export type Where = (typeof WHERE)[number][0];
-export type Size = (typeof SIZES)[number][0];
-export const isWhere = (v: unknown): v is Where => WHERE.some(([k]) => k === v);
-export const isSize = (v: unknown): v is Size => SIZES.some(([k]) => k === v);
-/** The stake their record line is said at (their normal bet). */
-export const stakeFor = (s: Size | null): number => SIZES.find(([k]) => k === s)?.[2] ?? 100;
+export { isSize, isWhere, SIZES, stakeFor, WHERE, type Size, type Where } from "./answers";
 
 /** Their categories as the older onboarding's leagues (lib/read/member.ts BET_ON), so Tonight keeps working. */
 export function betOnFor(cats: readonly string[]): string[] {
@@ -42,7 +37,7 @@ export interface GoData {
   hook: BoardBet | null;
   build: { wallets: number; perCat: Record<string, number> };
   aha: { cards: AhaCard[]; more: number };
-  proof: Proof | null;
+  lead: Lead | null;
   wallets: TopWallet[];
 }
 
@@ -62,7 +57,7 @@ export async function goData(db: Db, cats: readonly CategorySlug[], now: number,
     safe(betsToday(db, cats, now), new Map<string, number>()),
     safe(marketMoney(db, { categories: cats.length ? cats : undefined, since: now - DAY, limit: 20, now }), [] as MarketMoney[]),
     safe(marketMoney(db, { categories: cats.length ? cats : undefined, since: now - 7 * DAY, limit: 3, now }), [] as MarketMoney[]),
-    safe(proof(db, now), null),
+    safe(leadRule(db), null),
     safe(topWallets(db, cats, now, 3), [] as TopWallet[]),
   ]);
   const pool = today.length >= 3 ? today : [...today, ...week.filter(w => !today.some(t => t.marketId === w.marketId))];
@@ -76,7 +71,7 @@ export async function goData(db: Db, cats: readonly CategorySlug[], now: number,
     now, paid, pulse: p, hook: hooks[0] ? (paid ? hooks[0] : { ...hooks[0], pnl: null }) : null, // a wallet's record is for members
     build: { wallets: p.wallets, perCat: Object.fromEntries(perCat) },
     aha: { cards, more: Math.max(0, today.length - 3) },
-    proof: pr,
+    lead: pr,
     wallets: paid ? wallets : [],
   };
 }

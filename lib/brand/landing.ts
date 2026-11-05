@@ -6,14 +6,15 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import type { CategorySlug } from "@/lib/brand/categories";
-import { BOARD_DELAY_MS, lastResults, liveCategories, marketMoney, midnightET, positions, proof, pulse, recentBets, topWallets,
-  type BoardBet, type CategoryLive, type MarketMoney, type Position, type Proof, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
+import { BOARD_DELAY_MS, lastResults, liveCategories, marketMoney, midnightET, positions, pulse, recentBets, topWallets,
+  type BoardBet, type CategoryLive, type MarketMoney, type Position, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
+import { leadRule, type Lead } from "@/lib/autopilot/lead";
 import { memo } from "@/lib/memo";
 import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
 
 let clients: { kalshi: KalshiClient; polymarket: PolymarketClient } | null = null;
 const gapClients = () => (clients ??= { kalshi: new KalshiClient(), polymarket: new PolymarketClient() });
-import { bestRecord, electionBoard, electionDay, priceGaps, pulseData, walletSpotlight, type ElectionBoard, type PriceGap, type Race, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
+import { electionBoard, electionDay, priceGaps, pulseData, walletSpotlight, type ElectionBoard, type PriceGap, type Race, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
 
 const DAY = 86_400_000;
 
@@ -41,7 +42,8 @@ export interface LandingData {
   wallet: (TopWallet & { results: Array<{ title: string; outcome: string; result: "won" | "lost" | "void"; amount: number }> }) | null;
   bigNight: MarketMoney | null;
   categories: { window: "day" | "week"; list: CategoryLive[] };
-  proof: Proof | null;
+  /** The leading rule from the Kalshi backtest, or null (lib/autopilot/lead.ts). */
+  record: Lead | null;
   bestPrice: BestPrice | null;
   /** The Pulse (lib/brand/pulse.ts). */
   pulse2: Pulse2;
@@ -79,7 +81,7 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
     safe(recentBets(db, { now, limit: 3, tier: "millionaire", withSide: true }), [] as BoardBet[]),
     safe(recentBets(db, { now, limit: 2, member }), [] as BoardBet[]),
     safe(liveCategories(db, now), { window: "day" as const, list: [] }),
-    safe(proof(db, now), null),
+    safe(leadRule(db), null),
     safe(topWallets(db, [], now, 1), [] as TopWallet[]),
     safe(bestPrice(db), null),
     safe(recentBets(db, { now, since: now - DAY, limit: 200, member: true, tier: "millionaire" }), [] as BoardBet[]),
@@ -97,14 +99,15 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
     safe(pulseData(db, now, p.sinceMidnight, pool), { today: p.sinceMidnight, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
     electionDay(now) ? safe(electionBoard(db, now, member), null) : Promise.resolve(null),
     safe(walletSpotlight(db), null),
-    safe(bestRecord(db, now), null),
+    // Your stake runs on the leading rule only: the best of many trackers was a pick after the fact.
+    Promise.resolve(pr ? { n: pr.settled, won: pr.won, lost: pr.lost, staked: pr.settled * pr.perBet, net: pr.net, roi: pr.roi, stake: pr.perBet } : null),
     safe(priceGaps(db, gapClients(), now), [] as PriceGap[]),
     safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
     electionDay(now) ? Promise.resolve(null) : safe(electionBoard(db, now, false), null),
   ]);
   return {
     pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
-    now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, proof: pr, bestPrice: best,
+    now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, record: pr, bestPrice: best,
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
     brief: pool.slice(0, 3),
     wallet,
@@ -120,6 +123,6 @@ export function landingFor(db: Db, now: number): Promise<LandingData> {
 /** No database (local preview): every stage in its empty state. */
 export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, topBet: null, race: null, top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
-  categories: { window: "day", list: [] }, proof: null, bestPrice: null,
+  categories: { window: "day", list: [] }, record: null, bestPrice: null,
   pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
 });
