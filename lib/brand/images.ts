@@ -27,7 +27,7 @@ export interface Photo {
 const POS: Record<PhotoFile, string> = {
   hero: "50% 80%", cta: "50% 78%", markets: "60% 75%", politics: "60% 80%", tech: "70% 75%", oil: "66% 75%", hurricane: "30% 45%",
   racing: "50% 60%", tennis: "40% 55%", baseball: "55% 75%", basketball: "30% 40%", soccer: "75% 75%", golf: "40% 55%",
-  football: "50% 60%", hockey: "50% 50%", esports: "50% 55%", elections: "50% 40%", world: "50% 70%", culture: "50% 60%", space: "40% 60%",
+  football: "50% 60%", hockey: "80% 45%", esports: "50% 55%", elections: "50% 40%", world: "50% 70%", culture: "50% 60%", space: "64% 60%",
 };
 const AMBIENT = palette as Record<string, string>;
 

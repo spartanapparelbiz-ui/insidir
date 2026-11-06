@@ -45,7 +45,8 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   // part or none of it (the card then says there's none yet today).
   if (etMinutes > 95) await expect(page.getByTestId("pulse-total")).toContainText("$299K");
   else await expect(page.getByTestId("pulse-total")).toContainText(/\$\d+K|No millionaire money yet today/);
-  await expect(page.getByTestId("pulse-biggest")).toContainText("Millionaire");
+  if (etMinutes > 95) await expect(page.getByTestId("pulse-biggest")).toContainText("Millionaire");
+  else await expect(page.getByTestId("pulse-biggest")).toContainText(/Millionaire|No millionaire bet yet today/);
   await expect(page.getByTestId("pulse-hottest")).toContainText("Chiefs vs. Bills");
   for (const id of ["pulse-total", "pulse-biggest", "pulse-hottest", "pulse-disagree", "pulse-unusual"]) await expect(page.getByTestId(id)).toBeVisible();
   await page.screenshot({ path: shotName("brand-hero", page) });
