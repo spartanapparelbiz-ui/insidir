@@ -7,7 +7,11 @@
  * it again in seconds. MEMORY_RECYCLE_MB=0 turns the restart off; the log line stays.
  *
  * The line splits RSS into the JavaScript heap and memory outside it (Buffers, native), so a leak can be told apart
- * from heap growth by reading the deploy logs ("memory: rss ..."). */
+ * from heap growth by reading the deploy logs ("memory: rss ..."). In production (Nov 6, 2026) the heap held at
+ * 60–90 MB while memory outside it stepped up after big jobs (93 → 417 → 540 MB in the first five minutes) and never
+ * came back down: glibc keeping freed native memory. The worker script (package.json) therefore runs with
+ * MALLOC_ARENA_MAX=2 (fewer per-thread pools holding freed memory) and MALLOC_MMAP_THRESHOLD_=131072 (blocks of
+ * 128 KB or more get their own mapping and go back to the system when freed). */
 
 export const MB = 1024 * 1024;
 export const RECYCLE_DEFAULT_MB = 800;
