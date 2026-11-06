@@ -25,7 +25,8 @@
  *   accuracy  every hour: 20 random moves and 20 profile facts re-read from their sources (lib/accuracy/check.ts);
  *             moves that don't match are hidden until they do; OWNER_EMAIL gets an email when anything is off
  *   memory    every minute: RSS, heap and memory outside the heap into the log; past MEMORY_RECYCLE_MB (800) the
- *             worker stops its jobs, lets running ones finish and exits 0 for Railway to restart (lib/worker/memory.ts)
+ *             worker stops its jobs, lets running ones finish and exits 0 for Railway to restart (lib/worker/memory.ts).
+ *             Any job run that grows RSS by 20 MB or more is logged by name ("memory: <job> +N MB").
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
 import { tagOnce } from "@/lib/trackers-tag";
@@ -71,7 +72,7 @@ import { moneyPathOnce, MONEY_PATH_MS } from "@/lib/monitor/money-path";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import { notesOnce } from "@/lib/analyst/store";
-import { memoryLine, memorySample, memoryStats, overLimit, recycleLimitMb, type MemorySample } from "@/lib/worker/memory";
+import { jobGrowthLine, memoryLine, memorySample, memoryStats, overLimit, recycleLimitMb, type MemorySample } from "@/lib/worker/memory";
 import type { VMarket, Venue } from "@/lib/types";
 import {
   alertableDeals, alertUsers, claimAlert, deactivateStale, dropPush, heartbeat,
@@ -253,8 +254,14 @@ function every(name: string, ms: number, fn: () => Promise<void>): () => void {
     if (running || stopped) return;
     running = true;
     runningJobs.add(name);
+    const rssBefore = process.memoryUsage.rss();
     try { await fn(); } catch (e) { log(`${name} failed: ${errMsg(e)}`); await heartbeat(getDb(), name, false, errMsg(e)).catch(() => undefined); }
-    finally { running = false; runningJobs.delete(name); }
+    finally {
+      running = false;
+      const grew = jobGrowthLine(name, rssBefore, process.memoryUsage.rss(), [...runningJobs]);
+      runningJobs.delete(name);
+      if (grew) log(grew);
+    }
   };
   void tick();
   const t = setInterval(() => void tick(), ms);

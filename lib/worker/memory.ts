@@ -50,6 +50,18 @@ export function recycleLimitMb(env: Record<string, string | undefined> = process
   return Number.isFinite(v) && v >= 0 ? v : RECYCLE_DEFAULT_MB;
 }
 
+/** A job's run that grew RSS by at least this much is logged with its name (see jobGrowthLine). */
+export const JOB_GROWTH_LOG_MB = 20;
+
+/** "memory: sweep +312 MB (rss 498 MB; also running: moves, smart)" when one run of a job grew RSS by
+ *  JOB_GROWTH_LOG_MB or more, else null. Jobs overlap, so the others running at the time are named too. */
+export function jobGrowthLine(job: string, rssBefore: number, rssAfter: number, others: readonly string[]): string | null {
+  const grew = rssAfter - rssBefore;
+  if (grew < JOB_GROWTH_LOG_MB * MB) return null;
+  const also = others.filter(o => o !== job);
+  return `memory: ${job} +${mb(grew)} MB (rss ${mb(rssAfter)} MB${also.length ? `; also running: ${also.join(", ")}` : ""})`;
+}
+
 export function overLimit(s: MemorySample, limitMb: number): boolean {
   return limitMb > 0 && s.rss > limitMb * MB;
 }
