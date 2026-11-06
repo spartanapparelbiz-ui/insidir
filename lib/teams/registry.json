@@ -4773,9 +4773,20 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_cark_60000298.png"
     },
     {
+     "abbr": "ccar",
+     "name": "LaGrange Panthers",
+     "short": "LaGrange Panthers",
+     "color": "#c01b3a",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 200×200, under 400px"
+    },
+    {
      "abbr": "ccmo",
-     "name": "Central Christian (MO) Saints",
-     "short": "Central Christian (MO) Saints",
+     "name": "Central Bible Saints",
+     "short": "Central Bible Saints",
      "color": "#981737",
      "logo": "/teams/cbb/ccmo",
      "dark": false,
@@ -6035,6 +6046,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_jmad_60000126.png"
+    },
+    {
+     "abbr": "jowal",
+     "name": "Johnson & Wales (RI) Wildcats",
+     "short": "Johnson & Wales (RI) Wildcats",
+     "color": "#dfa920",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "kan",
