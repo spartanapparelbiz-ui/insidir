@@ -1,6 +1,6 @@
 /* The worker's memory line and clean-restart limit (lib/worker/memory.ts). SYNTHETIC samples. */
 import { describe, expect, it } from "vitest";
-import { MB, memoryLine, memorySample, memoryStats, overLimit, RECYCLE_DEFAULT_MB, recycleLimitMb, type MemorySample } from "@/lib/worker/memory";
+import { jobGrowthLine, MB, memoryLine, memorySample, memoryStats, overLimit, RECYCLE_DEFAULT_MB, recycleLimitMb, type MemorySample } from "@/lib/worker/memory";
 
 const sample = (rssMb: number, heapUsedMb = 300, heapTotalMb = 400): MemorySample =>
   ({ rss: rssMb * MB, heapUsed: heapUsedMb * MB, heapTotal: heapTotalMb * MB, external: 40 * MB, arrayBuffers: 25 * MB });
@@ -30,5 +30,11 @@ describe("worker memory", () => {
     expect(recycleLimitMb({ MEMORY_RECYCLE_MB: "0" })).toBe(0);
     expect(recycleLimitMb({ MEMORY_RECYCLE_MB: "off" })).toBe(0);
     expect(overLimit(sample(5_000), 0)).toBe(false);
+  });
+
+  it("names a job whose run grew RSS by 20 MB or more, with the others running then", () => {
+    expect(jobGrowthLine("sweep", 100 * MB, 119 * MB, ["sweep"])).toBeNull();
+    expect(jobGrowthLine("sweep", 100 * MB, 412 * MB, ["moves", "sweep", "smart"])).toBe("memory: sweep +312 MB (rss 412 MB; also running: moves, smart)");
+    expect(jobGrowthLine("smart", 400 * MB, 425 * MB, ["smart"])).toBe("memory: smart +25 MB (rss 425 MB)");
   });
 });
