@@ -3,7 +3,7 @@
  * counting watchlist wallets' bets from $5K while everyone else stays at the moves threshold, and every market
  * landing in exactly one category with a photo. */
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, CATEGORY_SLUGS, categoryOf, categoryPhoto, categoryPhotos, isCategory } from "@/lib/brand/categories";
+import { CATEGORIES, CATEGORY_SLUGS, categoryOf, categoryPhoto, categoryPhotos, isCategory, ownPhoto } from "@/lib/brand/categories";
 import { FALLBACK, PHOTOS, SLOT } from "@/lib/brand/images";
 import { betsFrom } from "@/lib/millionaires/bets";
 import { leaningSide, type MarketMoney } from "@/lib/millionaires/queries";
@@ -153,12 +153,23 @@ describe("category map", () => {
     for (const file of Object.values(FALLBACK)) expect(PHOTOS[file]).toBeTruthy();
   });
 
-  it("a row of cards never shows the same photo twice while a fallback is free", () => {
-    // A row never repeats a photo: a category without its own gets none (a plain card), never a borrowed one.
-    expect(categoryPhotos(["soccer", "football"]).map(p => p?.src ?? null)).toEqual(["/brand/soccer.jpg", null]);
-    expect(categoryPhotos(["weather"]).map(p => p?.src ?? null)).toEqual(["/brand/cta.jpg"]);
-    const all = categoryPhotos(CATEGORY_SLUGS).filter(Boolean).map(p => p!.src);
+  it("every category has a photo of its own: no card is ever a plain grey box", () => {
+    for (const slug of CATEGORY_SLUGS) {
+      const p = ownPhoto(slug);
+      expect(p, `${slug} has no photo of its own`).toBeTruthy();
+      expect(existsSync(`public${p!.src}`), slug).toBe(true);
+    }
+  });
+
+  it("a row of cards always has a photo on every card, and never repeats one while another is free", () => {
+    const all = categoryPhotos(CATEGORY_SLUGS).map(p => p.src);
+    expect(all).toHaveLength(CATEGORY_SLUGS.length);
     expect(new Set(all).size).toBe(all.length);
+    expect(categoryPhotos(["weather"]).map(p => p.src)).toEqual(["/brand/cta.jpg"]);
+    // The same category twice: the second card borrows a related photo instead of going blank.
+    const [a, b] = categoryPhotos(["hockey", "hockey"]);
+    expect(a!.src).toBe("/brand/hockey.jpg");
+    expect(b!.src).not.toBe(a!.src);
   });
 
   // The 6K master is never sent as is: next/image delivers AVIF at the width the screen needs (73KB at 3840 wide).

@@ -4,7 +4,7 @@
  * is Hurricane, not Weather; a Fed market is Markets, not Politics). */
 import { sportsLeagueOf } from "@/lib/moves/classify";
 import type { League } from "@/lib/moves/types";
-import { FALLBACK, PHOTOS, type Photo, type PhotoFile } from "./images";
+import { FALLBACK, FALLBACKS, PHOTOS, type Photo, type PhotoFile } from "./images";
 
 export const CATEGORY_SLUGS = [
   "elections", "politics", "football", "basketball", "soccer", "baseball", "tennis", "hockey", "golf", "racing", "esports",
@@ -54,15 +54,18 @@ export function ownPhoto(slug: CategorySlug): Photo | null {
   const f = slug in PHOTOS ? (slug as PhotoFile) : OWN[slug] ?? null;
   return f ? PHOTOS[f] : null;
 }
-/** Photos for a row of categories shown together (/markets, the landing's row): each its own, never one twice; a
- *  category without its own photo gets none (a plain card), never a repeat. */
-export function categoryPhotos(slugs: readonly CategorySlug[]): Array<Photo | null> {
+/** Photos for a row of categories shown together (/markets, the landing's row): each its own, never one twice in a row
+ *  when it can be helped. A category without its own photo, or whose photo another card already took, gets the first
+ *  related one still free (FALLBACKS), then any free photo, and only as a last resort a repeat: a card is never blank. */
+export function categoryPhotos(slugs: readonly CategorySlug[]): Photo[] {
   const used = new Set<string>();
+  const take = (p: Photo) => { used.add(p.src); return p; };
   return slugs.map(slug => {
-    const p = ownPhoto(slug);
-    if (!p || used.has(p.src)) return null;
-    used.add(p.src);
-    return p;
+    const own = ownPhoto(slug);
+    if (own && !used.has(own.src)) return take(own);
+    for (const f of FALLBACKS[slug] ?? []) if (!used.has(PHOTOS[f].src)) return take(PHOTOS[f]);
+    const free = Object.values(PHOTOS).find(p => !used.has(p.src));
+    return free ? take(free) : own ?? categoryPhoto(slug);
   });
 }
 

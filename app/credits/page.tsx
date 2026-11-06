@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { TrustPage } from "@/components/TrustPage";
 import { PHOTOS } from "@/lib/photos";
 import { PEOPLE } from "@/lib/brand/people";
+import { PHOTOS as BRAND_PHOTOS } from "@/lib/brand/images";
+import { CATEGORIES, ownPhoto } from "@/lib/brand/categories";
 
 export const metadata: Metadata = { title: "Credits", description: "Every photo, logo and typeface on Insidir, with its source and license." };
 
@@ -27,7 +29,7 @@ export default function CreditsPage() {
     <TrustPage path="/credits" title="Credits" cta={false}
       lead="Every photo, logo and typeface on Insidir, where it comes from, and the license we use it under. We never use photos of the people behind wallets, and never AI images of real people.">
       <h2>Photos</h2>
-      <p>All {photos.length} photos are from Unsplash, used under the <a href="https://unsplash.com/license" target="_blank" rel="noopener noreferrer">Unsplash License</a>, and served from Unsplash&apos;s own image service.</p>
+      <p>The {photos.length} photos on trackers and page bands are from Unsplash, used under the <a href="https://unsplash.com/license" target="_blank" rel="noopener noreferrer">Unsplash License</a>, and served from Unsplash&apos;s own image service.</p>
       <ul className="credits" data-testid="credits-photos">
         {photos.map(([name, p]) => (
           <li key={name}>
@@ -36,6 +38,21 @@ export default function CreditsPage() {
             <a href={`https://unsplash.com/@${p.user}`} target="_blank" rel="noopener noreferrer">@{p.user}</a>
           </li>
         ))}
+      </ul>
+
+      <h2>Category photos</h2>
+      <p>The photos behind each category&apos;s cards and pages, with their sources and licenses:</p>
+      <ul className="credits" data-testid="credits-categories">
+        {Object.entries(BRAND_PHOTOS).filter(([, p]) => p.credit).map(([name, p]) => {
+          const cats = CATEGORIES.filter(c => ownPhoto(c.slug)?.src === p.src).map(c => c.name).join(", ") || label(name);
+          return (
+            <li key={name}>
+              <span>{cats}</span>:{" "}
+              <a href={p.credit!.source} target="_blank" rel="noopener noreferrer">photo</a> by {p.credit!.by},{" "}
+              <a href={p.credit!.licenseUrl} target="_blank" rel="noopener noreferrer">{p.credit!.license}</a>
+            </li>
+          );
+        })}
       </ul>
 
       <h2>Portraits</h2>

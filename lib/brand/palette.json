@@ -2,14 +2,21 @@
   "baseball": "#757e96",
   "basketball": "#966345",
   "cta": "#7d7596",
+  "culture": "#96794a",
+  "elections": "#3858a8",
+  "esports": "#964973",
+  "football": "#967f49",
   "golf": "#967a42",
   "hero": "#606796",
+  "hockey": "#968075",
   "hurricane": "#346296",
   "markets": "#b7927c",
   "oil": "#a44433",
   "politics": "#1e4996",
   "racing": "#537b96",
   "soccer": "#589196",
+  "space": "#747e96",
   "tech": "#7d7896",
-  "tennis": "#964310"
+  "tennis": "#964310",
+  "world": "#968857"
 }
