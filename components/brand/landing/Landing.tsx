@@ -92,8 +92,8 @@ function Markets({ d }: { d: LandingData }) {
         <div className="b-hrow" data-hrow="" data-testid="category-cards">
           <div className="b-htrack" data-htrack="">
           {list.map((c, i) => (
-            <a key={c.slug} className={`b-ccard${photos[i] ? "" : " b-ccard--plain"}`} href={`/markets/${c.slug}`} data-testid="category-card" data-photo={photos[i]?.src ?? "none"} data-m="settle" style={{ "--d": `${0.5 + i * 0.06}s` } as CSSProperties}>
-              {photos[i] ? <span className="b-ccard__img"><BrandPicture src={photos[i]!.src} fill sizes="(max-width: 552px) 157vw, (max-width: 1160px) 680px, 750px" priority={i < 2} /></span> : <span className="b-ccard__img" aria-hidden="true" />}
+            <a key={c.slug} className="b-ccard" href={`/markets/${c.slug}`} data-testid="category-card" data-photo={photos[i]!.src} data-m="settle" style={{ "--d": `${0.5 + i * 0.06}s` } as CSSProperties}>
+              <span className="b-ccard__img"><BrandPicture src={photos[i]!.src} style={{ objectPosition: photos[i]!.pos }} fill sizes="(max-width: 552px) 157vw, (max-width: 1160px) 680px, 750px" priority={i < 2} /></span>
               <span className="b-ccard__txt">
                 <h3 className="b-ccard__name">{categoryInfo(c.slug).name}</h3>
                 <span className="b-small" style={{ color: "var(--ink-muted)" }}>{c.millionaire ? `${dollars(c.millionaire)} millionaire money ${when}` : `${dollars(c.pro)} Pro money ${when}`}</span>

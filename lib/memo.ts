@@ -1,16 +1,23 @@
 /* A tiny in-process cache for expensive reads that every visitor shares (the home page's moves, Top traders, the
  * trust numbers). Each key is computed at most once per `ttl`; callers arriving while it runs share the same promise.
  * A failed computation is not kept. Per server instance, in memory; fine for data that is a few seconds old anyway. */
-const store = new Map<string, { at: number; value: Promise<unknown> }>();
+const store = new Map<string, { at: number; ttl: number; value: Promise<unknown> }>();
+/** Hard cap: past it, expired entries go first (each by its own ttl), then the oldest, so keys made per minute or per
+ *  id can never grow the long-running worker's memory without bound. */
+export const MEMO_MAX = 1000;
 
 export function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
   const now = Date.now();
   const hit = store.get(key);
   if (hit && now - hit.at < ttlMs) return hit.value as Promise<T>;
   const value = fn();
-  store.set(key, { at: now, value });
+  store.delete(key);
+  store.set(key, { at: now, ttl: ttlMs, value });
   value.catch(() => { if (store.get(key)?.value === value) store.delete(key); });
-  if (store.size > 500) for (const [k, v] of store) if (now - v.at > ttlMs) store.delete(k);
+  if (store.size > MEMO_MAX) {
+    for (const [k, v] of store) if (now - v.at >= v.ttl) store.delete(k);
+    for (const k of store.keys()) { if (store.size <= MEMO_MAX) break; store.delete(k); }
+  }
   return value;
 }
 
@@ -27,6 +34,7 @@ export function memoStale<T>(key: string, ttlMs: number, fn: () => Promise<T>): 
     if (e) e.running = p; else swrStore.set(key, { at: 0, value: undefined, running: p });
     return p;
   };
+  if (swrStore.size > MEMO_MAX) for (const k of swrStore.keys()) { if (swrStore.size <= MEMO_MAX) break; if (k !== key && !swrStore.get(k)?.running) swrStore.delete(k); }
   if (!hit || hit.at === 0) return hit?.running ? (hit.running as Promise<T>) : refresh();
   if (now - hit.at >= ttlMs) void refresh().catch(() => undefined);
   return Promise.resolve(hit.value as T);
