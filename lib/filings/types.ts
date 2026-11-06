@@ -72,6 +72,8 @@ export interface JournalNote {
   pinned: boolean;
   createdAt: number;
   updatedAt: number;
+  /** Earlier versions of the body, newest last (at most NOTE_REVISIONS), each with when it was replaced. */
+  revisions?: Array<{ body: string; at: number }>;
 }
 export interface Journal { cik: string; ticker: string; status: ThesisStatus | null; history: StatusEvent[]; notes: JournalNote[]; version: number; updatedAt: number }
 

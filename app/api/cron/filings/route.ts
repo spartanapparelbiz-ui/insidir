@@ -9,6 +9,7 @@ import { isReady } from "@/lib/features";
 import { filingsOnce } from "@/lib/filings/ingest";
 import { tickersOnce } from "@/lib/filings/tickers";
 import { SecClient } from "@/lib/stocks/sec";
+import { heartbeat } from "@/lib/worker/store";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -28,5 +29,8 @@ export async function GET(req: NextRequest) {
   const db = getDb();
   const tickers = req.nextUrl.searchParams.get("tickers") === "1" ? await tickersOnce(db, sec) : null;
   const run = await filingsOnce(db, sec);
+  // The same heartbeat the worker writes: it drives the terminal's EDGAR light and /status.
+  await heartbeat(db, "filings", run.errors === 0, run.errors ? `${run.errors} errors` : null,
+    { form4: run.form4, eightK: run.eightK, anomalies: run.anomalies, ...(run.lagMs !== null ? { lagP95Sec: Math.round(run.lagMs / 1000) } : {}) });
   return NextResponse.json({ ok: true, run, tickers, requests: sec.stats.requests }, { headers: { "Cache-Control": "no-store" } });
 }

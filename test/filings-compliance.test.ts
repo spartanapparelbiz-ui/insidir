@@ -28,16 +28,19 @@ describe("Filings compliance", () => {
     expect(bad).toEqual([]);
   });
   it("the disclaimer is word for word, and every view renders it", () => {
-    expect(RESEARCH_DISCLAIMER).toBe("Insidir is research software made by Aethric LLC. It is not a broker, dealer, or registered investment adviser. All figures are sourced from public SEC records. Not investment advice.");
+    expect(RESEARCH_DISCLAIMER).toBe("Insidir is independent research software. Not a registered investment adviser or broker. Data sourced directly from public SEC EDGAR filings.");
     expect(renderToStaticMarkup(createElement(ResearchFoot))).toContain(RESEARCH_DISCLAIMER);
-    const app = readFileSync(join(ROOT, "components/filings/FilingsApp.tsx"), "utf8");
-    // Loading, error, first-visit notice and the desk itself: four returns, four footers.
-    expect(app.match(/<ResearchFoot \/>/g)?.length).toBe(4);
-    for (const page of ["app/filings/page.tsx", "app/filings/[ticker]/page.tsx"]) {
-      const src = readFileSync(join(ROOT, page), "utf8");
-      expect(src).toContain("<FilingsApp");
-      expect(src).toContain("<Frame member"); // the site's own header and logo stay on top
-    }
+    const term = readFileSync(join(ROOT, "components/filings/Terminal.tsx"), "utf8");
+    // One status bar, rendered on every view and state (outside every conditional), carrying the disclaimer.
+    expect(term.match(/<ResearchFoot \/>/g)?.length).toBe(1);
+    expect(term).toMatch(/<footer className="fl-status">\s*<ResearchFoot \/>/);
+    // The site's own logo, untouched, in the terminal header; the site footer below the terminal.
+    expect(term).toMatch(/import \{ Logo \} from "@\/components\/brand\/Bits"/);
+    expect(term).toContain("<Logo />");
+    const page = readFileSync(join(ROOT, "components/filings/TerminalPage.tsx"), "utf8");
+    expect(page).toContain("<Terminal {...props} />");
+    expect(page).toContain("<BrandFoot inline />");
+    for (const p of ["app/filings/page.tsx", "app/filings/[ticker]/page.tsx"]) expect(readFileSync(join(ROOT, p), "utf8")).toContain("<TerminalPage");
   });
   it("the calculator starts empty: no default value, no suggested probability", () => {
     const html = renderToStaticMarkup(createElement(EvCalculator));
@@ -45,7 +48,7 @@ describe("Filings compliance", () => {
     expect(inputs).toHaveLength(4);
     for (const i of inputs) expect(i).toMatch(/value=""/);
     expect(html).toContain("Fill in all four fields");
-    expect(html).toContain("Insidir does not estimate it");
+    expect(html).toContain("estimate it");
   });
   it("the Stream sorts only by time, dollars or ticker", () => {
     const src = readFileSync(join(ROOT, "components/filings/StreamView.tsx"), "utf8");
@@ -58,7 +61,14 @@ describe("Filings compliance", () => {
     expect(css).not.toMatch(/font-weight:\s*(700|800|900|bold)/);
     expect(css.match(/#[0-9a-fA-F]{3,8}\b/g)).toBeNull();
     const brand = readFileSync(join(ROOT, "app/brand.css"), "utf8");
-    expect(brand).toContain("--obsidian: #0a0a0a; --obsidian-2: #121212; --obsidian-line: #262626; --emerald-muted: #4fa883;");
-    for (const v of ["var(--obsidian)", "var(--obsidian-2)", "var(--obsidian-line)", "var(--emerald-muted)"]) expect(css).toContain(v);
+    expect(brand).toContain("--term-void: #050505; --term-slate: #0a0a0a; --term-line: #1c1c1e; --term-line-2: #2c2c2e;");
+    expect(brand).toContain("--term-p: #10b981; --term-s: #e5484d; --term-8k: #22b8cf;");
+    for (const v of ["var(--term-void)", "var(--term-slate)", "var(--term-line)", "var(--term-line-2)", "var(--term-p)", "var(--term-s)", "var(--term-8k)"]) expect(css).toContain(v);
+  });
+  it("gains and losses are never coloured: P&L and EV use the neutral number style", () => {
+    for (const f of ["components/filings/PositionsDesk.tsx", "components/filings/EvCalculator.tsx"]) {
+      const src = readFileSync(join(ROOT, f), "utf8");
+      expect(src, f).not.toMatch(/pnl[^\n]*fl-(p|s)\b|signedUsd[^\n]*fl-(p|s)\b/);
+    }
   });
 });

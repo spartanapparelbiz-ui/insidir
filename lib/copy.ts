@@ -77,11 +77,11 @@ export const SAVED = "Saved";
 export const LANDING_MARK = 'data-testid="landing"';
 
 /* ---------- Filings (docs/RESEARCH-DESK.md §2) ---------- */
-/** Under every /filings view, in the first-visit notice and under every calculator. */
+/** In the terminal's status bar on every /filings view, and in the first-visit notice. */
 export const RESEARCH_DISCLAIMER =
-  "Insidir is research software made by Aethric LLC. It is not a broker, dealer, or registered investment adviser. All figures are sourced from public SEC records. Not investment advice.";
-/** Bump to show the first-visit notice again to everyone. */
-export const RESEARCH_DISCLAIMER_V = 1;
+  "Insidir is independent research software. Not a registered investment adviser or broker. Data sourced directly from public SEC EDGAR filings.";
+/** Bump to show the first-visit notice again to everyone (2: the terminal's status-bar wording). */
+export const RESEARCH_DISCLAIMER_V = 2;
 /** Under every calculator and the positions desk: their numbers are the member's, not the SEC's. */
 export const CALC_LINE = "Calculated only from the numbers you entered. Insidir does not supply estimates or advice.";
 /** Words that never appear on a /filings surface (test/filings-compliance.test.ts). */

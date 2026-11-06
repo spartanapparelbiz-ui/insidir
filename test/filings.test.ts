@@ -11,6 +11,9 @@ import { clustersOf, velocityOf, weekOf, whaleOf } from "@/lib/filings/rules";
 import { parseTickers } from "@/lib/filings/tickers";
 import type { FiledLine, FilingRow, Position } from "@/lib/filings/types";
 import { parseOwnership } from "@/lib/stocks/form4";
+import { bucketOf, derive, filterRows, mergeRows, NO_FILTER, type RowFilter } from "@/lib/filings/filter";
+import { JournalBody } from "@/lib/filings/validate";
+import { edgarLight } from "@/components/filings/Terminal";
 
 const fx = (name: string) => readFileSync(join(__dirname, "fixtures/sec", name), "utf8");
 const DAY = 86_400_000;
@@ -168,5 +171,69 @@ describe("ticker directory", () => {
     expect(parseTickers({ 0: { cik_str: 320193, ticker: "aapl", title: "Apple Inc." }, 1: { cik_str: "0000001", ticker: "BRK-B", title: "Berkshire" },
       2: { cik_str: 5, ticker: "AAPL", title: "Dup" }, 3: { cik_str: "x", ticker: "BAD", title: "Bad" }, 4: { cik_str: 6, ticker: "TOO LONG NAME", title: "T" } }))
       .toEqual([{ ticker: "AAPL", cik: "320193", title: "Apple Inc." }, { ticker: "BRK-B", cik: "1", title: "Berkshire" }]);
+  });
+});
+
+describe("terminal filtering (in the browser)", () => {
+  const rows: FilingRow[] = [
+    { ...f4({ owners: [["1", "Huang Jen"]], lines: [{ value: 2_000_000 }] }), id: 10, cik: "1", ticker: "NVDA", company: "NVIDIA" },
+    { ...f4({ owners: [["2", "Kress C"]], lines: [{ code: "S", ad: "D", value: 50_000 }] }), id: 11, cik: "2", ticker: "AAPL", company: "Apple",
+      payload: { kind: "4", owners: [{ cik: "2", name: "Kress C", role: "CFO" }], codes: ["S"], derivativeLines: 0, lines: [{ code: "S", ad: "D", date: "2026-10-21", shares: 10, price: 5000, value: 50_000 }] } },
+    { ...f4({ owners: [], lines: [] }), id: 12, cik: "1", ticker: "NVDA", company: "NVIDIA", form: "8-K", payload: { kind: "8-K", items: ["2.02"] } },
+  ];
+  const run = (o: Partial<RowFilter>) => filterRows(rows, { ...NO_FILTER, ...o }).rows.map(r => r.id);
+  it("text terms all match across ticker, owner, role and codes", () => {
+    expect(run({ q: "nvda" })).toEqual([10, 12]);
+    expect(run({ q: "nvda huang" })).toEqual([10]);
+    expect(run({ q: "cfo" })).toEqual([11]);
+  });
+  it("form, code, dollar threshold, watchlist and velocity filters", () => {
+    expect(run({ forms: ["8-K"] })).toEqual([12]);
+    expect(run({ codes: ["S"] })).toEqual([11]);
+    expect(run({ minUsd: 1_000_000 })).toEqual([10]);
+    expect(run({ ciks: new Set(["2"]) })).toEqual([11]);
+    expect(run({ velocity: new Set(["1"]), forms: ["4"] })).toEqual([10]);
+    expect(run({ velocity: new Set() })).toEqual([]);
+  });
+  it("derived fields are computed once per row", () => {
+    expect(derive(rows[0]!)).toBe(derive(rows[0]!));
+    expect(derive(rows[0]!).p).toBe(2_000_000);
+  });
+  it("10,000 rows filter well under 50 ms", () => {
+    const many = Array.from({ length: 10_000 }, (_, i) => ({ ...rows[i % 3]!, id: i }));
+    filterRows(many, { ...NO_FILTER, q: "warm" });
+    const { ms, rows: out } = filterRows(many, { ...NO_FILTER, q: "nvda", minUsd: 1000 });
+    expect(out.length).toBeGreaterThan(0);
+    expect(ms).toBeLessThan(50);
+  });
+  it("tape buckets and merging", () => {
+    expect(bucketOf(0)).toBe(0);
+    expect(bucketOf(199)).toBe(0);
+    expect(bucketOf(200)).toBe(1);
+    expect(mergeRows([rows[0]!, rows[1]!], [rows[1]!, rows[2]!]).map(r => r.id)).toEqual([12, 11, 10]);
+  });
+});
+
+describe("the EDGAR light", () => {
+  const NOW = Date.UTC(2026, 10, 6, 21);
+  it("green after a recent good read, white when stale, red on failure, grey with no data", () => {
+    expect(edgarLight({ lastRunAt: NOW - 30_000, lastOkAt: NOW - 30_000, ok: true }, NOW)).toMatchObject({ tone: "ok", label: "EDGAR 30s" });
+    expect(edgarLight({ lastRunAt: NOW - 600_000, lastOkAt: NOW - 600_000, ok: true }, NOW)).toMatchObject({ tone: "warn", label: "EDGAR 10m" });
+    expect(edgarLight({ lastRunAt: NOW, lastOkAt: NOW - 120_000, ok: false }, NOW).tone).toBe("down");
+    expect(edgarLight(null, NOW).tone).toBe("idle");
+  });
+});
+
+describe("journal bodies", () => {
+  const note = { id: "n", body: "x", anchor: null, pinned: false, createdAt: 1, updatedAt: 2 };
+  it("accepts up to 10 revisions per note and refuses more", () => {
+    const revs = (n: number) => Array.from({ length: n }, (_, i) => ({ body: `v${i}`, at: i }));
+    const ok = JournalBody.safeParse({ ticker: "nvda", status: null, reason: null, version: 0, notes: [{ ...note, revisions: revs(10) }] });
+    expect(ok.success).toBe(true);
+    expect(JournalBody.safeParse({ ticker: "NVDA", status: null, reason: null, version: 0, notes: [{ ...note, revisions: revs(11) }] }).success).toBe(false);
+  });
+  it("refuses a journal over 1 MB", () => {
+    const big = Array.from({ length: 60 }, (_, i) => ({ ...note, id: `n${i}`, body: "x".repeat(19_000) }));
+    expect(JournalBody.safeParse({ ticker: "NVDA", status: null, reason: null, version: 0, notes: big }).success).toBe(false);
   });
 });

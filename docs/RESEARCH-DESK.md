@@ -16,6 +16,10 @@ conflict on an SEC surface, this file wins. Billing, Whop, auth and pricing ($39
 >   (status, history and notes). Positions are one JSON document per member.
 > - The Cluster rule uses calendar weeks (Monday–Sunday), as in "the same week", instead of a rolling 7-day anchor.
 > - XBRL, Wikidata and delayed quotes are not built yet. P&L uses a mark the member types.
+> - The UI is a terminal (Nov 6, 2026, second pass): see the README's Filings section. The status-bar disclaimer reads
+>   "Insidir is independent research software. Not a registered investment adviser or broker. Data sourced directly
+>   from public SEC EDGAR filings." (`RESEARCH_DISCLAIMER`, version 2, so members accept it again). Colour now marks
+>   record type only: code P emerald, code S crimson, 8-K cyan; gains and losses stay uncoloured.
 
 ---
 

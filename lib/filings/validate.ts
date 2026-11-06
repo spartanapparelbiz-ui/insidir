@@ -22,6 +22,7 @@ const Note = z.object({
   pinned: z.boolean(),
   createdAt: z.number().int().nonnegative(),
   updatedAt: z.number().int().nonnegative(),
+  revisions: z.array(z.object({ body: z.string().max(LIMITS.noteChars), at: z.number().int().nonnegative() })).max(LIMITS.noteRevisions).optional(),
 });
 
 export const JournalBody = z.object({
@@ -30,7 +31,7 @@ export const JournalBody = z.object({
   reason: z.string().trim().max(LIMITS.reason).nullable(),
   notes: z.array(Note).max(LIMITS.notesPerCompany),
   version: z.number().int().nonnegative(),
-});
+}).refine(j => JSON.stringify(j.notes).length <= LIMITS.journalBytes, { message: "This company's journal is full. Delete old notes or revisions." });
 
 const Position = z.object({
   id: z.string().min(1).max(40),

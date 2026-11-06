@@ -118,8 +118,9 @@ describe("the old product's names are gone", () => {
 describe("every page is on the brand shell", () => {
   /** The homepage system's frames: Frame (visitors: brand nav and footer; members: the app shell), the text-page shell
    *  (TrustPage), the landing, the /go funnel, the member home, or a .b-root page of its own. Admin and the dev gallery
-   *  aside. No old SiteHeader, SiteFooter, Wordmark or AuthSplit anywhere. */
-  const SHELL = /<Frame\b|<TrustPage\b|<Landing\b|<Funnel\b|<HomePage\b|<Shell\b|className="b-root"/;
+   *  aside, and the Filings terminal (components/filings/TerminalPage: a .b-root page with the site's logo and footer).
+   *  No old SiteHeader, SiteFooter, Wordmark or AuthSplit anywhere. */
+  const SHELL = /<Frame\b|<TrustPage\b|<Landing\b|<Funnel\b|<HomePage\b|<Shell\b|<TerminalPage\b|className="b-root"/;
   it("every page, the 404 and the error page render inside it", () => {
     const pagesOff = [...files("app", /^(page|not-found|error)\.tsx$/)].filter(f => !/^app\/(admin|dev)\//.test(f) && !SHELL.test(readFileSync(f, "utf8")));
     expect(pagesOff).toEqual([]);

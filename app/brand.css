@@ -26,8 +26,10 @@
   --yes: #3DD68C; --no: #FF6B6B;       /* the data colours (= --up / --down) */
   --dem: #4C8DFF; --rep: #FF4D5E;      /* election rows only: the D / R chip */
   --violet: #a78bfa;                   /* focus, the active nav item, a new live row's glow */
-  /* Filings (components/filings, docs/RESEARCH-DESK.md): obsidian surfaces, and code P's muted emerald (nothing else). */
-  --obsidian: #0a0a0a; --obsidian-2: #121212; --obsidian-line: #262626; --emerald-muted: #4fa883;
+  /* The Filings terminal (components/filings, docs/RESEARCH-DESK.md): void and slate surfaces, hairlines, and one colour
+   * per SEC record type (code P purchase, code S sale, 8-K event). Never used for gains or losses. */
+  --term-void: #050505; --term-slate: #0a0a0a; --term-line: #1c1c1e; --term-line-2: #2c2c2e;
+  --term-p: #10b981; --term-s: #e5484d; --term-8k: #22b8cf;
   --e-reveal: cubic-bezier(.16, 1, .3, 1);
   --e-soft: cubic-bezier(.25, .8, .3, 1);
   --gut: calc(40 * var(--u));

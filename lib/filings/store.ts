@@ -2,11 +2,12 @@
  *   - The shared feed is one query per 10 s per server instance however many members poll (memo), served by slicing.
  *   - Per-member reads happen on page load only (watched filings since a time, one indexed query), never per poll.
  *   - Member writes are one row each: a watchlist, a company's journal, the positions document, the read cursor. */
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, between, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { filingAnomalies, issuerTickers, researchJournal, researchMembers, secFilings, userWatchlists } from "@/lib/db/schema";
+import { filingAnomalies, issuerTickers, researchJournal, researchMembers, secFilings, userWatchlists, workerHeartbeats } from "@/lib/db/schema";
 import { memo } from "@/lib/memo";
 import { toRow } from "./ingest";
+import { TAPE_BUCKET } from "./filter";
 export { LIMITS } from "./limits";
 import type { AnomalyRow, FilingRow, Journal, JournalNote, MemberState, Position, StatusEvent, ThesisStatus, Watchlist } from "./types";
 
@@ -20,15 +21,31 @@ export const latestFilings = (db: Db): Promise<FilingRow[]> => memo("filings:lat
 
 /** Filings after a cursor, from the shared cache. `gap` when the cursor is older than the cache holds: the client then
  *  reloads its watched companies with watchedSince. */
-export async function feedAfter(db: Db, after: number): Promise<{ rows: FilingRow[]; cursor: number; gap: boolean }> {
-  const all = await latestFilings(db);
+export interface EdgarHealth { lastRunAt: number | null; lastOkAt: number | null; ok: boolean | null; lagP95Sec: number | null }
+
+/** The poller's own heartbeat (worker job or cron run "filings"): when EDGAR was last read, and whether that worked.
+ *  Shared with the feed's cache, so the terminal's EDGAR light costs no extra read per member. */
+export const edgarHealth = (db: Db): Promise<EdgarHealth> => memo("filings:health", FEED_CACHE_MS, async () => {
+  const [h] = await db.select().from(workerHeartbeats).where(eq(workerHeartbeats.job, "filings"));
+  const lag = Number(h?.stats?.lagP95Sec);
+  return { lastRunAt: h?.lastRunAt.getTime() ?? null, lastOkAt: h?.lastOkAt?.getTime() ?? null, ok: h?.ok ?? null, lagP95Sec: Number.isFinite(lag) ? lag : null };
+});
+
+export async function feedAfter(db: Db, after: number): Promise<{ rows: FilingRow[]; cursor: number; gap: boolean; edgar: EdgarHealth }> {
+  const [all, edgar] = await Promise.all([latestFilings(db), edgarHealth(db)]);
   const cursor = all[0]?.id ?? after;
   const oldest = all.at(-1)?.id ?? 0;
   // A first poll only learns the cursor: the page has already loaded its watched companies with watchedSince.
-  if (after <= 0) return { rows: [], cursor, gap: false };
-  if (after > 0 && all.length === FEED_SIZE && after < oldest - 1) return { rows: [], cursor, gap: true };
-  return { rows: all.filter(r => r.id > after), cursor, gap: false };
+  if (after <= 0) return { rows: [], cursor, gap: false, edgar };
+  if (after > 0 && all.length === FEED_SIZE && after < oldest - 1) return { rows: [], cursor, gap: true, edgar };
+  return { rows: all.filter(r => r.id > after), cursor, gap: false, edgar };
 }
+
+/** One page of the tape: every shown filing whose id falls in bucket `b` (ids b×TAPE_BUCKET … +TAPE_BUCKET−1),
+ *  newest first. Filings are written once and never change, so a bucket below the newest is immutable: it is cached
+ *  for 10 minutes here and for a day in the browser, and every member scrolling back reads the same cached pages. */
+export const tapeBucket = (db: Db, b: number, newest: boolean): Promise<FilingRow[]> => memo(`filings:tape:${b}`, newest ? FEED_CACHE_MS : 600_000, async () =>
+  (await db.select().from(secFilings).where(and(between(secFilings.id, b * TAPE_BUCKET, b * TAPE_BUCKET + TAPE_BUCKET - 1), shown)).orderBy(desc(secFilings.id))).map(toRow));
 
 /** A member's watched companies' filings since a time (page load only; index sec_filings_issuer_idx). */
 export async function watchedSince(db: Db, ciks: readonly string[], since: number, limit = 500): Promise<FilingRow[]> {

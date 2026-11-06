@@ -8,12 +8,15 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { eq } from "drizzle-orm";
 import pg from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { filingsOnce } from "@/lib/filings/ingest";
 import { acknowledge, exportAll, feedAfter, markSeen, memberState, resolveTicker, saveJournal, savePositions, saveWatchlists, watchedSince } from "@/lib/filings/store";
 import { tickersOnce } from "@/lib/filings/tickers";
+import { edgarHealth, tapeBucket } from "@/lib/filings/store";
+import { sourceFor } from "@/lib/filings/source";
+import { heartbeat } from "@/lib/worker/store";
 import type { Position } from "@/lib/filings/types";
 import { SecClient } from "@/lib/stocks/sec";
 
@@ -153,6 +156,28 @@ describe.skipIf(!URL0)("Filings in Postgres", () => {
     expect(s).toMatchObject({ seenId: 7, ackVersion: 1, positions: [p], positionsVersion: 1 });
     const out = await exportAll(db, "usr_a");
     expect(out).toMatchObject({ positions: [p], journals: [{ ticker: "EXDV", status: "passed" }] });
+  });
+
+  it("tape pages are id buckets of shown filings; EDGAR health rides on the feed; source documents fail soft", async () => {
+    const all = await db.select({ id: schema.secFilings.id, acc: schema.secFilings.accession }).from(schema.secFilings);
+    const page = await tapeBucket(db, 0, true);
+    expect(page.map(r => r.id)).toEqual(all.filter(r => r.acc !== "000000000226000888").map(r => r.id).sort((x, y) => y - x));
+    expect(await tapeBucket(db, 5, false)).toEqual([]);
+    await heartbeat(db, "filings", true, null, { lagP95Sec: 42 });
+    // The health read is cached with the feed for 10 s, and an earlier test already filled it: step past the cache.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 11_000);
+    const h = await edgarHealth(db);
+    vi.useRealTimers();
+    expect(h).toMatchObject({ ok: true, lagP95Sec: 42 });
+    expect(h.lastOkAt).toBeGreaterThan(0);
+    const prev = process.env.SEC_USER_AGENT;
+    delete process.env.SEC_USER_AGENT;
+    expect(await sourceFor(db, "123")).toBe("not-found");
+    expect(await sourceFor(db, "999999999999999999")).toBe("not-found");
+    expect(await sourceFor(db, "000032019326000205")).toBe("no-xml");      // an 8-K
+    expect(await sourceFor(db, ACC)).toBe("unavailable");                   // no SEC client on this service
+    process.env.SEC_USER_AGENT = prev;
   });
 
   it("deleting an account deletes its lists, journal and desk", async () => {
