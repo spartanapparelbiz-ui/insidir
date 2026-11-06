@@ -222,6 +222,27 @@ describe("the poller", () => {
     expect(second[0]).toMatchObject({ wallet: W, amount: 12_000, fills: 2 });
     expect(await poller.pollKalshi(T0, new Map(), info)).toEqual([]);
   });
+
+  it("Kalshi: a trade re-read in the 5 s overlap counts once, and ids older than a minute behind the newest are dropped", async () => {
+    const market = { id: "KXNFLGAME-26NOV09KCBUF-KC", venue: "kalshi", title: "Chiefs vs. Bills winner?", eventTitle: "Chiefs vs. Bills", yesLabel: "Chiefs", noLabel: "Bills",
+      url: "https://kalshi.com/markets/kxnflgame", category: "sports", seriesId: "KXNFLGAME", eventId: "KXNFLGAME-26NOV09KCBUF" } as unknown as VMarket;
+    const trade = (id: string, at: number) => ({ trade_id: id, ticker: market.id, count: 10_000, yes_price: 55, no_price: 45, taker_side: "yes", created_time: new Date(at).toISOString() });
+    const polls = [[trade("t1", T0)], [trade("t1", T0), trade("t2", T0 + 2 * MIN)], [trade("t2", T0 + 2 * MIN), trade("t3", T0 + 2 * MIN + 10_000)]];
+    let n = 0;
+    const poller = new MovesPoller({
+      polyTradesPage: async () => [],
+      polyWalletTrades: async () => [],
+      kalshiTradesPage: async () => ({ trades: polls[n++] ?? [], cursor: "" }),
+    });
+    const markets = new Map([[market.id, market]]);
+    const kInfo = new Map([[market.id, { category: "sports", labels: ["KXNFLGAME"], url: market.url }]]);
+    const seen = () => (poller as unknown as { kalshiSeen: Map<string, number> }).kalshiSeen;
+    expect((await poller.pollKalshi(T0 + 15_000, markets, kInfo)).map(m => m.id)).toEqual(["ks:t1"]);
+    expect((await poller.pollKalshi(T0 + 2 * MIN + 5_000, markets, kInfo)).map(m => m.id)).toEqual(["ks:t2"]);
+    expect([...seen().keys()]).toEqual(["t2"]);
+    expect((await poller.pollKalshi(T0 + 2 * MIN + 15_000, markets, kInfo)).map(m => m.id)).toEqual(["ks:t3"]);
+    expect([...seen().keys()]).toEqual(["t2", "t3"]);
+  });
 });
 
 /* ---------- V2 step 3: alerts, the daily email, share cards and posts ---------- */
