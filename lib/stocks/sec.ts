@@ -21,10 +21,12 @@ export function allowedSecUrl(input: string): boolean {
     if (u.hostname === "data.sec.gov") return !u.search && /^\/submissions\/CIK\d{10}\.json$/.test(u.pathname);
     if (u.hostname !== "www.sec.gov") return false;
     if (/^\/Archives\/edgar\/data\/\d+\/\d{18}\/[A-Za-z0-9_.-]+$/.test(u.pathname)) return !u.search;
-    // The current-filings Atom feed for Form 4, paged.
+    // The ticker ↔ CIK directory (lib/filings/tickers.ts), read once a day and skipped when its hash is unchanged.
+    if (u.pathname === "/files/company_tickers.json") return !u.search;
+    // The current-filings Atom feed for Form 4 and 8-K (lib/filings/ingest.ts), paged.
     if (u.pathname === "/cgi-bin/browse-edgar") {
       const keys = [...u.searchParams.keys()].sort().join(",");
-      return u.searchParams.get("action") === "getcurrent" && u.searchParams.get("type") === "4" && u.searchParams.get("output") === "atom" &&
+      return u.searchParams.get("action") === "getcurrent" && ["4", "8-K"].includes(u.searchParams.get("type") ?? "") && u.searchParams.get("output") === "atom" &&
         (keys === "action,count,output,type" || keys === "action,count,output,start,type");
     }
     return false;

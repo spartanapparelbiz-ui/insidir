@@ -75,3 +75,16 @@ export const SAVED = "Saved";
 
 /** What the money-path monitor looks for on the home page: the landing's own marker (components/brand/landing). */
 export const LANDING_MARK = 'data-testid="landing"';
+
+/* ---------- Filings (docs/RESEARCH-DESK.md §2) ---------- */
+/** Under every /filings view, in the first-visit notice and under every calculator. */
+export const RESEARCH_DISCLAIMER =
+  "Insidir is research software made by Aethric LLC. It is not a broker, dealer, or registered investment adviser. All figures are sourced from public SEC records. Not investment advice.";
+/** Bump to show the first-visit notice again to everyone. */
+export const RESEARCH_DISCLAIMER_V = 1;
+/** Under every calculator and the positions desk: their numbers are the member's, not the SEC's. */
+export const CALC_LINE = "Calculated only from the numbers you entered. Insidir does not supply estimates or advice.";
+/** Words that never appear on a /filings surface (test/filings-compliance.test.ts). */
+export const RESEARCH_BANNED = [/\bsignals?\b/i, /\balpha\b/i, /\bprice targets?\b/i, /\btarget price\b/i, /\bfair value\b/i, /\bupside\b/i, /\boutperform/i,
+  /\bunderperform/i, /\bstrong buy\b/i, /\bconviction\b/i, /\bbullish\b/i, /\bbearish\b/i, /\bwe recommend\b/i, /\bsmart money\b/i, /\byou should\b/i, /\bfollow the insiders\b/i];
+export const researchBanned = (text: string): string[] => [...bannedPhrases(text), ...RESEARCH_BANNED.filter(r => r.test(text)).map(r => r.source)];

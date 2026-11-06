@@ -15,6 +15,9 @@
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
  *             and resolved positions every 5 min, the public leaderboard's wallets every 6 h, profile pictures daily (lib/moves/jobs.ts)
  *   stocks    off: no SEC or stock-price jobs
+ *   filings   every FILINGS_MS (60 s), only with "filings" in FEATURES_READY: EDGAR's Form 4 and 8-K feeds, each filing
+ *             stored once (terminal.sec_filings), the Cluster & Whale Stream computed on the spot; the SEC ticker
+ *             directory daily, rewritten only when it changed (lib/filings)
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *   follow:seen every minute: the price Insidir showed each position at and the tag times of Momentum / Early / Late
  *             (lib/follow/seen.ts), new positions first, then the backlog
@@ -44,6 +47,8 @@ import { provenBackfillOnce } from "@/lib/moves/proven-backfill";
 import { refreshWatchlist, WATCHLIST_MS, WatchCache, watchlistAge } from "@/lib/millionaires/watchlist";
 import { avatarsOnce, dedupeOnce, leagueBackfillOnce, repairSwappedOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { SecClient } from "@/lib/stocks/sec";
+import { FILINGS_MS, filingsOnce } from "@/lib/filings/ingest";
+import { TICKERS_MS, tickersOnce } from "@/lib/filings/tickers";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -439,6 +444,20 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       }),
     ] : []),
     // Stocks are off: no SEC or stock-price jobs.
+    // Filings (lib/filings, docs/RESEARCH-DESK.md): the one EDGAR poller for Form 4 and 8-K, once FEATURES_READY has
+    // "filings" and SEC_USER_AGENT is set. Each filing is written once and shared by every member.
+    ...(sec && isReady("filings") ? [
+      every("filings", FILINGS_MS, async () => {
+        const db = getDb(), r = await filingsOnce(db, sec);
+        await heartbeat(db, "filings", r.errors === 0, r.errors ? `${r.errors} errors` : null,
+          { form4: r.form4, eightK: r.eightK, anomalies: r.anomalies, ...(r.lagMs !== null ? { lagP95Sec: Math.round(r.lagMs / 1000) } : {}) });
+        if (r.form4 || r.eightK || r.errors) log(`filings: ${r.form4} Form 4, ${r.eightK} 8-K, ${r.anomalies} Stream matches, ${r.errors} errors`);
+      }),
+      every("filings:tickers", TICKERS_MS, async () => {
+        const r = await tickersOnce(getDb(), sec);
+        if (r.changed) log(`filings: ticker directory updated, ${r.rows} tickers`);
+      }),
+    ] : []),
     every("ratelimits", 60_000, async () => {
       const s = rateLimitStats();
       log("rate limits:", Object.entries(s).map(([k, v]) => `${k} ${v.requests} req, ${v.rateLimited} 429s, ${v.retries} retries`).join(" | "));

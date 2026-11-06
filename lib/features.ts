@@ -16,6 +16,7 @@ export const FEATURES = {
   price_gaps: "Price gaps",
   crypto: "Crypto",
   stocks: "Stocks",
+  filings: "Filings",
 } as const;
 export type Feature = keyof typeof FEATURES;
 

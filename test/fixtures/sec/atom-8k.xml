@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!-- Hand-written in the shape of EDGAR's getcurrent&type=8-K Atom feed (same layout as atom-current.xml). -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Latest Filings - Mon, 26 Oct 2026 16:35:02 EDT</title>
+<entry>
+<title>8-K - Example Devices Inc. (0000320193) (Filer)</title>
+<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/320193/000032019326000205/0000320193-26-000205-index.htm"/>
+<summary type="html"> &lt;b&gt;Filed:&lt;/b&gt; 2026-10-26 &lt;b&gt;AccNo:&lt;/b&gt; 0000320193-26-000205 &lt;b&gt;Size:&lt;/b&gt; 2 MB&lt;br&gt;Item 2.02: Results of Operations and Financial Condition&lt;br&gt;Item 9.01: Financial Statements and Exhibits</summary>
+<updated>2026-10-26T16:31:07-04:00</updated>
+<category scheme="https://www.sec.gov/" label="form type" term="8-K"/>
+<id>urn:tag:sec.gov,2008:accession-number=0000320193-26-000205</id>
+</entry>
+<entry>
+<title>8-K/A - Other Co (0000000002) (Filer)</title>
+<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/2/000000000226000999/0000000002-26-000999-index.htm"/>
+<summary type="html"> &lt;b&gt;Filed:&lt;/b&gt; 2026-10-26 &lt;b&gt;AccNo:&lt;/b&gt; 0000000002-26-000999 &lt;b&gt;Size:&lt;/b&gt; 40 KB&lt;br&gt;Item 5.02: Departure of Directors or Certain Officers</summary>
+<updated>2026-10-26T16:20:00-04:00</updated>
+<category scheme="https://www.sec.gov/" label="form type" term="8-K/A"/>
+</entry>
+<entry>
+<title>8-K12B - Prefix Match Corp (0000000003) (Filer)</title>
+<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/3/000000000326000001/0000000003-26-000001-index.htm"/>
+<updated>2026-10-26T16:10:00-04:00</updated>
+<category scheme="https://www.sec.gov/" label="form type" term="8-K12B"/>
+</entry>
+<entry>
+<title>8-K - Off Site Inc (0000000004) (Filer)</title>
+<link rel="alternate" type="text/html" href="https://example.com/Archives/edgar/data/4/000000000426000001/x-index.htm"/>
+<updated>2026-10-26T16:05:00-04:00</updated>
+<category scheme="https://www.sec.gov/" label="form type" term="8-K"/>
+</entry>
+<entry>
+<title>8-K - Example Devices Inc. (0000320193) (Filer)</title>
+<link rel="alternate" type="text/html" href="https://www.sec.gov/Archives/edgar/data/320193/000032019326000205/0000320193-26-000205-index.htm"/>
+<updated>2026-10-26T16:31:07-04:00</updated>
+<category scheme="https://www.sec.gov/" label="form type" term="8-K"/>
+</entry>
+</feed>

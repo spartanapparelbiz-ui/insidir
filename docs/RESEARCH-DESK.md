@@ -7,6 +7,16 @@ Positions & paper-trail desk) and the legal framework that wraps them. Written a
 Code comments cite sections of this file as `docs/RESEARCH-DESK.md §N`. Where this file and `docs/INSIDIR-V2.md`
 conflict on an SEC surface, this file wins. Billing, Whop, auth and pricing ($39/mo) stay as they are.
 
+> **Built (Nov 6, 2026), with these changes from the plan below.** `/research` is a retired route (301 to `/board`),
+> so the desk lives at **`/filings`** and **`/filings/<TICKER>`**. The code is in `lib/filings/`, `components/filings/` and
+> `app/api/filings/`. To keep costs down, the data model is leaner than §4:
+> - Alerts are not written once per member. `sec_filings` is written once per filing and is the feed. Each browser
+>   filters the shared feed by its own watchlists, and per member only a read cursor is stored.
+> - Watchlists are stored as one row per list (a JSON array of companies). The journal is one row per company
+>   (status, history and notes). Positions are one JSON document per member.
+> - The Cluster rule uses calendar weeks (Monday–Sunday), as in "the same week", instead of a rolling 7-day anchor.
+> - XBRL, Wikidata and delayed quotes are not built yet. P&L uses a mark the member types.
+
 ---
 
 ## §0 Where the code is today (read before building)

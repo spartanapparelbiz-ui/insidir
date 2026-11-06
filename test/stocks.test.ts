@@ -146,7 +146,11 @@ describe("SEC client", () => {
     expect(allowedSecUrl("https://www.sec.gov/Archives/edgar/data/320193/000032019326000101/index.json")).toBe(true);
     expect(allowedSecUrl("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=100&start=100")).toBe(true);
     expect(allowedSecUrl("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=1")).toBe(false);
-    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers.json")).toBe(false);
+    expect(allowedSecUrl("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&output=atom&count=100")).toBe(true);
+    expect(allowedSecUrl("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-K&output=atom&count=100")).toBe(false);
+    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers.json")).toBe(true);
+    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers.json?x=1")).toBe(false);
+    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers_exchange.json")).toBe(false);
     expect(allowedSecUrl("http://data.sec.gov/submissions/CIK0001067983.json")).toBe(false);
     expect(allowedSecUrl("https://efts.sec.gov/LATEST/search-index?q=house")).toBe(false);
   });

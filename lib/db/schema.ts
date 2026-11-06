@@ -1,7 +1,7 @@
 /* Insidir Terminal's tables, in their own PostgreSQL schema ("terminal") so they never collide with the old
  * stock product's tables in the same Railway database (those are left untouched). Drizzle ORM. */
 import type { NearMiss } from "@/lib/engines/near-miss";
-import { boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { MarketPair, Opportunity, Plan, Region, Safety, Venue, VMarket, WhaleTrade } from "@/lib/types";
 
 export const terminal = pgSchema("terminal");
@@ -1065,4 +1065,95 @@ export const twinAttempts = terminal.table("twin_attempts", {
   slug: text("slug").primaryKey(),
   found: boolean("found").notNull(),
   at: timestamp("at", { withTimezone: true }).notNull(),
+});
+
+/* ───────── Filings: SEC Form 4 / 8-K intelligence for members (lib/filings, docs/RESEARCH-DESK.md) ───────── */
+
+/** Every Form 4, 4/A, 8-K and 8-K/A the poller found, written once per filing and shared by every member: it is the
+ *  alert feed (members filter it by their watchlists in the browser), the company report and the position paper
+ *  trail. `id` is the cursor clients poll from. `payload` is the compact parse (lib/filings/types.ts FilingPayload). */
+export const secFilings = terminal.table("sec_filings", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  accession: text("accession").notNull(),
+  form: text("form").$type<import("@/lib/filings/types").FormType>().notNull(),
+  issuerCik: text("issuer_cik").notNull(),
+  ticker: text("ticker"),
+  company: text("company").notNull(),
+  /** EDGAR's acceptance time (the Atom entry); detectedAt − acceptedAt is the latency /status reports. */
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }).notNull(),
+  detectedAt: timestamp("detected_at", { withTimezone: true }).notNull().defaultNow(),
+  /** The filing date ("YYYY-MM-DD", Eastern) for date-range reads. */
+  filedOn: text("filed_on").notNull(),
+  url: text("url").notNull(),
+  payload: jsonb("payload").$type<import("@/lib/filings/types").FilingPayload>().notNull(),
+}, t => [
+  uniqueIndex("sec_filings_accession").on(t.accession),
+  index("sec_filings_issuer_idx").on(t.issuerCik, t.acceptedAt),
+  index("sec_filings_ticker_idx").on(t.ticker, t.filedOn),
+  index("sec_filings_filed_idx").on(t.filedOn),
+]);
+
+/** The Cluster & Whale Stream, computed at ingestion (lib/filings/rules.ts) so a read is a plain indexed scan.
+ *  Idempotent on `key`; `facts` holds exactly the figures the card prints, never a score. */
+export const filingAnomalies = terminal.table("filing_anomalies", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull(),
+  kind: text("kind").$type<"cluster" | "whale" | "velocity">().notNull(),
+  issuerCik: text("issuer_cik").notNull(),
+  ticker: text("ticker"),
+  company: text("company").notNull(),
+  windowStart: text("window_start").notNull(),
+  windowEnd: text("window_end").notNull(),
+  /** Code-P dollars as filed (cluster, whale); null for velocity. */
+  total: doublePrecision("total"),
+  facts: jsonb("facts").$type<import("@/lib/filings/types").AnomalyFacts>().notNull(),
+  ruleVersion: integer("rule_version").notNull(),
+  detectedAt: timestamp("detected_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("filing_anomalies_key").on(t.key),
+  index("filing_anomalies_detected_idx").on(t.detectedAt),
+  index("filing_anomalies_ticker_idx").on(t.ticker),
+]);
+
+/** SEC company_tickers.json: ticker → CIK. Rewritten only when the file's hash changes (lib/filings/tickers.ts). */
+export const issuerTickers = terminal.table("issuer_tickers", {
+  ticker: text("ticker").primaryKey(),
+  cik: text("cik").notNull(),
+  title: text("title").notNull(),
+}, t => [index("issuer_tickers_cik_idx").on(t.cik)]);
+
+/** A member's named ticker list; companies as a small JSON array (one row, one write per change). */
+export const userWatchlists = terminal.table("user_watchlists", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  position: integer("position").notNull().default(0),
+  items: jsonb("items").$type<Array<{ cik: string; ticker: string }>>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("user_watchlists_user_idx").on(t.userId)]);
+
+/** A member's private research on one company: status, its history, and notes, as one row. `version` guards saves
+ *  from two tabs (a stale save gets 409). */
+export const researchJournal = terminal.table("research_journal", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  issuerCik: text("issuer_cik").notNull(),
+  ticker: text("ticker").notNull(),
+  status: text("status").$type<"researching" | "watching" | "passed">(),
+  history: jsonb("history").$type<import("@/lib/filings/types").StatusEvent[]>().notNull().default([]),
+  notes: jsonb("notes").$type<import("@/lib/filings/types").JournalNote[]>().notNull().default([]),
+  version: integer("version").notNull().default(1),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.issuerCik] }), index("research_journal_user_idx").on(t.userId, t.updatedAt)]);
+
+/** Per member: the feed cursor they have read up to, the disclaimer version they accepted, and their hand-logged
+ *  positions as one JSON document the browser owns (never a broker or venue link). */
+export const researchMembers = terminal.table("research_members", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  seenId: bigint("seen_id", { mode: "number" }).notNull().default(0),
+  ackVersion: integer("ack_version"),
+  ackAt: timestamp("ack_at", { withTimezone: true }),
+  positions: jsonb("positions").$type<import("@/lib/filings/types").Position[]>().notNull().default([]),
+  positionsVersion: integer("positions_version").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

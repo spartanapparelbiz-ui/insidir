@@ -82,6 +82,7 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `BOOK_MIN_VOLUME_24H`, `BOOK_MAX_DAYS` | worker | which unmatched markets get order books (default 1000, 30 days) |
 | `SEC_USER_AGENT` | worker | name and monitored email for SEC EDGAR requests (required for the Stocks tab's Form 4 and 13F jobs; under 10 requests a second) |
 | `STOCKS_INGEST` | worker | `0` turns the Stocks jobs off (default on when `SEC_USER_AGENT` is set) |
+| `CRON_SECRET` (optional) | web | `GET /api/cron/filings` for a scheduler-driven filings poll (`Authorization: Bearer …`); the worker's `filings` job does the same without it |
 | `INSIDIR_13F_MANAGER_CIKS` | worker | funds followed for 13F adds, comma-separated CIKs (default: six large managers) |
 
 Kalshi API keys are never asked for or stored. P&L for Kalshi comes from the CSV export the user uploads, which
@@ -180,6 +181,15 @@ history and Follow are for members. Follow kinds (`lib/follows.ts`): `trader`, `
 CIK), `company` (issuer CIK) and `fund` (13F filer CIK); following an insider or company queues its EDGAR history.
 Their new filings show on `/following` (`lib/following-feed.ts`). `/sitemap.xml` lists these pages; `/robots.txt`
 keeps crawlers out of the app. Congress trades are not a source (a test fails if one is added).
+
+## Filings (SEC research desk)
+
+`/filings` and `/filings/<TICKER>`, members only, live once `FEATURES_READY` includes `filings`. Spec: [`docs/RESEARCH-DESK.md`](docs/RESEARCH-DESK.md).
+
+- **One poller** (`lib/filings/ingest.ts`, worker job `filings` every 60 s, or `/api/cron/filings`): EDGAR's Form 4 and 8-K current-filings feeds. A filing is new only if its accession isn't in `terminal.sec_filings`, so nothing is fetched twice. 8-Ks are stored from the feed entry (zero extra requests); Form 4s cost two. Each filing is written **once, for everyone**.
+- **Stream** (`lib/filings/rules.ts`): cluster (2+ owner groups buying code P in one week), whale (one Form 4 with $1M+ of code P) and filing velocity, computed at ingestion into `terminal.filing_anomalies`.
+- **Reads are cheap**: every member's 15-second poll is served from one shared 10-second cache of the newest filings; the browser keeps the ones on its watchlists. Per-member reads happen on page load only. Ticker search runs in the browser over the SEC directory (`terminal.issuer_tickers`, refreshed daily, rewritten only when its hash changes).
+- **Member data**: `user_watchlists` (one row per list), `research_journal` (one row per company: status, history, notes), `research_members` (read cursor, accepted disclaimer, positions as one document). `GET /api/filings/export` downloads all of it.
 
 ## Rate limits
 
