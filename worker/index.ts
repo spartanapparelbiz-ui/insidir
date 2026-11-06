@@ -24,6 +24,8 @@
  *             pushed to the owners' devices (FREE_ACCESS_EMAILS) when it breaks, shown on /status
  *   accuracy  every hour: 20 random moves and 20 profile facts re-read from their sources (lib/accuracy/check.ts);
  *             moves that don't match are hidden until they do; OWNER_EMAIL gets an email when anything is off
+ *   memory    every minute: RSS, heap and memory outside the heap into the log; past MEMORY_RECYCLE_MB (800) the
+ *             worker stops its jobs, lets running ones finish and exits 0 for Railway to restart (lib/worker/memory.ts)
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
 import { tagOnce } from "@/lib/trackers-tag";
@@ -69,6 +71,7 @@ import { moneyPathOnce, MONEY_PATH_MS } from "@/lib/monitor/money-path";
 import { scanOptionsFromEnv } from "@/lib/scanner";
 import { pruneLive } from "@/lib/live/publish";
 import { notesOnce } from "@/lib/analyst/store";
+import { memoryLine, memorySample, memoryStats, overLimit, recycleLimitMb, type MemorySample } from "@/lib/worker/memory";
 import type { VMarket, Venue } from "@/lib/types";
 import {
   alertableDeals, alertUsers, claimAlert, deactivateStale, dropPush, heartbeat,
@@ -79,6 +82,8 @@ const n = (k: string, d: number) => { const v = Number(process.env[k]); return N
 export const ALERT_MS = n("ALERT_MS", 5_000);
 export const WHALE_MS = n("WHALE_MS", 15_000);
 export const SETTLE_MS = n("SETTLE_MS", 15 * 60_000);
+/** How long a clean memory restart waits for running jobs before it exits anyway. */
+const RECYCLE_WAIT_MS = 30_000;
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 /** Capped: a failed bulk insert puts its whole SQL statement (thousands of placeholders) in the message. */
@@ -238,14 +243,18 @@ async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: S
   for (const l of run.lines.filter(x => x.status === "mismatch")) log(`accuracy mismatch: ${l.kind}/${l.what} ${l.target} | ${l.label} | ${l.problems.join("; ")}`);
 }
 
+/** The jobs running right now, so a clean restart can wait for them to finish. */
+const runningJobs = new Set<string>();
+
 /** Runs `fn` every `ms`, never overlapping itself, logging failures. */
 function every(name: string, ms: number, fn: () => Promise<void>): () => void {
   let running = false, stopped = false;
   const tick = async () => {
     if (running || stopped) return;
     running = true;
+    runningJobs.add(name);
     try { await fn(); } catch (e) { log(`${name} failed: ${errMsg(e)}`); await heartbeat(getDb(), name, false, errMsg(e)).catch(() => undefined); }
-    finally { running = false; }
+    finally { running = false; runningJobs.delete(name); }
   };
   void tick();
   const t = setInterval(() => void tick(), ms);
@@ -430,6 +439,31 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     }),
   ];
   const stop = async () => { stops.forEach(s => s()); await closeDb(); log("worker stopped"); };
+  // Memory (lib/worker/memory.ts): a line a minute, and a clean restart before Railway's OOM kill would cut a job off
+  // mid-write. Stop every job, give the running ones up to RECYCLE_WAIT_MS to finish, close the pool, exit 0; the
+  // restart policy (ALWAYS) brings the worker back.
+  const recycleMb = recycleLimitMb();
+  let recycling = false;
+  const recycle = async (s: MemorySample) => {
+    if (recycling) return;
+    recycling = true;
+    log(`memory: rss ${memoryStats(s).rssMb} MB is over ${recycleMb} MB; restarting cleanly`);
+    await heartbeat(getDb(), "memory", false, `restarted at ${memoryStats(s).rssMb} MB`, memoryStats(s)).catch(() => undefined);
+    stops.forEach(f => f());
+    const until = Date.now() + RECYCLE_WAIT_MS;
+    while (runningJobs.size && Date.now() < until) await new Promise(r => setTimeout(r, 250));
+    if (runningJobs.size) log(`memory: still running after ${RECYCLE_WAIT_MS / 1000}s: ${[...runningJobs].join(", ")}`);
+    await closeDb().catch(() => undefined);
+    log("worker stopped (memory)");
+    process.exit(0);
+  };
+  stops.push(every("memory", 60_000, async () => {
+    const s = memorySample();
+    log(memoryLine(s, process.uptime()));
+    await heartbeat(getDb(), "memory", true, null, memoryStats(s));
+    // Not awaited: the memory job's own run ends here, so the wait above counts only the other jobs.
+    if (overLimit(s, recycleMb)) void recycle(s);
+  }));
   process.on("SIGTERM", () => void stop().then(() => process.exit(0)));
   process.on("SIGINT", () => void stop().then(() => process.exit(0)));
   if (opts.runForMs) { await new Promise(r => setTimeout(r, opts.runForMs)); await stop(); }

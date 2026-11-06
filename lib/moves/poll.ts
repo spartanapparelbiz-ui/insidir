@@ -20,6 +20,10 @@ export const NOISE_TTL_MS = 30 * 60_000;
 export const NOISE_CHECKS_PER_POLL = 10;
 const POLY_PAGES = 6;
 const KALSHI_PAGES = 10;
+/** Kalshi trade ids are kept this long behind the newest trade seen. Each poll re-reads only from 5 s before that
+ *  trade (min_ts), so a minute covers the overlap; two hours of every trade's id was the worker's biggest memory
+ *  growth on busy nights. */
+export const KALSHI_SEEN_MS = 60_000;
 
 /** Market details for the given ids (lib/moves/directory.ts). */
 export type MarketLookup = (ids: string[]) => Promise<ReadonlyMap<string, VMarket>>;
@@ -136,7 +140,9 @@ export class MovesPoller {
     const info = infoIn ?? MovesPoller.infoFrom([...markets.values()]);
     for (const raw of pages) for (const f of readKalshiFills(raw, markets)) if (!this.kalshiSeen.has(f.id)) { this.kalshiSeen.set(f.id, f.at); fills.push(f); }
     this.kalshiSince = Math.max(since, ...fills.map(f => f.at));
-    for (const [k, at] of this.kalshiSeen) if (at < now - 2 * 3_600_000) this.kalshiSeen.delete(k);
+    // Against Kalshi's own clock (the newest trade), not ours: the overlap is measured in trade times.
+    const keepFrom = this.kalshiSince - KALSHI_SEEN_MS;
+    for (const [k, at] of this.kalshiSeen) if (at < keepFrom) this.kalshiSeen.delete(k);
     return kalshiMoves(fills, info);
   }
 }
