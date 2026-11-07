@@ -6,7 +6,7 @@
  *   Exit intent on desktop (the cursor leaves through the top).
  *   The second check (the visitor's free one is used: "insidir:paywall" from the ask box): opens, it's their tap.
  *   A free tile used: 2.5 s after the free check's verdict ("insidir:free-used"), or a tap into the #1 market or a free
- *     bet ([data-free]): "That was 1 of 38 millionaire bets today. See them all live…".
+ *     bet ([data-free]): "That was 1 of 38 millionaire bets in the last 24 hours. See them all live…".
  * Rules: automatic ones never in the first 15 s on the page, and at most once per session; a close (button, Esc, a tap
  * outside) is remembered for 24 hours; taps on locked items always open. No countdowns, discounts or scarcity; the full
  * price is always in it. */
@@ -18,7 +18,7 @@ import { Paywall } from "./Paywall";
 const CLOSED = "insidir_pay_closed", AUTO = "insidir_pay_auto";
 export const QUIET_MS = 15_000, AFTER_AHA_MS = 8_000;
 
-export interface PayContext { count: number; window: "hour" | "day"; biggest: { title: string; amount: number } | null; /** Millionaire bets since midnight ET. */ today?: number }
+export interface PayContext { count: number; window: "hour" | "day"; biggest: { title: string; amount: number } | null; /** Millionaire bets in the last 24 hours. */ today?: number }
 type Open = { kind: "after-read" | "locked" | "exit" | "limit" | "free"; headline: string } | null;
 
 const closedRecently = () => document.cookie.split("; ").some(c => c.startsWith(`${CLOSED}=`));
@@ -29,11 +29,11 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
   const [open, setOpen] = useState<Open>(null);
   const t0 = useRef(Date.now());
   const panel = useRef<HTMLDivElement>(null), back = useRef<HTMLElement | null>(null);
-  const bets = `${ctx.count} millionaire ${ctx.count === 1 ? "bet" : "bets"} from ${ctx.window === "hour" ? "the last hour" : "today"}`;
+  const bets = `${ctx.count} millionaire ${ctx.count === 1 ? "bet" : "bets"} from ${ctx.window === "hour" ? "the last hour" : "the last 24 hours"}`;
   const afterRead = `See the side on all ${bets}. $${TRIAL.fee} for ${TRIAL.days} days.`;
   // After a free tile (a check, the #1 market, a free bet): name what they just saw.
   const free = ctx.today
-    ? `That was 1 of ${ctx.today} millionaire bets today. See them all live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`
+    ? `That was 1 of ${ctx.today} millionaire bets in the last 24 hours. See them all live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`
     : `See every millionaire bet live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`;
 
   const show = useCallback((o: NonNullable<Open>, automatic: boolean) => {
@@ -64,7 +64,7 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
     };
     const onExit = (e: MouseEvent) => {
       if (e.relatedTarget || e.clientY > 0 || window.innerWidth < 768) return;
-      show({ kind: "exit", headline: ctx.biggest ? `Before you go: today's biggest millionaire bet is ${dollars(ctx.biggest.amount)} on ${ctx.biggest.title}. See the side for $${TRIAL.fee}.` : `Before you go: see every millionaire bet with its side for $${TRIAL.fee}.` }, true);
+      show({ kind: "exit", headline: ctx.biggest ? `Before you go: the biggest millionaire bet of the last 24 hours is ${dollars(ctx.biggest.amount)} on ${ctx.biggest.title}. See the side for $${TRIAL.fee}.` : `Before you go: see every millionaire bet with its side for $${TRIAL.fee}.` }, true);
     };
     // The second check (the free one is used): always opens, it's their own tap.
     const onLimit = (e: Event) => { e.preventDefault(); show({ kind: "limit", headline: `You've used your free check. Check every bet for $${TRIAL.fee} for ${TRIAL.days} days.` }, false); };

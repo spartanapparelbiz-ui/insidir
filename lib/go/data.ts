@@ -51,7 +51,7 @@ export async function paidByVisitor(db: Db, visitorId: string | null): Promise<b
 export async function goData(db: Db, cats: readonly CategorySlug[], now: number, paid: boolean): Promise<GoData> {
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("go", e instanceof Error ? e.message : e); return d; });
   const [p, hooks, perCat, today, week, pr, wallets] = await Promise.all([
-    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }),
+    safe(pulse(db, now), { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, count24h: 0 }),
     // A visitor's hook is an hour late, like the board (it is prefetched on every page).
     safe(recentBets(db, { now, limit: 1, tier: "millionaire", member: paid, delayMs: paid ? 0 : VISITOR_DELAY_MS }), [] as BoardBet[]),
     safe(betsToday(db, cats, now), new Map<string, number>()),

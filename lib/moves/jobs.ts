@@ -72,8 +72,8 @@ export async function movesOnce(db: Db, poller: MovesPoller, directory: MarketDi
         const watched = poller.lastWatchedBets();
         // The outcome names, from the directory (already in memory: the poll just looked these markets up).
         const labels = watched.length ? await directory.lookup("polymarket", [...new Set(watched.map(m => m.marketId))], now).catch(() => new Map()) : new Map();
-        const rows = betsFrom(watched, w => watch.tier(w), labels);
-        await saveBets(db, rows);
+        // As stored: a run seen again under a later fill's id keeps the bet it already is.
+        const rows = await saveBets(db, betsFrom(watched, w => watch.tier(w), labels));
         // Opens, adds, trims and exits (lib/millionaires/positions.ts), for pings and the Kalshi record.
         await recordPositions(db, rows, poller.lastWatchedSells(), w => watch.tier(w)).catch(e => console.error("positions", e instanceof Error ? e.message : e));
         // Once per process: stored bets re-read with the current category rules (esports out of Golf).

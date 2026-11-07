@@ -57,6 +57,7 @@ import { screenWallets } from "@/lib/millionaires/proven";
 import { autopilotBacktestsOnce, autopilotOnce } from "@/lib/autopilot/jobs";
 import { settleMatches } from "@/lib/autopilot/engine";
 import { bookDailyOnce } from "@/lib/book/daily";
+import { trialRemindersOnce } from "@/lib/billing/trial-reminder";
 import { kalshiAsksOnce } from "@/lib/autopilot/history";
 import { twinsFromHistory } from "@/lib/twins/direct";
 import { twinOf } from "@/lib/entities/market";
@@ -304,6 +305,13 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("autopilot:settle", 5 * 60_000, async () => { await settleMatches(getDb()); }),
     every("autopilot:backtests", 30 * 60_000, async () => { const n = await autopilotBacktestsOnce(getDb(), Date.now()); if (n) log(`autopilot:backtests: ${n} computed`); }),
     // The Book's daily summary, at each member's chosen time.
+    // About a day before a trial's first $39 charge: one push (Whop emails its own notice too).
+    every("trial:remind", 15 * 60_000, async () => {
+      const db = getDb();
+      const n = await trialRemindersOnce(db, Date.now(), { appUrl: appUrl(),
+        async push(u, msg) { for (const t of await pushTargets(db, u)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint); } });
+      if (n) log(`trial:remind: ${n} reminded`);
+    }),
     every("book:daily", 5 * 60_000, async () => {
       const db = getDb();
       const n = await bookDailyOnce(db, Date.now(), { appUrl: appUrl(), claim: (u, k) => claimAlert(db, u, k, "push"),
@@ -338,7 +346,10 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         const db = getDb(), now = Date.now(), age = await watchlistAge(db);
         if (age !== null && now - age < WATCHLIST_MS) return;
         const r = await refreshWatchlist(db, clients.polymarket as PolymarketClient, now);
-        await watch.load(db, now + WATCHLIST_MS);
+        // Re-read at once, then every 5 minutes as usual, so the screen's verdicts (a wallet moved down to Pro) reach
+        // the poller within minutes. (Loading with a future time used to freeze the copy for a day.)
+        watch.invalidate();
+        await watch.load(db, Date.now());
         log(`millionaires: watchlist ${r.wallets} wallets, ${r.millionaires} millionaires`);
       }),
       every("moves:settle", 10 * 60_000, async () => {

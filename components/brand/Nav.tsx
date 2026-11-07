@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
+import { TimeZoneSync } from "@/components/app/TimeZoneSync";
 import { COMPANY, DATA_COMPANY, GAMBLER, FOOTER } from "@/lib/copy";
 
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
@@ -43,6 +44,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
   }, [open]);
   return (
     <>
+      {member && <TimeZoneSync />}
       <header className={`b-nav${fixed ? " b-nav--fixed" : ""}${solid ? " is-solid" : ""}`} data-testid="brand-nav">
         <span {...q(motion, "quiet", 0.46)}><Logo /></span>
         <nav className="b-nav-links" aria-label="Primary">{links.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>

@@ -23,7 +23,12 @@ export interface PingBet { id: string; marketId?: string; side?: "yes" | "no"; t
   /** Where a sell's ping opens (the market's page; a buy opens its bet). */
   path?: string }
 /** The market's approved Kalshi twin (lib/twins) and Kalshi's YES price now, when it has one. */
-export interface PingTwin { yes: number | null }
+export interface PingTwin { yes: number | null; noAsk?: number | null }
+
+/** Kalshi's price to buy `side` now: the YES price for YES, and the NO ask for NO. Never 1 − the YES ask: that's the
+ *  best NO bid, which understates what a NO costs by the spread. Null when Kalshi has no NO offer. Pure. */
+export const kalshiSidePrice = (t: PingTwin, side: "yes" | "no" | null | undefined): number | null =>
+  side === "no" ? (t.noAsk ?? null) : t.yes;
 
 export function pingCategories(u: Pick<PingUser, "cats">, now: number): Set<string> | null {
   if (!u.cats.length) return null; // none chosen: every category
@@ -61,7 +66,7 @@ export function pingMessage(b: PingBet, priceNow: number | null, appUrl: string,
   const now = priceNow !== null && Math.round(priceNow * 100) !== Math.round(b.price * 100) ? ` (now ${c(priceNow)})` : priceNow !== null ? " (still there now)" : "";
   // Kalshi first when the market has a twin: its price for the same side now, and the tap opens the bet's page, which
   // leads with the Kalshi market.
-  const kalshi = twin && twin.yes !== null ? c(b.side === "no" ? 1 - twin.yes : twin.yes) : null;
+  const kp = twin ? kalshiSidePrice(twin, b.side) : null, kalshi = kp !== null && kp > 0 && kp < 1 ? c(kp) : null;
   const k = kalshi ? ` Kalshi: ${kalshi}.` : "";
   // A sell: what share of the position went, at what price, and Kalshi's price for that side now. Opens the market.
   if (b.kind === "trim" || b.kind === "exit") {
@@ -70,9 +75,9 @@ export function pingMessage(b: PingBet, priceNow: number | null, appUrl: string,
     return { title: "Insidir", body: `${who} ${did} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}${b.path ?? `/bet/${encodeURIComponent(b.id)}`}` };
   }
   if (b.kind === "add") {
-    if (kalshi) return { title: "Insidir", body: `${who} added ${dollars(b.amount)} to ${b.outcome} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}/bet/${encodeURIComponent(b.id)}` };
+    if (twin) return { title: "Insidir", body: `${who} added ${dollars(b.amount)} to ${b.outcome} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}/bet/${encodeURIComponent(b.id)}` };
     return { title: "Insidir", body: `${who} just added ${dollars(b.amount)} to ${what} at ${c(b.price)}${now}. Copy?`, url: `${appUrl}/copy/${encodeURIComponent(b.id)}` };
   }
-  if (kalshi) return { title: "Insidir", body: `${who} bought ${b.outcome} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}/bet/${encodeURIComponent(b.id)}` };
+  if (twin) return { title: "Insidir", body: `${who} bought ${b.outcome} at ${c(b.price)} on Polymarket.${k}`, url: `${appUrl}/bet/${encodeURIComponent(b.id)}` };
   return { title: "Insidir", body: `${who} just put ${dollars(b.amount)} on ${what} at ${c(b.price)}${now}. Copy?`, url: `${appUrl}/copy/${encodeURIComponent(b.id)}` };
 }

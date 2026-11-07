@@ -20,13 +20,13 @@ const DAY = 86_400_000;
 
 export interface BestPrice { question: string; yes: { polymarket: number | null; kalshi: number | null } }
 export interface Biggest { title: string; amount: number; pnl: number | null }
-export const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 };
+export const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, count24h: 0 };
 
 export interface LandingData {
   now: number;
   member: boolean;
   pulse: Pulse;
-  /** The free live sample: today's #1 millionaire bet (the biggest since midnight ET), whole, side included. */
+  /** The free live sample: the biggest millionaire bet of the last 24 hours, whole, side included. */
   topBet: BoardBet | null;
   /** The free live sample: one race in full (the race with the most watchlist money this week). */
   race: Race | null;
@@ -94,9 +94,9 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   const wallet = w ? { ...w, results: await safe(lastResults(db, w.wallet, 5), []) } : null;
   const b = [...recent].sort((x, y) => y.amount - x.amount)[0];
   const pool = todayTop.length ? todayTop : dayTop;
-  const topBet = [...recent].filter(x => x.at >= midnight).sort((x, y) => y.amount - x.amount)[0] ?? null;
+  const topBet = [...recent].sort((x, y) => y.amount - x.amount)[0] ?? null;
   const [pulse2, election, spotlight, stake, gaps, lead, races] = await Promise.all([
-    safe(pulseData(db, now, p.sinceMidnight, pool), { today: p.sinceMidnight, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
+    safe(pulseData(db, now, p.today, pool), { today: p.today, biggest: null, biggestWindow: "24h" as const, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
     electionDay(now) ? safe(electionBoard(db, now, member), null) : Promise.resolve(null),
     safe(walletSpotlight(db), null),
     // Your stake runs on the leading rule only: the best of many trackers was a pick after the fact.
@@ -107,7 +107,7 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   ]);
   return {
     pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
-    now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, record: pr, bestPrice: best,
+    now, member, pulse: p, top, last3, moreToday: Math.max(0, p.count24h - last3.length), board, categories, record: pr, bestPrice: best,
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
     brief: pool.slice(0, 3),
     wallet,
@@ -124,5 +124,5 @@ export function landingFor(db: Db, now: number): Promise<LandingData> {
 export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, topBet: null, race: null, top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, record: null, bestPrice: null,
-  pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
+  pulse2: { today: 0, biggest: null, biggestWindow: "24h", hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
 });

@@ -898,6 +898,9 @@ export const millionaireBets = terminal.table("millionaire_bets", {
   lastAt: timestamp("last_at", { withTimezone: true }).notNull(),
   result: text("result").$type<"won" | "lost" | "void">(),
   settledAt: timestamp("settled_at", { withTimezone: true }),
+  /** The run's fills (id, contracts, price, time), so a run seen again under another id merges exactly
+   *  (lib/millionaires/bets.ts saveBets). Null on bets saved before fills were kept. */
+  parts: jsonb("parts").$type<Array<{ id: string; c: number; p: number; at: number }>>(),
 }, t => [
   index("millionaire_bets_at_idx").on(t.at),
   index("millionaire_bets_category_at_idx").on(t.category, t.at),

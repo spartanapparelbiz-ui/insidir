@@ -53,7 +53,9 @@ describe("alert fan-out", () => {
     const quiet = (start: string, end: string, timeZone: string | null) => user({ settings: { ...user().settings, quietStart: start, quietEnd: end, timeZone } });
     expect(dueAlerts([quiet("10:00", "12:00", "America/New_York")], [deal(5)], NOW)).toEqual([]);
     expect(dueAlerts([quiet("10:00", "12:00", "UTC")], [deal(5)], NOW)).toHaveLength(1);
-    expect(dueAlerts([quiet("14:00", "16:00", null)], [deal(5)], NOW)).toEqual([]);
+    // No time zone yet: New York's clock, not UTC's.
+    expect(dueAlerts([quiet("10:00", "12:00", null)], [deal(5)], NOW)).toEqual([]);
+    expect(dueAlerts([quiet("14:00", "16:00", null)], [deal(5)], NOW)).toHaveLength(1);
   });
   it("the alert text states facts and the lock condition, never a promise or advice", () => {
     const t = alertText(opp(), "https://insidir.com", "push");

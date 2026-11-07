@@ -63,25 +63,29 @@ export async function unusualBet(db: Db, now: number): Promise<Unusual | null> {
 /* ---------- The Pulse ---------- */
 
 export interface Pulse2 {
-  /** Millionaire dollars bet since midnight ET (0: none yet). */
+  /** Millionaire dollars bet in the last 24 hours (0: none). */
   today: number;
+  /** The biggest millionaire bet of the last 24 hours, or of the last 7 days when the day had none. */
   biggest: BoardBet | null;
+  biggestWindow: "24h" | "7d";
   hottest: MarketMoney | null;
   disagree: { free: Disagreement | null; locked: LockedRow[] };
   unusual: Unusual | null;
 }
 
 export async function pulseData(db: Db, now: number, today: number, pool: readonly MarketMoney[]): Promise<Pulse2> {
-  const midnight = midnightET(now);
-  const [bets, unusual, wide] = await Promise.all([
-    recentBets(db, { now, since: midnight, limit: 200, tier: "millionaire", withSide: true }).catch(() => [] as BoardBet[]),
+  const [day, unusual, wide] = await Promise.all([
+    recentBets(db, { now, since: now - DAY, limit: 200, tier: "millionaire", withSide: true }).catch(() => [] as BoardBet[]),
     unusualBet(db, now).catch(() => null),
     marketMoney(db, { since: now - 7 * DAY, limit: 60, now }).catch(() => [] as MarketMoney[]),
   ]);
   const d = disagreements(wide);
+  const week = day.length ? [] : await recentBets(db, { now, since: now - 7 * DAY, limit: 200, tier: "millionaire", withSide: true }).catch(() => [] as BoardBet[]);
+  const biggest = (bets: readonly BoardBet[]) => [...bets].sort((a, b) => b.amount - a.amount)[0] ?? null;
   return {
     today,
-    biggest: [...bets].sort((a, b) => b.amount - a.amount)[0] ?? null,
+    biggest: biggest(day) ?? biggest(week),
+    biggestWindow: day.length ? "24h" : "7d",
     hottest: [...pool].filter(m => mil(m) > 0).sort((a, b) => mil(b) - mil(a))[0] ?? null,
     disagree: { free: d[0] ?? null, locked: d.slice(1, 5).map(x => ({ category: x.category, categoryName: categoryInfo(x.category).name })) },
     unusual,

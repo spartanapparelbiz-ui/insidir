@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS, kalshiPings, pushSubscriptions, users } from "@/lib/d
 import { marketPath } from "@/lib/entities/slug";
 import { soldShare } from "./positions";
 import { isPaid } from "@/lib/plans";
-import { PING_MIN, type PingBet, type PingUser } from "./pings";
+import { kalshiSidePrice, PING_MIN, type PingBet, type PingUser } from "./pings";
 
 /** Paid members with push on and a device, their categories, quiet hours and pings in the last 24 hours. */
 export async function pingUsers(db: Db, now: number): Promise<PingUser[]> {
@@ -59,14 +59,14 @@ export async function freshBigSells(db: Db, now: number, windowMs = 10 * 60_000)
 
 /** The Kalshi record (/results): each buy ping (an open or an add) on a market with a Kalshi twin and Kalshi's price for
  *  that side, kept once, at the moment it was first pinged. */
-export async function recordKalshiPings(db: Db, bets: readonly PingBet[], twins: ReadonlyMap<string, { kalshiId: string; yes: number | null }>, now: number): Promise<number> {
+export async function recordKalshiPings(db: Db, bets: readonly PingBet[], twins: ReadonlyMap<string, { kalshiId: string; yes: number | null; noAsk?: number | null }>, now: number): Promise<number> {
   let n = 0;
   for (const b of bets) {
     if (b.kind === "trim" || b.kind === "exit" || !b.marketId) continue;
     const t = twins.get(b.marketId);
-    if (!t || t.yes === null) continue;
-    const kp = b.side === "no" ? 1 - t.yes : t.yes;
-    if (!(kp > 0 && kp < 1)) continue;
+    if (!t) continue;
+    const kp = kalshiSidePrice(t, b.side);
+    if (kp === null || !(kp > 0 && kp < 1)) continue;
     const r = await db.insert(kalshiPings).values({ eventId: b.id, marketId: b.marketId, kalshiId: t.kalshiId, outcomeSide: b.side ?? "yes", kind: b.kind === "add" ? "add" : "open",
       title: b.title, outcome: b.outcome, category: b.category, polyPrice: b.price, kalshiPrice: kp, at: new Date(now) }).onConflictDoNothing().returning({ id: kalshiPings.eventId });
     n += r.length;

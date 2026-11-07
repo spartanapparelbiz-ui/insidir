@@ -4,7 +4,7 @@ import type { Db } from "@/lib/db";
 import { DEFAULT_SETTINGS, users } from "@/lib/db/schema";
 import { effectivePlan } from "@/lib/billing/access";
 import { isPaid } from "@/lib/plans";
-import { localMinutes, minutesOf, validTimeZone } from "@/lib/alerts/quiet";
+import { localMinutes, minutesOf, zoneOf } from "@/lib/alerts/quiet";
 import { bookFor, summarize, type Entry } from "./book";
 
 /** The member's local date ("2026-11-04") when the push is due now (within two hours after the chosen time), else null. Pure. */
@@ -13,7 +13,7 @@ export function bookPushDue(now: number, at: string | null | undefined, tz: stri
   if (m === null) return null;
   const t = localMinutes(now, tz);
   if (t < m || t >= m + 120) return null;
-  return new Intl.DateTimeFormat("en-CA", { timeZone: validTimeZone(tz) ? tz! : "UTC", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
+  return new Intl.DateTimeFormat("en-CA", { timeZone: zoneOf(tz), year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
 }
 
 const usd = (n: number) => `$${Math.abs(n) < 100 ? Math.abs(n).toFixed(2).replace(/\.00$/, "") : Math.round(Math.abs(n)).toLocaleString("en-US")}`;

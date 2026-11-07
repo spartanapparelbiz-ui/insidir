@@ -13,12 +13,11 @@ import type { Db } from "@/lib/db";
 import { autopilotMatches, autopilotRules, DEFAULT_SETTINGS, users } from "@/lib/db/schema";
 import { effectivePlan } from "@/lib/billing/access";
 import { isPaid } from "@/lib/plans";
-import { inQuietHours } from "@/lib/alerts/quiet";
+import { inQuietHours, localDayAndWeekStart } from "@/lib/alerts/quiet";
 import { approvedTwins } from "@/lib/twins/store";
 import { cleanSpec, mismatch, stakeLeft, ticketFor, tooLate, type Move, type RuleSpec } from "./rules";
 
 export const ENGINE_WINDOW_MS = 15 * 60_000;
-const DAY = 86_400_000;
 
 export interface Quote { yesAsk: number | null; noAsk: number | null; yesBid: number | null; noBid: number | null }
 export interface Push { title: string; body: string; url: string }
@@ -82,9 +81,9 @@ export async function activeRules(db: Db): Promise<ActiveRule[]> {
   });
 }
 
-/** Stake already committed by a rule today and this week (UTC), sent and quiet matches. */
-async function spent(db: Db, ruleId: number, now: number): Promise<{ day: number; week: number }> {
-  const dayStart = Math.floor(now / DAY) * DAY, weekStart = (Math.floor((now / DAY + 3) / 7) * 7 - 3) * DAY;
+/** Stake already committed by a rule today and this week (Monday on), on the member's own clock, sent and quiet matches. */
+async function spent(db: Db, ruleId: number, now: number, tz: string | null): Promise<{ day: number; week: number }> {
+  const { day: dayStart, week: weekStart } = localDayAndWeekStart(now, tz);
   const r = await db.execute(sql`select coalesce(sum(stake) filter (where matched_at >= ${new Date(dayStart)}), 0)::float as day, coalesce(sum(stake), 0)::float as week
     from terminal.autopilot_matches where rule_id = ${ruleId} and status in ('sent', 'quiet') and matched_at >= ${new Date(weekStart)}`);
   const x = r.rows[0] as { day: number; week: number } | undefined;
@@ -121,7 +120,7 @@ export async function runAutopilot(db: Db, now: number, deps: EngineDeps): Promi
           const r = await db.insert(autopilotMatches).values({ ...base, status: "skipped", reason: late }).onConflictDoNothing().returning({ id: autopilotMatches.id });
           out.skipped += r.length; continue;
         }
-        const sp = await spent(db, rule.id, now);
+        const sp = await spent(db, rule.id, now, rule.timeZone);
         const t = ticketFor(rule.spec, ask!, stakeLeft(rule.spec, sp.day, sp.week));
         if (!t) {
           const r = await db.insert(autopilotMatches).values({ ...base, status: "capped", reason: "Skipped: today's or this week's limit for this rule is used up" }).onConflictDoNothing().returning({ id: autopilotMatches.id });

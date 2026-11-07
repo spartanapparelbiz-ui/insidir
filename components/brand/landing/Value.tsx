@@ -29,21 +29,21 @@ export function PulseStage({ d }: { d: LandingData }) {
       <div className="b-head"><Lines id="pulse-h" lines={STAGES.pulse} size={64} /></div>
       <div className="b-dash" data-testid="pulse-dash" data-pin="pulse">
         <section className="b-dcard b-glass b-dcard--total" data-slot="0" data-testid="pulse-total">
-          <span className="b-label">Millionaire money today</span>
+          <span className="b-label">Millionaire money, last 24 hours</span>
           {p.today > 0
             ? <p className="b-dbig b-num" data-count={Math.round(p.today)} data-fmt="usd">{dollars(p.today)}</p>
-            : <p className="b-empty">No millionaire money yet today. It shows the second a $1M+ wallet bets.</p>}
-          <span className="b-small">Bet by wallets up $1M+ since midnight ET.</span>
+            : <p className="b-empty">No millionaire money in the last 24 hours. It shows the second a $1M+ wallet bets.</p>}
+          <span className="b-small">Bet by wallets up $1M+ in the last 24 hours.</span>
         </section>
         <section className="b-dcard b-glass" data-slot="1" data-testid="pulse-biggest">
-          <span className="b-label">Biggest bet today</span>
+          <span className="b-label">{p.biggestWindow === "7d" ? "Biggest bet, last 7 days" : "Biggest bet, last 24 hours"}</span>
           {b ? (
             <div style={{ display: "grid", gap: 8 }}>
               <p className="b-dmid b-num" data-count={Math.round(b.amount)} data-fmt="usd">{dollars(b.amount)}</p>
               <span className="b-dtitle">{b.title}</span>
               <span className="b-row__meta"><TierBadge tier={b.tier} />{b.pnl !== null ? <span>{signedDollars(b.pnl)} wallet</span> : null}<Side outcome={b.outcome} side={b.side} /></span>
             </div>
-          ) : <p className="b-empty">No millionaire bet yet today.</p>}
+          ) : <p className="b-empty">No millionaire bet in the last 7 days.</p>}
         </section>
         <section className="b-dcard b-glass" data-slot="2" data-testid="pulse-hottest">
           <span className="b-label">Hottest market</span>
@@ -54,7 +54,7 @@ export function PulseStage({ d }: { d: LandingData }) {
               <div className="b-bar" role="img" aria-label={`${pct(hShare)} of it on ${h.yesLabel}`}><span data-bar={hShare.toFixed(3)} style={{ transform: `scaleX(${hShare})` }} /></div>
               <span className="b-kv b-small"><span>{h.yesLabel} {h.millionaire.yes.dollars ? dollars(h.millionaire.yes.dollars) : "no money yet"}</span><span>{h.noLabel} {h.millionaire.no.dollars ? dollars(h.millionaire.no.dollars) : "no money yet"}</span></span>
             </div>
-          ) : <p className="b-empty">No market has millionaire money today yet.</p>}
+          ) : <p className="b-empty">No market has millionaire money in the last 24 hours.</p>}
         </section>
         <section className="b-dcard b-glass b-dcard--wide" data-slot="3" data-testid="pulse-disagree">
           <span className="b-label">Where millionaires disagree with the price</span>
@@ -109,7 +109,7 @@ export function BoardLeadStage({ d }: { d: LandingData }) {
   return (
     <Stage testid="lead-board" labelledBy="lead-h">
       <div className="b-head"><Lines id="lead-h" lines={["Every millionaire bet."]} size={60} />
-        {d.member ? null : <p className="b-sub">Live now: <b className="b-num">{d.pulse.countToday}</b> today. Here 60 minutes late; members see each one the second it lands.</p>}</div>
+        {d.member ? null : <p className="b-sub"><b className="b-num">{d.pulse.count24h}</b> in the last 24 hours. Here 60 minutes late; members see each one the second it lands.</p>}</div>
       <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.lead }} n={8} board copy={d.member} />
       <div className="b-center" style={{ marginTop: 18 }}><div className="b-ctas">{d.member ? <Pill href="/board" kind="ghost">The whole board</Pill> : <Pill href="/go" data-testid="lead-start" data-checkout="lead">Start for $1</Pill>}</div></div>
     </Stage>

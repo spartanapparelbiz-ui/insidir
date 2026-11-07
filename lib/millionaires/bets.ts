@@ -1,14 +1,16 @@
 /* Millionaire bets: every bet of BET_MIN ($5K) or more by a watchlist wallet, from the moves poller's Polymarket fills
  * (lib/moves/poll.ts lastWatchedBets: one wallet, one market and outcome, fills within 10 minutes merged, the same
  * as moves). Stored with the market, side, size, the average price paid then, the wallet's tier when it bet, the
- * category (lib/brand/categories.ts) and the time. A run that grows keeps its id and is updated in place. Settled with
- * the market (lib/moves/store.ts settleMarket). Kalshi trades are anonymous, so millionaire bets are Polymarket's. */
-import { and, eq, isNull, sql } from "drizzle-orm";
+ * category (lib/brand/categories.ts) and the time. A run that grows keeps its id and is updated in place, even when the
+ * poller names it after a later fill (saveBets). Settled with the market (lib/moves/store.ts settleMarket). Kalshi
+ * trades are anonymous, so millionaire bets are Polymarket's. */
+import { and, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { betCopies, millionaireBets } from "@/lib/db/schema";
 import { categoryOf, ESPORTS_RE } from "@/lib/brand/categories";
 import type { Move } from "@/lib/moves/types";
 import { BET_MIN } from "@/lib/moves/poll";
+import { fromParts, mergeParts, MERGE_WINDOW_MS } from "@/lib/moves/detect";
 import type { Tier } from "./watchlist";
 
 export { BET_MIN };
@@ -26,23 +28,46 @@ export function betsFrom(moves: readonly Move[], tierOf: (wallet: string) => Tie
       outcome: m.outcome, outcomeSide: m.outcomeSide, amount: m.amount, price: m.avgPrice,
       category: categoryOf({ title: m.marketTitle, event: m.eventTitle, venueCategory: m.category, tab: m.tab, league: m.league, url: m.url }),
       url: m.url, yesLabel: labels?.get(m.marketId)?.yesLabel ?? null, noLabel: labels?.get(m.marketId)?.noLabel ?? null,
-      at: new Date(m.at), lastAt: new Date(m.lastAt),
+      at: new Date(m.at), lastAt: new Date(m.lastAt), parts: m.parts ?? null,
     });
   }
   return out;
 }
 
-/** Upserts bets. The tier stays what it was when the bet was first seen; size, price and last fill follow the run. */
-export async function saveBets(db: Db, rows: readonly BetRow[]): Promise<number> {
-  if (!rows.length) return 0;
-  await db.insert(millionaireBets).values([...rows]).onConflictDoUpdate({
-    target: millionaireBets.id,
-    set: { amount: sql`excluded.amount`, price: sql`excluded.price`, lastAt: sql`excluded.last_at`, url: sql`coalesce(excluded.url, ${millionaireBets.url})`,
+/** Saves bets, one row per run (a wallet's buys in one market and outcome, each within 10 minutes of the last). The
+ *  poller names a run after its first fill in a 70-minute buffer, so a long run, or one the worker restarted in the
+ *  middle of, comes back under a later fill's id: it merges into the open bet already there, by fill id, and keeps
+ *  that bet's id, so one bet never pings or opens an Autopilot ticket twice. The tier stays what it was when the bet
+ *  was first seen; size, price and last fill follow the run. Returns the rows as stored (ids and sizes after merging),
+ *  for the position events. */
+export async function saveBets(db: Db, rows: readonly BetRow[]): Promise<BetRow[]> {
+  const out: BetRow[] = [];
+  for (const row of rows) {
+    const at = +row.at, lastAt = +(row.lastAt ?? row.at);
+    const same = await db.select().from(millionaireBets).where(and(eq(millionaireBets.wallet, row.wallet), eq(millionaireBets.marketId, row.marketId),
+      eq(millionaireBets.outcomeSide, row.outcomeSide), isNull(millionaireBets.result),
+      gte(millionaireBets.lastAt, new Date(at - MERGE_WINDOW_MS)), lte(millionaireBets.at, new Date(lastAt + MERGE_WINDOW_MS))))
+      .orderBy(millionaireBets.at, millionaireBets.id);
+    const keep = same.find(r => r.id === row.id) ?? same[0];
+    if (!keep) {
+      await db.insert(millionaireBets).values(row).onConflictDoNothing();
+      out.push(row);
+      continue;
+    }
+    const parts = mergeParts(...same.map(r => r.parts), row.parts);
+    const merged = parts.length ? fromParts(parts) : null;
+    // Bets from before fills were kept can't be added up exactly: never show less than the biggest of them.
+    const legacy = same.filter(r => !r.parts?.length).reduce((mx, r) => Math.max(mx, r.amount), 0);
+    const amount = Math.max(legacy, merged?.amount ?? row.amount), price = merged && merged.amount >= legacy ? merged.avgPrice : row.price;
+    const first = new Date(Math.min(at, +keep.at, merged?.at ?? at)), last = new Date(Math.max(lastAt, +keep.lastAt, merged?.lastAt ?? lastAt));
+    await db.update(millionaireBets).set({
+      amount, price, at: first, lastAt: last, parts: parts.length ? parts : null, url: row.url ?? keep.url,
       // The category is re-read on every run, so a better rule (esports, the Masters) corrects live bets too.
-      category: sql`excluded.category`,
-      yesLabel: sql`coalesce(excluded.yes_label, ${millionaireBets.yesLabel})`, noLabel: sql`coalesce(excluded.no_label, ${millionaireBets.noLabel})` },
-  });
-  return rows.length;
+      category: row.category, yesLabel: row.yesLabel ?? keep.yesLabel, noLabel: row.noLabel ?? keep.noLabel,
+    }).where(eq(millionaireBets.id, keep.id));
+    out.push({ ...row, id: keep.id, tier: keep.tier, amount, price, at: first, lastAt: last, parts });
+  }
+  return out;
 }
 
 /** Marks a settled market's bets won / lost (void when refunded). */

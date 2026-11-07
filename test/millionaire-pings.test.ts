@@ -57,8 +57,8 @@ describe("a ping on a market with a Kalshi twin", () => {
     const m = pingMessage(b, 0.8, "https://insidir.com", { yes: 0.81 });
     expect(m.body).toBe("A +$11M wallet bought Hawks at 79¢ on Polymarket. Kalshi: 81¢.");
     expect(m.url).toBe("https://insidir.com/bet/b9");
-    // NO on Polymarket is NO on Kalshi: 1 − Kalshi's YES.
-    expect(pingMessage({ ...b, side: "no" }, null, "https://insidir.com", { yes: 0.81 }).body).toContain("Kalshi: 19¢.");
+    // NO on Polymarket is NO on Kalshi, at Kalshi's NO ask (not 1 − the YES ask, the NO bid).
+    expect(pingMessage({ ...b, side: "no" }, null, "https://insidir.com", { yes: 0.81, noAsk: 0.21 }).body).toContain("Kalshi: 21¢.");
     // No twin, or no Kalshi price yet: the copy ticket as before.
     expect(pingMessage(b, 0.8, "https://insidir.com", null).url).toBe("https://insidir.com/copy/b9");
   });
