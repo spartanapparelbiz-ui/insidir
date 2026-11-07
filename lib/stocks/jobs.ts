@@ -1,14 +1,17 @@
-/* The Stocks jobs (worker): Form 4 insider buys every STOCKS_FORM4_MS (2 min) and 13F fund adds every 6 hours.
+/* The Stocks jobs (worker): every Form 4 and 4/A every STOCKS_FORM4_MS (2 min), and 13F fund adds every 6 hours (13F
+ * is kept but not scheduled for the V3 launch, docs/INSIDIR-V3.md §7).
  * Each SEC filing is read once (terminal.sec_seen). Requests go through one SecClient: SEC_USER_AGENT, under 10 a
  * second. Nothing runs without SEC_USER_AGENT. Congress trades (house disclosures) are not part of this. */
 import { inArray } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { secSeen } from "@/lib/db/schema";
 import { upsertMoves } from "@/lib/moves/store";
+import { seenKey } from "./backfill";
+import { readAndSave } from "./filings";
 import type { Move } from "@/lib/moves/types";
 import { companyName, filingIndexUrl, insiderBuy, parseAtom, type AtomFiling } from "./form4";
 import { cik10, complete, filingIndex13f, fundAdds, managerCiks, parseInfoTable, parsePrimaryDoc, pickDocuments, positions, thirteenFFilings, type Position, type ThirteenF } from "./form13f";
-import { fundHistoryOnce, queueHistory, readOwnership, saveTrades, tradeRows, type TradeRow } from "./history";
+import { fundHistoryOnce, readOwnership, tradeRows, type TradeRow } from "./history";
 import { fundMove, insiderMove } from "./moves";
 import type { SecClient } from "./sec";
 
@@ -47,41 +50,31 @@ export async function readForm4Full(sec: SecClient, f: AtomFiling): Promise<{ mo
 
 export const readForm4 = async (sec: SecClient, f: AtomFiling): Promise<Move | null> => (await readForm4Full(sec, f)).move;
 
-/** Pages back through the current-filings feed until a page holds nothing new, then reads the new filings. */
-export async function form4Once(db: Db, sec: SecClient): Promise<{ read: number; moves: number; errors: number }> {
+/** The live Form 4 feed (docs/INSIDIR-V3.md §3): pages back through EDGAR's current-filings feed until a page holds
+ *  nothing new, then reads each new Form 4 and 4/A into terminal.filings and terminal.insider_trades (lib/stocks/
+ *  filings.ts), marked read under the V3 key so the backfill (lib/stocks/backfill.ts) never reads it twice. It no
+ *  longer makes moves: V3 has no cards. A filing that fails is left unmarked and read again on the next run. */
+export async function form4Once(db: Db, sec: SecClient): Promise<{ read: number; trades: number; amendments: number; errors: number }> {
   const fresh: AtomFiling[] = [];
   const queued = new Set<string>();
   for (let page = 0; page < FORM4_PAGES && fresh.length < FORM4_PER_RUN; page++) {
     const batch = parseAtom(await sec.text(atomUrl(page * 100))).filter(f => !queued.has(f.accession));
     if (!batch.length) break;
-    const known = await seen(db, batch.map(f => `f4:${f.accession}`));
-    const unknown = batch.filter(f => !known.has(`f4:${f.accession}`));
+    const known = await seen(db, batch.map(f => seenKey(f.accession)));
+    const unknown = batch.filter(f => !known.has(seenKey(f.accession)));
     for (const f of unknown) { queued.add(f.accession); fresh.push(f); }
     if (!unknown.length) break;
   }
-  let read = 0, errors = 0;
-  const out: Move[] = [];
+  let read = 0, trades = 0, amendments = 0, errors = 0;
   for (const f of fresh.slice(0, FORM4_PER_RUN)) {
     try {
-      // 4/A restates an earlier filing: recorded, never shown.
-      if (f.formType === "4") {
-        const { move, trades } = await readForm4Full(sec, f);
-        if (trades.length) await saveTrades(db, trades);
-        if (move) out.push(move);
-      }
-      await markSeen(db, `f4:${f.accession}`);
+      const got = await readAndSave(db, sec, f.filerCik, f.accession, { at: f.publishedAt });
+      if (got) { trades += got.trades.length; if (got.filing.form === "4/A") amendments++; }
+      await markSeen(db, seenKey(f.accession));
       read++;
     } catch { errors++; }
   }
-  if (out.length) {
-    await upsertMoves(db, out);
-    // Each buyer's and company's EDGAR history, for the profile and "why this matters" (lib/stocks/history.ts).
-    await queueHistory(db, out.flatMap(m => m.detail?.kind === "insider" ? [
-      ...(m.detail.ownerCik ? [{ kind: "owner" as const, cik: m.detail.ownerCik, name: m.detail.ownerName }] : []),
-      { kind: "issuer" as const, cik: m.detail.issuerCik, name: m.detail.company },
-    ] : []));
-  }
-  return { read, moves: out.length, errors };
+  return { read, trades, amendments, errors };
 }
 
 export async function thirteenFPositions(sec: SecClient, cik: string, f: ThirteenF): Promise<Map<string, Position> | null> {

@@ -35,10 +35,16 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
-  for (const path of ["/stocks", "/insider-trading/EXDV", "/NVDA"]) {
+  for (const path of ["/stocks", "/insider-trading/EXDV"]) {
     const r = await page.request.get(path, { maxRedirects: 0 });
     expect(r.status(), path).toBe(301);
     expect(r.headers().location, path).toMatch(/\/board$/);
+  }
+  // A bare ticker and the old per-person pages land on insider activity (docs/INSIDIR-V3.md §3).
+  for (const [path, to] of [["/NVDA", /\/insiders\?ticker=NVDA$/], ["/insiders/1197647-jen-hsun-huang", /\/insiders$/]] as const) {
+    const r = await page.request.get(path, { maxRedirects: 0 });
+    expect(r.status(), path).toBe(301);
+    expect(r.headers().location, path).toMatch(to);
   }
   expect(await (await page.request.get("/sitemaps/pages.xml")).text()).not.toContain("/stocks</loc>");
 });

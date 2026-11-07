@@ -78,8 +78,50 @@ export function parseAtom(xml: string): AtomFiling[] {
 }
 
 export interface Owner { cik: string | null; name: string; isDirector: boolean; isOfficer: boolean; isTenPercentOwner: boolean; officerTitle: string | null; otherText: string | null }
-export interface Line { code: string | null; acquiredDisposed: string | null; derivative: boolean; date: string | null; shares: number | null; price: number | null; value: number | null; security: string | null }
-export interface Ownership { issuerCik: string; issuerName: string; ticker: string | null; documentType: string; owners: Owner[]; lines: Line[] }
+export interface Line {
+  code: string | null; acquiredDisposed: string | null; derivative: boolean; date: string | null; shares: number | null; price: number | null; value: number | null; security: string | null;
+  /** Shares (or derivative securities) owned after the transaction, as filed. */
+  ownedAfter: number | null;
+  /** "D" direct → true, "I" indirect → false, else null. */
+  direct: boolean | null;
+  /** The text of the footnotes this line points to. */
+  notes: string[];
+}
+export interface Ownership {
+  issuerCik: string; issuerName: string; ticker: string | null; documentType: string; owners: Owner[]; lines: Line[];
+  /** periodOfReport: the date of the earliest transaction reported. */
+  period: string | null;
+  /** The 10b5-1 checkbox (aff10b5One, on filings since April 2023); null when the filing has no such element. */
+  aff10b5One: boolean | null;
+  /** On a 4/A: dateOfOriginalSubmission, the day the filing it amends was filed. */
+  originalDate: string | null;
+}
+
+/** Every footnoteId the node (or anything inside it) points to. */
+function footnoteIds(v: unknown, out = new Set<string>()): Set<string> {
+  if (Array.isArray(v)) { for (const x of v) footnoteIds(x, out); return out; }
+  if (v && typeof v === "object") {
+    for (const [k, x] of Object.entries(v as Node)) {
+      if (k === "footnoteId") for (const f of list<Node>(x)) { const id = String(f?.["@_id"] ?? "").trim(); if (id) out.add(id); }
+      else footnoteIds(x, out);
+    }
+  }
+  return out;
+}
+
+/** Whether the filing marks this line as made under a Rule 10b5-1 trading plan. Pure.
+ *   - the line's own footnote decides: one that says 10b5-1 (and not "not … 10b5-1") is true, one that says it was not
+ *     under a plan is false;
+ *   - with no such footnote, an unchecked 10b5-1 box (aff10b5One, on filings since April 2023) is false for every line:
+ *     the filer says no transaction on the form was under a plan;
+ *   - a checked box without a footnote is null: the box covers the filing, not a line, and doesn't say which one;
+ *   - a filing from before the box, with no footnote, is null. */
+export function plan10b5One(line: Pick<Line, "notes">, aff: boolean | null): boolean | null {
+  const said = line.notes.filter(n => /10b5-?1/i.test(n));
+  if (said.some(n => !/\bnot\b[^.]{0,80}10b5-?1/i.test(n))) return true;
+  if (said.length) return false;
+  return aff === false ? false : null;
+}
 
 export function parseOwnership(xml: string): Ownership {
   const root = (parser.parse(xml) as Node)?.ownershipDocument as Node | undefined;
@@ -92,6 +134,7 @@ export function parseOwnership(xml: string): Ownership {
     return { cik: scalar(id.rptOwnerCik), name: scalar(id.rptOwnerName) ?? "Reporting owner", isDirector: flag(rel.isDirector), isOfficer: flag(rel.isOfficer),
       isTenPercentOwner: flag(rel.isTenPercentOwner), officerTitle: scalar(rel.officerTitle), otherText: scalar(rel.otherText) };
   });
+  const notes = new Map(list<Node>((root.footnotes as Node | undefined)?.footnote).map(f => [String(f?.["@_id"] ?? ""), (scalar(f) ?? "").replace(/\s+/g, " ")]));
   const lines: Line[] = [];
   for (const [derivative, key, table] of [[false, "nonDerivativeTransaction", root.nonDerivativeTable], [true, "derivativeTransaction", root.derivativeTable]] as const) {
     for (const t of list<Node>((table as Node | undefined)?.[key])) {
@@ -102,11 +145,16 @@ export function parseOwnership(xml: string): Ownership {
         derivative, date: xmlDate(val(t?.transactionDate)), security: val(t?.securityTitle),
         shares: num(amounts.transactionShares), price: num(amounts.transactionPricePerShare),
         value: filedValue(decimalText(amounts.transactionShares), decimalText(amounts.transactionPricePerShare)),
+        ownedAfter: num(((t?.postTransactionAmounts ?? {}) as Node).sharesOwnedFollowingTransaction),
+        direct: ((d: string | null) => (d === "D" ? true : d === "I" ? false : null))(val(((t?.ownershipNature ?? {}) as Node).directOrIndirectOwnership)?.toUpperCase() ?? null),
+        notes: [...footnoteIds(t)].map(id => notes.get(id)).filter((n): n is string => Boolean(n)),
       });
     }
   }
   return { issuerCik: issuerCik!, issuerName: scalar(issuer.issuerName) ?? "Unknown issuer", ticker: scalar(issuer.issuerTradingSymbol)?.toUpperCase() ?? null,
-    documentType: val(root.documentType) ?? "4", owners, lines };
+    documentType: val(root.documentType) ?? "4", owners, lines,
+    period: xmlDate(val(root.periodOfReport)), aff10b5One: root.aff10b5One === undefined ? null : flag(root.aff10b5One),
+    originalDate: xmlDate(val(root.dateOfOriginalSubmission)) };
 }
 
 /** The XML documents of a filing's index.json worth trying, likeliest first. */

@@ -1,6 +1,10 @@
 /* Seeds the END-TO-END TEST database (never a real one: refuses unless DATABASE_URL names an "e2e" database).
  * Every deal is computed by the real engines from synthetic books, and every title says "E2E fixture", so nothing
  * here can be mistaken for live data. Run: DATABASE_URL=…/terminal_e2e tsx qa/e2e/seed.ts */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { saveFiling } from "@/lib/stocks/filings";
+import { filingIndexUrl, parseOwnership } from "@/lib/stocks/form4";
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/lib/db";
@@ -79,7 +83,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks, terminal.market_info, terminal.move_tags CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks, terminal.market_info, terminal.move_tags, terminal.filings, terminal.form4_days CASCADE`);
   const u = universe(now);
   // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
   await saveMarkets(db, u.markets);
@@ -265,6 +269,13 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   delete process.env.OPENROUTER_API_KEY;
   while ((await notesOnce(db, now, { limit: 50 })).written > 0) { /* every position from the last 2 days */ }
   process.env.OPENROUTER_API_KEY = prevKey;
+  // The Form 4 database (docs/INSIDIR-V3.md §3): three real filings from EDGAR (test/fixtures/sec/v3), a BCB Bancorp
+  // director's Form 4 and the 4/A that restates it, and a Procter & Gamble officer's option exercises and sale.
+  const fx = (n: string) => readFileSync(join(__dirname, "../../test/fixtures/sec/v3", n), "utf8");
+  for (const [acc, cik, name, at] of [["000119312526448969", "1228454", "bcb-4", "2026-11-05T15:37:13Z"], ["000119312526450490", "1228454", "bcb-4a", "2026-11-06T02:50:04Z"],
+    ["000008042426000271", "80424", "pg-ms", "2026-11-05T14:03:41Z"]] as const) {
+    await saveFiling(db, parseOwnership(fx(`${name}.xml`)), acc, Date.parse(at), filingIndexUrl(cik, acc));
+  }
   return { opps: deals };
 }
 

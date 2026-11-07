@@ -1,12 +1,13 @@
 import type { NextConfig } from "next";
 
-/** Retired routes and where each one goes now. /check/<id>, /read/<id> and /read/open resolve the market (app/check,
+/** Retired routes and where each one goes now. /insiders is live again (docs/INSIDIR-V3.md §3): the old per-person
+ *  pages (/insiders/<cik>-<name>) go to it until People (§3, step 4) has a page of its own. /check/<id>, /read/<id> and /read/open resolve the market (app/check,
  *  app/read). Query strings carry over (/welcome?status=succeeded lands on /go?status=succeeded). */
 export const RETIRED: ReadonlyArray<readonly [string, string]> = [
   ["/check", "/board"], ["/check/history", "/board"], ["/check/:id/:rest+", "/board"], ["/read/:id/:rest+", "/board"],
   ["/trader/:wallet", "/wallet/:wallet"], ["/p/:id", "/wallet/:id"], ["/top", "/wallets"], ["/whales", "/wallets"],
   ["/trackers", "/wallets"], ["/trackers/:slug*", "/wallets"], ["/sports", "/board?cat=sports"],
-  ["/stocks", "/board"], ["/company/:t*", "/board"], ["/insider-trading/:t*", "/board"], ["/insiders/:id*", "/board"],
+  ["/stocks", "/board"], ["/company/:t*", "/board"], ["/insider-trading/:t*", "/board"], ["/insiders/:id+", "/insiders"],
   ["/funds/:id*", "/board"], ["/deal/:id*", "/board"], ["/terminal", "/board"], ["/research", "/board"],
   ["/discover", "/markets"], ["/feed", "/board"], ["/gaps", "/board"], ["/splits", "/board"], ["/splits/:rest*", "/board"],
   ["/open", "/board"], ["/position/:id*", "/board"], ["/pnl", "/copies"], ["/receipts", "/results"], ["/receipts/:rest*", "/results"],
