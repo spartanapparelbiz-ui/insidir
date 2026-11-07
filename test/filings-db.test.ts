@@ -16,6 +16,7 @@ import { acknowledge, exportAll, feedAfter, markSeen, memberState, resolveTicker
 import { tickersOnce } from "@/lib/filings/tickers";
 import { edgarHealth, tapeBucket } from "@/lib/filings/store";
 import { sourceFor } from "@/lib/filings/source";
+import { previewFor } from "@/lib/filings/preview";
 import { heartbeat } from "@/lib/worker/store";
 import type { Position } from "@/lib/filings/types";
 import { SecClient } from "@/lib/stocks/sec";
@@ -178,6 +179,15 @@ describe.skipIf(!URL0)("Filings in Postgres", () => {
     expect(await sourceFor(db, "000032019326000205")).toBe("no-xml");      // an 8-K
     expect(await sourceFor(db, ACC)).toBe("unavailable");                   // no SEC client on this service
     process.env.SEC_USER_AGENT = prev;
+  });
+
+  it("the public preview: open-market Form 4s and 8-Ks from the last 72 hours, the counts, the matches", async () => {
+    const p = await previewFor(db, NOW);
+    // The 8-K/A (an amendment) and the Oct 22 Form 4 (over 72 hours before NOW) are left out.
+    expect(p.rows.map(r => [r.f, r.t, r.code])).toEqual([["8-K", "EXDV", null], ["4", "EXDV", "P"]]);
+    expect(p.rows[1]).toMatchObject({ v: 1_401_817.5, own: "Doe Jane" });
+    expect(p.stats).toMatchObject({ f4Day: 2, pDay: 1, eightKDay: 2 });
+    expect(p.matches.map(m => m.kind).sort()).toEqual(["cluster", "whale"]);
   });
 
   it("deleting an account deletes its lists, journal and desk", async () => {

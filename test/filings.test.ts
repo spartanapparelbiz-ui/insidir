@@ -14,6 +14,7 @@ import { parseOwnership } from "@/lib/stocks/form4";
 import { bucketOf, derive, filterRows, mergeRows, NO_FILTER, type RowFilter } from "@/lib/filings/filter";
 import { JournalBody } from "@/lib/filings/validate";
 import { edgarLight } from "@/components/filings/Terminal";
+import { previewRow } from "@/lib/filings/preview";
 
 const fx = (name: string) => readFileSync(join(__dirname, "fixtures/sec", name), "utf8");
 const DAY = 86_400_000;
@@ -235,5 +236,24 @@ describe("journal bodies", () => {
   it("refuses a journal over 1 MB", () => {
     const big = Array.from({ length: 60 }, (_, i) => ({ ...note, id: `n${i}`, body: "x".repeat(19_000) }));
     expect(JournalBody.safeParse({ ticker: "NVDA", status: null, reason: null, version: 0, notes: big }).success).toBe(false);
+  });
+});
+
+describe("the public preview (/edgar)", () => {
+  const base = f4({ owners: [["1", "Doe Jane"]], lines: [] });
+  const row = (lines: Array<Partial<FiledLine>>): FilingRow => ({ ...base, id: 7, payload: { kind: "4", owners: [{ cik: "1", name: "Doe Jane", role: "Chief Executive Officer" }], codes: ["P", "S"], derivativeLines: 0,
+    lines: lines.map(l => ({ code: "P", ad: "A", date: "2026-10-21", shares: 100, price: 10, value: 1000, ...l })) } });
+  it("a Form 4 becomes its open-market side, figures as filed, without any source link", () => {
+    const r = previewRow(row([{ shares: 5000, price: 182.405, value: 912_025 }, { shares: 2675, price: 183.1, value: 489_792.5, date: "2026-10-22" }]))!;
+    expect(r).toEqual({ id: 7, t: "EXDV", co: "Example Devices", at: 0, f: "4", own: "Doe Jane", role: "Chief Executive Officer", code: "P", sh: 7675, px: 182.6472, v: 1_401_817.5, d: "2026-10-21", items: [] });
+    expect(JSON.stringify(r)).not.toMatch(/sec\.gov|http/);
+  });
+  it("the larger side wins when a filing has both; grants and amendments are left out", () => {
+    expect(previewRow(row([{ value: 1000 }, { code: "S", ad: "D", value: 5000, shares: 50, price: 100 }]))?.code).toBe("S");
+    expect(previewRow(row([{ code: "A", value: 9000 }]))).toBeNull();
+    expect(previewRow({ ...row([{}]), form: "4/A" })).toBeNull();
+  });
+  it("an 8-K keeps its item numbers", () => {
+    expect(previewRow({ ...base, form: "8-K", payload: { kind: "8-K", items: ["2.02"] } })).toMatchObject({ f: "8-K", code: null, items: ["2.02"] });
   });
 });

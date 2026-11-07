@@ -12,7 +12,7 @@ import { RESEARCH_DISCLAIMER, researchBanned } from "@/lib/copy";
 import { isIdentifier } from "./copy-text";
 
 const ROOT = join(__dirname, "..");
-const DIRS = ["components/filings", "lib/filings", "app/filings", "app/api/filings", "app/api/cron/filings"];
+const DIRS = ["components/filings", "lib/filings", "app/filings", "app/api/filings", "app/api/cron/filings", "app/edgar", "app/api/edgar"];
 const walk = (d: string): string[] => readdirSync(d).flatMap(f => { const p = join(d, f); return statSync(p).isDirectory() ? walk(p) : /\.(tsx?|css)$/.test(f) ? [p] : []; });
 const FILES = DIRS.flatMap(d => walk(join(ROOT, d)));
 const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
@@ -70,5 +70,19 @@ describe("Filings compliance", () => {
       const src = readFileSync(join(ROOT, f), "utf8");
       expect(src, f).not.toMatch(/pnl[^\n]*fl-(p|s)\b|signedUsd[^\n]*fl-(p|s)\b/);
     }
+  });
+  it("the /edgar landing: disclaimer pinned to the viewport, real checkout, the site's nav, no per-visitor database read", () => {
+    const land = readFileSync(join(ROOT, "components/filings/EdgarLanding.tsx"), "utf8");
+    expect(land).toContain('<p className="el-bar" role="note" data-testid="el-disclaimer">{RESEARCH_DISCLAIMER}</p>');
+    expect(readFileSync(join(ROOT, "components/filings/filings.css"), "utf8")).toMatch(/\.el-bar \{ position: fixed;[^}]*bottom: 0;/);
+    expect(land).toContain('const CHECKOUT = "/go?step=checkout&from=edgar"');
+    expect(land).toContain("<Paywall ");
+    const page = readFileSync(join(ROOT, "app/edgar/page.tsx"), "utf8");
+    // Data from the shared 30-second preview cache only: no per-visitor query, no cookies read by the page itself.
+    expect(page).toMatch(/await previewFor\(getDb\(\), now\)/);
+    expect(page).not.toMatch(/cookies\(|headers\(|getViewer|select\(/);
+    expect(readFileSync(join(ROOT, "lib/filings/preview.ts"), "utf8")).toMatch(/memo\("filings:preview", PREVIEW_MS/);
+    expect(page).toContain("<BrandNav fixed />");
+    expect(readFileSync(join(ROOT, "app/api/edgar/preview/route.ts"), "utf8")).toMatch(/public, max-age=15, s-maxage=30/);
   });
 });

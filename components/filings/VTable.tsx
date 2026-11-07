@@ -16,6 +16,7 @@ interface Data<T> {
   selected: string | null;
   rowKey: (row: T) => string;
   onSelect: (row: T, index: number) => void;
+  onHover?: (row: T | null) => void;
 }
 
 function RowImpl<T>({ index, style, data }: ListChildComponentProps<Data<T>>) {
@@ -23,7 +24,7 @@ function RowImpl<T>({ index, style, data }: ListChildComponentProps<Data<T>>) {
   const key = data.rowKey(row);
   return (
     <div role="row" aria-rowindex={index + 2} aria-selected={key === data.selected} className={`fl-tr ${data.cols}${data.rowClass ? ` ${data.rowClass(row)}` : ""}`}
-      style={style} onClick={() => data.onSelect(row, index)} data-testid="fl-tr">
+      style={style} onClick={() => data.onSelect(row, index)} onMouseEnter={data.onHover ? () => data.onHover!(row) : undefined} data-testid="fl-tr">
       {data.render(row, index)}
     </div>
   );
@@ -45,14 +46,14 @@ function useHeight<E extends HTMLElement>(): [React.RefObject<E | null>, number]
   return [ref, h];
 }
 
-export function VTable<T>({ rows, cols, head, render, rowKey, selected, onSelect, onOpen, onEnd, rowClass, empty, label, footer }: {
+export function VTable<T>({ rows, cols, head, render, rowKey, selected, onSelect, onOpen, onEnd, onHover, rowClass, empty, label, footer }: {
   rows: readonly T[]; cols: string; head: ReactNode; render: (row: T, index: number) => ReactNode; rowKey: (row: T) => string;
-  selected: string | null; onSelect: (row: T, index: number) => void; onOpen?: (row: T) => void; onEnd?: () => void;
+  selected: string | null; onSelect: (row: T, index: number) => void; onOpen?: (row: T) => void; onEnd?: () => void; onHover?: (row: T | null) => void;
   rowClass?: (row: T) => string; empty: ReactNode; label: string; footer?: ReactNode;
 }) {
   const [box, height] = useHeight<HTMLDivElement>();
   const list = useRef<FixedSizeList<Data<T>>>(null);
-  const data = useMemo<Data<T>>(() => ({ rows, cols, render, rowClass, selected, rowKey, onSelect }), [rows, cols, render, rowClass, selected, rowKey, onSelect]);
+  const data = useMemo<Data<T>>(() => ({ rows, cols, render, rowClass, selected, rowKey, onSelect, onHover }), [rows, cols, render, rowClass, selected, rowKey, onSelect, onHover]);
   const index = selected === null ? -1 : rows.findIndex(r => rowKey(r) === selected);
 
   const onKey = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
@@ -66,7 +67,7 @@ export function VTable<T>({ rows, cols, head, render, rowKey, selected, onSelect
   }, [rows, index, onSelect, onOpen]);
 
   return (
-    <div className="fl-table" role="grid" aria-label={label} aria-rowcount={rows.length + 1} tabIndex={0} onKeyDown={onKey}>
+    <div className="fl-table" role="grid" aria-label={label} aria-rowcount={rows.length + 1} tabIndex={0} onKeyDown={onKey} onMouseLeave={onHover ? () => onHover(null) : undefined}>
       <div role="row" aria-rowindex={1} className={`fl-thead ${cols}`}>{head}</div>
       <div ref={box} className="fl-tbody">
         {!rows.length ? <div className="fl-empty">{empty}</div> : height > 0 ? (

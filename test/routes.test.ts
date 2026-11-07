@@ -8,7 +8,7 @@ import { RETIRED } from "../next.config";
 import { PAGES } from "@/lib/seo/sitemaps";
 
 const KEEP_MAIN = ["/", "/election", "/board", "/markets", "/markets/[category]", "/market/[slug]", "/race/[slug]", "/wallet/[address]", "/bet/[id]",
-  "/wallets", "/copies", "/copies/yours", "/copy/[id]", "/go", "/login", "/settings", "/results", "/autopilot", "/t/[id]", "/book", "/filings", "/filings/[ticker]"];
+  "/wallets", "/copies", "/copies/yours", "/copy/[id]", "/go", "/login", "/settings", "/results", "/autopilot", "/t/[id]", "/book", "/filings", "/filings/[ticker]", "/edgar"];
 const KEEP_TEXT = ["/faq", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog", "/about", "/help"];
 const KEEP = new Set([...KEEP_MAIN, ...KEEP_TEXT]);
 /** Pages that are not on the keep list but never answer 200 to a visitor: admin (signed-in owners only), the dev gallery

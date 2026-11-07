@@ -192,6 +192,21 @@ keeps crawlers out of the app. Congress trades are not a source (a test fails if
 - **Member data**: `user_watchlists` (one row per list), `research_journal` (one row per company: status, history, notes with up to 10 revisions each), `research_members` (read cursor, accepted disclaimer, positions as one document). `GET /api/filings/export` downloads all of it.
 - **Terminal UI** (`components/filings/Terminal.tsx`): a full-viewport desk with the site logo, a UTC clock, an EDGAR light (from the poller's heartbeat) and a feed light (round trip of the 15-second poll; it is polling, not a socket). Views: Alerts (watchlists rail, filtered feed, document), Tape (every filing, virtualized with `react-window`, infinite scroll over immutable id buckets the browser caches for a day), Stream, Journal (document left, notes right), Positions (ledger, EDGAR paper trail, EV calculator). Keys: `/` search, `F` filter, `A` `T` `S` `J` `P` views, `W` pin, `N` note, `?` all. Raw Form 4 XML is fetched on demand through `/api/filings/source/<accession>` (needs `SEC_USER_AGENT` on the web service; cached per instance). The disclaimer sits in the status bar on every view.
 
+### `/edgar`: the SEC landing
+
+A public page (off until `FEATURES_READY` has `filings`) that is useful before sign-up: the last 72 hours of
+open-market Form 4 trades, $1M+ purchases, clusters and 8-Ks in a live, virtualized table visitors can search, filter,
+sort and hover without an account (`components/filings/EdgarLanding.tsx`). Clicking a row or "Set an alert" opens the
+membership drawer (the shared `Paywall`, into `/go?step=checkout&from=edgar`).
+
+- **Cost per visitor: no database read.** The rows are in the HTML, from `lib/filings/preview.ts`, computed at most once
+  every 30 s per server instance. Measured locally: 25 visits, 0 database transactions. `GET /api/edgar/preview` (the
+  page's 30 s refresh) is the same data with `Cache-Control: public, s-maxage=30`, so a CDN can absorb it.
+- The page is server-rendered on each visit (the root layout reads cookies for the visitor bar, so no page can be
+  static). Making it fully static would mean moving that cookie read out of `app/layout.tsx`.
+- `/` is unchanged. Making `/edgar` the home page retires the current landing and needs the money-path monitor
+  (`lib/monitor/money-path.ts`, which walks landing → Read → checkout) changed in the same deploy.
+
 ## Rate limits
 
 Every request goes through a per-bucket token bucket set to about 80% of the published limit:
