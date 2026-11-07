@@ -26,14 +26,15 @@ describe("quiet hours", () => {
     expect(inQuietHours(at(7), "22:00", "07:00", "UTC")).toBe(false);
     expect(inQuietHours(at(12), "22:00", "07:00", "UTC")).toBe(false);
   });
-  it("uses the member's time zone (unknown zones fall back to UTC)", () => {
+  it("uses the member's time zone (none or unknown: New York, never UTC)", () => {
     // 03:00 UTC = 23:00 the day before in New York (EDT, UTC−4).
     expect(localMinutes(at(3), "America/New_York")).toBe(23 * 60);
     expect(inQuietHours(at(3), "22:00", "07:00", "America/New_York")).toBe(true);
     expect(inQuietHours(at(12), "22:00", "07:00", "Asia/Tokyo")).toBe(false); // 12:00 UTC = 21:00 in Tokyo
     expect(inQuietHours(at(14), "22:00", "07:00", "Asia/Tokyo")).toBe(true); // 14:00 UTC = 23:00 in Tokyo
     expect(validTimeZone("Not/AZone")).toBe(false);
-    expect(localMinutes(at(5), "Not/AZone")).toBe(5 * 60);
+    expect(localMinutes(at(5), "Not/AZone")).toBe(localMinutes(at(5), "America/New_York"));
+    expect(localMinutes(at(5), null)).toBe(localMinutes(at(5), "America/New_York"));
   });
   it("no window when either end is missing or they're equal", () => {
     expect(inQuietHours(at(3), null, "07:00", "UTC")).toBe(false);

@@ -86,18 +86,31 @@ export async function collapsePosition(db: Db, ids: string[], parts: FillPart[] 
   await db.delete(moves).where(inArray(moves.id, rows.slice(1).map(r => r.id)));
 }
 
-/** Markets with unsettled moves older than an hour, per source (for the settlement check). SEC filings never settle. */
+/** Where the last settlement check stopped ("source:market"), per process. */
+let settleCursor = "";
+
+/** Markets with unsettled moves or millionaire bets older than an hour, per source (for the settlement check), `limit`
+ *  at a time. Each run takes the next markets in id order after the last run's, wrapping around, so every open market
+ *  is checked within a few runs however many there are (a fixed first 300 could hold the same long-dated markets
+ *  forever). SEC filings never settle. */
 export async function unsettledMarkets(db: Db, before: Date, limit = 300): Promise<Array<{ source: "polymarket" | "kalshi"; marketId: string }>> {
-  const rows = await db.selectDistinct({ source: moves.source, marketId: moves.marketId }).from(moves)
-    .where(and(isNull(moves.result), lt(moves.at, before), inArray(moves.source, ["polymarket", "kalshi"]))).limit(limit);
-  // Markets that only hold millionaire bets under the moves threshold (lib/millionaires/bets.ts) settle the same way.
-  const left = limit - rows.length;
-  const bets = left > 0 ? await db.selectDistinct({ marketId: millionaireBets.marketId }).from(millionaireBets)
-    .where(and(isNull(millionaireBets.result), lt(millionaireBets.at, before))).limit(limit) : [];
-  const have = new Set(rows.map(r => `${r.source}:${r.marketId}`));
-  const extra = bets.filter(b => !have.has(`polymarket:${b.marketId}`)).slice(0, left).map(b => ({ source: "polymarket" as const, marketId: b.marketId }));
-  return [...rows as Array<{ source: "polymarket" | "kalshi"; marketId: string }>, ...extra];
+  const page = async (after: string, n: number) => (await db.execute(sql`select source, market_id from (
+      select distinct source, market_id from terminal.moves where result is null and at < ${before} and source in ('polymarket', 'kalshi')
+      union
+      select distinct 'polymarket' as source, market_id from terminal.millionaire_bets where result is null and at < ${before}
+    ) open where source || ':' || market_id > ${after} order by source || ':' || market_id limit ${n}`)).rows as Array<{ source: "polymarket" | "kalshi"; market_id: string }>;
+  let rows = await page(settleCursor, limit);
+  if (rows.length < limit && settleCursor) {
+    const seen = new Set(rows.map(r => `${r.source}:${r.market_id}`));
+    rows = [...rows, ...(await page("", limit - rows.length)).filter(r => !seen.has(`${r.source}:${r.market_id}`))];
+  }
+  const last = rows[rows.length - 1];
+  settleCursor = rows.length === limit && last ? `${last.source}:${last.market_id}` : "";
+  return rows.map(r => ({ source: r.source, marketId: r.market_id }));
 }
+
+/** Tests: start the rotation over. */
+export const resetSettleCursor = (): void => { settleCursor = ""; };
 
 /** Marks every move in a settled market won or lost (or void when the market was refunded). */
 export async function settleMarket(db: Db, source: "polymarket" | "kalshi", marketId: string, result: "yes" | "no" | "void", at: Date): Promise<void> {

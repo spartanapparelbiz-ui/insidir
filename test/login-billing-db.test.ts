@@ -154,4 +154,14 @@ describe.skipIf(!URL0)("sign-in with Whop and billing, in Postgres", () => {
     expect((await applyBillingEvent(db, "membership.deactivated", webhookRef("membership.deactivated", { data: whop.memberships.get("mem_end") }), NOW)).plan).toBe("free");
     expect(effectivePlan({ plan: "insidir", accessUntil: new Date(NOW - 1), membershipStatus: "canceling" }, NOW)).toBe("free");
   });
+
+  it("Whop's API is down: a webhook never takes a member's access away, and the next request re-checks", async () => {
+    await db.insert(schema.users).values({ id: "usr_down", email: "down@example.test", whopUserId: "user_down", plan: "insidir", membershipStatus: "active", planCheckedAt: new Date(NOW), settings: schema.DEFAULT_SETTINGS });
+    vi.stubGlobal("fetch", async () => new Response("{}", { status: 503 }));
+    const a = await applyBillingEvent(db, "payment.succeeded", webhookRef("payment.succeeded", { data: { id: "pay_down", user: { id: "user_down" } } }), NOW);
+    expect(a.plan).toBe("insidir");
+    const row = (await db.select().from(schema.users).where(eq(schema.users.id, "usr_down")))[0]!;
+    expect(row.plan).toBe("insidir");
+    expect(row.planCheckedAt).toBeNull();
+  });
 });

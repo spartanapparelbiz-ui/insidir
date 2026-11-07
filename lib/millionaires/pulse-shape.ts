@@ -11,6 +11,8 @@ export interface Pulse {
   sinceMidnight: number;
   /** How many millionaire-tier bets since midnight US Eastern. */
   countToday: number;
+  /** How many millionaire-tier bets in the last 24 hours (what the pages count: never "0 today" at 8am). */
+  count24h: number;
 }
 
 /** The hero's live line: today's total (since midnight ET), or the last 24 hours when today is under HERO_MIN. */

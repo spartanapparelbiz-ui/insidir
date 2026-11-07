@@ -5,11 +5,11 @@ import { captureBodies, q, signIn } from "./helpers";
 
 test("landing: final on first paint, the hero's words and its CTAs, the nav, no stocks, no pop-up on arrival, no visitor bar", async ({ page }) => {
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain("Bet with the people");
-  expect(html).toContain("who actually win.");
+  expect(html).toContain("Every bet the");
+  expect(html).toContain("millionaires make.");
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1 });
-  await expect(h1).toHaveText(/Bet with the people\s*who actually win\./);
+  await expect(h1).toHaveText(/Every bet the\s*millionaires make\./);
   await expect(page.getByTestId("hero-line")).toContainText("Wallets up $1M+ bet");
   // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
   const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
@@ -31,7 +31,7 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; the retired stock pages are 301s", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Bet with the people\s*who actually win\./);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Every bet the\s*millionaires make\./);
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });

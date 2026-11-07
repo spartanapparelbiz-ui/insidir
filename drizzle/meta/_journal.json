@@ -302,6 +302,13 @@
       "when": 1793880000000,
       "tag": "0042_kalshi_history",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793890000000,
+      "tag": "0043_bet_parts",
+      "breakpoints": true
     }
   ]
 }

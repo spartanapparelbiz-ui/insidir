@@ -104,8 +104,15 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   const whop = whopUserId ?? user.whopUserId;
   const product = planIds().insidirProduct;
   const [has, list] = whop ? await Promise.all([product ? checkAccess(whop, product).catch(() => null) : Promise.resolve(null), fetchMemberships(whop).catch(() => null)]) : [null, null];
-  const plan = await store(db, user.id, list ?? (membership ? [membership] : []), has, now);
   void type;
+  if (has === null && list === null) {
+    // Whop didn't answer: never take access away on a guess. The event's own membership can grant it; otherwise the
+    // stored plan stays and the next request re-checks (planCheckedAt cleared).
+    if (membership && grants(membership, now)) return { userId: user.id, plan: await store(db, user.id, [membership], null, now), created };
+    await db.update(users).set({ planCheckedAt: null }).where(eq(users.id, user.id)).catch(() => undefined);
+    return { userId: user.id, plan: effectivePlan(user, now), created };
+  }
+  const plan = await store(db, user.id, list ?? (membership ? [membership] : []), has, now);
   return { userId: user.id, plan, created };
 }
 

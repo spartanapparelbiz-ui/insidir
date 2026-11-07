@@ -36,13 +36,17 @@ describe("positions, pure", () => {
   });
   it("pings say what the wallet did, with Kalshi's price for that side", () => {
     const base: PingBet = { id: "pm:x", marketId: M, side: "no", tier: "millionaire", amount: 40_000, category: "basketball", title: "Heat vs. Lakers", outcome: "Lakers", price: 0.55, pnl: 2_400_000 };
-    const twin = { yes: 0.47 };
+    // A NO costs Kalshi's NO ask (53¢), not 1 − the YES ask (1 − 0.49 = 51¢, the best NO bid).
+    const twin = { yes: 0.49, noAsk: 0.53 };
     expect(pingMessage({ ...base, kind: "add" }, null, "https://insidir.com", twin).body).toBe("A +$2.4M wallet added $40K to Lakers at 55¢ on Polymarket. Kalshi: 53¢.");
     const trim = pingMessage({ ...base, kind: "trim", sold: 0.4, path: "/market/heat-vs-lakers-aaaaaa" }, null, "https://insidir.com", twin);
     expect(trim.body).toBe("A +$2.4M wallet sold $40K of Lakers (about 40% of it) at 55¢ on Polymarket. Kalshi: 53¢.");
     expect(trim.url).toBe("https://insidir.com/market/heat-vs-lakers-aaaaaa");
     expect(pingMessage({ ...base, kind: "exit", path: "/m" }, null, "https://insidir.com", twin).body).toBe("A +$2.4M wallet sold out of Lakers at 55¢ on Polymarket. Kalshi: 53¢.");
     expect(pingMessage({ ...base }, null, "https://insidir.com", twin).body).toBe("A +$2.4M wallet bought Lakers at 55¢ on Polymarket. Kalshi: 53¢.");
+    // No NO offer on Kalshi: no Kalshi price, rather than a wrong one. A YES bet uses the YES price.
+    expect(pingMessage({ ...base }, null, "https://insidir.com", { yes: 0.49 }).body).toBe("A +$2.4M wallet bought Lakers at 55¢ on Polymarket.");
+    expect(pingMessage({ ...base, side: "yes" }, null, "https://insidir.com", twin).body).toBe("A +$2.4M wallet bought Lakers at 55¢ on Polymarket. Kalshi: 49¢.");
   });
 });
 
@@ -91,7 +95,7 @@ describe.skipIf(!URL0)("positions in Postgres: open, add, trim, exit; the pings;
     expect(sells[1]!.sold).toBeCloseTo(0.4);
 
     // The Kalshi record: both buys at Kalshi's price for the No side (the Lakers), once each; settled with the bets.
-    const twins = new Map([[M, { kalshiId: "KXNBAGAME-26NOV04MIALAL-LAL", yes: 0.45 }]]);
+    const twins = new Map([[M, { kalshiId: "KXNBAGAME-26NOV04MIALAL-LAL", yes: 0.43, noAsk: 0.55 }]]);
     expect(await recordKalshiPings(db, [...buys, ...sells], twins, now)).toBe(2);
     expect(await recordKalshiPings(db, buys, twins, now)).toBe(0);
     await db.update(schema.millionaireBets).set({ result: "won", settledAt: new Date(now) });

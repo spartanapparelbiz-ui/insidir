@@ -1,7 +1,7 @@
 /* The landing: a scrolling page of stages in the hero spec's language. Each stage is a full-viewport black stage with
  * one background that never animates; its foreground performs once as it enters (components/brand/StageMotion.tsx).
  *   Hero (the globe) · The Pulse (a live dashboard that assembles as you scroll) · Free right now (a live sample, no
- *   account: today's #1 millionaire bet whole, the board 60 minutes late, one race in full) · Election Day board (Nov 3–4 ET only) · What members get (a sticky
+ *   account: the last 24 hours' #1 millionaire bet whole, the board 60 minutes late, one race in full) · Election Day board (Nov 3–4 ET only) · What members get (a sticky
  *   phone showing real screens) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
  *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
@@ -50,20 +50,20 @@ function Free({ d }: { d: LandingData }) {
       <div className="b-head"><Lines id="free-h" lines={STAGES.free} size={64} /><p className="b-sub">A live sample, no account.</p></div>
       <div className="b-tiles3">
         <section className="b-glass b-pad b-tile3" data-testid="free-top-bet" data-m="settle" style={{ "--d": ".6s" } as CSSProperties}>
-          <h3 className="b-panel-h">Today&apos;s #1 millionaire bet</h3>
+          <h3 className="b-panel-h">The #1 millionaire bet of the last 24 hours</h3>
           {t ? (
             <div style={{ display: "grid", gap: 12 }}>
               <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
-              <p className="b-small">The biggest single bet since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
+              <p className="b-small">The biggest single bet of the last 24 hours from a wallet up $1M+, side and price included. Information, not advice.</p>
             </div>
-          ) : <p className="b-empty">No millionaire bet since midnight ET yet.</p>}
+          ) : <p className="b-empty">No millionaire bet in the last 24 hours.</p>}
         </section>
         <section className="b-glass b-pad b-tile3" data-testid="free-late" data-m="settle" style={{ "--d": ".72s" } as CSSProperties}>
           <h3 className="b-panel-h">The board, 60 minutes late</h3>
           {late.length ? (
             <>
               <ul className="b-rows">{late.map(b => <li key={b.id}><BetRow bet={b} now={d.now} /></li>)}</ul>
-              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.pulse.countToday ? `${d.pulse.countToday.toLocaleString("en-US")} millionaire bets today. ` : ""}Members see each one the second it lands.</p>
+              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.pulse.count24h ? `${d.pulse.count24h.toLocaleString("en-US")} millionaire ${d.pulse.count24h === 1 ? "bet" : "bets"} in the last 24 hours. ` : ""}Members see each one the second it lands.</p>
             </>
           ) : <p className="b-empty">No millionaire bets in the last day yet.</p>}
           <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/board">The board</a>
@@ -176,7 +176,7 @@ function Rest({ d }: { d: LandingData }) {
       <Pricing />
       <FaqStage />
       <Final />
-      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
+      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.count24h }} now={d.now} />}
     </>
   );
 }

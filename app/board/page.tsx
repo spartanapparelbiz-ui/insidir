@@ -25,7 +25,7 @@ import { isPaid } from "@/lib/plans";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "The board: millionaire bets, live", description: "Every bet of $5K+ by Polymarket wallets with $1M+ in all-time profit, as it happens." };
 
-const EMPTY_PULSE = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 };
+const EMPTY_PULSE = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, count24h: 0 };
 const href = (c: CategorySlug | null, pro: boolean) => { const p = new URLSearchParams(); if (c) p.set("cat", c); if (pro) p.set("tier", "pro"); const s = p.toString(); return `/board${s ? `?${s}` : ""}`; };
 
 export default async function Board({ searchParams }: { searchParams: Promise<{ cat?: string; tier?: string }> }) {
@@ -46,8 +46,8 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   const where = cat ? ` in ${categoryInfo(cat).name}` : "";
   // Every number follows the filter (pulse is computed for the category).
   const stats = pro ? "" : [
-    pl.sinceMidnight > 0 ? `${dollars(pl.sinceMidnight)} bet by millionaires${where} today` : null,
-    pl.countToday > 0 ? `${pl.countToday} millionaire ${pl.countToday === 1 ? "bet" : "bets"}${where} today` : null,
+    pl.today > 0 ? `${dollars(pl.today)} bet by millionaires${where} in the last 24 hours` : null,
+    pl.count24h > 0 ? `${pl.count24h} millionaire ${pl.count24h === 1 ? "bet" : "bets"}${where} in the last 24 hours` : null,
     !cat && pl.millionaires > 0 ? `${pl.millionaires} ${pl.millionaires === 1 ? "wallet" : "wallets"} up $1M+ watched` : null,
   ].filter(Boolean).join(" · ");
   // One headline, two lines at most: the computed sentence when it fits, else "The board: Golf".
@@ -71,11 +71,9 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
         ) : (
           <div className="s-board">
             <Panel className="b-delay" testid="board-delay">
-              <p className="s-strong"><span className="b-dot" aria-hidden="true" /> {pl.countToday > 0
-                ? <>Live now: <span className="b-num" data-testid="board-live-count">{pl.countToday}</span> millionaire {pl.countToday === 1 ? "bet" : "bets"}{where} today{pl.window === "hour" && pl.count > 0 ? <>, <span className="b-num">{pl.count}</span> in the last hour</> : null}.</>
-                : pl.window === "hour" && pl.count > 0
-                  ? <>Live now: <span className="b-num" data-testid="board-live-count">{pl.count}</span> millionaire {pl.count === 1 ? "bet" : "bets"}{where} in the last hour.</>
-                  : <>No millionaire bet{where} yet today (since midnight ET).</>}</p>
+              <p className="s-strong"><span className="b-dot" aria-hidden="true" /> {pl.count24h > 0
+                ? <>Live now: <span className="b-num" data-testid="board-live-count">{pl.count24h}</span> millionaire {pl.count24h === 1 ? "bet" : "bets"}{where} in the last 24 hours{pl.window === "hour" && pl.count > 0 ? <>, <span className="b-num">{pl.count}</span> in the last hour</> : null}.</>
+                : <>No millionaire bet{where} in the last 24 hours.</>}</p>
               <p className="b-small">You&apos;re seeing them 60 minutes late. Members see every one the second it lands, with its side.</p>
               <div className="b-ctas"><Pill href="/go" data-testid="board-start" data-checkout="board">Start for $1</Pill></div>
             </Panel>

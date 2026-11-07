@@ -133,7 +133,7 @@ export function pulse(db: Db, now: number, category?: CategorySlug | null): Prom
         (select count(*)::int from terminal.watchlist where tier = 'millionaire') as millionaires
       from terminal.millionaire_bets where at > ${new Date(now - DAY)} ${category ? sql`and category = ${category}` : sql``}`)).rows[0] as Row;
     const hour = n(r.hour);
-    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight), countToday: n(r.count_today) };
+    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight), countToday: n(r.count_today), count24h: n(r.day) };
   });
 }
 

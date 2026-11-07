@@ -57,7 +57,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
       <Stage testid="category-live" labelledBy="cat-live-h">
         <div className="b-head"><Lines as="h2" id="cat-live-h" lines={["The latest bets."]} size={52} /></div>
         <div className="s-col s-col--wide">
-          <LiveFeed initial={{ now, pulse: p ?? { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 }, bets }} n={12} cats={[slug]} />
+          <LiveFeed initial={{ now, pulse: p ?? { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, count24h: 0 }, bets }} n={12} cats={[slug]} />
         </div>
       </Stage>
       {member ? null : <PayMoments ctx={{ count: p?.count ?? 0, window: p?.window ?? "hour", biggest: null }} now={now} />}

@@ -48,7 +48,7 @@ async function thisWeek(now: number): Promise<Week | null> {
       db.execute(sql`select count(*)::int as n from terminal.market_twins where status = 'approved'`).then(r => Number((r.rows[0] as { n: number }).n)).catch(() => 0),
       proofStrip(db, now).catch(() => null),
     ]);
-    return { today: p?.countToday ?? 0, wallets: w, twins: t, audit: proof?.accuracy ? { ok: proof.accuracy.ok, checked: proof.accuracy.checked } : null };
+    return { today: p?.count24h ?? 0, wallets: w, twins: t, audit: proof?.accuracy ? { ok: proof.accuracy.ok, checked: proof.accuracy.checked } : null };
   });
 }
 
@@ -58,7 +58,7 @@ export default async function PricingPage() {
   const w = await thisWeek(Date.now());
   const items = w ? [
     w.wallets ? { label: "Millionaire wallets watched", value: w.wallets.toLocaleString("en-US"), testid: "week-positions" } : null,
-    { label: "Millionaire bets today", value: w.today.toLocaleString("en-US"), testid: "week-bets" },
+    { label: "Millionaire bets, last 24 hours", value: w.today.toLocaleString("en-US"), testid: "week-bets" },
     { label: "Markets with a Kalshi twin", value: w.twins.toLocaleString("en-US"), testid: "week-twins" },
     w.audit ? { label: "Last accuracy audit", value: `${w.audit.ok} of ${w.audit.checked} matched`, testid: "week-check" } : null,
   ].filter(<T,>(x: T | null): x is T => x !== null) : [];

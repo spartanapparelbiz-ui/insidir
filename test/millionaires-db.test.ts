@@ -11,7 +11,7 @@ import * as schema from "@/lib/db/schema";
 import { saveBets, type BetRow } from "@/lib/millionaires/bets";
 import { liveCategories, marketMoney, midnightET, positions, proof, pulse, recentBets, topWallets, VISITOR_DELAY_MS } from "@/lib/millionaires/queries";
 import { refreshWatchlist } from "@/lib/millionaires/watchlist";
-import { settleMarket, unsettledMarkets } from "@/lib/moves/store";
+import { resetSettleCursor, settleMarket, unsettledMarkets } from "@/lib/moves/store";
 import { clearMemo } from "@/lib/memo";
 
 const URL0 = process.env.E2E_DATABASE_URL;
@@ -111,6 +111,29 @@ describe.skipIf(!URL0)("millionaires, in Postgres", () => {
     await settleMarket(db, "polymarket", "0xm1", "yes", new Date(NOW));
     const res = await pool.query("select id, result from terminal.millionaire_bets where market_id = '0xm1' order by id");
     expect(res.rows).toEqual([{ id: "b1", result: "won" }, { id: "b2", result: "won" }, { id: "b3", result: "lost" }]);
+  });
+
+  it("one run is one bet: seen again under a later fill's id (its first fill aged out, or a restart), it merges into the bet already there", async () => {
+    const part = (id: string, minsAgo: number, c = 10_000, p = 0.5) => ({ id, c, p, at: NOW - minsAgo * MIN });
+    const run1 = [part("f1", 80), part("f2", 72), part("f3", 65)];
+    const [a] = await saveBets(db, [bet("r1", { wallet: W(7), minsAgo: 80, lastAt: new Date(NOW - 65 * MIN), amount: 15_000, parts: run1 })]);
+    expect(a!.id).toBe("r1");
+    // Next poll: f1 is out of the buffer, so the poller calls the same run "r2" (f2, f3 and a new fill f4).
+    const [b] = await saveBets(db, [bet("r2", { wallet: W(7), minsAgo: 72, lastAt: new Date(NOW - 60 * MIN), amount: 15_000, parts: [part("f2", 72), part("f3", 65), part("f4", 60)] })]);
+    expect(b).toMatchObject({ id: "r1", amount: 20_000 });
+    const rows = (await pool.query(`select id, amount from terminal.millionaire_bets where wallet = '${W(7)}'`)).rows;
+    expect(rows).toEqual([{ id: "r1", amount: 20_000 }]);
+    // A new run 30 minutes after the last fill is a new bet (an add).
+    const [c] = await saveBets(db, [bet("r3", { wallet: W(7), minsAgo: 30, amount: 5_000, parts: [part("f9", 30)] })]);
+    expect(c!.id).toBe("r3");
+  });
+
+  it("settlement checks every open market in turn, however many there are", async () => {
+    resetSettleCursor();
+    await saveBets(db, Array.from({ length: 5 }, (_, i) => bet(`u${i}`, { wallet: W(8), minsAgo: 200, marketId: `0xu${i}` })));
+    const seen = new Set<string>();
+    for (let i = 0; i < 3; i++) for (const m of await unsettledMarkets(db, new Date(NOW), 2)) seen.add(m.marketId);
+    expect([...seen].sort()).toEqual(["0xu0", "0xu1", "0xu2", "0xu3", "0xu4"]);
   });
 
   it("proof: the millionaires' own record once 30 settled, else none (no tracker record here)", async () => {

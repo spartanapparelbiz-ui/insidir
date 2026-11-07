@@ -98,6 +98,8 @@ export class WatchCache {
     this.at = now;
     return this.map;
   }
+  /** Forget the copy, so the next load re-reads the table (after the daily refresh). */
+  invalidate(): void { this.at = 0; }
   has(wallet: string): boolean { return this.map.has(wallet.toLowerCase()); }
   tier(wallet: string): Tier | null { return this.map.get(wallet.toLowerCase()) ?? null; }
 }
