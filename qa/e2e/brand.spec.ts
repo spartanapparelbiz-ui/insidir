@@ -26,7 +26,7 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
   await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("Every bet the millionaires make.");
-  await expect(page.getByTestId("hero-sub")).toHaveText("On Kalshi, in seconds, and know when they get out.");
+  await expect(page.getByTestId("hero-sub")).toHaveText("Live, with the same market on Kalshi, and when they get out.");
   // Today's real total since midnight ET: the fixtures' six Millionaire bets of the last 90 minutes ($299K) once they all
   // fall after midnight. Within 95 minutes of midnight ET only part of them do: then today's part, or the last 24 hours
   // while today is still under $100K.
