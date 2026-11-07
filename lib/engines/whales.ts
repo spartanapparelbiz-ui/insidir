@@ -3,7 +3,7 @@
 import type { WhaleTrade } from "../types";
 
 /** Smallest trade, in dollars, that counts as a whale trade. */
-export const WHALE_MIN_CASH = 10_000;
+const WHALE_MIN_CASH = 10_000;
 
 function tradeKey(t: WhaleTrade): string {
   if (t.txHash) return `${t.txHash.toLowerCase()}|${t.wallet.toLowerCase()}`;

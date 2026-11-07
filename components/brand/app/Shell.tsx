@@ -6,7 +6,6 @@ import { ViewAs } from "@/components/ViewAs";
 import { electionDay } from "@/lib/brand/pulse";
 
 export type Tab = "autopilot" | "book" | "today" | "home" | "election" | "board" | "wallets" | "markets" | "following" | "copies" | "library" | "account";
-export const SEARCH_HREF = "/?search=1";
 
 export function Shell({ children }: { current?: Tab; children: ReactNode }) {
   return (

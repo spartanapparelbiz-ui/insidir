@@ -4,9 +4,9 @@ import type { Book, Level } from "@/lib/types";
 import { isObject, num, type JsonObject } from "./parse";
 
 /** Prices are rounded to this many decimals after any arithmetic (1 − bid) to kill float noise (0.1 + 0.2). */
-export const PRICE_DECIMALS = 6;
+const PRICE_DECIMALS = 6;
 
-export const roundPrice = (p: number): number => Number(p.toFixed(PRICE_DECIMALS));
+const roundPrice = (p: number): number => Number(p.toFixed(PRICE_DECIMALS));
 
 /** One level from [price, size] / ["0.45", "100.00"] / {price, size}; null when unreadable or empty. `scale`
  *  divides the price (100 for integer-cent fields). */
@@ -51,10 +51,6 @@ export const sortBids = (levels: Level[]): Level[] => merge(levels).sort((a, b) 
 
 /** The complement side: a bid of p on one side is an ask of 1 − p on the other, same size. */
 export const complement = (levels: Level[]): Level[] => levels.map(l => ({ price: roundPrice(1 - l.price), size: l.size }));
-
-export function emptyBook(fetchedAt: number): Book {
-  return { yesAsks: [], noAsks: [], yesBids: [], noBids: [], fetchedAt, hash: null };
-}
 
 /** A stable content hash of a book (FNV-1a over the levels), for change detection when the venue sends none. */
 export function bookDigest(b: Pick<Book, "yesAsks" | "noAsks" | "yesBids" | "noBids">): string {

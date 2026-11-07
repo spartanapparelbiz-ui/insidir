@@ -10,7 +10,7 @@ import type { RawDealClosed, RawDealFound, RawPriceTick } from "./types";
 /** At most one price tick per deal this often, so the stream stays readable. */
 export const TICK_MIN_MS = 10_000;
 /** Live events older than this are deleted. */
-export const LIVE_KEEP_MS = 7 * 86_400_000;
+const LIVE_KEEP_MS = 7 * 86_400_000;
 
 const venuesOf = (o: Opportunity): Venue[] => [...new Set(o.legs.map(l => l.venue))];
 const legKey = (o: Opportunity): string => o.legs.map(l => `${l.venue}:${l.side}:${l.avgPrice.toFixed(4)}`).join("|");

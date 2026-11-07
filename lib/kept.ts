@@ -9,7 +9,7 @@ export const SLIDER_STAKES = [100, 250, 500, 1000, 2500, 5000] as const;
 /** Below this many settled green deals, the slider is hidden (one lucky deal isn't a week). */
 export const SLIDER_MIN_DEALS = 3;
 
-export interface KeptPoint { stake: number; kept: number; count: number; staked: number }
+interface KeptPoint { stake: number; kept: number; count: number; staked: number }
 
 export function keptCurve(receipts: readonly Receipt[], stakes: readonly number[] = SLIDER_STAKES): KeptPoint[] | null {
   const pts = stakes.map(stake => {

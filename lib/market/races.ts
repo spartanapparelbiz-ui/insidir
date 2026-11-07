@@ -63,7 +63,7 @@ export const raceName = (r: RaceCard) => r.title.replace(/ Election Winner$/, ""
 
 export { headlineLines };
 
-export interface RaceLead {
+interface RaceLead {
   race: RaceCard; candidate: Candidate;
   /** What wallets did in that candidate's own market: bought Yes ("on") or No ("against"). Never inferred across
    *  candidates: a No on one candidate is not money on another. */

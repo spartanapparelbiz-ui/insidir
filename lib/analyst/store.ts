@@ -18,9 +18,9 @@ const dayOf = (now: number) => `${new Date(now).toISOString().slice(0, 10)}:note
 export const notesCapUsd = (): number => Number(process.env.ANALYST_MONTHLY_USD ?? 30);
 export const notesDailyCapUsd = (): number => Number(process.env.ANALYST_DAILY_USD ?? 5);
 /** Notes per run (the worker runs it every minute): a steady backfill without bursts. */
-export const notesPerRun = (): number => Number(process.env.ANALYST_NOTES_PER_RUN ?? 20);
+const notesPerRun = (): number => Number(process.env.ANALYST_NOTES_PER_RUN ?? 20);
 
-export interface NotesRun { written: number; model: number; template: number; failures: number; /** Replies that came back empty (each is retried once). */ empty: number; costUsd: number; left: number; lastError: string | null; capped: boolean }
+interface NotesRun { written: number; model: number; template: number; failures: number; /** Replies that came back empty (each is retried once). */ empty: number; costUsd: number; left: number; lastError: string | null; capped: boolean }
 
 /** Writes notes for positions that need one, newest first: every large position from the last 2 days, every open one
  *  from the last 60, and every one settled in the last 7 (the backfill); positions with a note from older rules; and,
@@ -64,10 +64,3 @@ export async function notesFor(db: Db, ids: readonly string[]): Promise<Map<stri
   return new Map(r.map(x => [x.moveId, { moveId: x.moveId, text: x.note, facts: x.facts, model: x.model, origin: x.origin, at: x.createdAt.getTime() }]));
 }
 
-/** Notes written so far and what they cost, for /methodology and the QA log. */
-export async function noteStats(db: Db, now: number): Promise<{ notes: number; model: number; avgCostUsd: number; models: string[] }> {
-  const r = (await db.execute(sql`select count(*)::int as n, count(*) filter (where origin = 'model')::int as m,
-      coalesce(avg(cost_usd) filter (where origin = 'model'), 0)::float as c, coalesce(array_agg(distinct model) filter (where origin = 'model'), '{}') as models
-    from terminal.analyst_notes where created_at > ${new Date(now - 30 * 86_400_000)}`)).rows[0] as { n: number; m: number; c: number; models: string[] };
-  return { notes: Number(r.n), model: Number(r.m), avgCostUsd: Number(r.c), models: r.models ?? [] };
-}

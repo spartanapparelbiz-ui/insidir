@@ -9,7 +9,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 const ID = /^[A-Za-z0-9_-]{4,40}$/;
 
 /** The market a saved Read (terminal.reads) or bet check (terminal.bet_checks) was about: Polymarket first. */
-export async function oldMarket(kind: "read" | "check", id: string): Promise<string | null> {
+async function oldMarket(kind: "read" | "check", id: string): Promise<string | null> {
   if (!ID.test(id) || !hasDatabase()) return null;
   const db = getDb();
   const r = kind === "read"

@@ -5,8 +5,6 @@ import type { Db } from "@/lib/db";
 import { userNotFree } from "@/lib/analytics";
 import { TRIAL } from "@/lib/plans";
 
-export interface Spread { n: number; medianS: number | null; p75S: number | null }
-
 export async function cancelReasonCounts(db: Db, since: Date): Promise<Array<{ reason: string; n: number }>> {
   const r = await db.execute(sql`select reason, count(*)::int as n from terminal.cancel_reasons where created_at >= ${since} group by reason order by n desc`);
   return (r.rows as Array<{ reason: string; n: number }>).map(x => ({ reason: x.reason, n: Number(x.n) }));

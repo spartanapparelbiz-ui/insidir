@@ -116,7 +116,7 @@ export function mismatch(spec: RuleSpec, m: Move): string | null {
   return null;
 }
 
-export interface Ticket { limit: number; contracts: number; cost: number }
+interface Ticket { limit: number; contracts: number; cost: number }
 
 /** The finished Kalshi order: limit = min(rule max, Kalshi ask), as many whole contracts as the stake buys. Pure. */
 export function ticketFor(spec: RuleSpec, ask: number, stake = spec.stake.perBet): Ticket | null {

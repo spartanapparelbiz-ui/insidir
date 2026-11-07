@@ -15,13 +15,13 @@
 import type { FeeModel, Venue } from "./types";
 
 /** Kalshi taker fee rate (fraction of C × P × (1 − P)). */
-export const KALSHI_TAKER_RATE = 0.07;
+const KALSHI_TAKER_RATE = 0.07;
 /** Kalshi maker fee rate. */
-export const KALSHI_MAKER_RATE = 0.0175;
+const KALSHI_MAKER_RATE = 0.0175;
 /** Kalshi series fee_multiplier when the series does not state one. */
-export const KALSHI_DEFAULT_MULTIPLIER = 1;
+const KALSHI_DEFAULT_MULTIPLIER = 1;
 /** Tolerance, in cents, when rounding up: 7.0000000001 cents is 7 cents (float noise), not 8. */
-export const CENT_EPSILON = 1e-6;
+const CENT_EPSILON = 1e-6;
 
 /** Polymarket taker fee rates by normalised category. Makers pay 0. */
 export const POLYMARKET_RATES: Readonly<Record<string, number>> = {
@@ -39,7 +39,7 @@ export const POLYMARKET_RATES: Readonly<Record<string, number>> = {
   geopolitics: 0,
 };
 /** Category used when a Polymarket category is unknown. */
-export const POLYMARKET_DEFAULT_CATEGORY = "other";
+const POLYMARKET_DEFAULT_CATEGORY = "other";
 
 /** Round a dollar amount up to the next cent, ignoring float noise below CENT_EPSILON cents. */
 export function ceilToCent(dollars: number): number {

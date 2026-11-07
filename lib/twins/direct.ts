@@ -12,7 +12,7 @@ import { TEAMS, type League } from "@/lib/matching/aliases";
 import { pairByStructure, polySoccer, SOCCER_SERIES } from "./structured";
 import { memo } from "@/lib/memo";
 import { saveTwin } from "./store";
-export { pairByStructure, structuredResult } from "./structured";
+export { pairByStructure } from "./structured";
 
 const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const DAY = 86_400_000;
@@ -37,7 +37,7 @@ export function gameTickers(slug: string): string[] {
   return [...new Set(out)];
 }
 
-export interface DirectClients {
+interface DirectClients {
   polymarket: { getEventBySlug(slug: string): Promise<{ markets: VMarket[] } | null> };
   kalshi: { getEvent(ticker: string): Promise<{ markets: VMarket[] } | null> };
 }
@@ -76,7 +76,7 @@ export async function twinsFromBets(db: Db, c: DirectClients, now: number, maxEv
 
 /** One game's twins: its Polymarket markets against Kalshi's GAME, SPREAD and TOTAL events for it. Null when Kalshi
  *  has no such game (or Polymarket no such event). */
-export async function twinGame(db: Db, c: DirectClients, slug: string, now: number): Promise<{ twins: number; auto: number } | null> {
+async function twinGame(db: Db, c: DirectClients, slug: string, now: number): Promise<{ twins: number; auto: number } | null> {
   const pe = await c.polymarket.getEventBySlug(slug).catch(() => null);
   if (!pe?.markets.length) return null;
   if (polySoccer(slug)) return soccerGame(db, c, slug, pe.markets, now);

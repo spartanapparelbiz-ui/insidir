@@ -11,7 +11,7 @@ import { leadRule, type Lead } from "@/lib/autopilot/lead";
 
 const DAY = 86_400_000;
 
-export { isSize, isWhere, SIZES, stakeFor, WHERE, type Size, type Where } from "./answers";
+export { isSize, isWhere, stakeFor } from "./answers";
 
 /** Their categories as the older onboarding's leagues (lib/read/member.ts BET_ON), so Tonight keeps working. */
 export function betOnFor(cats: readonly string[]): string[] {

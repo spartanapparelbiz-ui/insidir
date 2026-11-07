@@ -10,7 +10,6 @@ export const HERO = {
   sub: "On Kalshi, in seconds, and know when they get out.",
   /** Under it, the live line (components/brand/HeroLine.tsx): "Wallets up $1M+ bet $X today. Which side were you on?" */
 } as const;
-export const ASK_PLACEHOLDER = "Paste your bet: a Kalshi or Polymarket link, or type it";
 export const PROBLEM = {
   h1: ["You're not betting", "against the market."],
   sub: "You're betting against the wallets that have made millions.",
@@ -21,9 +20,7 @@ export const PROBLEM = {
     ["You might be paying more than you need to.", "The better price, Kalshi vs. Polymarket."],
   ],
 } as const;
-export const START = `Start for $${TRIAL.fee}`;
 export const PAST = "Past results, not a promise.";
-export const LEGAL = "Information, not financial or betting advice. Operated by Aethric LLC.";
 export const STAGES = {
   live: ["Millionaire money,", "right now."],
   pulse: ["The pulse.", "Live, today."],

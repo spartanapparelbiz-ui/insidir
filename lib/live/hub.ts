@@ -10,11 +10,11 @@ import { dataStatus } from "@/lib/status";
 import type { LiveEvent, LiveEventType, LiveStatus, RawLiveEvent } from "./types";
 import { delayFor, viewEvent } from "./view";
 
-export const POLL_MS = 1_000;
-export const STATUS_MS = 2_000;
+const POLL_MS = 1_000;
+const STATUS_MS = 2_000;
 /** Enough history for the free plan's 30-minute delay, plus the tape's backlog. */
-export const BUFFER_MS = 3 * 3_600_000;
-export const BUFFER_MAX = 20_000;
+const BUFFER_MS = 3 * 3_600_000;
+const BUFFER_MAX = 20_000;
 /** Most events one stream sends per poll: a human can't read more. */
 export const MAX_PER_TICK = 12;
 

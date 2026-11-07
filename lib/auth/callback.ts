@@ -17,7 +17,7 @@ import { clientIp } from "@/lib/http";
 const OPEN_TO_ALL = /^\/(go|settings|pricing|terms|privacy|faq|help|methodology|data|status|security|disclosures|credits|changelog|about)(\/|\?|$)/;
 
 /** Where anyone without Insidir lands after signing in: the paywall, never an empty app. */
-export const PAYWALL = "/go?step=paywall";
+const PAYWALL = "/go?step=paywall";
 
 export async function handleLoginCallback(req: NextRequest) {
   const to = (path: string) => NextResponse.redirect(new URL(path, appUrl()), 303);

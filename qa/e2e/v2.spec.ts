@@ -1,7 +1,7 @@
 /* docs/INSIDIR-V2.md: the landing, the feed and its plan gating, location rules, Coming soon, following, results. Runs at
  * 390×844 and 1440×900 against the seeded fixtures (qa/e2e/seed.ts: E2E-Top has a 41-of-63 record). */
 import { expect, test } from "@playwright/test";
-import { captureBodies, q, signIn } from "./helpers";
+import { q, signIn } from "./helpers";
 
 test("landing: final on first paint, the hero's words and its CTAs, the nav, no stocks, no pop-up on arrival, no visitor bar", async ({ page }) => {
   const html = await (await page.request.get("/")).text();
@@ -57,7 +57,6 @@ test("outside the US, the market page links to the source market", async ({ page
   await page.goto("/market/0xe2emarket1");
   await expect(page.getByRole("link", { name: "See it on Polymarket" })).toHaveAttribute("href", /polymarket\.com/);
 });
-
 
 test("share card: a 1080×1920 PNG, never early for free viewers", async ({ page, context }) => {
   const late = await page.request.get("/api/share/e2e%3Am4");

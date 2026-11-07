@@ -17,9 +17,9 @@ import {
 
 const MIN = 60_000, DAY = 86_400_000;
 /** Proven wallets' open positions are read again after this long. */
-export const OPEN_STALE_MS = 30 * MIN;
+const OPEN_STALE_MS = 30 * MIN;
 /** Open markets checked per splits run, by proven money. */
-export const MARKETS_PER_RUN = 300;
+const MARKETS_PER_RUN = 300;
 const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 /** Replaces a wallet's stored open positions (Data API /positions). Resolved ones (redeemable, or priced 0 or 1) are
@@ -59,7 +59,7 @@ export async function provenOpenOnce(db: Db, poly: PolymarketClient, now: number
 }
 
 /** Proven traders' open money per market (positions read in the last 3 hours). */
-export async function provenOpen(db: Db, now: number, marketIds?: readonly string[]): Promise<Map<string, { positions: SmartPosition[]; title: string; outcomes: [string | null, string | null]; cur: number | null }>> {
+async function provenOpen(db: Db, now: number, marketIds?: readonly string[]): Promise<Map<string, { positions: SmartPosition[]; title: string; outcomes: [string | null, string | null]; cur: number | null }>> {
   const rows = await db.select({ wallet: traderOpen.wallet, marketId: traderOpen.marketId, outcomeIndex: traderOpen.outcomeIndex, outcome: traderOpen.outcome,
     title: traderOpen.title, moneyIn: traderOpen.moneyIn, curPrice: traderOpen.curPrice, firstSeenAt: traderOpen.firstSeenAt })
     .from(traderOpen).innerJoin(traderRecords, eq(traderRecords.wallet, traderOpen.wallet))
@@ -76,7 +76,7 @@ export async function provenOpen(db: Db, now: number, marketIds?: readonly strin
 }
 
 /** All the big money we track on each side of these markets (every wallet, Polymarket ids). */
-export async function bigMoney(db: Db, marketIds: readonly string[]): Promise<Map<string, { yes: number; no: number }>> {
+async function bigMoney(db: Db, marketIds: readonly string[]): Promise<Map<string, { yes: number; no: number }>> {
   if (!marketIds.length) return new Map();
   const r = await db.execute(sql`select market_id, sum(case when outcome_side = 'yes' then amount else 0 end)::float as yes,
       sum(case when outcome_side = 'no' then amount else 0 end)::float as no
@@ -213,7 +213,7 @@ export async function resolveSplitsOnce(db: Db, poly: PolymarketClient, now: num
   return n;
 }
 
-export type SplitRec = typeof splits.$inferSelect;
+type SplitRec = typeof splits.$inferSelect;
 
 /** Live splits, biggest gap first. `until` hides those first seen after it (free viewers see them 30 minutes late). */
 export async function liveSplits(db: Db, opts: { kinds?: readonly SplitKind[]; until: number; limit?: number }): Promise<SplitRec[]> {

@@ -7,7 +7,6 @@
  *   Face         a verified headshot, else initials; Party disc
  *   StageMotion, ScrollFx, BrandNav, BrandFoot, Refresh
  * Screens compose these; they add no colours, sizes or radii of their own. */
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { Lines } from "@/components/brand/Bits";
 import { headlineLines } from "@/lib/market/headline";
@@ -15,8 +14,8 @@ import { headlineLines } from "@/lib/market/headline";
 export { Stage } from "@/components/brand/Stage";
 export { Arrow, Lines, Pill } from "@/components/brand/Bits";
 export { StageMotion } from "@/components/brand/StageMotion";
-export { ScrollFx } from "@/components/brand/landing/ScrollFx";
 export { BrandFoot, BrandNav } from "@/components/brand/Nav";
+export { ScrollFx } from "@/components/brand/landing/ScrollFx";
 export { Refresh } from "./Refresh";
 
 export function Panel({ children, className = "", testid, ...data }: { children: ReactNode; className?: string; testid?: string } & { [k: `data-${string}`]: string | undefined }) {

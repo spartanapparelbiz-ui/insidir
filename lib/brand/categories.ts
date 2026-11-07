@@ -12,7 +12,7 @@ export const CATEGORY_SLUGS = [
 ] as const;
 export type CategorySlug = typeof CATEGORY_SLUGS[number];
 
-export interface Category { slug: CategorySlug; name: string; /** One short line for the quiz tile. */ blurb: string; sport: boolean }
+interface Category { slug: CategorySlug; name: string; /** One short line for the quiz tile. */ blurb: string; sport: boolean }
 
 const c = (slug: CategorySlug, name: string, blurb: string, sport = false): Category => ({ slug, name, blurb, sport });
 export const CATEGORIES: readonly Category[] = [
@@ -104,7 +104,7 @@ const VENUE: Readonly<Record<string, CategorySlug>> = {
   weather: "weather", tech: "tech", geopolitics: "world",
 };
 
-export interface CategoryInput {
+interface CategoryInput {
   title: string;
   event?: string | null;
   /** Venue category (lib/exchanges/categories.ts Category). */
@@ -137,7 +137,7 @@ const SLUG: Readonly<Record<string, CategorySlug>> = {
 const KALSHI_ESPORTS = /\bkx(dota|cs2|csgo|lol|valorant|val|r6|cod|ow)\w*/i;
 
 /** The category a Polymarket link's event slug names, if any. */
-export function slugCategory(url: string | null | undefined): CategorySlug | null {
+function slugCategory(url: string | null | undefined): CategorySlug | null {
   const m = /polymarket\.com\/event\/([a-z0-9]+)-/.exec(url ?? "");
   return m ? SLUG[m[1]!] ?? null : null;
 }

@@ -52,7 +52,7 @@ const c = (v: number) => `${Math.round(v * 100)}¢`;
 
 /** The last 10 closed positions per wallet (Polymarket's resolved positions, lib/moves: trader_positions): how many made
  *  money (profit above 0), how many lost. */
-export async function last10(db: Db, wallets: string[]): Promise<Map<string, { made: number; lost: number }>> {
+async function last10(db: Db, wallets: string[]): Promise<Map<string, { made: number; lost: number }>> {
   if (!wallets.length) return new Map();
   const r = (await db.execute(sql`select wallet, count(*) filter (where pnl > 0)::int as made, count(*) filter (where pnl <= 0)::int as lost from (
       select wallet, pnl, row_number() over (partition by wallet order by resolved_at desc) as n from terminal.trader_positions

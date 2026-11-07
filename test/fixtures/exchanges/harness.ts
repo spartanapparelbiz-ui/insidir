@@ -23,13 +23,13 @@ export class VirtualClock implements Clock {
   };
 }
 
-export interface Reply {
+interface Reply {
   status?: number;
   body?: unknown;
   headers?: Record<string, string>;
 }
 
-export interface Call {
+interface Call {
   url: string;
   method: string;
   body: unknown;
@@ -37,9 +37,9 @@ export interface Call {
 }
 
 /** routes: (url, method, body) → Reply (or a list of replies served in order for that matcher). */
-export type Route = (url: string, method: string, body: unknown) => Reply | undefined;
+type Route = (url: string, method: string, body: unknown) => Reply | undefined;
 
-export function fakeFetch(route: Route, clock: VirtualClock) {
+function fakeFetch(route: Route, clock: VirtualClock) {
   const calls: Call[] = [];
   const impl = async (url: string, init: RequestInit): Promise<Response> => {
     const method = init.method ?? "GET";

@@ -10,7 +10,7 @@ import { dollars } from "@/lib/money";
 
 export const PING_MIN = 25_000;
 export const PING_DAILY_MAX = 8;
-export const DEFAULT_QUIET = { start: "23:00", end: "08:00" } as const;
+const DEFAULT_QUIET = { start: "23:00", end: "08:00" } as const;
 /** Elections is on for everyone until the end of Nov 4 ET (Election week). */
 export const ELECTIONS_ON_UNTIL = Date.parse("2026-11-05T05:00:00Z");
 
@@ -23,9 +23,9 @@ export interface PingBet { id: string; marketId?: string; side?: "yes" | "no"; t
   /** Where a sell's ping opens (the market's page; a buy opens its bet). */
   path?: string }
 /** The market's approved Kalshi twin (lib/twins) and Kalshi's YES price now, when it has one. */
-export interface PingTwin { yes: number | null }
+interface PingTwin { yes: number | null }
 
-export function pingCategories(u: Pick<PingUser, "cats">, now: number): Set<string> | null {
+function pingCategories(u: Pick<PingUser, "cats">, now: number): Set<string> | null {
   if (!u.cats.length) return null; // none chosen: every category
   const s = new Set(u.cats);
   if (now < ELECTIONS_ON_UNTIL) s.add("elections");

@@ -18,12 +18,12 @@ import type { Step } from "./money-path";
 
 export const MONITOR_USER = "usr_monitor";
 export const MONITOR_WALLET = "0x" + "e".repeat(36) + "0000";
-export const FRESH_MS = 5 * 60_000;
-export const BETS_FRESH_MS = 2 * 60_000;
+const FRESH_MS = 5 * 60_000;
+const BETS_FRESH_MS = 2 * 60_000;
 const MATCH_MS = 10_000;
 
 /** The freshness sources /status shows and the monitor checks: the worker job whose last good run dates each. */
-export const FRESHNESS: ReadonlyArray<{ key: "trades" | "twins" | "prices"; label: string; job: string }> = [
+const FRESHNESS: ReadonlyArray<{ key: "trades" | "twins" | "prices"; label: string; job: string }> = [
   { key: "trades", label: "Trades (Polymarket bets)", job: "moves:polymarket" },
   { key: "twins", label: "Kalshi twins", job: "twins:bets" },
   { key: "prices", label: "Prices", job: "markets:info" },
@@ -36,7 +36,7 @@ export async function freshness(db: Db, now: number): Promise<Freshness[]> {
   return FRESHNESS.map(f => { const t = at.get(f.job) ?? null; return { key: f.key, label: f.label, at: t, stale: t === null || now - t > FRESH_MS }; });
 }
 
-export interface ProductDeps {
+interface ProductDeps {
   base: string; f?: typeof fetch; now?: number;
   /** Kalshi's ask for the YES side of a market now, or null. */
   yesAsk(kalshiId: string): Promise<number | null>;

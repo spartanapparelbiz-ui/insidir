@@ -17,7 +17,7 @@ export function matchFingerprint(m: VMarket): string {
 
 interface Entry { fp: string; p: MarketProfile; keys: string[] }
 
-export interface IncrementalStats { a: number; b: number; changedA: number; changedB: number; removedA: number; removedB: number; rescored: number }
+interface IncrementalStats { a: number; b: number; changedA: number; changedB: number; removedA: number; removedB: number; rescored: number }
 
 const keyOf = (m: Pick<VMarket, "venue" | "id">) => `${m.venue}:${m.id}`;
 

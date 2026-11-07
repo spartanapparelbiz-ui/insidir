@@ -7,7 +7,7 @@ const day = (d: Date | number | string) => DAY.format(new Date(d));
 /** "CEO", "CFO", "Director", "10% owner", "Officer", "Insider". */
 export const roleShort = (role: string) => { const r = roleOf(role).replace(/^(its|a|an) /, ""); return r === "president" || r === "chair" ? r.charAt(0).toUpperCase() + r.slice(1) : r.length <= 3 ? r.toUpperCase() : r.charAt(0).toUpperCase() + r.slice(1); };
 
-export interface Buy { owner: string; role: string; value: number; filedAt: Date | number | string }
+interface Buy { owner: string; role: string; value: number; filedAt: Date | number | string }
 
 export function companyTitle(company: string, ticker: string, last: Buy | null): { title: string; description: string } {
   if (!last) return { title: `${company} (${ticker}) insider trading: every Form 4 buy and sale`, description: `Every insider purchase and sale at ${company} (${ticker}) reported to the SEC on Form 4: who traded, how much, the price and the filing.` };

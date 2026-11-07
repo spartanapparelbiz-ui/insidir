@@ -3,19 +3,18 @@
 import { effectivePlan } from "@/lib/billing/access";
 import { and, eq, gte, inArray, isNull, lt, notInArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
-import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, nearMisses, opportunities, pairs, pushSubscriptions, quarantinedDeals, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
+import { alertsSent, llmUsage, markets, matchDecisions, matchOverrides, opportunities, pushSubscriptions, quarantinedDeals, receipts, users, whaleTrades, workerHeartbeats } from "@/lib/db/schema";
 import { DEFAULT_SETTINGS } from "@/lib/db/schema";
 import { hiddenKinds } from "@/lib/flags";
 import type { AlertUser } from "@/lib/alerts/fanout";
 import type { MatchCache, MatchDecision } from "@/lib/matching/cache";
 import type { LlmUsageStore } from "@/lib/matching/llm";
 import type { Override } from "@/lib/matching";
-import type { NearMiss } from "@/lib/engines/near-miss";
-import type { MarketPair, Opportunity, VMarket, WhaleTrade } from "@/lib/types";
+import type { Opportunity, VMarket, WhaleTrade } from "@/lib/types";
 import { dealClosed, dealFound, priceTick, publish, whale, type LiveRowInput } from "@/lib/live/publish";
 
 /** An opportunity not re-found for this long is marked inactive. */
-export const DEACTIVATE_AFTER_MS = 90_000;
+const DEACTIVATE_AFTER_MS = 90_000;
 
 export function dbMatchCache(db: Db): MatchCache {
   return {
@@ -66,14 +65,6 @@ export async function saveMarkets(db: Db, list: readonly VMarket[]): Promise<voi
   }
 }
 
-export async function savePairs(db: Db, list: readonly MarketPair[]): Promise<void> {
-  for (let i = 0; i < list.length; i += 500) {
-    const chunk = list.slice(i, i + 500);
-    await db.insert(pairs).values(chunk.map(p => ({ id: p.id, data: p, safety: p.safety, blocked: p.blocked, updatedAt: new Date() })))
-      .onConflictDoUpdate({ target: pairs.id, set: { data: sql`excluded.data`, safety: sql`excluded.safety`, blocked: sql`excluded.blocked`, updatedAt: sql`excluded.updated_at` } });
-  }
-}
-
 /** Stores a scan. New opportunities get a receipt (the snapshot at detection, never changed) and a live "deal found"
  *  event; a price that moved on a known deal gets a live "price tick" (at most one per deal per TICK_MIN_MS, tracked
  *  in `lastTickAt`). Returns the new ids. */
@@ -119,12 +110,6 @@ export async function saveQuarantined(db: Db, list: ReadonlyArray<{ opp: Opportu
   return ids.filter(id => !existing.has(id));
 }
 
-/** Switches off every live deal of these kinds (a disabled engine's leftovers). */
-export async function deactivateKinds(db: Db, kinds: readonly string[]): Promise<number> {
-  if (!kinds.length) return 0;
-  return (await db.update(opportunities).set({ active: false }).where(and(eq(opportunities.active, true), inArray(opportunities.kind, [...kinds]))).returning({ id: opportunities.id })).length;
-}
-
 /** Deals not re-found recently are no longer live; each one gets a live "deal closed" event with how long it lasted. */
 export async function deactivateStale(db: Db, now: Date): Promise<number> {
   const res = await db.update(opportunities).set({ active: false })
@@ -138,16 +123,6 @@ export async function heartbeat(db: Db, job: string, ok: boolean, error: string 
   const now = new Date();
   const row = { job, lastRunAt: now, ok, error, stats, ...(ok ? { lastOkAt: now } : {}) };
   await db.insert(workerHeartbeats).values(row).onConflictDoUpdate({ target: workerHeartbeats.job, set: { lastRunAt: now, ok, error, stats, ...(ok ? { lastOkAt: now } : {}) } });
-}
-
-/** Stores big trades; each one not seen before gets a live "whale" event. */
-/** The closest matched market per venue pair, replacing the last scan's. Pairs that vanish keep their last row
- *  (with its time), so the landing page can still show the last known prices. */
-export async function saveNearMisses(db: Db, list: readonly NearMiss[]): Promise<void> {
-  for (const n of list) {
-    const row = { venues: n.venues.join("|"), data: n, at: new Date(n.at) };
-    await db.insert(nearMisses).values(row).onConflictDoUpdate({ target: nearMisses.venues, set: { data: row.data, at: row.at } });
-  }
 }
 
 export async function saveWhales(db: Db, trades: readonly WhaleTrade[]): Promise<void> {
@@ -193,9 +168,6 @@ export async function pushTargets(db: Db, userId: string) {
 }
 export async function dropPush(db: Db, endpoint: string): Promise<void> {
   await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
-}
-export async function markDigestSent(db: Db, userId: string, at: Date): Promise<void> {
-  await db.update(users).set({ lastDigestAt: at }).where(eq(users.id, userId));
 }
 
 /** Receipts whose markets should have resolved by now and aren't settled yet. */

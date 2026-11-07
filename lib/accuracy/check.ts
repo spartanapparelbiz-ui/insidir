@@ -32,7 +32,7 @@ import type { VMarket } from "@/lib/types";
 export interface Sources { poly: PolymarketClient; kalshi: KalshiClient; sec: SecClient | null }
 export type Status = "ok" | "mismatch" | "skipped";
 export interface CheckLine { kind: "move" | "profile"; what: string; target: string; label: string; status: Status; problems: string[] }
-export interface CheckRun { runAt: number; lines: CheckLine[]; hidden: string[]; restored: string[] }
+interface CheckRun { runAt: number; lines: CheckLine[]; hidden: string[]; restored: string[] }
 
 export const ACCURACY_MS = 3_600_000;
 const near = (a: number, b: number, tol: number) => Math.abs(a - b) <= tol;
@@ -67,7 +67,7 @@ const rebuildable = (problems: readonly string[]) => problems.length > 0
 /** Rebuilds a Polymarket position from the wallet's own BUY fills of that outcome (maker and taker), from its first
  *  fill to MERGE_WINDOW_MS after its last, the same window the dedupe uses. Its record is worked out again
  *  (realized_at cleared). The rebuilt move, or null when the source has no such fills. */
-export async function rebuildPoly(db: Db, poly: PolymarketClient, m: Move): Promise<Move | null> {
+async function rebuildPoly(db: Db, poly: PolymarketClient, m: Move): Promise<Move | null> {
   const raw = await source(() => poly.getWalletMarketTradesAll(m.wallet!, m.marketId));
   const parts = readPolymarketFills(raw)
     .filter(f => f.wallet === m.wallet && f.side === "BUY" && f.outcomeSide === m.outcomeSide && f.at >= Math.min(m.at, m.lastAt) - 1000 && f.at <= Math.max(m.at, m.lastAt) + MERGE_WINDOW_MS)
@@ -86,7 +86,7 @@ export async function rebuildPoly(db: Db, poly: PolymarketClient, m: Move): Prom
 const kalshiStandIn = (m: Move): VMarket => ({ id: m.marketId, venue: "kalshi", title: m.marketTitle, eventTitle: m.eventTitle,
   yesLabel: m.outcomeSide === "yes" ? m.outcome : "Yes", noLabel: m.outcomeSide === "no" ? m.outcome : "No", url: m.url } as unknown as VMarket);
 
-export async function checkKalshi(kalshi: KalshiClient, m: Move, market: VMarket | null = null): Promise<string[]> {
+async function checkKalshi(kalshi: KalshiClient, m: Move, market: VMarket | null = null): Promise<string[]> {
   market ??= kalshiStandIn(m);
   const tradeId = m.id.slice(3);
   const s = Math.floor(m.at / 1000);
@@ -102,7 +102,7 @@ export async function checkKalshi(kalshi: KalshiClient, m: Move, market: VMarket
 }
 
 /** Form 4: re-read the filing from EDGAR and rebuild the move; 13F: re-read both filings and recompute the add. */
-export async function checkSec(sec: SecClient, m: Move): Promise<string[]> {
+async function checkSec(sec: SecClient, m: Move): Promise<string[]> {
   const d = m.detail;
   if (!d) return ["no filing detail"];
   const errs: string[] = [];
@@ -131,7 +131,7 @@ export async function checkSec(sec: SecClient, m: Move): Promise<string[]> {
 }
 
 /** A stored resolved position against Polymarket's own row for that wallet and market. */
-export async function checkPosition(poly: PolymarketClient, p: Record<string, unknown>): Promise<string[]> {
+async function checkPosition(poly: PolymarketClient, p: Record<string, unknown>): Promise<string[]> {
   const got = readClosedRows(await source(() => poly.getClosedPositionsPage(String(p.wallet), { market: String(p.market_id), limit: 50 })))
     .find(x => x.marketId === p.market_id && x.outcomeIndex === Number(p.outcome_index));
   if (!got) return ["position not found at the source"];
@@ -142,7 +142,7 @@ export async function checkPosition(poly: PolymarketClient, p: Record<string, un
 }
 
 /** A trader's record (what the profile and cards show) against the positions it was built from. */
-export async function checkRecord(db: Db, wallet: string, now: number): Promise<string[]> {
+async function checkRecord(db: Db, wallet: string, now: number): Promise<string[]> {
   const rec = (await db.execute(sql`select resolved, won, profit from terminal.trader_records where wallet = ${wallet}`)).rows[0] as { resolved: number; won: number; profit: number } | undefined;
   if (!rec) return ["no record"];
   const s = traderStats(await marketsFor(db, wallet), now);
@@ -154,7 +154,7 @@ export async function checkRecord(db: Db, wallet: string, now: number): Promise<
 }
 
 /** A stored insider trade line against the Form 4 re-read from EDGAR. */
-export async function checkTrade(sec: SecClient, t: Record<string, unknown>): Promise<string[]> {
+async function checkTrade(sec: SecClient, t: Record<string, unknown>): Promise<string[]> {
   const acc = String(t.accession);
   const m = /\/data\/(\d+)\//.exec(String(t.url));
   if (!m || !String(t.url).includes(acc)) return ["link is not this filing"];
@@ -171,7 +171,7 @@ export async function checkTrade(sec: SecClient, t: Record<string, unknown>): Pr
 }
 
 /** A stored 13F holding against the fund's information table re-read. */
-export async function checkHolding(sec: SecClient, h: Record<string, unknown>): Promise<string[]> {
+async function checkHolding(sec: SecClient, h: Record<string, unknown>): Promise<string[]> {
   const cik = cik10(String(h.fund_cik))!;
   const f = thirteenFFilings(await source(() => sec.json(`https://data.sec.gov/submissions/CIK${cik}.json`)), 4000).find(x => x.accession === h.accession);
   if (!f) return ["filing not in the fund's EDGAR list"];

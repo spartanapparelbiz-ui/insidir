@@ -1,7 +1,7 @@
 /* Unsplash's image CDN (imgix): every photo is cropped and sized there, never stored here. One URL shape for the whole
  * product, so the browser cache and Unsplash's CDN share every size. */
 
-export const UNSPLASH_HOST = "images.unsplash.com";
+const UNSPLASH_HOST = "images.unsplash.com";
 /** The widths a srcset offers, smallest first. */
 export const PHOTO_WIDTHS = [96, 192, 384, 768, 1280, 1920, 2560, 3840] as const;
 

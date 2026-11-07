@@ -11,7 +11,7 @@
  * Never a sell as a bet: only BUY fills make the bet, and a move whose first fill isn't a BUY is "not_a_buy". */
 import { MERGE_WINDOW_MS } from "./detect";
 
-export interface WalletFill { side: "BUY" | "SELL"; outcomeIndex: number; size: number; price: number; at: number }
+interface WalletFill { side: "BUY" | "SELL"; outcomeIndex: number; size: number; price: number; at: number }
 
 export type Realized =
   | { ok: true; amount: number; avgPrice: number; contracts: number; soldContracts: number; proceeds: number; pnl: number; soldShare: number }

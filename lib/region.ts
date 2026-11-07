@@ -8,7 +8,7 @@ export const REGION_VENUES: Record<Region, readonly Venue[]> = {
   non_us: ["kalshi", "polymarket"],
 };
 
-export const DEFAULT_REGION: Region = "us";
+const DEFAULT_REGION: Region = "us";
 
 /** The venues to show: the region's venues, narrowed by the user's own choice when they made one. */
 export function allowedVenues(region: Region | null, chosen?: readonly Venue[]): Venue[] {

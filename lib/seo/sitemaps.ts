@@ -12,7 +12,7 @@ import { allRaces, raceHref } from "@/lib/entities/race";
 
 export const SITEMAP_TYPES = ["pages", "races", "markets", "wallets"] as const;
 export type SitemapType = (typeof SITEMAP_TYPES)[number];
-export interface Url { loc: string; lastmod?: Date; changefreq?: "hourly" | "daily" | "weekly"; priority?: number }
+interface Url { loc: string; lastmod?: Date; changefreq?: "hourly" | "daily" | "weekly"; priority?: number }
 
 const HOUR = 3_600_000;
 /** Every public page on the keep list (test/routes.test.ts), and every category. */

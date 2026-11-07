@@ -11,7 +11,7 @@ import type { FillOptions } from "./book";
 import { lockOpportunity, marketKey, outcomeSideLabel, type LegSpec } from "./common";
 
 /** Fewest outcomes for a multi-outcome set. */
-export const MULTI_MIN_OUTCOMES = 2;
+const MULTI_MIN_OUTCOMES = 2;
 
 export interface MultiInput {
   event: VEvent;

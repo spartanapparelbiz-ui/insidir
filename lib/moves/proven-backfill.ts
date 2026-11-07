@@ -13,7 +13,6 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { walletPnlQueue } from "@/lib/db/schema";
-import { rows } from "@/lib/exchanges/parse";
 import { bucketConfig, venueHttp, type Priority } from "@/lib/exchanges/http";
 import type { PolymarketClient } from "@/lib/exchanges";
 import { tradesCursor } from "@/lib/exchanges/polymarket";
@@ -23,9 +22,9 @@ import { readUserPnl } from "./sources";
 import { saveWalletPnl, type WalletPnl } from "./store";
 
 export const PROVEN_RECORD_TTL_MS = 24 * 3_600_000;
-export const BACKFILL_DAYS = 90;
+const BACKFILL_DAYS = 90;
 /** Markets starting or closing within this window go first. */
-export const SOON_MS = 72 * 3_600_000;
+const SOON_MS = 72 * 3_600_000;
 const DAY = 86_400_000;
 
 type Poly = Pick<PolymarketClient, "getClosedPositionsPage" | "getLeaderboardUser">;
@@ -37,7 +36,7 @@ type Poly = Pick<PolymarketClient, "getClosedPositionsPage" | "getLeaderboardUse
  *  thrown away, and kept the head of the queue: every run read nothing. */
 export const BACKFILL_MAX_PAGES = 10;
 /** A read cut off by its deadline is still stored when it already shows this many settled markets (as "at least"). */
-export const PARTIAL_MIN = 30;
+const PARTIAL_MIN = 30;
 
 /** One wallet's record, and how many requests it took. Throws when Polymarket can't be read (the wallet stays due).
  *  With a deadline, stops starting new pages after it and returns null (nothing saved), or with `partial` the markets
@@ -102,22 +101,6 @@ export async function enqueueWallets(db: Db, wallets: readonly string[], now: nu
 /** The most wallets a Read reads inline. */
 export const INLINE_MAX = 5;
 
-/** A Read's wallets with no record: all of them queued; up to INLINE_MAX read now (hot lane) if they finish within
- *  `ms`. Returns the wallets whose record was stored in time. Reads still running at the deadline are abandoned (the
- *  wallet stays queued for the worker). */
-export async function onDemand(db: Db, poly: Poly, missing: readonly string[], ms: number, now: number): Promise<string[]> {
-  if (!missing.length) return [];
-  await enqueueWallets(db, missing, now);
-  if (ms < 200) return [];
-  const deadline = Date.now() + ms, done: string[] = [];
-  const work = missing.slice(0, INLINE_MAX).map(async w => {
-    const r = await readWalletPnl(poly, w, { priority: "hot", deadline }).catch(() => null);
-    if (r && Date.now() <= deadline) { await store(db, w, r.v, now); done.push(w); }
-  });
-  await Promise.race([Promise.all(work), new Promise(ok => setTimeout(ok, ms))]);
-  return [...done];
-}
-
 /* ---------- speed ---------- */
 
 /** Share of the Data API bucket the backfill may spend: starts at half, +0.1 after a clean run (up to 0.8; the rest
@@ -129,7 +112,7 @@ export const nextShare = (share: number, rateLimited: number): number =>
 export const budgetFor = (ratePerSec: number, share: number, runMs: number): number => Math.max(1, Math.floor(ratePerSec * share * runMs / 1000));
 
 let share = SHARE_START;
-export interface BackfillRun { wallets: number; requests: number; reqPerSec: number; budget: number; share: number; limitPerSec: number; rateLimited: number; failed: number; queued: number; due: number }
+interface BackfillRun { wallets: number; requests: number; reqPerSec: number; budget: number; share: number; limitPerSec: number; rateLimited: number; failed: number; queued: number; due: number }
 
 /** One run: spends up to its request budget within runMs, reading wallets concurrently in backfill order. */
 export async function provenBackfillOnce(db: Db, poly: Poly, now: number, runMs = 50_000): Promise<BackfillRun> {

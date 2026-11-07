@@ -10,13 +10,13 @@ import { calculate } from "./calculator";
 import { pct } from "./format";
 import type { FeeModel, MarketPair, Opportunity, RuleMismatch, Venue } from "./types";
 
-export const QUARANTINE_MAX_ROI = 0.15;
-export const QUARANTINE_AMOUNT = 500;
-export const QUARANTINE_MAX_KEEP = 50;
+const QUARANTINE_MAX_ROI = 0.15;
+const QUARANTINE_AMOUNT = 500;
+const QUARANTINE_MAX_KEEP = 50;
 
 const MISMATCH_WORD: Readonly<Record<RuleMismatch, string>> = { date: "date", threshold: "threshold", source: "resolution source", tie: "how a tie settles" };
 
-export interface QuarantineContext {
+interface QuarantineContext {
   /** The matched pair behind a cross-venue deal. */
   pair?: MarketPair | undefined;
   /** Each leg market's fee model, for the $500 calculation. */

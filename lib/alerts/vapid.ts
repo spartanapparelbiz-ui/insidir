@@ -2,7 +2,7 @@
  * INSIDIR_VAPID_PRIVATE_KEY (production), else VAPID_PUBLIC_KEY / NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
  * The browser gets the public key from the server (the alerts page, GET /api/push/key), so a key set after the
  * build still works. Server only. */
-export interface VapidKeys { publicKey: string; privateKey: string; subject: string }
+interface VapidKeys { publicKey: string; privateKey: string; subject: string }
 
 /** Read by name at run time: Next.js inlines `process.env.NEXT_PUBLIC_…` at build, a computed name it can't. */
 const read = (env: Record<string, string | undefined>, name: string): string => (env[name] ?? "").trim();

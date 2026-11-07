@@ -4,9 +4,9 @@
  * beats it. A market counts once (a wallet can hold both outcomes): won when its net is above zero. */
 import { RECORD_MIN_RESOLVED } from "@/lib/moves/records";
 
-export interface PricedPosition { marketId: string; moneyIn: number; pnl: number; avgPrice: number | null }
+interface PricedPosition { marketId: string; moneyIn: number; pnl: number; avgPrice: number | null }
 
-export interface Proven { markets: number; won: number; winRate: number | null; avgPrice: number | null; proven: boolean }
+interface Proven { markets: number; won: number; winRate: number | null; avgPrice: number | null; proven: boolean }
 
 export function provenFrom(positions: readonly PricedPosition[]): Proven {
   const net = new Map<string, number>();

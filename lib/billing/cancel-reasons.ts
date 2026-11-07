@@ -6,6 +6,6 @@ export const CANCEL_REASONS = [
   ["missing", "Missing a market or feature I need"],
   ["other", "Something else"],
 ] as const;
-export type CancelReason = (typeof CANCEL_REASONS)[number][0];
+type CancelReason = (typeof CANCEL_REASONS)[number][0];
 export const isCancelReason = (v: unknown): v is CancelReason => CANCEL_REASONS.some(([k]) => k === v);
 export const reasonLabel = (k: CancelReason): string => CANCEL_REASONS.find(([x]) => x === k)![1];

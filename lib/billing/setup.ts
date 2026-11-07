@@ -22,15 +22,15 @@ export const EVENTS = ["membership.activated", "membership.updated", "membership
 const MONTH_DAYS = [28, 29, 30, 31];
 
 type Json = Record<string, unknown>;
-export interface SetupDeps {
+interface SetupDeps {
   db: Db;
   env: Record<string, string | undefined>;
   /** fetch, bound to Whop's API (tests pass a stand-in). */
   fetch: typeof fetch;
   log: (line: string) => void;
 }
-export const APP_NAME = "Insidir";
-export interface SetupResult { plan: "ok" | "wrong"; webhook: "ok" | "failed"; app: "ok" | "missing redirect" | "failed"; line: string }
+const APP_NAME = "Insidir";
+interface SetupResult { plan: "ok" | "wrong"; webhook: "ok" | "failed"; app: "ok" | "missing redirect" | "failed"; line: string }
 
 const num = (v: unknown): number | null => (v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);

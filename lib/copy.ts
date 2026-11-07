@@ -34,23 +34,13 @@ export const TRIAL_LINE = `$${TRIAL.fee} for your first ${TRIAL.days} days`;
 export const GET_CTA = `Try ${TRIAL.days} days for $${TRIAL.fee}`;
 /** Next to every performance figure. */
 export const PAST = "Past results, not a promise.";
-/** The nav's one button, for visitors on every page. */
-export const NAV_CTA = "Start for $1";
 /** What comes after, said next to every price. */
-export const THEN_LINE = "then $39/mo, cancel anytime";
+const THEN_LINE = "then $39/mo, cancel anytime";
 /** The small line under a button. */
 export const CANCEL_LINE = "Then $39/mo, cancel anytime.";
 export const OFFER_BAR = `${GET_CTA}, ${THEN_LINE}.`;
 /** What the members-only APIs say to someone without a plan. */
 export const MEMBERS_ONLY = `Members only. ${GET_CTA}, ${THEN_LINE}.`;
-/** "$1 today. $39 on Nov 4 unless you cancel." (/start, under the button): the date is TRIAL.days from `now`, US Eastern. */
-export function chargeLine(now: number): string {
-  const d = new Date(now + TRIAL.days * 86_400_000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
-  return `$${TRIAL.fee} today. $39 on ${d} unless you cancel.`;
-}
-
-/** How a lock is described everywhere. */
-export const LOCK_LINE = "Locks in a net P&L if both sides fill and both markets settle the same way.";
 
 /** Words that must never describe a deal (checked over every page by test/compliance.test.ts). The negated form
  *  "Not risk-free" and "aren't guaranteed" are allowed, and so is the FAQ question "Is this risk-free?". */
@@ -64,14 +54,6 @@ export function bannedPhrases(text: string): string[] {
   const cleaned = text.replace(NEGATED, "").replace(QUESTION, "");
   return BANNED.filter(r => r.test(cleaned)).map(r => r.source);
 }
-
-/* One name per action, everywhere (buttons say exactly what happens). */
-/** Start the checkout (every upgrade button for a visitor). */
-export const UNLOCK = GET_CTA;
-/** Go to the live Terminal (no account needed). */
-export const OPEN_TERMINAL = "See today's live deals";
-/** Change any member setting: confirmed with this toast. */
-export const SAVED = "Saved";
 
 /** What the money-path monitor looks for on the home page: the landing's own marker (components/brand/landing). */
 export const LANDING_MARK = 'data-testid="landing"';

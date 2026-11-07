@@ -22,13 +22,13 @@ import type { Opportunity, Plan, Region } from "@/lib/types";
 import { VENUE_NAME } from "@/lib/types";
 
 /** Deals older than this at alert time are not sent: the prices have probably moved. */
-export const ALERT_MAX_AGE_MS = 10 * 60_000;
+const ALERT_MAX_AGE_MS = 10 * 60_000;
 /** Email alerts (the push backup) per user per hour, at most. */
 export const EMAIL_ALERTS_PER_HOUR = 6;
 /** The daily summary goes out at this UTC hour (13:00 UTC is 9am in New York, 8am in winter). */
-export const DIGEST_HOUR_UTC = 13;
+const DIGEST_HOUR_UTC = 13;
 /** Deals listed in a summary. */
-export const DIGEST_ROWS = 5;
+const DIGEST_ROWS = 5;
 
 export interface AlertUser {
   id: string;
@@ -44,8 +44,8 @@ export interface AlertUser {
 
 export interface AlertDeal { opp: Opportunity; firstSeenAt: number; active: boolean }
 
-export type Channel = "push" | "email";
-export interface AlertJob { userId: string; oppId: string; channel: Channel }
+type Channel = "push" | "email";
+interface AlertJob { userId: string; oppId: string; channel: Channel }
 
 export function dueAlerts(users: readonly AlertUser[], deals: readonly AlertDeal[], now: number): AlertJob[] {
   const jobs: AlertJob[] = [];

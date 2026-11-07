@@ -1,7 +1,7 @@
 /* What each plan gets. Enforced on the server (lib/feed.ts redacts before anything is rendered or sent). */
 import type { Plan } from "./types";
 
-export interface Entitlements {
+interface Entitlements {
   /** The feed shows what was found at least this long ago. 0 = live. */
   feedDelayMinutes: number;
   /** Rows shown; null = all. */
@@ -27,9 +27,6 @@ export const PLANS: Record<Plan, { name: string; price: number; tagline: string;
     entitlements: { feedDelayMinutes: 0, maxRows: null, sizesHidden: false, calculator: true, alertDelaySeconds: 0, whales: true, pnl: true, fullHistory: true },
   },
 };
-
-/** The one plan, as every button and price line says it. */
-export const PRICE = `$${PLANS.insidir.price}/mo`;
 
 /** The trial: the first 3 days for $1 (Whop plan plan_XBvNjaLPThsp2: a 3-day trial with a $1 initial fee), then the
  *  monthly price. Every mention of the trial on the site is built from this (lib/copy.ts TRIAL_LINE, GET_CTA,

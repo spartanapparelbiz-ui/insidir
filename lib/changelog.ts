@@ -1,6 +1,6 @@
 /* The changelog (/changelog): what shipped, newest first, written from the commit history. One entry per day, a few
  * lines each, in the house style. Add a line when something a visitor or member can see ships. */
-export interface ChangeDay { date: string; items: string[] }
+interface ChangeDay { date: string; items: string[] }
 
 export const CHANGELOG: ChangeDay[] = [
   { date: "2026-10-31", items: [

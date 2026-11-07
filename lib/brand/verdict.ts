@@ -9,10 +9,10 @@
 import { dollars } from "@/lib/money";
 
 export type Side = "yes" | "no";
-export type VerdictKind = "agree" | "against" | "split" | "none";
-export interface Verdict { kind: VerdictKind; headline: string; evidence: string | null }
+type VerdictKind = "agree" | "against" | "split" | "none";
+interface Verdict { kind: VerdictKind; headline: string; evidence: string | null }
 
-export const AGREE_SHARE = 0.65, AGAINST_SHARE = 0.35;
+const AGREE_SHARE = 0.65, AGAINST_SHARE = 0.35;
 
 export const HEADLINE: Record<VerdictKind, string> = {
   agree: "Millionaires agree with you",
@@ -58,17 +58,3 @@ export function verdict(m: VerdictInput, mine: Side): Verdict {
 /** The side the most millionaire money is on (the demo picks it, so the demo shows a verdict with real money). */
 export const heavierSide = (m: VerdictInput): Side => (m.yes.dollars >= m.no.dollars ? "yes" : "no");
 
-/** One sentence describing where a market's $1M+ money is (the free #1 market's analyst line). Data, not advice. */
-export function dataLine(m: VerdictInput & { pro?: { yes: { dollars: number; wallets: number }; no: { dollars: number; wallets: number } } }): string {
-  const y = m.yes.dollars, n = m.no.dollars, t = y + n;
-  if (!t) return "No $1M+ wallet holds this market yet.";
-  const [hi, lo] = y >= n ? (["yes", "no"] as const) : (["no", "yes"] as const);
-  const label = (s: Side) => (s === "yes" ? m.yesLabel : m.noLabel);
-  const main = !m[lo].dollars
-    ? `All ${dollars(m[hi].dollars)} of the millionaire money here is on ${label(hi)}, from ${w(m[hi].wallets)}.`
-    : `Millionaire money is ${Math.round((m[hi].dollars / t) * 100)}% on ${label(hi)}: ${dollars(m[hi].dollars)} from ${w(m[hi].wallets)} against ${dollars(m[lo].dollars)} from ${w(m[lo].wallets)}.`;
-  const pro = m.pro ? m.pro.yes.dollars + m.pro.no.dollars : 0;
-  if (!pro || !m.pro) return main;
-  const proHi: Side = m.pro.yes.dollars >= m.pro.no.dollars ? "yes" : "no";
-  return `${main} Pro wallets lean ${label(proHi)} with ${dollars(m.pro[proHi].dollars)}.`;
-}

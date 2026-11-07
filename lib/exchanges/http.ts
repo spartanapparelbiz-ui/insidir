@@ -15,17 +15,17 @@
 /** Kalshi Trade API v2. api.elections.kalshi.com serves ALL Kalshi markets (not just elections) and is the host in
  *  Kalshi's public docs as of this writing. The spec mentions https://external-api.kalshi.com/trade-api/v2 ("verify
  *  live"); set KALSHI_API_URL to that if it turns out to be current. */
-export const DEFAULT_KALSHI_API_URL = "https://api.elections.kalshi.com/trade-api/v2";
+const DEFAULT_KALSHI_API_URL = "https://api.elections.kalshi.com/trade-api/v2";
 /** Polymarket Gamma (markets / events metadata). */
-export const DEFAULT_POLYMARKET_GAMMA_URL = "https://gamma-api.polymarket.com";
+const DEFAULT_POLYMARKET_GAMMA_URL = "https://gamma-api.polymarket.com";
 /** Polymarket CLOB (order books, prices). */
-export const DEFAULT_POLYMARKET_CLOB_URL = "https://clob.polymarket.com";
+const DEFAULT_POLYMARKET_CLOB_URL = "https://clob.polymarket.com";
 /** Polymarket Data API (trades, positions, activity). */
-export const DEFAULT_POLYMARKET_DATA_URL = "https://data-api.polymarket.com";
+const DEFAULT_POLYMARKET_DATA_URL = "https://data-api.polymarket.com";
 /** Polymarket US (the CFTC-regulated exchange at polymarket.us). UNVERIFIED host; see polymarket-us.ts. */
-export const DEFAULT_POLYMARKET_US_API_URL = "https://api.polymarket.us";
+const DEFAULT_POLYMARKET_US_API_URL = "https://api.polymarket.us";
 /** Polymarket CLOB market websocket. */
-export const DEFAULT_POLYMARKET_WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market";
+const DEFAULT_POLYMARKET_WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market";
 
 const env = (k: string): string | undefined => {
   const v = typeof process !== "undefined" ? process.env[k] : undefined;
@@ -45,35 +45,22 @@ export const baseUrls = () => ({
 
 export const USER_AGENT = "InsidirTerminal/0.1 (+https://insidir.com)";
 /** Per-attempt timeout. */
-export const TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = 10_000;
 /** Retries after the first attempt (so at most MAX_RETRIES + 1 requests per call). */
 export const MAX_RETRIES = 4;
 /** Backoff without a Retry-After: 500ms, 1s, 2s, 4s ... deterministic (no jitter). */
 export const BACKOFF_BASE_MS = 500;
-export const BACKOFF_CAP_MS = 15_000;
+const BACKOFF_CAP_MS = 15_000;
 /** A Retry-After longer than this is clamped (a misbehaving header should not stall a sweep for minutes). */
 export const RETRY_AFTER_CAP_MS = 30_000;
 /** Without a Retry-After on a 429 we wait at least this long. */
-export const RETRY_AFTER_DEFAULT_MS = 1_000;
+const RETRY_AFTER_DEFAULT_MS = 1_000;
 
 /* ---------- Published rate limits (documentation, for the headroom report) ---------- */
 
-/** Kalshi, Basic tier (no account / default): 20 reads per second, 10 writes per second. Advanced 30/30, Premier
- *  100/100, Prime 400/400. Only reads matter here (public market data, no auth). */
-export const KALSHI_BASIC_READS_PER_SEC = 20;
-export const KALSHI_BASIC_WRITES_PER_SEC = 10;
-
-/** Polymarket's published Cloudflare throttles, requests per 10 seconds (requests over the limit are delayed /
- *  queued by Cloudflare rather than always rejected, but 429s do happen). */
-export const POLYMARKET_LIMITS_PER_10S = {
-  gamma: { general: 4000, events: 500, markets: 300, search: 350 },
-  clob: { general: 9000, book: 1500, books: 500, price: 1500, prices: 500, midpoint: 1500, midpoints: 500 },
-  data: { general: 1000, trades: 200, positions: 150, closedPositions: 150 },
-} as const;
-
 /* ---------- Configured buckets (what we actually allow ourselves) ---------- */
 
-export type BucketName = "kalshi" | "polymarket_gamma" | "polymarket_clob" | "polymarket_data" | "polymarket_us";
+type BucketName = "kalshi" | "polymarket_gamma" | "polymarket_clob" | "polymarket_data" | "polymarket_us";
 export const BUCKETS: readonly BucketName[] = ["kalshi", "polymarket_gamma", "polymarket_clob", "polymarket_data", "polymarket_us"];
 
 export interface BucketConfig {
@@ -87,7 +74,7 @@ export interface BucketConfig {
 
 /** Defaults sit at ~80% (Kalshi: 50%) of the tightest published limit of the endpoints each client uses. Override per bucket with
  *  <NAME>_RATE_PER_SEC (e.g. KALSHI_RATE_PER_SEC=80 on a Premier account). */
-export const DEFAULT_BUCKETS: Record<BucketName, BucketConfig> = {
+const DEFAULT_BUCKETS: Record<BucketName, BucketConfig> = {
   // 50% of 20 reads/s: unauthenticated reads share a budget per egress IP, and Railway's (and the QA proxy's) IPs are
   // shared, so 429s showed up at ~6 req/s against the 80% default.
   kalshi: { ratePerSec: 10, burst: 10, published: "20 reads/s (Basic tier)" },
@@ -124,7 +111,7 @@ export const realClock: Clock = {
 
 export type Priority = "hot" | "normal";
 
-export interface BucketStats {
+interface BucketStats {
   name: string;
   ratePerSec: number;
   burst: number;
@@ -249,7 +236,7 @@ export function retryAfterMs(header: string | null, now: number): number | null 
 /** Deterministic exponential backoff for retry number `attempt` (0-based). */
 export const backoffMs = (attempt: number): number => Math.min(BACKOFF_BASE_MS * 2 ** attempt, BACKOFF_CAP_MS);
 
-export interface RequestOptions {
+interface RequestOptions {
   priority?: Priority;
   method?: "GET" | "POST";
   /** JSON body for POST. */
@@ -258,7 +245,7 @@ export interface RequestOptions {
   maxRetries?: number;
 }
 
-export interface HttpStats extends BucketStats {
+interface HttpStats extends BucketStats {
   requests: number;
   ok: number;
   rateLimited: number;
@@ -269,9 +256,9 @@ export interface HttpStats extends BucketStats {
   lastRateLimitedAt: number | null;
 }
 
-export type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
+type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 
-export interface HttpClientOptions {
+interface HttpClientOptions {
   bucket: TokenBucket;
   clock?: Clock;
   fetchImpl?: FetchLike;

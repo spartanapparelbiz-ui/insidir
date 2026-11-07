@@ -12,7 +12,7 @@ import { EMPTY, MIN_SETTLED, SLIPPAGE, STAKE, type FollowRecord } from "./math";
 
 const DAY = 86_400_000;
 const OBSERVED = new Set(["steam", "early-money", "late-money"]);
-export type FollowWindows = Record<string, FollowRecord>;
+type FollowWindows = Record<string, FollowRecord>;
 
 /** The price and moment a position can be followed from, for a tracker: its tag's for an after-the-fact tracker. */
 const pointFor = (slug: string | null): { price: SQL; at: SQL; join: SQL } => slug && OBSERVED.has(slug)
@@ -54,7 +54,7 @@ export function trackerFollowAll(db: Db, now: number): Promise<Map<TrackerSlug, 
   });
 }
 
-export interface TraderFollow { wallet: string; name: string | null; all: FollowRecord; d30: FollowRecord; open: number; openAmount: number }
+interface TraderFollow { wallet: string; name: string | null; all: FollowRecord; d30: FollowRecord; open: number; openAmount: number }
 
 /** Every Polymarket account's followable record (all time and the last 30 days), for those with any settled. */
 export function traderFollowAll(db: Db, now: number): Promise<Map<string, TraderFollow>> {

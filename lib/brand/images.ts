@@ -69,7 +69,7 @@ export const PHOTOS: Record<PhotoFile, Photo> = {
 };
 
 /** The page slots: what each section of the site sits on. */
-export type Slot = "hero" | "cta" | "markets" | "space" | "world";
+type Slot = "hero" | "cta" | "markets" | "space" | "world";
 export const SLOT: Record<Slot, PhotoFile> = { hero: "hero", cta: "cta", markets: "markets", space: "hurricane", world: "racing" };
 
 /** Slots and categories using a related photo until their own arrives (shown in the pull request, kept honest here):

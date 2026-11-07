@@ -22,34 +22,34 @@ import { strikeFromText } from "./strike";
 import { chunk, SWEEP_TTL_MS, TtlCache, type BookOptions, type ListOptions, type Sweep, type VenueClient } from "./venue";
 
 /** Condition ids per Gamma /markets?condition_ids= request when looking markets up by id. */
-export const GAMMA_IDS_BATCH = 50;
+const GAMMA_IDS_BATCH = 50;
 /** Gamma /events/keyset page size (the server caps it at 100). Events carry their markets, so pages are kept moderate. */
-export const GAMMA_EVENTS_PAGE_LIMIT = 100;
+const GAMMA_EVENTS_PAGE_LIMIT = 100;
 /** Hard stop for pagination loops. */
-export const GAMMA_MAX_PAGES = 1000;
+const GAMMA_MAX_PAGES = 1000;
 /** CLOB POST /books: at most this many token ids per request (documented). */
 export const CLOB_BOOKS_BATCH = 500;
 /** Whale threshold: trades of at least this many dollars. */
-export const WHALE_MIN_CASH = 10_000;
+const WHALE_MIN_CASH = 10_000;
 /** Data API page size. */
-export const DATA_PAGE_LIMIT = 500;
+const DATA_PAGE_LIMIT = 500;
 /** Data API wallet pagination stop. */
-export const DATA_MAX_PAGES = 20;
+const DATA_MAX_PAGES = 20;
 /** Websocket keep-alive: Polymarket expects a text "PING" about every 10 seconds. */
-export const WS_PING_INTERVAL_MS = 10_000;
+const WS_PING_INTERVAL_MS = 10_000;
 /** Reconnect backoff: 1s, 2s, 4s … capped (deterministic). */
-export const WS_RECONNECT_BASE_MS = 1_000;
-export const WS_RECONNECT_CAP_MS = 30_000;
+const WS_RECONNECT_BASE_MS = 1_000;
+const WS_RECONNECT_CAP_MS = 30_000;
 /** After this many consecutive failed connections, watchBooks switches to polling. */
-export const WS_FAILURES_BEFORE_POLLING = 3;
+const WS_FAILURES_BEFORE_POLLING = 3;
 /** Polling fallback interval. */
-export const POLL_INTERVAL_MS = 5_000;
+const POLL_INTERVAL_MS = 5_000;
 /** Web origin for deep links. */
-export const POLYMARKET_WEB = "https://polymarket.com";
+const POLYMARKET_WEB = "https://polymarket.com";
 
 /* ---------- Gamma ---------- */
 
-export interface GammaEventContext {
+interface GammaEventContext {
   id: string;
   slug: string | null;
   title: string | null;
@@ -93,7 +93,7 @@ export function gammaCategory(event: JsonObject | null, market?: JsonObject | nu
   return normaliseCategory([...categoryLabels(event), ...categoryLabels(market)]);
 }
 
-export function readGammaEventContext(e: JsonObject): GammaEventContext | null {
+function readGammaEventContext(e: JsonObject): GammaEventContext | null {
   const id = str(e.id) ?? str(e.slug);
   if (!id) return null;
   const markets = objList(e.markets);
@@ -127,11 +127,11 @@ export function polymarketUrl(eventSlug: string | null, marketSlug: string | nul
 /** Settled result from outcomePrices once closed: [1,0] YES, [0,1] NO, [0.5,0.5] void (50-50 refund). */
 /** Final outcomePrices must be at least this close to 1 / 0 to count as settled (a closed market awaiting resolution
  *  still shows its last trade prices). */
-export const SETTLED_PRICE_TOLERANCE = 0.005;
+const SETTLED_PRICE_TOLERANCE = 0.005;
 
 /** Settled result. When Gamma states umaResolutionStatus, only "resolved" counts; otherwise the market must be
  *  closed. Then the final outcomePrices decide: [1,0] YES, [0,1] NO, [0.5,0.5] void (50-50 refund). */
-export function gammaResult(m: JsonObject): Side | "void" | null {
+function gammaResult(m: JsonObject): Side | "void" | null {
   const uma = str(m.umaResolutionStatus)?.toLowerCase();
   if (uma !== undefined ? uma !== "resolved" : !bool(m.closed)) return null;
   const prices = list(m.outcomePrices).map(num);
@@ -152,7 +152,7 @@ function embeddedEvent(m: JsonObject): JsonObject | null {
 /** One Gamma market → VMarket. Null unless it is a binary CLOB market with two token ids. Pure. `venue` lets the
  *  Polymarket US client reuse this reader when its payload is Gamma-shaped. */
 /** Deep-link builder (eventSlug, marketSlug) → URL; Polymarket US passes its own. */
-export type UrlFor = (eventSlug: string | null, marketSlug: string | null) => string;
+type UrlFor = (eventSlug: string | null, marketSlug: string | null) => string;
 
 export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, venue: Venue = "polymarket", urlFor: UrlFor = polymarketUrl): VMarket | null {
   const conditionId = str(m.conditionId) ?? str(m.condition_id);
@@ -219,7 +219,7 @@ export function readGammaMarket(m: JsonObject, ctx: GammaEventContext | null, ve
 }
 
 /** The first outcome's price now: outcomePrices[0], else lastTradePrice (a 0..1 number either way). */
-export function gammaYesPrice(m: JsonObject): number | null {
+function gammaYesPrice(m: JsonObject): number | null {
   const p = list(m.outcomePrices).map(num)[0] ?? num(m.lastTradePrice);
   return p !== null && p !== undefined && p >= 0 && p <= 1 ? p : null;
 }
@@ -263,7 +263,7 @@ export function readGammaEvent(e: unknown, venue: Venue = "polymarket", urlFor: 
 
 /** Folds raw Gamma events into a sweep one page at a time (de-duplicated: pages can overlap), so the raw pages
  *  never all sit in memory at once (the full open universe is 200K+ markets). */
-export function gammaSweepBuilder(venue: Venue = "polymarket") {
+function gammaSweepBuilder(venue: Venue = "polymarket") {
   const markets: VMarket[] = [];
   const events: VEvent[] = [];
   const seenEvents = new Set<string>();
@@ -340,7 +340,7 @@ export function combineTokenBooks(yes: TokenBook | null, no: TokenBook | null, f
 /* ---------- Data API ---------- */
 
 /** A display name only when the profile shows one; never the wallet address itself. */
-export function displayName(r: JsonObject): string | null {
+function displayName(r: JsonObject): string | null {
   const usable = (s: string | null) => (s && !/^0x[0-9a-f]{6,}/i.test(s) ? s : null);
   const name = str(r.name);
   const pseudonym = str(r.pseudonym);
@@ -442,7 +442,7 @@ export function readPositions(raw: unknown): PolymarketPosition[] {
 }
 
 /** One row of a wallet's history (Data API /v2/activity): TRADE, SPLIT, MERGE, REDEEM, REWARD, CONVERSION, … */
-export interface PolymarketActivity {
+interface PolymarketActivity {
   wallet: string;
   timestamp: number;
   type: string;
@@ -490,7 +490,7 @@ export function readActivity(raw: unknown): PolymarketActivity[] {
 
 /* ---------- Client ---------- */
 
-export interface PolymarketClientOptions {
+interface PolymarketClientOptions {
   gamma?: HttpClient;
   clob?: HttpClient;
   data?: HttpClient;
@@ -826,11 +826,11 @@ export interface WsLike {
   onclose: ((ev: unknown) => void) | null;
   onerror: ((ev: unknown) => void) | null;
 }
-export type WsCtor = new (url: string) => WsLike;
+type WsCtor = new (url: string) => WsLike;
 
 const WS_OPEN = 1;
 
-export interface MarketStreamOptions {
+interface MarketStreamOptions {
   url?: string;
   WebSocketImpl?: WsCtor;
   clock?: Clock;
@@ -1020,7 +1020,7 @@ export class PolymarketMarketStream {
 
 /* ---------- Polling fallback and the combined watcher ---------- */
 
-export interface PollOptions {
+interface PollOptions {
   client: Pick<PolymarketClient, "getTokenBooks">;
   intervalMs?: number;
   clock?: Clock;
@@ -1050,7 +1050,7 @@ export async function pollOnce(
 }
 
 /** Poll books every intervalMs and call onChange only when a token's book hash changes. Returns stop(). */
-export function pollBooks(tokenIds: readonly string[], onChange: (tokenId: string, book: TokenBook) => void, o: PollOptions): () => void {
+function pollBooks(tokenIds: readonly string[], onChange: (tokenId: string, book: TokenBook) => void, o: PollOptions): () => void {
   const clock = o.clock ?? realClock;
   const last = new Map<string, string>();
   let stopped = false;
@@ -1070,7 +1070,7 @@ export function pollBooks(tokenIds: readonly string[], onChange: (tokenId: strin
   };
 }
 
-export interface WatchOptions extends PollOptions {
+interface WatchOptions extends PollOptions {
   WebSocketImpl?: WsCtor;
   url?: string;
   /** Skip the websocket entirely. */

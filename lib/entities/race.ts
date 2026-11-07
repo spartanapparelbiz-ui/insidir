@@ -7,7 +7,7 @@ import { memo } from "@/lib/memo";
 import { electionDay, type RaceCard } from "@/lib/market/races";
 import { racePath, raceSlugOf } from "./slug";
 
-export const raceSlug = (r: RaceCard): string => raceSlugOf(r.key, r.title);
+const raceSlug = (r: RaceCard): string => raceSlugOf(r.key, r.title);
 export const raceHref = (r: RaceCard): string => racePath(raceSlug(r));
 
 /** Every race (members' order: control first, then by money), and the keys a visitor gets whole. Cached a minute. */
@@ -33,6 +33,6 @@ export async function raceBySlug(db: Db, slug: string, now: number): Promise<{ r
 
 const STOP = new Set(["election", "elections", "winner", "race", "the", "who", "will", "win", "of", "2026", "2025", "2027", "general", "midterm", "midterms"]);
 /** A race slug's words without the noise ("florida-governor-winner-2026" → "florida governor"). Pure. */
-export function slugWords(slug: string): string {
+function slugWords(slug: string): string {
   return slug.toLowerCase().split(/[^a-z0-9]+/).filter(w => w && !STOP.has(w) && !/^[0-9a-f]{6}$/.test(w)).sort().join(" ");
 }

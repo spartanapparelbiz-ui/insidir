@@ -6,7 +6,7 @@
  * Sell runs are the wallet's SELL fills in one market and outcome, merged like buys (a gap over 10 minutes starts a new
  * run), $5K or more. A sell of a position we never saw it open is left out: we can't say if it trimmed or left.
  * Shares held come only from the buys and sells we've seen. Pure, except recordPositions (server only). */
-import { and, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { positionEvents } from "@/lib/db/schema";
 import { categoryOf } from "@/lib/brand/categories";
@@ -17,7 +17,7 @@ import type { BetRow } from "./bets";
 import type { Tier } from "./watchlist";
 
 export const EXIT_SHARE = 0.9;
-export type PositionKind = "open" | "add" | "trim" | "exit";
+type PositionKind = "open" | "add" | "trim" | "exit";
 
 export interface SellRun {
   id: string; wallet: string; marketId: string; outcomeSide: "yes" | "no"; outcome: string; marketTitle: string; eventTitle: string;
@@ -97,9 +97,3 @@ export async function recordPositions(db: Db, buys: readonly BetRow[], sells: re
   return n;
 }
 
-/** A position event's kind by id (the bet ids a ping is about). */
-export async function kindsOf(db: Db, ids: readonly string[]): Promise<Map<string, PositionKind>> {
-  if (!ids.length) return new Map();
-  const r = await db.execute(sql`select id, kind from terminal.position_events where id in (${sql.join(ids.map(i => sql`${i}`), sql`, `)})`);
-  return new Map((r.rows as Array<{ id: string; kind: PositionKind }>).map(x => [x.id, x.kind]));
-}

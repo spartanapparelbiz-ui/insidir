@@ -51,7 +51,7 @@ const NAMES: Record<League, Array<[string, ...string[]]>> = {
 const words = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9'.-]+/g, " ").trim()} `;
 
 /** The team a name is, in a league: "Chiefs", "Kansas City Chiefs", "Kansas City" → KC. */
-export function teamOf(league: League, name: string): string | null {
+function teamOf(league: League, name: string): string | null {
   const w = words(name);
   for (const [abbr, ...aliases] of NAMES[league]) if (TEAMS[league].has(abbr) && aliases.some(a => w.includes(` ${a} `))) return abbr;
   return null;
@@ -64,7 +64,7 @@ const LEAGUE_OF: Array<[RegExp, string]> = [
   [/valorant/i, "valorant"],
 ];
 const TEAM_LEAGUE: Record<string, League> = { nba: "nba", nfl: "nfl", mlb: "mlb", nhl: "nhl" };
-export const leagueLogo = (id: string): string | null => (LEAGUES[id] ? `/logos/leagues/${LEAGUES[id]}` : null);
+const leagueLogo = (id: string): string | null => (LEAGUES[id] ? `/logos/leagues/${LEAGUES[id]}` : null);
 const leagueId = (label: string | null | undefined): string | null => { if (!label) return null; for (const [re, id] of LEAGUE_OF) if (re.test(label)) return id; return null; };
 
 /** A company or coin named in a market's words, with its logo. */
@@ -93,7 +93,7 @@ const NAME_TICKER: Array<[RegExp, string]> = [
 ];
 export const tickerOfName = (name: string): string | null => { for (const [re, t] of NAME_TICKER) if (STOCKS.has(t) && re.test(name)) return t; return null; };
 
-export function brandOf(text: string): string | null {
+function brandOf(text: string): string | null {
   const t = tickerOfName(text);
   if (t) return `/logos/stocks/${t}.webp`;
   for (const [re, slug] of BRAND_TEXT) if (BRANDS[slug] && re.test(text)) return `/logos/brands/${BRANDS[slug]}`;
@@ -101,7 +101,7 @@ export function brandOf(text: string): string | null {
 }
 /** Share classes filed under one logo. */
 const SAME_LOGO: Record<string, string> = { GOOGL: "GOOG", "BRK-A": "BRK-B", "FOXA": "FOX", "NWSA": "NWS" };
-export const stockLogo = (ticker: string | null | undefined): string | null => {
+const stockLogo = (ticker: string | null | undefined): string | null => {
   const raw = ticker?.toUpperCase().replace(/\./g, "-");
   const t = raw ? (STOCKS.has(raw) ? raw : SAME_LOGO[raw]) : undefined;
   if (!t || !STOCKS.has(t)) return null;
@@ -111,7 +111,7 @@ export const stockLogo = (ticker: string | null | undefined): string | null => {
 
 /** The logo for a position: its team, else its league (sports); its company by ticker (filings); a company or coin it
  *  names (markets). */
-export function moveLogo(m: { tab: string; source: string; league?: string | null; leagueLabel?: string | null; outcome?: string | null;
+function moveLogo(m: { tab: string; source: string; league?: string | null; leagueLabel?: string | null; outcome?: string | null;
   marketTitle?: string | null; eventTitle?: string | null; ticker?: string | null; company?: string | null }): string | null {
   if (m.source === "sec" || m.tab === "stocks") return stockLogo(m.ticker) ?? (m.company ? stockLogo(tickerOfName(m.company)) : null);
   const text = `${m.eventTitle ?? ""} ${m.marketTitle ?? ""}`;
@@ -128,7 +128,7 @@ export function moveLogo(m: { tab: string; source: string; league?: string | nul
 }
 
 /** Both teams of a game, as the market names them ("Chiefs vs. Bills", "Lakers at Celtics"), each with its logo. */
-export function matchupOf(m: { tab: string; league?: string | null; leagueLabel?: string | null; marketTitle?: string | null; eventTitle?: string | null }): [string, string] | null {
+function matchupOf(m: { tab: string; league?: string | null; leagueLabel?: string | null; marketTitle?: string | null; eventTitle?: string | null }): [string, string] | null {
   if (m.tab !== "sports") return null;
   const id = leagueId(m.leagueLabel) ?? leagueId(m.league);
   const tl = id ? TEAM_LEAGUE[id] : undefined;
@@ -144,7 +144,7 @@ export function matchupOf(m: { tab: string; league?: string | null; leagueLabel?
 
 /** An insider's initials, first and last name ("HUANG JEN HSUN" is Jen Hsun Huang: "JH"); a filer that's an entity
  *  gets its first two letters. */
-export function initials(raw: string): string {
+function initials(raw: string): string {
   if (isEntity(raw)) return monogram(personName(raw));
   const w = personName(raw).split(" ").filter(x => /^\p{L}/u.test(x) && !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(x));
   return w.length ? `${w[0]![0]}${w.length > 1 ? w[w.length - 1]![0] : ""}`.toUpperCase() : monogram(raw);
@@ -158,7 +158,7 @@ export type MoveArt =
   | { kind: "logo"; src: string }
   | { kind: "photo"; name: PhotoName };
 
-export function moveArt(m: Parameters<typeof moveLogo>[0] & { insider?: string | null; category?: string | null; detailKind?: string | null }): MoveArt {
+function moveArt(m: Parameters<typeof moveLogo>[0] & { insider?: string | null; category?: string | null; detailKind?: string | null }): MoveArt {
   const game = matchupOf(m);
   if (game) return { kind: "matchup", a: game[0], b: game[1] };
   const src = moveLogo(m);

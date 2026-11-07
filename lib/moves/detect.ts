@@ -8,15 +8,15 @@ import type { Fill, FillPart, Move, Tab } from "./types";
 import { classify } from "./classify";
 import { isCombo } from "./combos";
 
-export const WHALE_MIN_POLY = Number(process.env.WHALE_MIN_POLY ?? 10_000);
-export const WHALE_MIN_KALSHI = Number(process.env.WHALE_MIN_KALSHI ?? 5_000);
+const WHALE_MIN_POLY = Number(process.env.WHALE_MIN_POLY ?? 10_000);
+const WHALE_MIN_KALSHI = Number(process.env.WHALE_MIN_KALSHI ?? 5_000);
 export const MERGE_WINDOW_MS = 10 * 60_000;
-export const PRICE_MAX = 0.97;
-export const PRICE_MIN = 0.03;
-export const BOTH_SIDES_WINDOW_MS = 60 * 60_000;
+const PRICE_MAX = 0.97;
+const PRICE_MIN = 0.03;
+const BOTH_SIDES_WINDOW_MS = 60 * 60_000;
 export const MAX_TRADES_PER_DAY = 300;
 
-export const priceOk = (p: number): boolean => p >= PRICE_MIN && p <= PRICE_MAX;
+const priceOk = (p: number): boolean => p >= PRICE_MIN && p <= PRICE_MAX;
 
 /** A wallet's recent trades, for the market-maker and trades-per-day checks. */
 export interface WalletTrade { marketId: string; outcomeSide: "yes" | "no"; side: "BUY" | "SELL"; at: number }

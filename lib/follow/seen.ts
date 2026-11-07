@@ -19,7 +19,7 @@ import { crossedAt, priceAt, type PricePoint } from "./math";
 
 const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 /** Wait this long after a position is shown before reading its price (the venue's history needs the minute). */
-export const SEEN_DELAY_MS = 3 * MIN;
+const SEEN_DELAY_MS = 3 * MIN;
 const OBSERVED = ["steam", "early-money", "late-money"] as const;
 
 type Clients = { polymarket: PolymarketClient; kalshi: KalshiClient };

@@ -13,22 +13,21 @@ import { rows, str, isObject } from "@/lib/exchanges/parse";
 import { tradesCursor } from "@/lib/exchanges/polymarket";
 import type { VMarket } from "@/lib/types";
 
-export const FILL_MIN = Number(process.env.WHALE_FILL_MIN ?? 500);
-export const LOOKBACK_MS = 70 * 60_000;
-export const NOISE_TTL_MS = 30 * 60_000;
+const LOOKBACK_MS = 70 * 60_000;
+const NOISE_TTL_MS = 30 * 60_000;
 /** At most this many wallet checks per poll (each is one Data API call). */
-export const NOISE_CHECKS_PER_POLL = 10;
+const NOISE_CHECKS_PER_POLL = 10;
 const POLY_PAGES = 6;
 const KALSHI_PAGES = 10;
 /** Kalshi trade ids are kept this long behind the newest trade seen. Each poll re-reads only from 5 s before that
  *  trade (min_ts), so a minute covers the overlap; two hours of every trade's id was the worker's biggest memory
  *  growth on busy nights. */
-export const KALSHI_SEEN_MS = 60_000;
+const KALSHI_SEEN_MS = 60_000;
 
 /** Market details for the given ids (lib/moves/directory.ts). */
-export type MarketLookup = (ids: string[]) => Promise<ReadonlyMap<string, VMarket>>;
+type MarketLookup = (ids: string[]) => Promise<ReadonlyMap<string, VMarket>>;
 
-export interface MoveSources {
+interface MoveSources {
   /** Page `page` of the newest fills; `cursor` is the previous page's next_cursor (null on the first). */
   polyTradesPage(page: number, cursor: string | null): Promise<unknown>;
   /** The wallet's trades over the last day (for the noise checks). */

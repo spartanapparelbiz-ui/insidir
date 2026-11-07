@@ -32,7 +32,7 @@ export function scanOptionsFromEnv(env: Readonly<Record<string, string | undefin
 const DAY_MS = 86_400_000;
 const closesSoon = (closeTime: number | null, now: number, o: ScanOptions): boolean => closeTime !== null && closeTime > now && closeTime - now <= o.maxDays * DAY_MS;
 /** A market that trades and closes within the window. */
-export const liquid = (m: VMarket, now: number, o: ScanOptions): boolean => (m.volume24h ?? 0) >= o.minVolume24h && closesSoon(m.closeTime, now, o);
+const liquid = (m: VMarket, now: number, o: ScanOptions): boolean => (m.volume24h ?? 0) >= o.minVolume24h && closesSoon(m.closeTime, now, o);
 
 /** Events with more outcomes than this are skipped for multi-outcome sets (too many books per scan). */
 export const MULTI_MAX_OUTCOMES = 40;
@@ -43,7 +43,7 @@ export interface Universe {
   pairs: readonly MarketPair[];
 }
 
-export interface ScanCounts { crossArb: number; secondOpinion: number; multi: number; ladder: number; implication: number }
+interface ScanCounts { crossArb: number; secondOpinion: number; multi: number; ladder: number; implication: number }
 
 const byKey = (markets: readonly VMarket[]): Map<string, VMarket> => new Map(markets.map(m => [marketKey(m.venue, m.id), m]));
 

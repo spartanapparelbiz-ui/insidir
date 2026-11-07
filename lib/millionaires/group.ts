@@ -9,7 +9,7 @@ export interface GroupedBet extends BoardBet {
   ids: string[];
 }
 
-export const GROUP_WINDOW_MS = 2 * 3_600_000;
+const GROUP_WINDOW_MS = 2 * 3_600_000;
 
 export function groupBets(bets: readonly BoardBet[], windowMs = GROUP_WINDOW_MS): GroupedBet[] {
   const out: GroupedBet[] = [];

@@ -10,7 +10,7 @@ import { dollars } from "@/lib/money";
 import { groupBets } from "@/lib/millionaires/group";
 import { BetRow } from "./BetRow";
 
-export interface FeedState { now: number; pulse: Pulse; bets: BoardBet[] }
+interface FeedState { now: number; pulse: Pulse; bets: BoardBet[] }
 
 export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true, board = false, copy = false, tier = "millionaire" }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean;
   /** Wallets up $1M+ (the default) or Pro ($100K–$1M): never mixed. */

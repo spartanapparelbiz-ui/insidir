@@ -18,10 +18,10 @@ import { outcomeNames, recentBets, VISITOR_DELAY_MS, type BoardBet } from "@/lib
 import { approvedTwins } from "@/lib/twins/store";
 import { marketPath } from "./slug";
 
-export interface Side { dollars: number; wallets: number }
+interface Side { dollars: number; wallets: number }
 /** yes: Kalshi's YES price (its ask now when the order book was read); yesAsk / noAsk: what buying each side costs now. */
 export interface MarketTwin { kalshiId: string; title: string; url: string; yes: number | null; yesAsk: number | null; noAsk: number | null }
-export interface MarketView {
+interface MarketView {
   id: string; slug: string; title: string; event: string; category: CategorySlug; yesLabel: string; noLabel: string; url: string | null;
   priceNow: number | null; closed: boolean; result: "yes" | "no" | "void" | null;
   twin: MarketTwin | null;

@@ -13,7 +13,7 @@ import type { Side } from "@/lib/types";
 import { num } from "./parse";
 
 /** Column aliases (normalised: lower case, letters and digits only). First match wins. */
-export const COLUMN_ALIASES = {
+const COLUMN_ALIASES = {
   ticker: ["ticker", "marketticker", "market", "contract", "contractticker", "symbol"],
   title: ["title", "markettitle", "marketname", "eventtitle", "description"],
   type: ["type", "transactiontype", "recordtype", "activity", "activitytype", "kind"],
@@ -36,9 +36,9 @@ export const COLUMN_ALIASES = {
   id: ["tradeid", "fillid", "orderid", "id", "transactionid"],
 } as const;
 
-export type CsvField = keyof typeof COLUMN_ALIASES;
+type CsvField = keyof typeof COLUMN_ALIASES;
 
-export interface KalshiCsvTrade {
+interface KalshiCsvTrade {
   kind: "trade";
   /** 1-based line number in the file. */
   line: number;
@@ -55,7 +55,7 @@ export interface KalshiCsvTrade {
   id: string | null;
 }
 
-export interface KalshiCsvSettlement {
+interface KalshiCsvSettlement {
   kind: "settlement";
   line: number;
   ticker: string;
@@ -73,7 +73,7 @@ export interface KalshiCsvSettlement {
   timestamp: number | null;
 }
 
-export interface KalshiCsvResult {
+interface KalshiCsvResult {
   trades: KalshiCsvTrade[];
   settlements: KalshiCsvSettlement[];
   /** Rows that were not trades or settlements (deposits, withdrawals) or could not be read, with the reason. */

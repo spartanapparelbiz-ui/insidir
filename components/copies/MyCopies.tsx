@@ -51,7 +51,7 @@ function MoveRow({ m, now, us }: { m: CopyMove; now: number; us: boolean }) {
   );
 }
 
-export function Recap({ mine, field, label }: { mine: CopyResult; field: CopyResult; label: string }) {
+function Recap({ mine, field, label }: { mine: CopyResult; field: CopyResult; label: string }) {
   const a = returnText(mine), b = returnText(field);
   return (
     <Stage bg={{ kind: "photo", photo: PHOTOS.golf, dark: 0.6 }} testid="recap" labelledBy="recap-h">

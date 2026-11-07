@@ -5,13 +5,9 @@
  *   league:<id> (public/logos/manifest.json)   country:<iso2>
  * Client safe. */
 import { monogram } from "@/lib/moves/avatar";
-import type { ArtKind, ArtRef } from "./ref";
 
-export const INK = "#0B0B12";
 /** The light grey initials sit on (--grey-1 in app/tokens.css). */
 export const GREY = "#F7F7F8";
-
-export const kindOf = (id: string): ArtKind => id.slice(0, id.indexOf(":")) as ArtKind;
 
 export const trackerArtId = (slug: string) => `tracker:${slug}`;
 export const insiderArtId = (cik: string) => `person:${cik.replace(/^0+/, "")}`;
@@ -33,5 +29,3 @@ export function initialsOf(label: string): string {
   return monogram(label);
 }
 
-/** The art an entity has before the job has made any: its initials, ink on light grey. */
-export const initialsRef = (id: string, label: string, mono?: string): ArtRef => ({ id, t: "initials", c: GREY, m: mono ?? initialsOf(label), l: label });

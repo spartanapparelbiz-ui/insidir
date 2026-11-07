@@ -20,7 +20,7 @@ const DAY = 86_400_000;
 
 export interface BestPrice { question: string; yes: { polymarket: number | null; kalshi: number | null } }
 export interface Biggest { title: string; amount: number; pnl: number | null }
-export const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 };
+const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 };
 
 export interface LandingData {
   now: number;
@@ -68,10 +68,10 @@ function bestPrice(db: Db): Promise<BestPrice | null> {
   });
 }
 
-export const milDollars = (m: MarketMoney): number => m.millionaire.yes.dollars + m.millionaire.no.dollars;
+const milDollars = (m: MarketMoney): number => m.millionaire.yes.dollars + m.millionaire.no.dollars;
 const NIGHT: readonly CategorySlug[] = ["elections", "politics", "football", "basketball", "baseball", "hockey", "soccer", "tennis", "golf", "racing"];
 
-export async function landingData(db: Db, now: number, member: boolean): Promise<LandingData> {
+async function landingData(db: Db, now: number, member: boolean): Promise<LandingData> {
   const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> => p.catch(e => { console.error("landing", e instanceof Error ? e.message : e); return fallback; });
   const midnight = midnightET(now);
   const [p, today, day, last3, board, categories, pr, wallets, best, recent] = await Promise.all([

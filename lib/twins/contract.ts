@@ -20,7 +20,7 @@ export type Contract =
 /** Which part of the game a line is on: the whole game, a half or a quarter. A first-half total is never a full-game
  *  or second-half total. */
 export type Period = "game" | "h1" | "h2" | "q1" | "q2" | "q3" | "q4";
-export function periodOf(text: string): Period {
+function periodOf(text: string): Period {
   const t = text.toLowerCase();
   if (/\b(1h|1st half|first half)\b/.test(t)) return "h1";
   if (/\b(2h|2nd half|second half)\b/.test(t)) return "h2";
@@ -28,7 +28,7 @@ export function periodOf(text: string): Period {
   return "game";
 }
 
-export interface Parsed { contract: Contract; event: string | null }
+interface Parsed { contract: Contract; event: string | null }
 
 const STATES = ["alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming"];
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
@@ -41,7 +41,7 @@ function leagueOf(m: VMarket): League | null {
 }
 
 /** A team in `league` named in `text` (city, nickname or Kalshi's "Los Angeles L" form): "nba:ATL". */
-export function teamIn(text: string, league: League): string | null {
+function teamIn(text: string, league: League): string | null {
   const t = ` ${text.toLowerCase().replace(/[^a-z0-9 ]/g, " ")} `;
   const hits = TEAMS[league].filter(r => [r.name, ...(r.extra ?? [])].some(w => t.includes(` ${w.toLowerCase()} `)));
   if (hits.length === 1) return `${league}:${hits[0]!.abbr[0]}`;

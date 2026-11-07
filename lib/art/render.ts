@@ -7,16 +7,14 @@
  * encodeLadder writes AVIF and WebP at 2048/1024/512/256/128, as far down from the square's size as there are. */
 import sharp, { type Sharp } from "sharp";
 
-export const LADDER = [2048, 1024, 512, 256, 128] as const;
-export const MAX = 2048;
+const LADDER = [2048, 1024, 512, 256, 128] as const;
+const MAX = 2048;
 const WHITE = "#FFFFFF";
 
-/* ---------- colour ---------- */
-export const hexToRgb = (hex: string): [number, number, number] => { const n = parseInt(hex.replace("#", "").slice(0, 6), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
-export const rgbToHex = (r: number, g: number, b: number) => `#${[r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+const rgbToHex = (r: number, g: number, b: number) => `#${[r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase()}`;
 
 /** The most common colour of an image (sharp's histogram), for the placeholder and the field around a logo. */
-export async function dominant(buf: Buffer): Promise<string> {
+async function dominant(buf: Buffer): Promise<string> {
   const { dominant: d } = await sharp(buf).stats();
   return rgbToHex(d.r, d.g, d.b);
 }
@@ -40,12 +38,12 @@ export async function photoSquare(buf: Buffer, fx = 0.5, fy = 0.5): Promise<{ pn
 }
 
 /* ---------- logos ---------- */
-export interface Raster { data: Buffer; w: number; h: number }
+interface Raster { data: Buffer; w: number; h: number }
 const isSvg = (buf: Buffer) => /^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE[^>]*>\s*)?<svg/i.test(buf.subarray(0, 2048).toString("utf8"));
 
 /** A logo as RGBA pixels, transparent margins trimmed, fitted inside box × box. A vector is drawn at that size; a
  *  bitmap is only ever made smaller. `vector` says which it was. */
-export async function rasterLogo(buf: Buffer, box: number, trim = true): Promise<Raster & { vector: boolean }> {
+async function rasterLogo(buf: Buffer, box: number, trim = true): Promise<Raster & { vector: boolean }> {
   const vector = isSvg(buf);
   let img: Sharp;
   if (vector) {
@@ -85,7 +83,7 @@ export async function flagArt(svg: Buffer): Promise<{ png: Buffer; n: number; co
 
 /* ---------- files ---------- */
 /** The widths a square of side n is stored at: the ladder from n down (n itself when it's under 128). */
-export const widthsFor = (n: number): number[] => { const w = LADDER.filter(s => s <= n); return w.length ? [...w] : [n]; };
+const widthsFor = (n: number): number[] => { const w = LADDER.filter(s => s <= n); return w.length ? [...w] : [n]; };
 
 export async function encodeLadder(png: Buffer, n: number): Promise<Array<{ w: number; fmt: "avif" | "webp"; buf: Buffer }>> {
   const out: Array<{ w: number; fmt: "avif" | "webp"; buf: Buffer }> = [];

@@ -3,7 +3,7 @@
  * front of the feed. "Where are you? US / Outside US." The answer is remembered (cookie, and the account when signed
  * in) and shown as a small pill they can change. Links are computed on the server for the chosen region, so the page
  * reloads after a choice: a US viewer's page never contains an international Polymarket link. */
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Region } from "@/lib/types";
 
@@ -15,7 +15,7 @@ async function choose(region: Region): Promise<void> {
   location.reload();
 }
 
-export function RegionSheet({ onClose }: { onClose: () => void }) {
+function RegionSheet({ onClose }: { onClose: () => void }) {
   const id = useId();
   useEffect(() => {
     const esc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -52,16 +52,3 @@ export function LocationPill({ region }: { region: Region | null }) {
   );
 }
 
-/** A market link that asks the location first when it isn't known yet. */
-export function MarketLinkButton({ href, label, regionKnown, className = "btn btn--secondary" }: { href: string | null; label: string; regionKnown: boolean; className?: string }): ReactNode {
-  const [open, setOpen] = useState(false);
-  if (!regionKnown) {
-    return (
-      <>
-        <button type="button" className={className} onClick={() => setOpen(true)}>{label}</button>
-        {open ? <RegionSheet onClose={() => setOpen(false)} /> : null}
-      </>
-    );
-  }
-  return href ? <a className={className} href={href} target="_blank" rel="noopener noreferrer">{label}</a> : null;
-}

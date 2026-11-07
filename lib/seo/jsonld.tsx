@@ -17,12 +17,12 @@ export function organizationLd() {
 }
 
 /** Home › … › this page. `trail` is [name, path] from the top, ending with this page. */
-export function breadcrumbLd(trail: Array<[string, string]>) {
+function breadcrumbLd(trail: Array<[string, string]>) {
   const base = appUrl();
   return { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [["Insidir", "/"] as [string, string], ...trail].map(([name, path], i) => ({ "@type": "ListItem", position: i + 1, name, item: `${base}${path}` })) };
 }
 
-export function datasetLd(o: { name: string; description: string; path: string; updated?: Date | number | null; sources: string[]; keywords?: string[] }) {
+function datasetLd(o: { name: string; description: string; path: string; updated?: Date | number | null; sources: string[]; keywords?: string[] }) {
   const base = appUrl();
   return { "@context": "https://schema.org", "@type": "Dataset", name: o.name, description: o.description, url: `${base}${o.path}`, isAccessibleForFree: true,
     creator: { "@type": "Organization", name: "Insidir", url: base }, publisher: { "@type": "Organization", name: "Insidir", url: base },

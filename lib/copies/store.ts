@@ -29,7 +29,7 @@ import type { Region } from "@/lib/types";
 import { copyResult, kalshiSide, sidePrice, type CopyResult, type SettledMove } from "./math";
 
 const DAY = 86_400_000;
-export const WEEK = 7 * DAY;
+const WEEK = 7 * DAY;
 
 export type CopyKind = "trader" | "tracker";
 export interface Copyable { kind: CopyKind; target: string; label: string; line: string | null; record: FollowRecord; roi: number }
@@ -53,7 +53,7 @@ export async function copyable(db: Db, now: number): Promise<Copyable[]> {
 
 export interface Copy { kind: CopyKind; target: string; label: string; since: number }
 
-export const copyLabel = (kind: CopyKind, target: string): string => (kind === "trader" ? shortWallet(target) : trackerBySlug(target)?.name ?? target);
+const copyLabel = (kind: CopyKind, target: string): string => (kind === "trader" ? shortWallet(target) : trackerBySlug(target)?.name ?? target);
 
 /** A member's copies, oldest first. */
 export async function copiesOf(db: Db, userId: string): Promise<Copy[]> {
@@ -183,9 +183,3 @@ export async function fieldWeek(db: Db, size: number, now: number): Promise<Copy
   return copyResult(rows, size, 0, since);
 }
 
-/** A copyable wallet's or tracker's latest positions shown up to `until` (a visitor's delay), newest first. */
-export async function recentMovesOf(db: Db, c: Pick<Copyable, "kind" | "target">, until: number, limit = 4): Promise<Move[]> {
-  const who = c.kind === "trader" ? sql`${T}.wallet = ${c.target}` : trackerBySlug(c.target) ? trackerWhere(trackerBySlug(c.target)!) : sql`false`;
-  const rows = await db.select().from(movesT).where(sql`${base()} and ${who} and ${T}.at <= ${new Date(until)}`).orderBy(sql`${T}.at desc`).limit(limit);
-  return rows.map(fromRow);
-}

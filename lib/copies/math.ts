@@ -5,7 +5,7 @@ import { followPrice } from "@/lib/follow/math";
 import { dollars } from "@/lib/money";
 
 export interface CopyResult { n: number; won: number; lost: number; staked: number; net: number }
-export const NO_RESULT: CopyResult = { n: 0, won: 0, lost: 0, staked: 0, net: 0 };
+const NO_RESULT: CopyResult = { n: 0, won: 0, lost: 0, staked: 0, net: 0 };
 
 export interface SettledMove { seenPrice: number | null; seenAt: number; result: "won" | "lost" | "void" | null; settledAt: number | null }
 

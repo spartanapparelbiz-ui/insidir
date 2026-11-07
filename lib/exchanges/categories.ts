@@ -16,7 +16,7 @@ export type Category =
   | "combos"
   | "other";
 
-export const OTHER: Category = "other";
+const OTHER: Category = "other";
 
 /** Keywords (matched against lower-cased tag labels / slugs / category names, as whole words or slug parts) per
  *  category. Checked in this order, most specific first: a "Trump says X" market tagged politics + mentions is a

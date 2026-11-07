@@ -8,7 +8,7 @@ import { dollars } from "@/lib/money";
 import { cents } from "../Bits";
 
 /** "d" or "r" when the race's title or outcome clearly names a party; otherwise no chip at all. */
-export function partyOf(text: string): "d" | "r" | null {
+function partyOf(text: string): "d" | "r" | null {
   const d = /\b(democrats?|democratic|dem)\b|\(d\)|\bd (senate|house)\b/i.test(text), r = /\b(republicans?|gop)\b|\(r\)|\br (senate|house)\b/i.test(text);
   return d && !r ? "d" : r && !d ? "r" : null;
 }

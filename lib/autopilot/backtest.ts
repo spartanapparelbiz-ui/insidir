@@ -53,7 +53,7 @@ export function sameSideCounts(rows: readonly BtRow[]): number[] {
 
 const weekOf = (ms: number) => Math.floor((ms / DAY + 3) / 7); // weeks starting Monday (UTC)
 
-export interface BacktestOptions {
+interface BacktestOptions {
   /** Price at Kalshi's ask (default), or at the market's price when Insidir saw it. */
   at?: "kalshi" | "seen";
   /** Only rows this keeps (an entry-price band, a category…), applied after the rule. */

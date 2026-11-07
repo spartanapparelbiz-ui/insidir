@@ -68,7 +68,7 @@ function fromQuestion(q: string, yes: boolean): string | null {
 /** The race in a candidate market's question, as a headline says it: "Will Democrats win the Senate race in
  *  Michigan?" → "the Michigan Senate race"; "Who will win the 2028 presidential election?" → "the 2028 presidential
  *  election"; "Michigan Senate Democratic primary winner?" → "the Michigan Senate Democratic primary". */
-export function raceOf(title: string): string | null {
+function raceOf(title: string): string | null {
   const t = clean(title).replace(/^[“"]|[”"]$/g, "");
   const m = /^(?:will\s+.+?\s+win|who\s+will\s+win)\s+(.+?)\??$/i.exec(t) ?? /^(.+?)\s+winner\??$/i.exec(t);
   if (!m) return null;
@@ -195,7 +195,7 @@ function plain(m: Pick<Move, "outcome" | "marketTitle" | "eventTitle"> & { categ
 
 /** The outcome the money is on, in plain English: "Warriors to beat the Timberwolves", "Brewers to win by 2 or more",
  *  "No runs in the 1st inning", "Talarico wins the Texas Senate race". The amount is the card's result, not here. */
-export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league"> & { category?: string | null }): string {
+function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle" | "eventTitle" | "tab" | "league"> & { category?: string | null }): string {
   const c = claimOf(m), o = clean(m.outcome);
   // "Who will win the Super Bowl?" on Chiefs: "Chiefs to win the Super Bowl".
   const whoWins = /^who will (win|be|become|lead|top)\s+(.+?)\??$/i.exec(clean(m.marketTitle));

@@ -2,16 +2,16 @@
  * side; never a tip. */
 import type { SplitKind } from "@/lib/db/schema";
 
-export interface SplitLike {
+interface SplitLike {
   id: string; kind: SplitKind; subject: string; title: string; subtitle: string | null; crowd: number | null; smart: number | null; gap: number;
   smartSide: string; detail: Record<string, unknown>;
 }
 
-export const pct = (x: number): string => `${Math.round(x * 100)}%`;
+const pct = (x: number): string => `${Math.round(x * 100)}%`;
 const money = (n: number): string => n >= 1e6 ? `$${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : `$${Math.round(n)}`;
 
 /** The YES side's name when it isn't just "Yes" ("Brewers", "Above $100K"). */
-export function yesName(d: Record<string, unknown>): string | null {
+function yesName(d: Record<string, unknown>): string | null {
   const y = typeof d.yesLabel === "string" ? d.yesLabel.trim() : "";
   return y && !/^yes$/i.test(y) ? y : null;
 }
@@ -42,7 +42,7 @@ export function gapLabel(s: Pick<SplitLike, "kind" | "gap">): string {
   return `${Math.round(s.gap)} pts apart`;
 }
 
-export const KIND_NAME: Record<SplitKind, string> = { crowd: "Proven traders vs. the market", bigmoney: "Large positions vs. proven traders", insider_dip: "Insider purchases after a decline", fund_add: "Fund additions during a decline" };
+const KIND_NAME: Record<SplitKind, string> = { crowd: "Proven traders vs. the market", bigmoney: "Large positions vs. proven traders", insider_dip: "Insider purchases after a decline", fund_add: "Fund additions during a decline" };
 
 export function splitHref(s: Pick<SplitLike, "kind" | "subject" | "detail">): string {
   if (s.kind === "insider_dip" || s.kind === "fund_add") return `/insider-trading/${encodeURIComponent(String(s.detail.ticker ?? s.subject.split(":")[0]))}`;

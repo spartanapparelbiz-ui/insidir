@@ -2,7 +2,7 @@
  * requires it; everywhere else it's just polite). Browser only. */
 export type PushState = "unsupported" | "ios_needs_install" | "denied" | "off" | "on";
 
-export const isIos = (): boolean =>
+const isIos = (): boolean =>
   /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 export const isStandalone = (): boolean =>
@@ -73,13 +73,3 @@ export async function enablePush(vapidPublicKey: string): Promise<PushState | "e
   return res.ok ? "on" : "error";
 }
 
-export async function disablePush(): Promise<PushState | "error"> {
-  if (!supported()) return "unsupported";
-  const reg = await navigator.serviceWorker.getRegistration("/");
-  const sub = await reg?.pushManager.getSubscription();
-  if (sub) {
-    await fetch("/api/push/subscribe", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => undefined);
-    await sub.unsubscribe().catch(() => false);
-  }
-  return "off";
-}

@@ -9,7 +9,7 @@ import { SPOT } from "@/lib/photos";
 
 /** The badge. Crypto's tab says just "Soon" (a small outlined pill that fits inside the tab on one line on any
  *  phone); everything else says "Coming soon". */
-export function SoonBadge({ short = false }: { short?: boolean }) {
+function SoonBadge({ short = false }: { short?: boolean }) {
   return <span className={short ? "soon soon--short" : "soon"}>{short ? "Soon" : "Coming soon"}</span>;
 }
 
@@ -26,7 +26,7 @@ export function ComingSoon({ feature, children, className = "" }: { feature: Fea
 }
 
 /** The waitlist form: "Want a heads-up when it's live?" with an email field. */
-export function SoonForm({ feature, autoFocus = false }: { feature: Feature; autoFocus?: boolean }) {
+function SoonForm({ feature, autoFocus = false }: { feature: Feature; autoFocus?: boolean }) {
   const id = useId();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<{ kind: "idle" | "busy" | "done" | "error"; text?: string }>({ kind: "idle" });
@@ -48,7 +48,7 @@ export function SoonForm({ feature, autoFocus = false }: { feature: Feature; aut
   );
 }
 
-export function SoonSheet({ feature, onClose }: { feature: Feature; onClose: () => void }) {
+function SoonSheet({ feature, onClose }: { feature: Feature; onClose: () => void }) {
   const id = useId();
   useEffect(() => {
     const esc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };

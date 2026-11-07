@@ -1,14 +1,14 @@
 /* First-party measurement: the funnel (landing view → feed view → unlock click → checkout start → paid → first
  * alert opened), UTM tags per IG account and reel, and a cookie A/B split on the hero headline and CTA.
  * Nothing goes to third parties. Visitor ids are random (set in middleware.ts), never derived from anything personal. */
-import { gte, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { getDb, hasDatabase } from "./db";
 import { events } from "./db/schema";
 import { freeAccessEmails } from "./billing/free";
 
 /** The sign-up funnel, in order: each step is the events that count for it. Each person counts once per step, on the
  *  day they first got there. Free-access accounts (lib/billing/free.ts) are left out of every number. */
-export const FUNNEL_STEPS = [
+const FUNNEL_STEPS = [
   { key: "landing_view", label: "Landing view", names: ["landing_view"] },
   { key: "cta_click", label: "CTA click", names: ["unlock_click", "hero_cta_click"] },
   { key: "start_view", label: "/start view", names: ["start_view"] },
@@ -41,7 +41,6 @@ export function userNotFree(col = sql`email`): ReturnType<typeof sql> {
 
 /** Drop-off between two steps: the share of the previous step that didn't reach this one. */
 export const dropOff = (cur: number, prev: number): number | null => (prev > 0 ? Math.max(0, 1 - cur / prev) : null);
-export type FunnelEvent = (typeof FUNNEL)[number];
 /** Events the browser may report (the rest are recorded by the server). */
 export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["go_step", "unlock_click", "checkout_start", "onboarding_done", "onboarding_skip", "first_feed_hint",
   // The timed pay prompt (components/paywall): shown, dismissed (how), its button clicked; paid_seen when /welcome
@@ -56,15 +55,6 @@ export const UTM_COOKIE = "insidir_utm";
 export const AB_COOKIE = "insidir_ab";
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 
-/** A/B tests: each visitor is assigned one variant per test, kept in a cookie for 90 days. */
-export const AB_TESTS = {
-  hero: {
-    a: { headline: "Two apps. Two prices. You keep the difference.", cta: "See today's live deals" },
-    b: { headline: "Polymarket and Kalshi disagree. You collect the difference.", cta: "See today's live deals" },
-  },
-} as const;
-export type HeroVariant = keyof typeof AB_TESTS.hero;
-
 export function readUtm(raw: string | undefined): Record<string, string> | null {
   if (!raw) return null;
   try {
@@ -75,14 +65,6 @@ export function readUtm(raw: string | undefined): Record<string, string> | null 
     return Object.keys(out).length ? out : null;
   } catch { return null; }
 }
-
-export function utmFromSearch(params: URLSearchParams): Record<string, string> | null {
-  const out: Record<string, string> = {};
-  for (const k of UTM_KEYS) { const v = params.get(k); if (v) out[k] = v.slice(0, 100); }
-  return Object.keys(out).length ? out : null;
-}
-
-export const heroVariant = (ab: string | undefined): HeroVariant => (/(^|,)hero:b(,|$)/.test(ab ?? "") ? "b" : "a");
 
 export async function recordEvent(e: { name: string; visitorId?: string | null; userId?: string | null; variant?: string | null; props?: Record<string, string | number | boolean> }): Promise<void> {
   if (!hasDatabase()) return;

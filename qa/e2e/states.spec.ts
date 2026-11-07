@@ -2,7 +2,7 @@
  * and Pro pages. Every one says what happened and offers a next step with a button. Whatever a test changes in
  * the database it puts back. */
 import { expect, test } from "@playwright/test";
-import { footerOk, noHorizontalScroll, q, signIn } from "./helpers";
+import { footerOk, noHorizontalScroll } from "./helpers";
 
 test("404: on-brand, says what happened, links back home", async ({ page }) => {
   const res = await page.goto("/no-such-page-anywhere");

@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { FEATURED, homeOrder, recordResult, returnPct, trackerBySlug, type TrackerRecord } from "@/lib/trackers";
+import { FEATURED, homeOrder, recordResult, trackerBySlug, type TrackerRecord } from "@/lib/trackers";
 import { cumulative } from "@/lib/trackers-store";
 
 const rec = (won: number, lost: number, net: number, staked?: number): TrackerRecord => ({ won, lost, oddsPct: 50, net, staked });
@@ -22,7 +22,6 @@ describe("polish", () => {
     expect(recordResult(null)).toEqual({ amount: null, tone: "none", status: "Building record · 0 of 30" });
   });
 
-
   it("the curve is cumulative by week, oldest first, and empty when nothing happened", () => {
     expect(cumulative([{ week: 0, v: 5 }, { week: 2, v: 10 }, { week: 30, v: 99 }], 4)).toEqual([0, 10, 10, 15]);
     expect(cumulative([], 4)).toEqual([]);
@@ -32,7 +31,7 @@ describe("polish", () => {
     const brand = readFileSync("app/brand.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
     expect(brand.match(/font-weight:\s*(700|800|900|bold)/g)).toEqual(["font-weight: 800"]);
     expect(brand).toMatch(/\.b-logo \{[^}]*font-weight: 800/);
-    const files = [...readdirSync("app").filter(f => f.endsWith(".css") && f !== "brand.css").map(f => join("app", f)), "components/app/terminal.css"];
+    const files = [...readdirSync("app").filter(f => f.endsWith(".css") && f !== "brand.css").map(f => join("app", f))];
     for (const f of files) {
       const css = readFileSync(f, "utf8");
       expect(css, f).not.toMatch(/font-weight:\s*(700|800|900|bold)/);

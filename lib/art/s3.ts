@@ -19,7 +19,7 @@ const hmac = (k: Buffer | string, s: string) => createHmac("sha256", k).update(s
 const enc = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
 /** A signed request for one object (virtual-host style: <bucket>.<endpoint host>/<key>). */
-export function signed(b: Bucket, method: "GET" | "PUT" | "HEAD", key: string, body?: Buffer, extra: Record<string, string> = {}, now = new Date()): { url: string; headers: Record<string, string> } {
+function signed(b: Bucket, method: "GET" | "PUT" | "HEAD", key: string, body?: Buffer, extra: Record<string, string> = {}, now = new Date()): { url: string; headers: Record<string, string> } {
   const host = `${b.name}.${b.endpoint.host}`;
   const path = "/" + key.split("/").map(enc).join("/");
   const amz = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");

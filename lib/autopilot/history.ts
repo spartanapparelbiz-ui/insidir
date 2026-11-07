@@ -7,7 +7,7 @@ import type { Db } from "@/lib/db";
 
 const MIN = 60_000;
 
-export interface Candle { end: number; yesAsk: number | null; yesBid: number | null }
+interface Candle { end: number; yesAsk: number | null; yesBid: number | null }
 
 const n = (v: unknown): number | null => (typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)) ? Number(v) : null);
 const close = (o: unknown): number | null => {
@@ -32,12 +32,12 @@ export function askAt(candles: readonly Candle[], side: "yes" | "no", at: number
   return p !== null && p > 0 && p < 1 ? Math.round(p * 100) / 100 : null;
 }
 
-export interface CandleSource { candles(series: string, ticker: string, fromMs: number, toMs: number, periodMin: 1 | 60): Promise<unknown> }
+interface CandleSource { candles(series: string, ticker: string, fromMs: number, toMs: number, periodMin: 1 | 60): Promise<unknown> }
 
 /** Rows with no ask read before this were possibly a failed request saved as "no price" (fixed Nov 4): read again. */
 export const RECHECK_EMPTY_BEFORE = Date.parse("2026-11-05T00:00:00Z");
 /** A run's time budget and one candle request's timeout: a run always ends (a hung run held the job for good). */
-export const ASKS_RUN_MS = 45_000, CANDLE_TIMEOUT_MS = 10_000;
+const ASKS_RUN_MS = 45_000, CANDLE_TIMEOUT_MS = 10_000;
 
 /** Kalshi asks for recorded bets on twinned markets that don't have one yet, newest first. A bet is stored with no ask
  *  only when Kalshi answered with no candle at that time; a failed or timed-out request stores nothing, so the bet is

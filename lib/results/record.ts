@@ -22,7 +22,7 @@ export interface RecordView {
 
 const empty = (): Tally => ({ won: 0, lost: 0, void: 0, staked: 0, back: 0 });
 /** One settled bet's $100: what came back. */
-export function payout(result: "won" | "lost" | "void", price: number): number {
+function payout(result: "won" | "lost" | "void", price: number): number {
   if (result === "void") return STAKE;
   if (result === "lost") return 0;
   return price > 0 && price < 1 ? STAKE / price : STAKE;

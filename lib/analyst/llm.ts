@@ -17,7 +17,7 @@ export type ChatMessage =
   | { role: "tool"; tool_call_id: string; content: string };
 export interface ToolCall { id: string; type: "function"; function: { name: string; arguments: string } }
 export interface ToolDef { type: "function"; function: { name: string; description: string; parameters: Record<string, unknown> } }
-export interface ChatResult {
+interface ChatResult {
   ok: boolean; text: string; toolCalls: ToolCall[]; costUsd: number; model: string; error?: string;
   /** Replies that came back with no text and no tool calls (0, 1 or 2: one retry). */
   empties: number;
@@ -27,7 +27,7 @@ export interface ChatResult {
 
 /** Tokens for the model's (excluded) reasoning, on top of the caller's budget for the answer. */
 export const REASONING_HEADROOM = 1024;
-export const REASONING = { effort: "low", exclude: true } as const;
+const REASONING = { effort: "low", exclude: true } as const;
 
 type Usage = { cost?: number | string | null; prompt_tokens?: number; completion_tokens?: number };
 /** OpenRouter's own cost (usage.cost, dollars; a number, sometimes sent as a string); else estimated from tokens. */
@@ -69,7 +69,7 @@ async function once(messages: ChatMessage[], model: string, o: { maxTokens?: num
 }
 
 /** What one model call cost, in dollars: the provider's own figure, else from the tokens at $3 / $15 per million. */
-export function callCost(usage: { cost?: number | null; prompt_tokens?: number; completion_tokens?: number } | null | undefined): number {
+function callCost(usage: { cost?: number | null; prompt_tokens?: number; completion_tokens?: number } | null | undefined): number {
   if (typeof usage?.cost === "number" && Number.isFinite(usage.cost)) return usage.cost;
   return ((usage?.prompt_tokens ?? 1600) * 3 + (usage?.completion_tokens ?? 1000) * 15) / 1e6;
 }

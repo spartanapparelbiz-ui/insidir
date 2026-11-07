@@ -9,7 +9,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { whopConfig } from "@/lib/db/schema";
 import { memo } from "@/lib/memo";
 
-export type WhopConfigKey = "plan_id" | "plan_status" | "webhook_id" | "webhook_secret" | "app_id" | "redirect_uri";
+type WhopConfigKey = "plan_id" | "plan_status" | "webhook_id" | "webhook_secret" | "app_id" | "redirect_uri";
 
 const keyFrom = (apiKey: string): Buffer => createHash("sha256").update(`insidir:whop_config:v1:${apiKey}`).digest();
 
@@ -45,7 +45,7 @@ export async function clearConfig(db: Db, key: WhopConfigKey): Promise<void> {
   await db.delete(whopConfig).where(eq(whopConfig.key, key));
 }
 
-export interface WhopRuntime { planId: string | null; webhookSecret: string | null; clientId: string | null; redirectUri: string | null }
+interface WhopRuntime { planId: string | null; webhookSecret: string | null; clientId: string | null; redirectUri: string | null }
 
 /** What the site uses now: env first, then what setup stored. */
 export function resolveRuntime(stored: Partial<Record<WhopConfigKey, string>>, env: Record<string, string | undefined> = process.env): WhopRuntime {

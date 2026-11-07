@@ -9,7 +9,7 @@
  * Server only (the art job). */
 import { readFile } from "node:fs/promises";
 
-export const WIKI_UA = "InsidirBot/1.0 (hello@aethric.llc)";
+const WIKI_UA = "InsidirBot/1.0 (hello@aethric.llc)";
 const WIKI_HOST = /(^|\.)(wikidata|wikimedia|wikipedia)\.org$/;
 const SIMPLE_ICONS = "https://cdn.jsdelivr.net/npm/simple-icons@16.36.0";
 const FLAG_ICONS = "https://cdn.jsdelivr.net/npm/flag-icons@7.5.0";
@@ -20,7 +20,7 @@ let wikiQueue: Promise<void> = Promise.resolve();
 export let wikiRequests = 0;
 
 /** A fetch that, for Wikimedia hosts, sends the bot's User-Agent and keeps to one request a second (in order). */
-export async function get(url: string, init: RequestInit = {}, tries = 4): Promise<Response> {
+async function get(url: string, init: RequestInit = {}, tries = 4): Promise<Response> {
   const wiki = WIKI_HOST.test(new URL(url).host);
   const headers = { "user-agent": wiki ? WIKI_UA : "Insidir art job (https://insidir.com/credits)", ...(init.headers as Record<string, string> | undefined) };
   for (let i = 0; ; i++) {
@@ -45,14 +45,14 @@ export async function bytes(url: string): Promise<Buffer> {
 }
 
 /* ---------- Wikidata ---------- */
-export type Binding = Record<string, { value: string } | undefined>;
+type Binding = Record<string, { value: string } | undefined>;
 export async function sparql(query: string): Promise<Binding[]> {
   const r = await get("https://query.wikidata.org/sparql", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/sparql-results+json" }, body: new URLSearchParams({ query }).toString() });
   if (!r.ok) throw new Error(`sparql ${r.status}: ${(await r.text()).slice(0, 200)}`);
   return ((await r.json()) as { results: { bindings: Binding[] } }).results.bindings;
 }
 
-export interface WikiItem { qid: string; label: string; claims: Record<string, string[]> }
+interface WikiItem { qid: string; label: string; claims: Record<string, string[]> }
 /** Wikidata items by English Wikipedia title (50 a request): their label and the claims named (best rank first). */
 export async function itemsByEnwiki(titles: string[], props: string[]): Promise<Map<string, WikiItem>> {
   const out = new Map<string, WikiItem>();
@@ -112,8 +112,6 @@ export async function commonsFiles(names: string[]): Promise<Map<string, Commons
 /** Portraits may only be Public Domain, CC0, CC BY or CC BY-SA (any version); never NC or ND. */
 export const freeForPeople = (license: string): boolean =>
   !/\b(nc|nd)\b|non-?commercial|no ?deriv/i.test(license) && /^(public domain|pd\b|pd-|cc0|cc[ -]?zero|cc[ -]by(-sa)?(\s|$|-?\d))/i.test(license.trim());
-/** CC BY-SA: the duotone is adapted and shared alike. */
-export const shareAlike = (license: string) => /by-sa/i.test(license);
 
 /* ---------- Unsplash ---------- */
 /** The CDN's own crop around a focal point, square, at most 2048 (it never enlarges past the original). */
@@ -121,7 +119,7 @@ export const unsplashSquare = (id: string, fx: number, fy: number, w = 2048) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&crop=focalpoint&fp-x=${fx}&fp-y=${fy}&w=${w}&h=${w}&q=85&fm=jpg`;
 
 /* ---------- Simple Icons ---------- */
-export interface SimpleIcon { slug: string; title: string; hex: string; aka: string[] }
+interface SimpleIcon { slug: string; title: string; hex: string; aka: string[] }
 let icons: SimpleIcon[] | null = null;
 export async function simpleIcons(): Promise<SimpleIcon[]> {
   if (!icons) {
@@ -134,7 +132,7 @@ export const simpleIconSvg = (slug: string) => bytes(`${SIMPLE_ICONS}/icons/${sl
 export const simpleIconPage = (slug: string) => `https://simpleicons.org/?q=${slug}`;
 
 /** A company's name as a brand: "NVIDIA CORP" → "nvidia", "Meta Platforms, Inc." → "meta platforms". */
-export const brandName = (s: string) => s.toLowerCase().replace(/\(.*?\)/g, " ").replace(/[,.]/g, " ")
+const brandName = (s: string) => s.toLowerCase().replace(/\(.*?\)/g, " ").replace(/[,.]/g, " ")
   .replace(/\b(inc|incorporated|corp|corporation|co|company|holdings?|group|plc|ltd|limited|llc|lp|sa|nv|ag|se|class [abc]|the|new|de)\b/g, " ").replace(/[^a-z0-9&+ ]/g, "").replace(/\s+/g, " ").trim();
 
 export async function iconFor(name: string): Promise<SimpleIcon | null> {

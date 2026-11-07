@@ -67,7 +67,7 @@ function toBet(r: Row, member: boolean): BoardBet {
   };
 }
 
-export interface BetFilter {
+interface BetFilter {
   now: number;
   /** Visitors: VISITOR_DELAY_MS. */
   delayMs?: number;
@@ -104,8 +104,7 @@ export async function recentBets(db: Db, f: BetFilter): Promise<BoardBet[]> {
 }
 
 /** A bet as a visitor gets it: everything but the side (and the prices that would give the side away). */
-export const redact = (b: BoardBet): BoardBet => ({ ...b, outcome: null, side: null, priceThen: null, priceNow: null, wallet: null });
-
+const redact = (b: BoardBet): BoardBet => ({ ...b, outcome: null, side: null, priceThen: null, priceNow: null, wallet: null });
 
 /** /board for visitors: bets 60 minutes late (the live count stays live); members see them as they land. */
 export const BOARD_DELAY_MS = 60 * 60_000;
@@ -117,7 +116,6 @@ export function midnightET(now: number): number {
   const sinceMidnight = (Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second)) * 1000;
   return Math.floor((now - sinceMidnight) / 1000) * 1000;
 }
-
 
 /** The live counter and the watchlist's size. */
 /** The live numbers, for every category or one (the board's filter: every number on the page follows it). */
@@ -244,7 +242,7 @@ export function outcomeNames(title: string, yes: string, no: string): { yesLabel
 }
 
 /** The side most of a tier's money is on, when at least MIN_SPLIT_WALLETS wallets are in (else null: no split). */
-export const MIN_SPLIT_WALLETS = 3;
+const MIN_SPLIT_WALLETS = 3;
 export function leaningSide(t: MarketMoney["millionaire"]): "yes" | "no" | null {
   if (t.yes.wallets + t.no.wallets < MIN_SPLIT_WALLETS) return null;
   return t.yes.dollars >= t.no.dollars ? "yes" : "no";
@@ -262,7 +260,7 @@ export async function positions(db: Db, marketId: string): Promise<Position[]> {
     side: x.outcome_side === "no" ? "no" : "yes", outcome: String(x.outcome), dollars: n(x.dollars), price: n(x.price), at: t(x.at), pnl: x.pnl === null ? null : n(x.pnl) }));
 }
 
-export interface Proof {
+interface Proof {
   /** What the record follows: the millionaire bets once MIN_SETTLED of them settled, else the best tracker's record. */
   kind: "millionaire" | "tracker";
   label: string;
@@ -300,13 +298,6 @@ export async function topWallets(db: Db, categories: readonly string[], now: num
   return out;
 }
 
-/** A wallet's all-time profit from the watchlist (for "A +$2.4M wallet just bet…"). */
-export async function walletPnls(db: Db, wallets: readonly string[]): Promise<Map<string, number>> {
-  if (!wallets.length) return new Map();
-  const r = await db.execute(sql`select wallet, pnl from terminal.watchlist where wallet in (${sql.join(wallets.map(w => sql`${w.toLowerCase()}`), sql`, `)})`);
-  return new Map((r.rows as Row[]).map(x => [String(x.wallet), n(x.pnl)]));
-}
-
 /** Bets today per category (the building screen's "37 bets in NFL today"). */
 export async function betsToday(db: Db, categories: readonly string[], now: number): Promise<Map<string, number>> {
   if (!categories.length) return new Map();
@@ -322,19 +313,3 @@ export async function lastResults(db: Db, wallet: string, limit = 5): Promise<Ar
   return (r.rows as Row[]).map(x => ({ title: humanLine({ title: String(x.market_title) }), outcome: String(x.outcome), result: x.result as "won" | "lost" | "void", amount: n(x.amount) }));
 }
 
-export interface Settled { marketId: string; title: string; heavier: string; won: string | null; right: boolean; dollars: number }
-/** Markets with millionaire money that settled in a window: did the side with more millionaire money win? */
-export async function settledBetween(db: Db, from: number, to: number, limit = 10): Promise<Settled[]> {
-  const r = await db.execute(sql`select market_id, max(market_title) as title, outcome_side, max(outcome) as outcome, sum(amount)::float as dollars, max(result) as result
-    from terminal.millionaire_bets where tier = 'millionaire' and result in ('won', 'lost') and settled_at >= ${new Date(from)} and settled_at < ${new Date(to)}
-    group by market_id, outcome_side`);
-  const by = new Map<string, Row[]>();
-  for (const x of r.rows as Row[]) by.set(String(x.market_id), [...(by.get(String(x.market_id)) ?? []), x]);
-  const out: Settled[] = [];
-  for (const [id, sides] of by) {
-    sides.sort((a, b) => n(b.dollars) - n(a.dollars));
-    const heavy = sides[0]!, winner = sides.find(x => x.result === "won");
-    out.push({ marketId: id, title: humanLine({ title: String(heavy.title) }), heavier: String(heavy.outcome), won: winner ? String(winner.outcome) : null, right: heavy.result === "won", dollars: sides.reduce((t, x) => t + n(x.dollars), 0) });
-  }
-  return out.sort((a, b) => b.dollars - a.dollars).slice(0, limit);
-}

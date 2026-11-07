@@ -17,9 +17,9 @@ import { marketKey } from "./common";
 export { marketKey };
 
 /** Money tolerance when comparing payouts. */
-export const SETTLE_EPSILON = 1e-6;
+const SETTLE_EPSILON = 1e-6;
 /** Default stake per alert in the backtest, dollars. */
-export const DEFAULT_STAKE = 500;
+const DEFAULT_STAKE = 500;
 
 export interface Settlement {
   settled: boolean;
@@ -50,7 +50,7 @@ export interface Receipt {
   settlement: Settlement;
 }
 
-export interface BacktestResult {
+interface BacktestResult {
   /** Green, settled locks counted. */
   count: number;
   /** Green locks not yet settled (left out). */

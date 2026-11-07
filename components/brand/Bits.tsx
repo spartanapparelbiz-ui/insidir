@@ -53,7 +53,7 @@ export function Side({ outcome, side, pnl }: { outcome: string | null; side: "ye
 }
 
 /** The brackets mark: 64×64, two L-brackets. */
-export const Mark = () => (
+const Mark = () => (
   <svg viewBox="0 0 64 64" aria-hidden="true" fill="currentColor"><rect x="0" y="0" width="40" height="18" /><rect x="0" y="0" width="18" height="46" /><rect x="46" y="18" width="18" height="46" /><rect x="24" y="46" width="40" height="18" /></svg>
 );
 

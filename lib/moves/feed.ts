@@ -7,7 +7,7 @@
 import { splitsFor } from "@/lib/smart/store";
 import { splitLine } from "@/lib/smart/text";
 import { leagueLabel } from "./leagues";
-import { chance, claimOf, headlineOf, short, sublineOf } from "./headline";
+import { chance, headlineOf, sublineOf } from "./headline";
 import { lowInterest, type LowReason } from "./interest";
 import { groupBets, groupTitle } from "./group";
 import { infoFor } from "@/lib/markets/info";
@@ -124,13 +124,13 @@ export function groupFeed(items: readonly FeedItem[]): FeedItem[] {
 
 export type { Move };
 
-export interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
+interface FeedStatus { state: "live" | "behind"; lastAt: number | null; text: string }
 
 /** A tab is "Catching up" when any of its sources hasn't had a successful update for this long. Data from then on
  *  is never presented as live. */
-export const BEHIND_AFTER_MS = 5 * 60_000;
+const BEHIND_AFTER_MS = 5 * 60_000;
 /** The worker jobs (heartbeats) that feed each tab. */
-export const TAB_SOURCES: Record<Tab, string[]> = {
+const TAB_SOURCES: Record<Tab, string[]> = {
   sports: ["moves:polymarket", "moves:kalshi"],
   markets: ["moves:polymarket", "moves:kalshi"],
   stocks: ["stocks:form4"],
@@ -139,7 +139,7 @@ export const TAB_SOURCES: Record<Tab, string[]> = {
 
 /** "Live · updated 8s ago", or "Catching up · last update 6m ago" when a source of this tab (all of Sports and
  *  Markets' sources without a tab) is 5+ minutes behind. "Last update" is the oldest of the tab's last good updates. */
-export function statusOf(lastOk: ReadonlyArray<number | null>, now: number): FeedStatus {
+function statusOf(lastOk: ReadonlyArray<number | null>, now: number): FeedStatus {
   const known = lastOk.filter((t): t is number => t !== null);
   const oldest = known.length === lastOk.length && known.length ? Math.min(...known) : null;
   if (oldest !== null && now - oldest <= BEHIND_AFTER_MS) {
@@ -172,7 +172,7 @@ export function secFollowsOf(m: Move): NonNullable<FeedItem["secFollows"]> {
 }
 
 /** Who moved, for the card: the name the sentence uses and where tapping it goes. */
-export function whoOf(m: Move): FeedItem["who"] {
+function whoOf(m: Move): FeedItem["who"] {
   const d = m.detail;
   if (d?.kind === "insider") return { name: personName(d.ownerName), href: d.ownerCik ? profileHref({ kind: "insider", cik: d.ownerCik, name: d.ownerName }) : null, badge: null };
   if (d?.kind === "fund") return { name: d.fund, href: profileHref({ kind: "fund", cik: d.fundCik, name: d.fund }), badge: null };
@@ -181,7 +181,7 @@ export function whoOf(m: Move): FeedItem["who"] {
     badge: m.newWallet ? "New account" : null };
 }
 
-export async function feedItems(db: Db, moves: readonly Move[], plan: Plan, region: Region | null, now: number, until = now - movePlan(plan).delayMs): Promise<FeedItem[]> {
+async function feedItems(db: Db, moves: readonly Move[], plan: Plan, region: Region | null, now: number, until = now - movePlan(plan).delayMs): Promise<FeedItem[]> {
   const p = movePlan(plan);
   const recs = p.records ? await recordsFor(db, moves.map(m => m.wallet ?? "")) : new Map();
   const matches = region === "non_us" ? new Map<string, string>() : await kalshiMatches(db, moves.filter(m => m.source === "polymarket").map(m => m.marketId));

@@ -5,11 +5,11 @@ import type { Book, Leg, Level, Opportunity, OppKind, Safety, Side, VMarket, Ven
 import { VENUE_NAME } from "../types";
 import { fillSets, type Fill, type FillOptions, type LegFill } from "./book";
 
-export const MS_PER_DAY = 86_400_000;
+const MS_PER_DAY = 86_400_000;
 /** Shortest holding period used for profit per day: one hour. */
-export const MIN_DAYS = 1 / 24;
+const MIN_DAYS = 1 / 24;
 /** Days assumed when a leg's close time is unknown: long, so profit per day is never inflated. */
-export const UNKNOWN_CLOSE_DAYS = 365;
+const UNKNOWN_CLOSE_DAYS = 365;
 
 /** Key for a market across venues: `${venue}:${id}`. Books and results maps are keyed by this. */
 export function marketKey(venue: Venue, id: string): string {
@@ -55,7 +55,7 @@ export function asksFor(book: Book, side: Side): Level[] {
 }
 
 /** Best (highest) valid bid price, or null. */
-export function bestBid(levels: readonly Level[]): number | null {
+function bestBid(levels: readonly Level[]): number | null {
   let best: number | null = null;
   for (const l of levels) if (l.size > 0 && l.price > 0 && l.price < 1 && (best == null || l.price > best)) best = l.price;
   return best;
@@ -106,7 +106,7 @@ export interface LegSpec {
   label: string;
 }
 
-export function legFromFill(spec: LegSpec, lf: LegFill): Leg {
+function legFromFill(spec: LegSpec, lf: LegFill): Leg {
   return {
     venue: spec.market.venue,
     marketId: spec.market.id,
@@ -121,7 +121,7 @@ export function legFromFill(spec: LegSpec, lf: LegFill): Leg {
   };
 }
 
-export interface OppMeta {
+interface OppMeta {
   kind: OppKind;
   title: string;
   safety: Safety;
@@ -131,7 +131,7 @@ export interface OppMeta {
 }
 
 /** Build an Opportunity from leg specs and their fill. */
-export function toOpportunity(specs: readonly LegSpec[], fill: Fill, meta: OppMeta, now: number): Opportunity {
+function toOpportunity(specs: readonly LegSpec[], fill: Fill, meta: OppMeta, now: number): Opportunity {
   const legs = specs.map((s, i) => legFromFill(s, fill.legs[i] as LegFill));
   const closeTime = lastClose(specs.map((s) => s.market));
   const days = daysUntil(closeTime, now);
@@ -215,7 +215,7 @@ export function lockImplication(
 }
 
 /** Monotonic violations: the antecedent's YES mid is above the consequent's, which can't be right if A implies B. */
-export interface ImplicationViolation {
+interface ImplicationViolation {
   implication: Implication;
   antecedentMid: number;
   consequentMid: number;

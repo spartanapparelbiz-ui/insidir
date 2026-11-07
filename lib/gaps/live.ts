@@ -13,10 +13,10 @@ import { quarantineReasons } from "@/lib/quarantine";
 import { marketsToBook, scan, type ScanOptions, type Universe } from "@/lib/scanner";
 import type { Book, MarketPair, Opportunity, VEvent, VMarket, Venue } from "@/lib/types";
 
-export const TARGETS_MS = 10 * 60_000;
+const TARGETS_MS = 10 * 60_000;
 export const BOOKS_MS = 10_000;
 
-export interface LiveRound { opps: Opportunity[]; held: Array<{ opp: Opportunity; reasons: string[] }>; books: number; requests: number; errors: string[] }
+interface LiveRound { opps: Opportunity[]; held: Array<{ opp: Opportunity; reasons: string[] }>; books: number; requests: number; errors: string[] }
 
 /** Requests one round of books costs: Kalshi in groups of 100 tickers, Polymarket in groups of 500 tokens (two per
  *  market: YES and NO), Polymarket US one per market. */

@@ -22,21 +22,21 @@ import { chunk, SWEEP_TTL_MS, TtlCache, type BookOptions, type ListOptions, type
 /** GET /markets page size (Kalshi's documented maximum). */
 export const MARKETS_PAGE_LIMIT = 1000;
 /** GET /events page size (Kalshi's documented maximum). */
-export const EVENTS_PAGE_LIMIT = 200;
+const EVENTS_PAGE_LIMIT = 200;
 /** Hard stop for cursor loops (a server that keeps returning a cursor must not loop forever). */
-export const MAX_PAGES = 500;
+const MAX_PAGES = 500;
 /** Tickers per GET /markets?tickers= lookup (any status). */
-export const TICKERS_BATCH = 100;
+const TICKERS_BATCH = 100;
 /** Tickers per GET /markets/orderbooks request (documented max 100). */
-export const ORDERBOOK_BATCH = 100;
+const ORDERBOOK_BATCH = 100;
 /** Exclude multivariate (combo / parlay) markets from the sweep: they are thousands of illiquid one-offs. */
-export const EXCLUDE_MULTIVARIATE = true;
+const EXCLUDE_MULTIVARIATE = true;
 /** Series metadata (fee multiplier) changes rarely: re-read every 6 hours. */
-export const SERIES_TTL_MS = 6 * 60 * 60 * 1000;
+const SERIES_TTL_MS = 6 * 60 * 60 * 1000;
 /** Kalshi's default fee multiplier when a series states none (lib/fees.ts KALSHI_DEFAULT_MULTIPLIER). */
-export const DEFAULT_FEE_MULTIPLIER = 1;
+const DEFAULT_FEE_MULTIPLIER = 1;
 /** Web origin for deep links. */
-export const KALSHI_WEB = "https://kalshi.com";
+const KALSHI_WEB = "https://kalshi.com";
 
 /* ---------- Order book ---------- */
 
@@ -87,7 +87,7 @@ export function deriveKalshiBook(raw: unknown, fetchedAt: number): Book {
 
 /* ---------- Series ---------- */
 
-export interface KalshiSeries {
+interface KalshiSeries {
   ticker: string;
   title: string | null;
   category: string | null;
@@ -98,7 +98,7 @@ export interface KalshiSeries {
   settlementSources: Array<{ name: string | null; url: string | null }>;
 }
 
-export function readKalshiSeries(raw: unknown): KalshiSeries | null {
+function readKalshiSeries(raw: unknown): KalshiSeries | null {
   const s = isObject(raw) && isObject(raw.series) ? raw.series : raw;
   if (!isObject(s)) return null;
   const ticker = str(s.ticker) ?? str(s.series_ticker);
@@ -118,7 +118,7 @@ export function readKalshiSeries(raw: unknown): KalshiSeries | null {
 }
 
 /** A /milestones answer → the earliest scheduled start (milestones[].start_date, RFC3339), ms; null without one. */
-export function readMilestoneStart(raw: unknown): number | null {
+function readMilestoneStart(raw: unknown): number | null {
   const ms = isObject(raw) ? objList(raw.milestones) : [];
   const starts = ms.map(m => epochMs(m.start_date)).filter((t): t is number => t !== null);
   return starts.length ? Math.min(...starts) : null;
@@ -138,7 +138,7 @@ export interface KalshiEventInfo {
   markets: JsonObject[];
 }
 
-export function readKalshiEventInfo(raw: unknown): KalshiEventInfo | null {
+function readKalshiEventInfo(raw: unknown): KalshiEventInfo | null {
   if (!isObject(raw)) return null;
   const ticker = str(raw.event_ticker) ?? str(raw.ticker);
   if (!ticker) return null;
@@ -156,7 +156,7 @@ export function readKalshiEventInfo(raw: unknown): KalshiEventInfo | null {
 
 /** The series ticker: stated on the market or event, else the event ticker's first dash-separated part
  *  (KXFEDDECISION-25DEC → KXFEDDECISION), which is Kalshi's naming convention. */
-export function seriesTickerOf(market: JsonObject, event: KalshiEventInfo | null): string | null {
+function seriesTickerOf(market: JsonObject, event: KalshiEventInfo | null): string | null {
   const stated = str(market.series_ticker) ?? event?.seriesTicker ?? null;
   if (stated) return stated;
   const et = str(market.event_ticker) ?? event?.ticker ?? null;
@@ -186,14 +186,14 @@ const VOID_STATUSES = new Set(["voided", "void", "cancelled", "canceled"]);
 /** Statuses Kalshi uses for markets that are trading. /markets?status=open returns "active" ("open" in older docs). */
 const TRADING_STATUSES = new Set(["active", "open"]);
 
-export interface KalshiMarketContext {
+interface KalshiMarketContext {
   event?: KalshiEventInfo | null;
   series?: KalshiSeries | null;
 }
 
 /** One Kalshi market → VMarket. Null for non-binary markets or rows without a ticker. Pure. */
 /** The YES last price, 0..1: last_price_dollars, else last_price in cents. */
-export function kalshiYesPrice(m: JsonObject): number | null {
+function kalshiYesPrice(m: JsonObject): number | null {
   const d = num(m.last_price_dollars);
   const p = d ?? (num(m.last_price) === null ? null : num(m.last_price)! / 100);
   return p !== null && p >= 0 && p <= 1 ? p : null;
@@ -263,13 +263,13 @@ export function readKalshiMarket(m: JsonObject, ctx: KalshiMarketContext = {}): 
 }
 
 /** Kalshi multivariate (combo) markets: flagged by an MVE collection ticker or the KXMVE ticker prefix. */
-export function isMultivariate(m: JsonObject): boolean {
+function isMultivariate(m: JsonObject): boolean {
   return str(m.mve_collection_ticker) !== null || /^KXMVE/i.test(str(m.ticker) ?? "") || /^KXMVE/i.test(str(m.event_ticker) ?? "");
 }
 
 /** VEvent for an event and the markets of it we kept. exhaustive is false: Kalshi's mutually_exclusive says at
  *  most one market resolves YES, but nothing in the API says the listed strikes cover every outcome. */
-export function toKalshiEvent(info: KalshiEventInfo, markets: readonly VMarket[], series: KalshiSeries | null): VEvent {
+function toKalshiEvent(info: KalshiEventInfo, markets: readonly VMarket[], series: KalshiSeries | null): VEvent {
   const closes = markets.map(m => m.closeTime).filter((t): t is number => t !== null);
   return {
     venue: "kalshi",
@@ -284,7 +284,7 @@ export function toKalshiEvent(info: KalshiEventInfo, markets: readonly VMarket[]
 }
 
 /** Assemble a sweep from raw pages. Pure. */
-export function buildKalshiSweep(
+function buildKalshiSweep(
   rawMarkets: readonly JsonObject[],
   eventInfos: ReadonlyMap<string, KalshiEventInfo>,
   series: ReadonlyMap<string, KalshiSeries>,
@@ -326,7 +326,7 @@ export function buildKalshiSweep(
 
 /* ---------- Client ---------- */
 
-export interface KalshiClientOptions {
+interface KalshiClientOptions {
   http?: HttpClient;
   baseUrl?: string;
   clock?: Clock;
