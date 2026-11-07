@@ -5146,6 +5146,17 @@
      "note": "polymarket: source 385×434, under 400px"
     },
     {
+     "abbr": "crbn",
+     "name": "Corban Warriors",
+     "short": "Corban Warriors",
+     "color": "#e0b929",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "creigh",
      "name": "Creighton Bluejays",
      "short": "Creighton",
@@ -6131,6 +6142,17 @@
      "note": "polymarket: source 225×225, under 400px"
     },
     {
+     "abbr": "knts",
+     "name": "Kentucky State Thorobreds",
+     "short": "Kentucky State Thorobreds",
+     "color": "#554b34",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 295×256, under 400px"
+    },
+    {
      "abbr": "kywe",
      "name": "Kentucky Wesleyan Panthers",
      "short": "Kentucky Wesleyan Panthers",
@@ -6438,6 +6460,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_manh_60000171.png"
+    },
+    {
+     "abbr": "marb",
+     "name": "Mary Baldwin Fighting Squirrels",
+     "short": "Mary Baldwin Fighting Squirrels",
+     "color": "#e4b83f",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 206×200, under 400px"
     },
     {
      "abbr": "marist",
@@ -8676,6 +8709,17 @@
      "dark": true,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_vir_60000022.png"
+    },
+    {
+     "abbr": "vite",
+     "name": "Viterbo V-Hawks",
+     "short": "Viterbo V-Hawks",
+     "color": "#a41e37",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 265×190, under 400px"
     },
     {
      "abbr": "voorhe",
