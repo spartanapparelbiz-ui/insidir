@@ -11,8 +11,7 @@ import { humanLine } from "@/lib/markets/title";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { category as categoryInfo, type CategorySlug } from "@/lib/brand/categories";
-import { followRoi, hasRecord, MIN_SETTLED, STAKE } from "@/lib/follow/math";
-import { traderFollowAll } from "@/lib/follow/records";
+import { MIN_SETTLED } from "@/lib/follow/math";
 import type { VenueClient } from "@/lib/exchanges";
 import { memo, memoStale } from "@/lib/memo";
 import type { Book, VMarket } from "@/lib/types";
@@ -49,7 +48,7 @@ export interface Unusual { title: string; outcome: string; amount: number; price
 
 /** Today's biggest bet (since midnight ET, else the last 24 h) by a wallet new to Polymarket on a long shot (25¢ or
  *  less). No wallet, name or address is sent. */
-export async function unusualBet(db: Db, now: number): Promise<Unusual | null> {
+async function unusualBet(db: Db, now: number): Promise<Unusual | null> {
   const pick = async (since: number) => {
     const r = await db.execute(sql`select market_id, market_title, outcome, amount, avg_price, at, category from terminal.moves
       where source = 'polymarket' and new_wallet and hidden_at is null and avg_price > 0.01 and avg_price <= 0.25 and amount >= 5000 and at > ${new Date(since)}
@@ -153,20 +152,6 @@ export function walletSpotlight(db: Db): Promise<Spotlight | null> {
 
 export interface StakeRecord { n: number; won: number; lost: number; staked: number; net: number; roi: number; stake: number }
 
-/** The best followable record (MIN_SETTLED+ settled, each bought at the price Insidir showed plus slippage): what
- *  STAKE on each returned. The slider scales it; nothing else is estimated. */
-export async function bestRecord(db: Db, now: number): Promise<StakeRecord | null> {
-  const all = await traderFollowAll(db, now).catch(() => new Map());
-  let best: StakeRecord | null = null;
-  for (const t of all.values()) {
-    const r = t.all;
-    if (!hasRecord(r)) continue;
-    const roi = followRoi(r);
-    if (roi === null) continue;
-    if (!best || roi > best.roi) best = { n: r.n, won: r.won, lost: r.lost, staked: r.staked, net: r.net, roi, stake: STAKE };
-  }
-  return best;
-}
 export { MIN_SETTLED };
 
 /* ---------- Price gaps ---------- */

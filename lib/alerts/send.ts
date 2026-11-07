@@ -6,11 +6,10 @@
  * iOS only delivers web push to apps added to the Home Screen; the site is an installable PWA (manifest + public/sw.js). */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
-import { appUrl } from "@/lib/app-url";
 import { vapidKeys } from "./vapid";
 
-export interface PushTarget { endpoint: string; p256dh: string; auth: string }
-export type SendResult = "sent" | "gone" | "failed";
+interface PushTarget { endpoint: string; p256dh: string; auth: string }
+type SendResult = "sent" | "gone" | "failed";
 
 let vapidReady = false;
 /** Sets web-push up with the VAPID keys (lib/alerts/vapid.ts); false when they aren't set. */
@@ -49,5 +48,3 @@ export function verifyUnsubscribe(userId: string, sig: string, secret = unsubSec
   const a = Buffer.from(unsubscribeSig(userId, secret)), b = Buffer.from(sig);
   return a.length === b.length && timingSafeEqual(a, b);
 }
-export const unsubscribeUrl = (appUrl: string, userId: string): string =>
-  `${appUrl}/api/email/unsubscribe?u=${encodeURIComponent(userId)}&s=${unsubscribeSig(userId)}`;

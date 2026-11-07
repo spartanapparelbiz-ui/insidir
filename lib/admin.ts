@@ -7,20 +7,20 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 /** Minimum ADMIN_TOKEN length. */
-export const ADMIN_TOKEN_MIN = 32;
+const ADMIN_TOKEN_MIN = 32;
 /** The admin cookie's name. */
 export const ADMIN_COOKIE = "insidir_admin";
 /** How long an admin sign-in lasts. */
 export const ADMIN_SESSION_MS = 12 * 3_600_000;
 /** TOTP step length (RFC 6238 default). */
-export const STEP_SECONDS = 30;
+const STEP_SECONDS = 30;
 /** Steps either side of now that are accepted (clock drift). */
-export const TOTP_WINDOW = 1;
+const TOTP_WINDOW = 1;
 /** Minimum decoded TOTP secret length, bytes (RFC 4226 asks for 128 bits; 80 is the floor apps accept). */
-export const TOTP_SECRET_MIN_BYTES = 10;
+const TOTP_SECRET_MIN_BYTES = 10;
 /** Failed sign-ins allowed per client per window, and the window. */
-export const LOGIN_MAX_ATTEMPTS = 10;
-export const LOGIN_WINDOW_MS = 15 * 60_000;
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_WINDOW_MS = 15 * 60_000;
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
@@ -73,7 +73,7 @@ export function adminConfigured(token = env("ADMIN_TOKEN"), secret = env("ADMIN_
 }
 
 /** Constant-time string equality (hashes first so lengths don't leak). */
-export function safeEqual(a: string, b: string): boolean {
+function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
 }
 
@@ -94,7 +94,7 @@ export function verifyAdminCookie(value: string | undefined, nowMs: number, toke
 /* A code can be used once: the last accepted step is remembered per process. */
 let lastStep = -1;
 
-export type AdminLogin = { ok: true; cookie: string; expires: number } | { ok: false; error: string };
+type AdminLogin = { ok: true; cookie: string; expires: number } | { ok: false; error: string };
 
 /** Checks the typed token and code against the environment. */
 export function adminLogin(tokenTyped: string, codeTyped: string, nowMs: number,

@@ -30,7 +30,7 @@ import { countsToRecord } from "@/lib/trust";
 import { Bars, Rows, SeriesChart, StatTiles } from "./Figures";
 import { Insight, Lines, Panel, Pill, Stage } from "./index";
 
-export const PAGE_SIZE = 20;
+const PAGE_SIZE = 20;
 const DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 const cents = (p: number | null | undefined) => (p === null || p === undefined ? "" : `${Math.round(p * 100)}¢`);

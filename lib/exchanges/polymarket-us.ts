@@ -29,15 +29,15 @@ export const US_ENDPOINTS = {
   book: "/v1/markets/{id}/book",
 } as const;
 /** Page size for list endpoints (limit/offset, or cursor when the response returns one). */
-export const US_PAGE_LIMIT = 200;
-export const US_MAX_PAGES = 100;
+const US_PAGE_LIMIT = 200;
+const US_MAX_PAGES = 100;
 /** Web origin for deep links (path pattern unverified: /market/<slug>). */
-export const POLYMARKET_US_WEB = "https://polymarket.us";
+const POLYMARKET_US_WEB = "https://polymarket.us";
 
 const LIST_KEYS = ["markets", "events", "data", "results", "items"] as const;
 
 /** Deep link: /market/<marketSlug>, else /event/<eventSlug> (unverified URL patterns). */
-export function usUrl(eventSlug: string | null, marketSlug: string | null): string {
+function usUrl(eventSlug: string | null, marketSlug: string | null): string {
   if (marketSlug) return `${POLYMARKET_US_WEB}/market/${marketSlug}`;
   if (eventSlug) return `${POLYMARKET_US_WEB}/event/${eventSlug}`;
   return POLYMARKET_US_WEB;
@@ -178,7 +178,7 @@ export function readUsBook(raw: unknown, fetchedAt: number): Book | null {
 }
 
 /** Group markets into events. mutuallyExclusive / exhaustive only when the payload states it; otherwise false. */
-export function usEvents(markets: readonly VMarket[], flags: ReadonlyMap<string, { title: string | null; mutuallyExclusive: boolean; exhaustive: boolean }> = new Map()): VEvent[] {
+function usEvents(markets: readonly VMarket[], flags: ReadonlyMap<string, { title: string | null; mutuallyExclusive: boolean; exhaustive: boolean }> = new Map()): VEvent[] {
   const by = new Map<string, VMarket[]>();
   for (const m of markets) {
     const l = by.get(m.eventId) ?? [];
@@ -235,7 +235,7 @@ export function buildUsSweep(rawEvents: readonly JsonObject[], rawMarkets: reado
 
 /* ---------- Client ---------- */
 
-export interface PolymarketUsClientOptions {
+interface PolymarketUsClientOptions {
   http?: HttpClient;
   baseUrl?: string;
   clock?: Clock;
@@ -243,7 +243,7 @@ export interface PolymarketUsClientOptions {
   enabled?: boolean;
 }
 
-export interface PolymarketUsStatus {
+interface PolymarketUsStatus {
   enabled: boolean;
   baseUrl: string;
   /** null until the first sweep. */

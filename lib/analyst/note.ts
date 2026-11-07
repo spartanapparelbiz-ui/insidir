@@ -17,7 +17,7 @@ Rules:
 Answer with the note only.`;
 
 /** The facts as the model sees them: labels and texts only (no links). */
-export function factsPrompt(f: Facts): string {
+function factsPrompt(f: Facts): string {
   return JSON.stringify({ kind: f.kind, names: f.names, facts: f.facts.map(x => ({ label: x.label, text: x.text })) });
 }
 
@@ -48,7 +48,7 @@ export function templateNote(f: Facts): string {
   return out.slice(0, 3).join(" ");
 }
 
-export interface NoteDeps { f?: typeof fetch }
+interface NoteDeps { f?: typeof fetch }
 
 /** Writes a note for one position's facts. */
 export async function writeNote(facts: Facts, deps: NoteDeps = {}): Promise<Note> {

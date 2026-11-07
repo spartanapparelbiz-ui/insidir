@@ -31,7 +31,7 @@ export function settledPnl(result: Result, contracts: number, cost: number): num
 }
 const round = (n: number) => Math.round(n * 100) / 100;
 
-export interface Summary {
+interface Summary {
   open: number; settled: number; won: number; lost: number; void: number;
   exposure: number; live: number | null; net: number; staked: number;
   winRate: number | null;
@@ -60,7 +60,7 @@ export function summarize(entries: readonly Entry[]): Summary {
   };
 }
 
-export type Pending = typeof autopilotMatches.$inferSelect;
+type Pending = typeof autopilotMatches.$inferSelect;
 
 /** The member's Book: entries newest first, and the Autopilot matches waiting for "placed or skipped". */
 export async function bookFor(db: Db, userId: string, now = Date.now()): Promise<{ entries: Entry[]; pending: Pending[] }> {

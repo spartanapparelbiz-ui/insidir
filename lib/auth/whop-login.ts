@@ -28,7 +28,7 @@ const OAUTH = () => `${(process.env.WHOP_API_ORIGIN ?? "https://api.whop.com").r
 /** The sign-in in flight: state, PKCE verifier and where to go after (httpOnly, 10 minutes, the whole site: it starts
  *  on /login/start and ends on /login/callback or /reset/callback). */
 export const LOGIN_COOKIE = "insidir_login";
-export const LIMIT = { perIp: 30, windowMs: 15 * 60_000 } as const;
+const LIMIT = { perIp: 30, windowMs: 15 * 60_000 } as const;
 export { CALLBACK_PATHS };
 /** WHOP_REDIRECT_URI, else the stored one (whop:setup), else <APP_URL>/login/callback. */
 export const redirectUri = async (): Promise<string> => (await whopRuntime()).redirectUri ?? appUrl() + CALLBACK_PATHS[0];
@@ -56,7 +56,7 @@ export async function startLogin(fresh = false): Promise<{ url: string; state: s
 }
 
 export class LoginFailed extends Error {}
-export interface WhopIdentity { id: string; email: string | null; name: string | null; picture: string | null }
+interface WhopIdentity { id: string; email: string | null; name: string | null; picture: string | null }
 
 /** Code → who they are at Whop. `redirect` is the exact redirect_uri the authorize request sent. On failure, logs the
  *  endpoint's status and error, nothing else. */
@@ -98,7 +98,7 @@ export async function rateLimited(db: Db, ip: string | null, now = Date.now()): 
  *  account the billing webhook made before they signed in (pay first). */
 /** Accounts only if you pay: a Whop user we have no account for gets one only when Whop says they have Insidir (a paid
  *  membership, or the free-access list). Anyone else signs in to nothing: `userId` is null and they go to the paywall. */
-export async function hasPaidAccess(whopUserId: string, email: string | null, now = Date.now()): Promise<boolean> {
+async function hasPaidAccess(whopUserId: string, email: string | null, now = Date.now()): Promise<boolean> {
   if (isFreeAccess(email)) return true;
   const ids = planIds();
   const [has, list] = await Promise.all([

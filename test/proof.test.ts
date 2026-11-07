@@ -5,15 +5,13 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { moveSource } from "@/lib/moves/source";
 import { listMoves, upsertMoves } from "@/lib/moves/store";
 import type { Move } from "@/lib/moves/types";
-import { recordOf, settledRecord, type TrustFacts } from "@/lib/trust";
+import { recordOf, settledRecord } from "@/lib/trust";
 import { readWalletFills, realizeMove } from "@/lib/moves/realize";
 
 const DAY = 86_400_000;
@@ -41,8 +39,6 @@ describe("the settled record", () => {
     expect(recordOf([]).oddsPct).toBeNull();
   });
 });
-
-
 
 describe("source links", () => {
   const base = { id: "pm:x", source: "polymarket" as const, marketId: "0xc1", wallet: `0x${"1".padStart(40, "0")}`, at: NOW, url: null };

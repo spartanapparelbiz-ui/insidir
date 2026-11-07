@@ -11,7 +11,6 @@
 import { expect, test } from "@playwright/test";
 import { WHOP_PORT } from "./env";
 import { noHorizontalScroll, q, shotName, signIn } from "./helpers";
-import { MW } from "./seed-millionaires";
 
 const post = (path: string, body: unknown) => fetch(`http://localhost:${WHOP_PORT}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 const closed = { name: "insidir_pay_closed", value: "1", url: "http://localhost:3100" };
@@ -97,8 +96,6 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await expect(page.getByTestId("brand-foot")).toContainText("Gambling problem? Call 1-800-GAMBLER.");
   await noHorizontalScroll(page);
 });
-
-
 
 test("the free live sample: today's #1 millionaire bet whole, the board 60 minutes late, one race in full", async ({ page }) => {
   await page.goto("/#free");

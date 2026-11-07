@@ -13,7 +13,6 @@ export const COLORS = ["#ffffff", "#fff", "#000", "#000000", "#ededed", "#181818
 
 /** UI text in px; headlines are set with <Lines size> in --u (40–89). */
 export const FONT_SIZES_PX = [12, 13, 14, 15, 16, 17, 20, 22, 28] as const;
-export const HEADLINE_SIZES = [40, 44, 48, 52, 56, 60, 64, 72, 89] as const;
 
 /** The pill, the panel (--r), the small corner, the circle. */
 export const RADII = ["999px", "var(--r)", "10px", "50%", "0"] as const;

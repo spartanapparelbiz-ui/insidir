@@ -5,7 +5,7 @@ import type { Move } from "./types";
 import { leagueLabel } from "./leagues";
 
 /** The competitions the default feed keeps (labels from lib/moves/leagues.ts). */
-export const MAJOR = new Set(["NFL", "NBA", "WNBA", "MLB", "NHL", "College football", "College basketball", "College", "UFC", "ATP", "WTA", "Tennis", "Golf",
+const MAJOR = new Set(["NFL", "NBA", "WNBA", "MLB", "NHL", "College football", "College basketball", "College", "UFC", "ATP", "WTA", "Tennis", "Golf",
   "Champions League", "Europa League", "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", "MLS", "World Cup", "Soccer", "Boxing", "F1"]);
 const ESPORTS = new Set(["Counter-Strike", "Dota 2", "League of Legends", "Valorant", "Rocket League", "Call of Duty"]);
 const PART = /\b(map|game)\s*\d\b|\b(1st|2nd|3rd|4th|5th|6th|7th|8th|9th|first|second|third|fourth)\s+(inning|period|half|quarter|set)\b|\b1h\b|\b2h\b|\bf5\b/i;

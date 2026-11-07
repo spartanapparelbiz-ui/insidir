@@ -11,9 +11,9 @@ export const FRESH_MS = 60_000;
 /** A venue whose last good scan is older than this is "paused". */
 export const STALE_MS = 2 * 60_000;
 
-export interface DataStatus { live: boolean; paused: Venue[]; lastScanAt: number | null }
+interface DataStatus { live: boolean; paused: Venue[]; lastScanAt: number | null }
 
-export function statusFrom(beats: ReadonlyArray<{ job: string; lastRunAt: number; ok: boolean }>, now: number): DataStatus {
+function statusFrom(beats: ReadonlyArray<{ job: string; lastRunAt: number; ok: boolean }>, now: number): DataStatus {
   const venues: Venue[] = ["kalshi", "polymarket", "polymarket_us"];
   const paused: Venue[] = [];
   let last: number | null = null;
@@ -37,8 +37,8 @@ export async function dataStatus(now = Date.now()): Promise<DataStatus> {
 
 /* ---------- /api/health ---------- */
 
-export interface VenueHealth { lastScanAt: string | null; ageSeconds: number | null; ok: boolean | null; error: string | null; paused: boolean }
-export interface Health {
+interface VenueHealth { lastScanAt: string | null; ageSeconds: number | null; ok: boolean | null; error: string | null; paused: boolean }
+interface Health {
   /** The web process is up. Always true here: Railway's health check must not fail when only the worker is down. */
   ok: true;
   /** "not_configured": no DATABASE_URL; "unreachable": the query failed (database down, or migrations not applied). */

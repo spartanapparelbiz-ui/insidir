@@ -55,19 +55,19 @@ export interface Tracker {
   needs?: Feature;
 }
 
-export const BIG_BET = 100_000;
-export const NEW_WALLET_MIN = 25_000;
-export const UNDERDOG_MAX = 0.4;
-export const FAVORITE_MIN = 0.75;
+const BIG_BET = 100_000;
+const NEW_WALLET_MIN = 25_000;
+const UNDERDOG_MAX = 0.4;
+const FAVORITE_MIN = 0.75;
 /** Steam: the price moved this much their way after the bet. */
 export const STEAM = 0.05;
-export const EARLY_MS = 24 * 3_600_000;
-export const LATE_MS = 3_600_000;
+const EARLY_MS = 24 * 3_600_000;
+const LATE_MS = 3_600_000;
 
 /** Text rules (one pattern for JS and Postgres, both read case-insensitively). */
-export const FED_RE = "(^|[^a-z])(fed|fomc|powell)([^a-z]|$)|interest rate|rate cut|rate hike|basis points|federal reserve|fed funds";
-export const ELECTION_RE = "elect|midterm|senate|house race|governor|primary|mayor|nominee|congress";
-export const CEO_RE = "(^|[^a-z])ceo([^a-z]|$)|chief executive";
+const FED_RE = "(^|[^a-z])(fed|fomc|powell)([^a-z]|$)|interest rate|rate cut|rate hike|basis points|federal reserve|fed funds";
+const ELECTION_RE = "elect|midterm|senate|house race|governor|primary|mayor|nominee|congress";
+const CEO_RE = "(^|[^a-z])ceo([^a-z]|$)|chief executive";
 const re = (p: string) => new RegExp(p, "i");
 const text = (m: TrackerMove) => `${m.eventTitle} ${m.marketTitle}`;
 const isBet = (m: TrackerMove) => m.source === "polymarket" || m.source === "kalshi";
@@ -148,15 +148,6 @@ export function clusterIssuers(insiderMoves: ReadonlyArray<{ at: number; detail?
   return (cik, at) => new Set((by.get(cik) ?? []).filter(x => Math.abs(x.at - at) <= D30).map(x => x.owner)).size >= 3;
 }
 
-/** Fifteen photos for more trackers than that: a photo's second use is mirrored, its third a tighter crop, the fourth
- *  both, so no two covers look the same. "" | "flip" | "zoom" | "flip zoom". */
-export function coverVariant(slug: string): string {
-  const t = TRACKERS.find(x => x.slug === slug);
-  if (!t) return "";
-  const k = TRACKERS.filter(x => x.photo === t.photo).findIndex(x => x.slug === slug);
-  return ["", "cover--flip", "cover--zoom", "cover--flip cover--zoom"][k % 4]!;
-}
-
 /** The four on the home page's "Featured" row, in order. */
 export const FEATURED: readonly TrackerSlug[] = ["ceo-buys", "fed-and-rates", "biggest-bets", "nba-big-money"];
 
@@ -175,7 +166,6 @@ export const visibleTrackers = (ready: (f: Feature) => boolean): Tracker[] => TR
 
 export const trackerBySlug = (slug: string): Tracker | null => TRACKERS.find(t => t.slug === slug) ?? null;
 export const isTrackerSlug = (s: string): boolean => TRACKERS.some(t => t.slug === s);
-export const trackerHref = (slug: string) => `/trackers/${slug}`;
 
 /** The rule over terminal.moves: stored tags for fixed and observed rules, SQL for live ones. */
 export function trackerWhere(t: Tracker): SQL {
@@ -185,8 +175,6 @@ export function trackerWhere(t: Tracker): SQL {
 /** The fixed trackers a move meets (what the worker stores). */
 export const fixedTags = (m: TrackerMove): string[] => TRACKERS.filter(isFixed).filter(t => t.rule.fixed(m)).map(t => t.slug);
 const OBSERVED = new Set(TRACKERS.filter(isObserved).map(t => t.slug));
-/** Trackers whose positions join after the fact (Momentum, Early, Late): followed from the moment they joined. */
-export const OBSERVED_TRACKERS: ReadonlySet<string> = OBSERVED;
 /** A move's tags after re-tagging: its fixed tags now, plus any observed ones it already had. */
 export const retag = (m: TrackerMove): string[] => [...fixedTags(m), ...(m.trackers ?? []).filter(s => OBSERVED.has(s))].sort();
 
@@ -226,12 +214,12 @@ export type PeriodKey = (typeof PERIODS)[number]["key"] | "all";
  *  price Insidir showed it, plus slippage; lib/follow); TrackerStats.own is the traders' own return from their entries. */
 export interface TrackerRecord { won: number; lost: number; oddsPct: number | null; net: number; /** Money in those bets. */ staked?: number }
 
-export const settledOf = (r: TrackerRecord | null | undefined) => (r ? r.won + r.lost : 0);
+const settledOf = (r: TrackerRecord | null | undefined) => (r ? r.won + r.lost : 0);
 export const hasTrackerRecord = (r: TrackerRecord | null | undefined): r is TrackerRecord => settledOf(r) >= TRACKER_MIN_SETTLED;
 export const winPct = (r: TrackerRecord) => Math.round((r.won / Math.max(1, r.won + r.lost)) * 100);
 
 /** Under 30 settled: "Building record · 12 of 30", never "New". */
-export const buildingLine = (r: TrackerRecord | null | undefined): string => `Building record · ${settledOf(r)} of ${TRACKER_MIN_SETTLED}`;
+const buildingLine = (r: TrackerRecord | null | undefined): string => `Building record · ${settledOf(r)} of ${TRACKER_MIN_SETTLED}`;
 
 /** "Won 63%", or "Building record · 12 of 30" under 30 settled positions. */
 export const recordPill = (r: TrackerRecord | null | undefined): { text: string; tone: "won" | "lost" | "new" } =>
@@ -251,14 +239,8 @@ export function returnPct(r: TrackerRecord | null | undefined): string | null {
   return `${p > 0 ? "+" : p < 0 ? "−" : ""}${Math.abs(p).toFixed(Math.abs(p) >= 100 ? 0 : 1)}%`;
 }
 
-/** ROI coloured like any gain or loss: green above zero, red below. */
-export function returnTone(r: TrackerRecord | null | undefined): "won" | "lost" | "none" {
-  const v = returnPct(r);
-  return v === null ? "none" : v.startsWith("+") ? "won" : v.startsWith("−") ? "lost" : "none";
-}
-
 /** What a record returned on the money in it (net / staked), or −∞ without the money to tell. */
-export const returnOf = (r: TrackerRecord): number => (r.staked && r.staked > 0 ? r.net / r.staked : Number.NEGATIVE_INFINITY);
+const returnOf = (r: TrackerRecord): number => (r.staked && r.staked > 0 ? r.net / r.staked : Number.NEGATIVE_INFINITY);
 
 /** Ranks trackers for one window: only those with a record there (30+ settled positions), best return first, then the
  *  better win rate, then most settled. */

@@ -7,7 +7,7 @@ import { SLOT_PHOTO, photoInfo, type PhotoName } from "@/lib/photos";
 import { PHOTO_WIDTHS, url } from "@/lib/unsplash";
 
 export type PhotoN = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16;
-export type PhotoRatio = "1:1" | "4:3" | "16:9" | "21:9" | "2:3";
+type PhotoRatio = "1:1" | "4:3" | "16:9" | "21:9" | "2:3";
 
 const RATIO: Record<PhotoRatio, number> = { "1:1": 1, "4:3": 4 / 3, "16:9": 16 / 9, "21:9": 21 / 9, "2:3": 2 / 3 };
 

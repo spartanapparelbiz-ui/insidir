@@ -3,9 +3,9 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 
-export interface RunSummary { runAt: number; ok: number; mismatch: number; skipped: number; moves: number; profiles: number }
-export interface Mismatch { runAt: number; kind: string; what: string; target: string; label: string; problems: string[] }
-export interface HiddenMove { id: string; source: string; title: string; amount: number; hiddenAt: number; reason: string | null }
+interface RunSummary { runAt: number; ok: number; mismatch: number; skipped: number; moves: number; profiles: number }
+interface Mismatch { runAt: number; kind: string; what: string; target: string; label: string; problems: string[] }
+interface HiddenMove { id: string; source: string; title: string; amount: number; hiddenAt: number; reason: string | null }
 
 export async function accuracyOverview(db: Db, days = 7): Promise<{ runs: RunSummary[]; mismatches: Mismatch[]; hidden: HiddenMove[] }> {
   const runs = (await db.execute(sql`select run_at, count(*) filter (where status = 'ok')::int as ok, count(*) filter (where status = 'mismatch')::int as mismatch,

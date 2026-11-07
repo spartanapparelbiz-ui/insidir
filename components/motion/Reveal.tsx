@@ -11,6 +11,3 @@ export function Reveal({ as: As = "div", className = "", delay = 0, style, child
   return <As className={`rv ${className}`.trim()} style={delay ? { ...style, ["--i" as string]: delay } : style} {...rest}>{children}</As>;
 }
 
-export function RevealGroup({ as: As = "div", className = "", style, children, ...rest }: Props) {
-  return <As className={className || undefined} style={style} data-reveal="group" {...rest}>{children}</As>;
-}

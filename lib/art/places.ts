@@ -44,12 +44,3 @@ export const FIGURES: Array<[string, string, string, RegExp]> = [
   ["taylor-swift", "Taylor_Swift", "Taylor Swift", /\btaylor swift\b/i], ["pope-leo-xiv", "Pope_Leo_XIV", "Pope Leo XIV", /\bpope leo\b/i],
 ];
 
-/** The one country or figure a market's words name (two or more: none, the art would be a guess). */
-export function countryIn(text: string): string | null {
-  const hits = COUNTRIES.filter(([, , re]) => re.test(text));
-  return hits.length === 1 ? hits[0]![0] : null;
-}
-export function figureIn(text: string): string | null {
-  const hits = FIGURES.filter(([, , , re]) => re.test(text));
-  return hits.length === 1 ? hits[0]![0] : null;
-}

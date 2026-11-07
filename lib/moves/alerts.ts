@@ -10,7 +10,7 @@ import { movePlan } from "./gate";
 import type { League, Move, Tab, TraderRecord } from "./types";
 import { trackersOf, type TrackerCtx } from "@/lib/trackers";
 
-export const MARKET_ALERT_MIN = 50_000;
+const MARKET_ALERT_MIN = 50_000;
 
 export interface MoveRule { tab: Tab | null; league: League | null; min: number }
 
@@ -30,8 +30,8 @@ export interface AlertUser {
   rules: readonly MoveRule[];
 }
 
-export type AlertReason = "trader" | "market" | "tracker" | "rule";
-export interface AlertJob { userId: string; moveId: string; channel: "push" | "email"; reason: AlertReason }
+type AlertReason = "trader" | "market" | "tracker" | "rule";
+interface AlertJob { userId: string; moveId: string; channel: "push" | "email"; reason: AlertReason }
 
 export function ruleMatches(r: MoveRule, m: Pick<Move, "tab" | "league" | "amount">): boolean {
   return (!r.tab || r.tab === m.tab) && (!r.league || r.league === m.league) && m.amount >= r.min;
@@ -74,8 +74,8 @@ export const ALERT_MAX_AGE_MS = 10 * 60_000;
 
 /* ---------- the daily email (8am ET): yesterday's top 5 moves and how yesterday's top-trader moves settled ---------- */
 
-export const DAILY_HOUR_ET = 8;
-export const DAILY_TOP = 5;
+const DAILY_HOUR_ET = 8;
+const DAILY_TOP = 5;
 
 /** The hour in New York at `now` (0–23). */
 export function hourInNewYork(now: number): number {
@@ -90,7 +90,7 @@ export function dailyDue(u: { plan: Plan; email: string | null; emailDigest: boo
   return u.lastDigestAt === null || now - u.lastDigestAt > 20 * 3_600_000;
 }
 
-export interface DailyEmail { subject: string; heading: string; lines: Array<{ text: string; url?: string }> }
+interface DailyEmail { subject: string; heading: string; lines: Array<{ text: string; url?: string }> }
 
 /** `top` are the biggest moves of the last 24h; `settled` are top-trader moves that settled in the last 24h. */
 export function dailyEmail(top: readonly Move[], settled: readonly Move[], records: ReadonlyMap<string, TraderRecord>, appUrl: string): DailyEmail {

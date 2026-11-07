@@ -60,7 +60,7 @@ const CITY_CODES: Readonly<Record<string, string>> = {
   LV: "las-vegas",
 };
 
-export function subjectFromText(text: string): string | null {
+function subjectFromText(text: string): string | null {
   const t = text.toLowerCase();
   const temp = /highest temperature in ([a-z .]+?)(?: on| today| tomorrow|\?|$)/.exec(t);
   if (temp?.[1]) {

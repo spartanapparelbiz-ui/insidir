@@ -19,12 +19,11 @@ import { runProduct } from "./product";
 
 export const MONEY_PATH_MS = 15 * 60_000;
 const STEP_MS = 15_000;
-export const MONITOR_VISITOR = /^monitor-/;
 export interface Step { step: "landing" | "market" | "checkout" | "sign-in" | "today" | "search" | "fresh-bets" | "autopilot" | "exit-ping" | "freshness"; ok: boolean; ms: number; detail?: string }
 export interface Alert { title: string; body: string; url: string }
 /** "sent" to at least one device; "no_subscription" when no owner has a device subscribed; "failed" otherwise. */
 export type NotifyOutcome = "sent" | "no_subscription" | "failed";
-export interface MonitorDeps { base: string; f?: typeof fetch; notify?: (a: Alert) => Promise<NotifyOutcome>; now?: number; log?: (s: string) => void;
+interface MonitorDeps { base: string; f?: typeof fetch; notify?: (a: Alert) => Promise<NotifyOutcome>; now?: number; log?: (s: string) => void;
   /** With it, the product checks run after the money path (lib/monitor/product.ts): Kalshi's YES ask now. */
   yesAsk?: (kalshiId: string) => Promise<number | null>; sleep?: (ms: number) => Promise<void> }
 
@@ -56,7 +55,7 @@ async function marketToOpen(db: Db, now: number): Promise<string | null> {
 }
 
 /** Runs the path once; returns each step (stops at the first failure). */
-export async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
+async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
   const f = d.f ?? fetch, base = d.base.replace(/\/+$/, ""), now = d.now ?? Date.now();
   const cookie = `insidir_vid=monitor-${randomUUID().slice(0, 12)}`;
   const get = (path: string, init: RequestInit = {}) => f(path.startsWith("http") ? path : base + path, { redirect: "manual", signal: AbortSignal.timeout(STEP_MS), ...init, headers: { cookie, "user-agent": "InsidirMoneyPathMonitor/1", ...(init.headers ?? {}) } });

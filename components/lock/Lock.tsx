@@ -4,7 +4,7 @@
  * checkout. Locks sit where curiosity peaks: a trader's record, Follow, live (vs. 30 minutes late), alerts.
  * Opening one is recorded as lock_view with where it was; the button carries data-unlock, so components/landing/
  * Beacons records unlock_click and checkout_start. */
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { beacon } from "@/components/app/beacon";
 import { Photo } from "@/components/Photo";
 import { SPOT } from "@/lib/photos";
@@ -61,14 +61,3 @@ function LockSheet({ where, unlocks, trialHref, onClose }: { where: string; unlo
   );
 }
 
-const LockIcon = () => <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 11h12v10H6zM9 11V8a3 3 0 0 1 6 0v3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>;
-
-/** A locked control: looks like what it unlocks, opens the lock sheet. */
-export function LockButton({ where, className = "btn btn--secondary", children, label }: { where: string; className?: string; children: ReactNode; label?: string }) {
-  const { open } = useContext(Ctx);
-  return (
-    <button type="button" className={`${className} lockbtn`} aria-haspopup="dialog" aria-label={label} onClick={() => open(where)}>
-      <LockIcon />{children}
-    </button>
-  );
-}

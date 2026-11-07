@@ -16,18 +16,18 @@
  * side won, minus the average price of that side when flagged (what the market already gave it). It stays off public
  * pages until it shows a positive edge on SCORE_MIN (100)+ scored. */
 
-export const SMART_MIN_WALLETS = 3;
+const SMART_MIN_WALLETS = 3;
 export const SMART_MIN_MONEY = 1_000;
-export const POSITION_MIN = 2_000;
+const POSITION_MIN = 2_000;
 export const POSITION_DAYS = 14;
-export const SIDE_MIN = 0.05, SIDE_MAX = 0.95;
+const SIDE_MIN = 0.05, SIDE_MAX = 0.95;
 export const SCORE_MIN = 100;
 export const SPLIT_MIN = 10;
 export const SPLIT_ALERT_GAP = 15;
-export const BIG_MIN_MONEY = 25_000;
-export const DIP_MIN = 10;
-export const DIP_DAYS = 30;
-export const STOCK_WINDOW_DAYS = 90;
+const BIG_MIN_MONEY = 25_000;
+const DIP_MIN = 10;
+const DIP_DAYS = 30;
+const STOCK_WINDOW_DAYS = 90;
 const DAY = 86_400_000;
 
 export interface SmartPosition { wallet: string; outcomeIndex: number; moneyIn: number; /** When we first saw it open (ms); absent: counts. */ firstSeenAt?: number }
@@ -51,7 +51,7 @@ export function smartOf(positions: readonly SmartPosition[], now = Date.now()): 
 export const points = (a: number, b: number): number => Math.round(Math.abs(a - b) * 1000) / 10;
 
 /** The price of a side, from the YES price. */
-export const sidePrice = (yes: number, side: "yes" | "no"): number => (side === "yes" ? yes : 1 - yes);
+const sidePrice = (yes: number, side: "yes" | "no"): number => (side === "yes" ? yes : 1 - yes);
 const sideOk = (yes: number | null, side: "yes" | "no") => yes !== null && sidePrice(yes, side) >= SIDE_MIN && sidePrice(yes, side) <= SIDE_MAX;
 
 /** Crowd vs. smart money on one open market; null when there's no smart money read, no price, or smart money's side
@@ -74,7 +74,7 @@ export function bigMoneySplit(all: { yes: number; no: number }, smart: Smart, ye
   return { crowd: a, smart: s, gap: points(a, s), smartSide };
 }
 
-export interface Close { date: string; close: number }
+interface Close { date: string; close: number }
 const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
 
 /** The last close on or before a date (markets are shut on weekends and holidays). */

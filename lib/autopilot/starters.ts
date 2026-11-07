@@ -1,7 +1,7 @@
 /* The starter rules a member turns on in one tap (/autopilot, onboarding). Each shows its own backtest. */
 import { DEFAULT_SPEC, type RuleSpec } from "./rules";
 
-export interface Starter { key: string; name: string; blurb: string; spec: RuleSpec }
+interface Starter { key: string; name: string; blurb: string; spec: RuleSpec }
 
 const spec = (o: { wallets?: Partial<RuleSpec["wallets"]>; markets?: Partial<RuleSpec["markets"]>; triggers?: Partial<RuleSpec["triggers"]>; price?: Partial<RuleSpec["price"]>; stake?: Partial<RuleSpec["stake"]> }): RuleSpec => ({
   wallets: { ...DEFAULT_SPEC.wallets, ...o.wallets }, markets: { ...DEFAULT_SPEC.markets, ...o.markets }, triggers: { ...DEFAULT_SPEC.triggers, ...o.triggers },

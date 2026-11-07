@@ -17,7 +17,7 @@ import {
 } from "./aliases";
 
 /** Function words dropped before token similarity. */
-export const STOPWORDS: ReadonlySet<string> = new Set([
+const STOPWORDS: ReadonlySet<string> = new Set([
   "will", "the", "a", "an", "be", "by", "of", "in", "on", "at", "to", "for", "is", "are", "was", "were", "does",
   "do", "did", "this", "that", "these", "those", "it", "its", "as", "with", "from", "and", "has", "have", "had",
   "any", "who", "what", "which", "when", "where", "how", "there", "their", "his", "her", "he", "she", "they",
@@ -28,7 +28,7 @@ export const STOPWORDS: ReadonlySet<string> = new Set([
 
 /** Words that describe the market type or a direction. Compared separately (type, thresholds), so they are left
  *  out of token similarity. */
-export const TYPE_WORDS: ReadonlySet<string> = new Set([
+const TYPE_WORDS: ReadonlySet<string> = new Set([
   "win", "beat", "defeat", "vs", "over", "under", "ou", "total", "totals", "spread", "cover", "covers", "above",
   "below", "between", "more", "less", "fewer", "than", "least", "most", "higher", "greater", "exceed", "exceeds",
   "reach", "reaches", "hit", "hits", "or", "game", "match", "matchup", "points", "moneyline", "deg", "f", "c",
@@ -398,7 +398,7 @@ function addRef(map: Map<string, AliasRef[]>, phrase: string, ref: AliasRef): vo
 }
 
 /** Builds (once) the phrase → refs index from aliases.ts. */
-export function aliasIndex(): AliasIndex {
+function aliasIndex(): AliasIndex {
   if (INDEX) return INDEX;
   const phrases = new Map<string, AliasRef[]>();
   const caseSensitive = new Map<string, AliasRef[]>();

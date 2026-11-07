@@ -3,16 +3,6 @@
  * sign-in panel). One place, so no page shows the same photo twice in view. */
 import type { PhotoN } from "@/components/Photo";
 
-/** Header bands, by page (the feed's and a market's follow the tab; a profile's, the trader's best category). */
-export const BAND = {
-  feed: { sports: 2, markets: 9, stocks: 10 },
-  market: { sports: 12, markets: 15, stocks: 10 },
-  profile: { sports: 2, markets: 9, stocks: 10 },
-  /* the product pages (/sports, /markets, /stocks, /faq) */
-  product: { sports: 2, markets: 9, stocks: 10 }, how: 15, faq: 4,
-  top: 6, results: 3, following: 7, account: 5, alerts: 14, pricing: 8, signin: 6, about: 13, notFound: 5,
-} as const satisfies Record<string, PhotoN | Record<string, PhotoN>>;
-
 /** Small crops in empty states, sheets and in-page bands. */
 export const SPOT = {
   feedEmpty: 12, resultsEmpty: 14, pageEmpty: 13, followingEmpty: 16, youreIn: 16,
@@ -27,9 +17,6 @@ export const SLOT_PHOTO: Record<PhotoN, PhotoName> = {
   2: "home-sports", 3: "biggest-bets", 4: "home-markets", 5: "home-stocks", 6: "top-traders", 7: "home-sports", 8: "top-1-percent",
   9: "home-markets", 10: "home-stocks", 11: "early-money", 12: "home-sports", 13: "home-markets", 14: "late-money", 15: "home-markets", 16: "steam",
 };
-
-/** The thin strip on top of share cards and emails. */
-export const STRIP = { move: 11, site: 16, siteTall: 15, email: 4 } as const satisfies Record<string, PhotoN>;
 
 /* ---------- the subject photos: one Unsplash original per subject, loaded from images.unsplash.com ---------- */
 
@@ -74,7 +61,7 @@ export const PHOTOS = {
   "home-sports": { id: "1679391029864-d46f366a456b", user: "howardbouchevereau", fx: 0.5, fy: 0.5, color: "#36553a" },
 } as const;
 export type PhotoName = keyof typeof PHOTOS;
-export interface PhotoInfo { id: string; user: string; fx: number; fy: number; color: string }
+interface PhotoInfo { id: string; user: string; fx: number; fy: number; color: string }
 export const photoInfo = (name: PhotoName): PhotoInfo => PHOTOS[name];
 
 /** Each photographer once, for the footer credits. */

@@ -8,7 +8,7 @@ import { calDay, dollars, onWhat, payoutLine, quarterOf, recordLine, stockNote, 
 import type { Move, TraderRecord } from "@/lib/moves/types";
 import { loadFonts, OG, OgLogo, strip, STRIP_H } from "@/lib/share-card";
 
-export const MOVE_CARD = { width: 1080, height: 1920 } as const;
+const MOVE_CARD = { width: 1080, height: 1920 } as const;
 
 
 const WHEN = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });

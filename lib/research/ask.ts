@@ -11,18 +11,18 @@ import { analystConfigured } from "@/lib/analyst/llm";
 import { dbUsageStore } from "@/lib/worker/store";
 import { research, type Answer } from "./run";
 
-export const VISITOR_DAILY = 3;
-export const memberDaily = (): number => Number(process.env.RESEARCH_MEMBER_DAILY ?? 200);
-export const userMonthlyUsd = (): number => Number(process.env.RESEARCH_USER_MONTHLY_USD ?? 3);
+const VISITOR_DAILY = 3;
+const memberDaily = (): number => Number(process.env.RESEARCH_MEMBER_DAILY ?? 200);
+const userMonthlyUsd = (): number => Number(process.env.RESEARCH_USER_MONTHLY_USD ?? 3);
 export const monthlyUsd = (): number => Number(process.env.RESEARCH_MONTHLY_USD ?? 60);
-export const CACHE_MS = 5 * 60_000;
+const CACHE_MS = 5 * 60_000;
 const DAY = 86_400_000;
 const month = (now: number) => new Date(now).toISOString().slice(0, 7);
 
-export const keyOf = (q: string, live: boolean, wallet: string | null) =>
+const keyOf = (q: string, live: boolean, wallet: string | null) =>
   createHash("sha256").update(`${q.trim().toLowerCase().replace(/\s+/g, " ").replace(/[?.!]+$/, "")}|${live ? "live" : "delayed"}|${wallet ?? ""}`).digest("hex").slice(0, 32);
 
-export type AskResult = { ok: true; id: number; answer: Answer; cached: boolean; remaining: number | null } | { ok: false; reason: "limit"; remaining: 0 };
+type AskResult = { ok: true; id: number; answer: Answer; cached: boolean; remaining: number | null } | { ok: false; reason: "limit"; remaining: 0 };
 
 export async function ask(db: Db, o: { question: string; userId: string | null; visitorId: string | null; member: boolean; live: boolean; until: number; now: number; wallet?: string | null; f?: typeof fetch }): Promise<AskResult> {
   const who = o.userId ? eq(researchQueries.userId, o.userId) : o.visitorId ? eq(researchQueries.visitorId, o.visitorId) : sql`false`;

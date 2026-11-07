@@ -16,7 +16,7 @@ const cents = (p: number | null | undefined) => (p === null || p === undefined ?
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 const ET = new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 
-export function Change({ from, to }: { from: number | null; to: number | null }) {
+function Change({ from, to }: { from: number | null; to: number | null }) {
   if (from === null || to === null) return null;
   const d = Math.round((to - from) * 100);
   if (!d) return <span className="b-dim">unchanged</span>;

@@ -8,11 +8,11 @@ import { Arrow } from "./Bits";
 
 const DAY = 86_400_000;
 const ET = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
-export const chargeDate = (now: number): string => ET.format(new Date(now + TRIAL.days * DAY));
+const chargeDate = (now: number): string => ET.format(new Date(now + TRIAL.days * DAY));
 
 export const PAY_BULLETS = ["Every millionaire bet, live, with the side they took", "A ping the moment a wallet you follow bets"] as const;
 
-export function Timeline({ now }: { now: number }) {
+function Timeline({ now }: { now: number }) {
   return (
     <ol className="b-timeline" aria-label="How the trial works" data-testid="paywall-timeline">
       <li>Today ${TRIAL.fee}</li><li className="b-sep" aria-hidden="true"><Arrow /></li>

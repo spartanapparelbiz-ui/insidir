@@ -15,9 +15,9 @@ import type { VMarket } from "@/lib/types";
 import type { TwinResult } from "./check";
 import { TEAMS, type League } from "@/lib/matching/aliases";
 
-export type Field = "event" | "outcome" | "line" | "rules" | "close";
-export type Basis = "match" | "differs" | "unknown";
-export interface AutoCheck { auto: boolean; kind: "moneyline" | "spread" | "total" | "candidate" | null; fields: Record<Field, Basis>; notes: string[] }
+type Field = "event" | "outcome" | "line" | "rules" | "close";
+type Basis = "match" | "differs" | "unknown";
+interface AutoCheck { auto: boolean; kind: "moneyline" | "spread" | "total" | "candidate" | null; fields: Record<Field, Basis>; notes: string[] }
 
 const MONTHS: Record<string, string> = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
 const CLOSE_MS = 36 * 3_600_000;
@@ -72,7 +72,7 @@ export function clubName(s: string): string {
 
 /** The same club: the same reduced name, or one's words all in the other's ("dortmund" in "bv borussia dortmund",
  *  "leipzig" in "rb leipzig"), the shorter with a word of 4+ letters. Pure. */
-export function sameClub(a: string, b: string): boolean {
+function sameClub(a: string, b: string): boolean {
   const x = clubName(a), y = clubName(b);
   if (!x || !y) return false;
   if (x === y) return true;
@@ -123,7 +123,7 @@ export function polyRace(slug: string | null | undefined): { state: string; offi
 const person = (s: string | null | undefined) => (s ?? "").replace(/\s*\((?:D|R|I|L|G)\)\s*$/i, "").trim().toLowerCase().replace(/\s+/g, " ");
 
 /** A time's date in US Eastern time, "2026-11-05". */
-export const etDate = (ms: number): string => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ms));
+const etDate = (ms: number): string => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ms));
 
 const domain = (s: string | null | undefined): string[] => [...(s ?? "").matchAll(/(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)].map(m => m[1]!.toLowerCase());
 
@@ -200,7 +200,7 @@ const KIND = { moneyline: "winner", spread: "spread", total: "total", candidate:
 /** The twin test's result for a pair whose five fields all match from structured data: an exact candidate. (The title
  *  reading in lib/twins/check.ts can't read every venue's wording, e.g. Kalshi's "Los Angeles L wins" or NHL "goals";
  *  for a game read from slugs, tickers, outcome names and line fields it isn't needed.) */
-export function structuredResult(a: AutoCheck): TwinResult {
+function structuredResult(a: AutoCheck): TwinResult {
   return { verdict: "candidate", confidence: 0.99, checks: { event: true, outcome: true, line: true, rules: true, close: true }, notes: ["All five fields from the venues' structured data"], kind: KIND[a.kind!] };
 }
 

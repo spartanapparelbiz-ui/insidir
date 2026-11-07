@@ -26,13 +26,13 @@ export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "pa
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
  * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
-export const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "size", paywall: "aha", checkout: "paywall" };
+const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "size", paywall: "aha", checkout: "paywall" };
 const KEY = "insidir_go";
 
 interface Answers { cats: CategorySlug[]; where: Where | null; size: Size | null; remind: boolean; /** Where to land at the end (a check they paid from). */ next?: string | null }
 const load = (): Answers => { try { return { cats: [], where: null, size: null, remind: true, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return { cats: [], where: null, size: null, remind: true }; } };
 /** Only our own pages. */
-export const safeNextPath = (v: string | null | undefined): string | null => (v && /^\/(read\/[A-Za-z0-9]{4,40})?$/.test(v) ? v : null);
+const safeNextPath = (v: string | null | undefined): string | null => (v && /^\/(read\/[A-Za-z0-9]{4,40})?$/.test(v) ? v : null);
 const store = (a: Answers) => { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch { /* private mode */ } };
 const st = (d: number, extra: CSSProperties = {}): { "data-m": "settle"; style: CSSProperties } => ({ "data-m": "settle", style: { ...extra, "--d": `${d}s` } as CSSProperties });
 const names = (cats: readonly CategorySlug[]) => { const n = cats.map(c => categoryInfo(c).name); return n.length <= 2 ? n.join(" and ") : `${n.slice(0, -1).join(", ")} and ${n.at(-1)}`; };

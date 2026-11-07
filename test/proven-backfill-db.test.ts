@@ -9,7 +9,7 @@ import pg from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { BACKFILL_MAX_PAGES, budgetFor, enqueueWallets, INLINE_MAX, nextShare, PROVEN_RECORD_TTL_MS, provenBackfillOnce, resetShare, SHARE_MAX, SHARE_MIN, SHARE_START, walletsToBackfill } from "@/lib/moves/proven-backfill";
+import { BACKFILL_MAX_PAGES, budgetFor, enqueueWallets, nextShare, PROVEN_RECORD_TTL_MS, provenBackfillOnce, resetShare, SHARE_MAX, SHARE_MIN, SHARE_START, walletsToBackfill } from "@/lib/moves/proven-backfill";
 import { recordsFor, saveWalletPnl, walletPnlFor } from "@/lib/moves/store";
 
 const URL0 = process.env.E2E_DATABASE_URL;

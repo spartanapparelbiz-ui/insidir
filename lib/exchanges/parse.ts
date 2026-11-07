@@ -2,7 +2,6 @@
  * "100.00"), arrays arrive either as arrays or as JSON-encoded strings ('["Yes","No"]'), and responses are either
  * bare arrays or wrapped ({data: [...]}, {markets: [...]}). Every reader takes `unknown` and never throws. */
 
-export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type JsonObject = { [key: string]: unknown };
 
 export function isObject(v: unknown): v is JsonObject {

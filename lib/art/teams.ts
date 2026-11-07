@@ -24,10 +24,3 @@ export const CLUBS: Array<{ slug: string; wiki: string; names: string[] }> = [
   { slug: "porto", wiki: "FC_Porto", names: ["fc porto", "porto"] },
 ];
 
-const words = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9à-ÿ'.-]+/g, " ").trim()} `;
-/** The club a name is ("Arsenal", "FC Barcelona"), or null. */
-export function clubOf(name: string): string | null {
-  const w = words(name);
-  for (const c of CLUBS) if (c.names.some(n => w.includes(` ${n} `))) return c.slug;
-  return null;
-}

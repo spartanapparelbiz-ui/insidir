@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { enablePush, pushState, type PushState } from "@/components/app/push";
 
-export async function vapidKey(): Promise<string | null> {
+async function vapidKey(): Promise<string | null> {
   const j = await fetch("/api/push/key", { cache: "no-store" }).then(r => r.json() as Promise<{ publicKey?: string }>).catch(() => null);
   return j?.publicKey ?? null;
 }

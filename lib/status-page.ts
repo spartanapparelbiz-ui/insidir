@@ -50,7 +50,7 @@ const JOBS: Array<[RegExp, string, number]> = [
   [/^smart:splits$/, "Positioning", 5 * MIN],
 ];
 
-export const lightOf = (age: number | null, [amber, red]: [number, number]): Light => (age === null ? "red" : age > red ? "red" : age > amber ? "amber" : "green");
+const lightOf = (age: number | null, [amber, red]: [number, number]): Light => (age === null ? "red" : age > red ? "red" : age > amber ? "amber" : "green");
 
 export function ago(ms: number, now: number): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));

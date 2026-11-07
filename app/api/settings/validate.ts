@@ -12,18 +12,14 @@ import { VENUES } from "@/lib/types";
 import { COPY_SIZES, type CopySize } from "@/lib/copies/size";
 
 /** Categories a user can filter on (the normalised categories in lib/exchanges/categories.ts, minus combos). */
-export const CATEGORIES = ["politics", "sports", "crypto", "economics", "finance", "culture", "weather", "tech", "geopolitics", "mentions", "other"] as const;
-export const CATEGORY_LABEL: Record<(typeof CATEGORIES)[number], string> = {
-  politics: "Politics", sports: "Sports", crypto: "Crypto", economics: "Economics", finance: "Finance", culture: "Culture",
-  weather: "Weather", tech: "Tech", geopolitics: "Geopolitics", mentions: "Mentions", other: "Other",
-};
+const CATEGORIES = ["politics", "sports", "crypto", "economics", "finance", "culture", "weather", "tech", "geopolitics", "mentions", "other"] as const;
 /** Highest ROI filter accepted, percent. */
-export const MAX_ROI_PCT = 100;
+const MAX_ROI_PCT = 100;
 /** At most this many custom alert rules (Pro). */
-export const MAX_MOVE_RULES = 10;
+const MAX_MOVE_RULES = 10;
 
 /** Highest size filter accepted, dollars. */
-export const MAX_SIZE_USD = 10_000_000;
+const MAX_SIZE_USD = 10_000_000;
 
 const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
   "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize",
@@ -41,7 +37,7 @@ export const checkRoiPct = (v: string): string | null => (number(v, 0, MAX_ROI_P
 /** Inline check for a dollar field as the user types: null when fine. */
 export const checkUsd = (v: string): string | null => (number(v, 0, MAX_SIZE_USD) === null ? SIZE_ERROR : null);
 
-export interface SettingsResult {
+interface SettingsResult {
   settings: UserSettings;
   region: Region | null;
   errors: string[];

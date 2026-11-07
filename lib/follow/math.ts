@@ -16,7 +16,7 @@ export function followPrice(seen: number | null | undefined): number | null {
 }
 
 /** What $100 at that price came back as: $100 / price when it won, nothing when it lost. */
-export const payout = (price: number, won: boolean): number => (won ? STAKE / price : 0);
+const payout = (price: number, won: boolean): number => (won ? STAKE / price : 0);
 
 export interface FollowRecord {
   /** Settled, followable positions. */

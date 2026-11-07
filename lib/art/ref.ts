@@ -30,11 +30,3 @@ export interface ArtRef {
   u?: string;
 }
 
-/** The art's full-size width: what it may be shown at without being stretched. */
-export const artWidth = (a: ArtRef): number => a.s?.[0] ?? 0;
-
-/** The file URL for one width and format. */
-export const artUrl = (a: ArtRef, w: number, fmt: "avif" | "webp"): string => `/${a.k}/${w}.${fmt}`;
-
-/** A logo or flag sits in the middle of white: a wide crop shows the white around it, never cuts the logo. */
-export const isCentred = (t: Treatment): boolean => t === "logo" || t === "flag";

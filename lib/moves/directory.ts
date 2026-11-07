@@ -7,11 +7,11 @@ import type { Db } from "@/lib/db";
 import { markets } from "@/lib/db/schema";
 import type { VMarket } from "@/lib/types";
 
-export const DIRECTORY_MAX = 5000;
-export const DIRECTORY_TTL_MS = 6 * 3_600_000;
+const DIRECTORY_MAX = 5000;
+const DIRECTORY_TTL_MS = 6 * 3_600_000;
 
 type Venue = "polymarket" | "kalshi";
-export interface DirectorySource { getMarketsById(ids: readonly string[]): Promise<Map<string, VMarket>> }
+interface DirectorySource { getMarketsById(ids: readonly string[]): Promise<Map<string, VMarket>> }
 
 export class MarketDirectory {
   private mem = new Map<string, { m: VMarket; at: number }>();

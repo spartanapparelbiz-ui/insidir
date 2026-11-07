@@ -24,9 +24,9 @@ const IMPLIED_SOURCES: ReadonlySet<string> = new Set(["official results", "offic
 const HOUR_MS = 3_600_000;
 
 /** "draw": the tie is its own outcome (a "Draw" result or a "Tie" strike), so it pays neither team. */
-export type OutcomeClass = "yes" | "no" | "split" | "void" | "wait" | "price" | "draw";
+type OutcomeClass = "yes" | "no" | "split" | "void" | "wait" | "price" | "draw";
 
-export interface RuleFacts {
+interface RuleFacts {
   sources: string[];
   times: TimeMention[];
   dates: DateMention[];
@@ -94,13 +94,13 @@ export function extractRuleFacts(rules: string, resolutionSource: string | null,
 }
 
 
-export interface SafetyResult {
+interface SafetyResult {
   safety: Safety;
   notes: string[];
   mismatch: RuleMismatch[];
 }
 
-export interface SafetyOptions {
+interface SafetyOptions {
   inverted: boolean;
   llmDifferences?: readonly string[];
   /** Precomputed entities (optional; computed when absent). */

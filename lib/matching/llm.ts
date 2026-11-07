@@ -10,7 +10,7 @@ export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 /** Default model: small and cheap, supports JSON-schema structured output. Override with OPENROUTER_MODEL. */
 export const DEFAULT_MODEL = "openai/gpt-4o-mini";
 /** Default monthly cap in USD (env MATCH_LLM_MONTHLY_USD). */
-export const DEFAULT_MONTHLY_USD = 3;
+const DEFAULT_MONTHLY_USD = 3;
 /** Request timeout. */
 const DEFAULT_TIMEOUT_MS = 20_000;
 /** The answer is a tiny JSON object. */
@@ -40,7 +40,7 @@ export type LlmVerdict =
 /** Asks whether two markets pay out on the same outcome. */
 export type LlmConfirm = (a: VMarket, b: VMarket) => Promise<LlmVerdict>;
 
-export interface OpenRouterOptions {
+interface OpenRouterOptions {
   apiKey: string | null | undefined;
   model?: string;
   usage: LlmUsageStore;
@@ -79,7 +79,7 @@ const cut = (s: string | null | undefined, n: number) => {
 };
 const iso = (t: number | null) => (t === null ? "unknown" : new Date(t).toISOString());
 
-export const SYSTEM_PROMPT = [
+const SYSTEM_PROMPT = [
   "You compare two prediction-market contracts from different exchanges.",
   "Answer one question only: do these two contracts pay out on the same real-world outcome?",
   "Do not predict, estimate probabilities, or comment on which outcome is likely.",

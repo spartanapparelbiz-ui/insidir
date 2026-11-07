@@ -16,9 +16,9 @@ import { TRIAL } from "@/lib/plans";
 import { Paywall } from "./Paywall";
 
 const CLOSED = "insidir_pay_closed", AUTO = "insidir_pay_auto";
-export const QUIET_MS = 15_000, AFTER_AHA_MS = 8_000;
+const QUIET_MS = 15_000, AFTER_AHA_MS = 8_000;
 
-export interface PayContext { count: number; window: "hour" | "day"; biggest: { title: string; amount: number } | null; /** Millionaire bets since midnight ET. */ today?: number }
+interface PayContext { count: number; window: "hour" | "day"; biggest: { title: string; amount: number } | null; /** Millionaire bets since midnight ET. */ today?: number }
 type Open = { kind: "after-read" | "locked" | "exit" | "limit" | "free"; headline: string } | null;
 
 const closedRecently = () => document.cookie.split("; ").some(c => c.startsWith(`${CLOSED}=`));

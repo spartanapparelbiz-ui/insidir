@@ -14,14 +14,14 @@ import { roiText } from "@/lib/follow/math";
 import { dollars } from "@/lib/money";
 import { headlineOf } from "@/lib/moves/headline";
 import { leagueLabel } from "@/lib/moves/leagues";
-import { RECORD_MIN_RESOLVED, walletLabel } from "@/lib/moves/records";
+import { RECORD_MIN_RESOLVED } from "@/lib/moves/records";
 import { moveSource } from "@/lib/moves/source";
 import type { Move } from "@/lib/moves/types";
 import type { Fact, Facts } from "./types";
 
 const ORD = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 /** "40 minutes", "3 hours", "2 days". */
-export function span(min: number): string {
+function span(min: number): string {
   const m = Math.max(1, Math.round(min));
   if (m < 120) return `${m} ${m === 1 ? "minute" : "minutes"}`;
   const h = Math.round(m / 60);
@@ -91,7 +91,7 @@ export function buildBetFacts(r: BetRaw, now: number): Facts {
   return { moveId: m.id, kind: "bet", names: [...new Set([...(who ? [who] : []), venue, ...scope, ...(lg ? [lg] : []), m.outcome, outcome, m.marketTitle, m.eventTitle].filter(Boolean))], facts: f, at: now };
 }
 
-export interface InsiderRaw {
+interface InsiderRaw {
   move: Move;
   /** The insider's earlier open-market purchases at this company. */
   priorBuys: number;

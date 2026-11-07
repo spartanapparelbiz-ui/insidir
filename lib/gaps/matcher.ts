@@ -29,13 +29,13 @@ import { extractEntities } from "@/lib/matching/entities";
 import { MULTI_MAX_OUTCOMES } from "@/lib/scanner";
 import type { MarketPair, VEvent, VMarket } from "@/lib/types";
 
-export const SCORE_BATCH = 300;
-export const PROFILE_CACHE = 4000;
+const SCORE_BATCH = 300;
+const PROFILE_CACHE = 4000;
 /** A key on more markets than this (on the other venue, all days) is not used to look up candidates. */
-export const KEY_MAX_TOTAL = 30 * MAX_POSTING;
+const KEY_MAX_TOTAL = 30 * MAX_POSTING;
 const INSERT_CHUNK = 500;
 
-export interface MatcherClients {
+interface MatcherClients {
   kalshi: Pick<KalshiClient, "listOpenEventInfos" | "marketPages">;
   polymarket: Pick<PolymarketClient, "eventPages">;
   /** Polymarket US (small: listed in one call); omitted or disabled when POLYMARKET_US_ENABLED=0. */
@@ -44,7 +44,7 @@ export interface MatcherClients {
 
 type BVenue = "polymarket" | "polymarket_us";
 
-export interface MatcherDeps {
+interface MatcherDeps {
   db: Db;
   clients: MatcherClients;
   floor: ActivityFloor;
@@ -56,7 +56,7 @@ export interface MatcherDeps {
   log?: (msg: string) => void;
 }
 
-export interface MatcherStats {
+interface MatcherStats {
   runId: number;
   ms: number;
   peakRssMb: number;

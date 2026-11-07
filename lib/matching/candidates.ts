@@ -155,7 +155,7 @@ export function pairKey(a: Pick<VMarket, "venue" | "id">, b: Pick<VMarket, "venu
 
 export type Orientation = "same" | "inverted" | "unknown";
 
-export interface PairScore {
+interface PairScore {
   score: number;
   orientation: Orientation;
   /** Hard conflicts: any one rejects the pair. */
@@ -249,7 +249,7 @@ function labelCovered(s: Entities["yesSubject"], other: Entities): boolean {
 }
 
 /** Which side of B matches YES on A. */
-export function orient(ea: Entities, eb: Entities): { orientation: Orientation; conflict: string | null; reason: string } {
+function orient(ea: Entities, eb: Entities): { orientation: Orientation; conflict: string | null; reason: string } {
   // Subjects (teams, people).
   const sa = ea.yesSubject;
   const sb = eb.yesSubject;
@@ -428,7 +428,7 @@ export interface Candidate {
 }
 
 /** Blocking index over B profiles: key@day and key → positions in `pbs`. */
-export interface CandidateIndex {
+interface CandidateIndex {
   pbs: readonly MarketProfile[];
   bucketed: Map<string, number[]>;
   all: Map<string, number[]>;
@@ -525,7 +525,7 @@ export function findCandidates(as: readonly VMarket[], bs: readonly VMarket[], c
   return candidatesFromProfiles(pas, pbs, cfg);
 }
 
-export function candidatesFromProfiles(pas: MarketProfile[], pbs: MarketProfile[], cfg: MatchConfig): Candidate[] {
+function candidatesFromProfiles(pas: MarketProfile[], pbs: MarketProfile[], cfg: MatchConfig): Candidate[] {
   const rare = rareTokenKeys([...pas, ...pbs]);
   const full = (p: MarketProfile, i: number) => [...p.blockKeys, ...(rare[i] ?? [])];
   const idx = buildCandidateIndex(pbs, pbs.map((p, i) => full(p, pas.length + i)));

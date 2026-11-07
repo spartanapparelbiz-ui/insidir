@@ -14,7 +14,7 @@ import type { FillOptions } from "./book";
 import { lockImplication, type Implication } from "./common";
 
 /** Two rungs count as the same close if within this many ms of each other: one hour. */
-export const LADDER_CLOSE_TOLERANCE_MS = 60 * 60 * 1000;
+const LADDER_CLOSE_TOLERANCE_MS = 60 * 60 * 1000;
 
 const fmt = (v: number): string => v.toLocaleString("en-US", { maximumFractionDigits: 6 });
 

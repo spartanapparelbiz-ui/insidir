@@ -24,7 +24,7 @@ export const OTHER_LEAGUE_HINTS: readonly string[] = [
   "la liga", "serie a", "bundesliga", "ligue 1", "champions league", "ufc", "atp", "wta", "pga", "f1", "nascar",
 ];
 
-export interface TeamRow {
+interface TeamRow {
   abbr: readonly string[];
   city: string;
   name: string;

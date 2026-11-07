@@ -17,12 +17,12 @@ import { inQuietHours } from "@/lib/alerts/quiet";
 import { approvedTwins } from "@/lib/twins/store";
 import { cleanSpec, mismatch, stakeLeft, ticketFor, tooLate, type Move, type RuleSpec } from "./rules";
 
-export const ENGINE_WINDOW_MS = 15 * 60_000;
+const ENGINE_WINDOW_MS = 15 * 60_000;
 const DAY = 86_400_000;
 
 export interface Quote { yesAsk: number | null; noAsk: number | null; yesBid: number | null; noBid: number | null }
 export interface Push { title: string; body: string; url: string }
-export interface EngineDeps {
+interface EngineDeps {
   /** Kalshi's best prices for a market, or null. */
   quote(kalshiId: string): Promise<Quote | null>;
   /** Sends to all of a member's devices. */
@@ -70,7 +70,7 @@ async function freshEvents(db: Db, now: number): Promise<EventRow[]> {
 interface ActiveRule { id: number; userId: string; name: string; spec: RuleSpec; quietStart: string | null; quietEnd: string | null; timeZone: string | null }
 
 /** Active rules of paying members, with each member's quiet hours. */
-export async function activeRules(db: Db): Promise<ActiveRule[]> {
+async function activeRules(db: Db): Promise<ActiveRule[]> {
   const rules = await db.select().from(autopilotRules).where(eq(autopilotRules.active, true));
   if (!rules.length) return [];
   const us = new Map((await db.select().from(users).where(inArray(users.id, [...new Set(rules.map(r => r.userId))]))).map(u => [u.id, u]));
@@ -91,7 +91,7 @@ async function spent(db: Db, ruleId: number, now: number): Promise<{ day: number
   return { day: Number(x?.day ?? 0), week: Number(x?.week ?? 0) };
 }
 
-export interface EngineResult { sent: number; quiet: number; skipped: number; capped: number; exits: number }
+interface EngineResult { sent: number; quiet: number; skipped: number; capped: number; exits: number }
 
 export async function runAutopilot(db: Db, now: number, deps: EngineDeps): Promise<EngineResult> {
   const out: EngineResult = { sent: 0, quiet: 0, skipped: 0, capped: 0, exits: 0 };

@@ -13,12 +13,12 @@ import { majorRace } from "@/lib/brand/pulse";
 import { humanLine } from "@/lib/markets/title";
 
 export interface Hit { kind: "market" | "race" | "wallet"; title: string; sub: string | null; href: string }
-export interface SearchResult { go: string | null; hits: Hit[]; note?: string }
+interface SearchResult { go: string | null; hits: Hit[]; note?: string }
 
-export type Pasted = { venue: "polymarket"; slug: string; market: string | null } | { venue: "kalshi"; ticker: string };
+type Pasted = { venue: "polymarket"; slug: string; market: string | null } | { venue: "kalshi"; ticker: string };
 
 /** A Polymarket or Kalshi link in the text, or null. */
-export function parseLink(text: string): Pasted | null {
+function parseLink(text: string): Pasted | null {
   const pm = /polymarket\.com\/(?:[a-z]{2}\/)?(?:event|market)\/([a-z0-9-]+)(?:\/([a-z0-9-]+))?/i.exec(text);
   if (pm) return { venue: "polymarket", slug: pm[1]!.toLowerCase(), market: pm[2]?.toLowerCase() ?? null };
   const ks = /kalshi\.com\/markets\/(?:[^/\s?#]+\/)*([a-z0-9][a-z0-9.\-]+)/i.exec(text);

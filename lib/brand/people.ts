@@ -5,7 +5,7 @@
  * to: the same name AND the same state's race. Otherwise initials. Never drawn, traced or generated. Pure. */
 import people from "./people.json";
 
-export interface Person {
+interface Person {
   name: string; party: "D" | "R" | "I" | null; office: string; race: string; state: string; bioguide: string | null;
   file: string | null; kind: "congress" | "polymarket" | "commons" | null; source: string | null; license: string | null; author: string | null; note?: string;
 }

@@ -10,21 +10,19 @@ import { DEFAULT_MATCH_CONFIG, findCandidates, pairKey, type Candidate, type Mat
 import type { LlmConfirm, LlmVerdict } from "./llm";
 import { assessSafety } from "./safety";
 
-export type { MatchCache, MatchDecision } from "./cache";
+export type { MatchCache } from "./cache";
 export { createLayeredCache, createMemoryCache, createMemoryUsageStore };
-export type { LlmConfirm, LlmUsageStore, LlmVerdict } from "./llm";
-export { createOpenRouterConfirm, llmEnv, DEFAULT_MODEL } from "./llm";
-export { DEFAULT_MATCH_CONFIG, matchConfigFromEnv, findCandidates, pairKey, type MatchConfig, type Candidate } from "./candidates";
-export { IncrementalCandidates, matchFingerprint, type IncrementalStats } from "./incremental";
-export { assessSafety, extractRuleFacts } from "./safety";
-export { extractEntities } from "./entities";
+export type { LlmConfirm } from "./llm";
+export { createOpenRouterConfirm, llmEnv } from "./llm";
+export { DEFAULT_MATCH_CONFIG, matchConfigFromEnv, pairKey, type MatchConfig } from "./candidates";
+export { matchFingerprint } from "./incremental";
 
 /** Bump when deterministic matching changes in a way that should re-decide cached deterministic decisions. */
-export const MATCHER_VERSION = 1;
+const MATCHER_VERSION = 1;
 /** The LLM must be at least this confident that the contracts pay on the same outcome. */
-export const LLM_ACCEPT_MIN_CONFIDENCE = 0.8;
+const LLM_ACCEPT_MIN_CONFIDENCE = 0.8;
 /** After an LLM failure (timeout, HTTP error, malformed answer), ask again no sooner than this. */
-export const LLM_RETRY_HOURS = 24;
+const LLM_RETRY_HOURS = 24;
 const HOUR_MS = 3_600_000;
 
 /** Admin override for one pair id (`kalshi:X|polymarket:Y`). */
@@ -37,7 +35,7 @@ export interface Override {
   notes?: string[];
 }
 
-export interface MatchDeps {
+interface MatchDeps {
   cache: MatchCache;
   llm?: LlmConfirm;
   overrides: Map<string, Override>;

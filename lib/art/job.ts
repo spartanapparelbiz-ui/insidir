@@ -36,10 +36,10 @@ import {
 import { CLUBS } from "./teams";
 
 /** Bump to remake every artwork (a change to a treatment). */
-export const ART_VERSION = 1;
+const ART_VERSION = 1;
 const RETRY_INITIALS_MS = 7 * 86_400_000;
 
-export const LEAGUES: Record<string, { label: string; wiki: string; icon?: string }> = {
+const LEAGUES: Record<string, { label: string; wiki: string; icon?: string }> = {
   nba: { label: "NBA", wiki: "National_Basketball_Association", icon: "nba" }, nfl: { label: "NFL", wiki: "National_Football_League" },
   mlb: { label: "MLB", wiki: "Major_League_Baseball", icon: "mlb" }, nhl: { label: "NHL", wiki: "National_Hockey_League", icon: "nhl" },
   epl: { label: "Premier League", wiki: "Premier_League", icon: "premierleague" }, laliga: { label: "La Liga", wiki: "La_Liga" },
@@ -51,7 +51,7 @@ export const LEAGUES: Record<string, { label: string; wiki: string; icon?: strin
 };
 
 /* ---------- what there is ---------- */
-export type Entity =
+type Entity =
   | { kind: "tracker"; id: string; label: string; slug: string }
   | { kind: "team"; id: string; label: string; league: "nba" | "nfl" | "mlb" | "nhl"; abbr: string }
   | { kind: "team"; id: string; label: string; league: "soccer"; club: string }
@@ -64,7 +64,7 @@ export type Entity =
 
 const rows = async <T>(db: Db, q: ReturnType<typeof sql>): Promise<T[]> => ((await db.execute(q)) as unknown as { rows: T[] }).rows;
 
-export async function entities(db: Db): Promise<Entity[]> {
+async function entities(db: Db): Promise<Entity[]> {
   const out: Entity[] = [];
   for (const t of TRACKERS) out.push({ kind: "tracker", id: trackerArtId(t.slug), label: t.name, slug: t.slug });
   for (const lg of ["nba", "nfl", "mlb", "nhl"] as const) for (const abbr of (manifest.teams as Record<string, string[]>)[lg] ?? [])
@@ -272,7 +272,7 @@ async function make(e: Entity, facts: Facts, has: (id: string) => boolean): Prom
 }
 
 /* ---------- the run ---------- */
-export interface ArtRunResult { made: number; failed: number; skipped: number; byTreatment: Record<string, number>; errors: string[] }
+interface ArtRunResult { made: number; failed: number; skipped: number; byTreatment: Record<string, number>; errors: string[] }
 
 export async function artOnce(db: Db, opts: { limit?: number; only?: ArtKind[]; force?: boolean; log?: (s: string) => void } = {}): Promise<ArtRunResult> {
   const log = opts.log ?? ((s: string) => console.log(new Date().toISOString(), s));

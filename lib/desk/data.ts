@@ -8,18 +8,14 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { isCategory, type CategorySlug } from "@/lib/brand/categories";
-import { electionBoard, type ElectionBoard } from "@/lib/brand/pulse";
-import { midnightET, recentBets, type BoardBet } from "@/lib/millionaires/queries";
+import { midnightET } from "@/lib/millionaires/queries";
 import { shortWallet } from "@/lib/millionaires/watchlist";
 
 const HOUR = 3_600_000;
 
-export interface Kpi { key: "money" | "bets" | "wallets" | "biggest"; value: number; series: number[]; label: string; detail?: string }
+interface Kpi { key: "money" | "bets" | "wallets" | "biggest"; value: number; series: number[]; label: string; detail?: string }
 export interface Leader { wallet: string; short: string; pnl: number | null; todayDollars: number; todayBets: number; biggest: { title: string; dollars: number; category: CategorySlug } | null; followed: boolean }
 export interface YourDesk { pushOn: boolean; devices: number; following: number; copies: { open: number; settled: number; centsSince: number | null } }
-export interface Desk { now: number; kpis: Kpi[]; flow: BoardBet[]; tape: BoardBet[]; leaders: Leader[]; election: ElectionBoard | null; desk: YourDesk; updatedAt: number | null;
-  /** The worker's last good poll of Polymarket (worker_heartbeats moves:polymarket): Live means within 5 minutes. */
-  polledAt: number | null }
 
 /** Today's KPIs with hourly series (hours since midnight ET, the current one last). A KPI with no data is left out. */
 export async function kpis(db: Db, now: number): Promise<Kpi[]> {
@@ -72,16 +68,3 @@ export async function yourDesk(db: Db, userId: string, settings: { alertPush?: b
     copies: { open: Number(c.open), settled: Number(c.settled), centsSince: c.moved === null ? null : Math.round(Number(c.moved) * 100) } };
 }
 
-export async function deskData(db: Db, userId: string, settings: { alertPush?: boolean }, now: number, election: boolean): Promise<Desk> {
-  const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("desk", e instanceof Error ? e.message : e); return d; });
-  const [k, flow, ls, el, desk, last, polled] = await Promise.all([
-    safe(kpis(db, now), [] as Kpi[]),
-    safe(recentBets(db, { now, limit: 40, member: true, tier: "millionaire" }), [] as BoardBet[]),
-    safe(leaders(db, now, userId), [] as Leader[]),
-    election ? safe(electionBoard(db, now, true), null) : Promise.resolve(null),
-    safe(yourDesk(db, userId, settings), { pushOn: false, devices: 0, following: 0, copies: { open: 0, settled: 0, centsSince: null } }),
-    safe(db.execute(sql`select max(last_at) as at from terminal.millionaire_bets`).then(r => (r.rows[0] as { at: string | null }).at), null),
-    safe(db.execute(sql`select last_ok_at as at from terminal.worker_heartbeats where job = 'moves:polymarket'`).then(r => (r.rows[0] as { at: string | null } | undefined)?.at ?? null), null),
-  ]);
-  return { now, kpis: k, flow, tape: flow.slice(0, 20), leaders: ls, election: el, desk, updatedAt: last ? new Date(last).getTime() : null, polledAt: polled ? new Date(polled).getTime() : null };
-}

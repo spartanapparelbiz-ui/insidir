@@ -11,7 +11,7 @@ import type { VMarket } from "@/lib/types";
 import { findTwins, type TwinResult } from "./check";
 import { autoCheck, structuredTwins } from "./structured";
 
-export interface Twin { polymarketId: string; kalshiId: string; kalshiUrl: string; kalshiTitle: string; polymarketTitle: string; kind: string }
+interface Twin { polymarketId: string; kalshiId: string; kalshiUrl: string; kalshiTitle: string; polymarketTitle: string; kind: string }
 
 /** Rebuilds twins from the stored active markets. Returns counts by verdict. Decisions survive unless the checks
  *  change, in which case the twin goes back to pending. */

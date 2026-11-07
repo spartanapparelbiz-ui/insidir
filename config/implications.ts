@@ -31,7 +31,7 @@ const NBA_TEAMS: ReadonlyArray<[string, string, "Eastern" | "Western"]> = [
 ];
 
 /** Team (nickname or "city nickname", lower case) → conference. City alone is left out (Los Angeles is two teams). */
-export const NBA_CONFERENCE: Record<string, string> = Object.fromEntries(
+const NBA_CONFERENCE: Record<string, string> = Object.fromEntries(
   NBA_TEAMS.flatMap(([city, nick, conf]) => [[nick.toLowerCase(), conf], [`${city} ${nick}`.toLowerCase(), conf]]),
 );
 NBA_CONFERENCE["sixers"] = "Eastern";
@@ -39,7 +39,7 @@ NBA_CONFERENCE["philadelphia sixers"] = "Eastern";
 NBA_CONFERENCE["blazers"] = "Western";
 
 /** Candidate (lower case) → party nomination word. Extend as candidates declare; remove when out of date. */
-export const CANDIDATE_PARTY: Record<string, string> = {
+const CANDIDATE_PARTY: Record<string, string> = {
   "jd vance": "Republican",
   "j.d. vance": "Republican",
   "marco rubio": "Republican",

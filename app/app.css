@@ -1,8 +1,7 @@
 /* The signed-in app pages (Terminal, deal, settings, P&L, whales, admin). Tokens from globals.css only:
  * Monochrome: Ink background, Surface rows and cards, Paper text, Steel secondary, Dim for stale or closed. The only
  * colours are the safety dots (and the warning / error dots, which use the same three). Type scale 14/17/22/32/48.
- * Mono for numbers. Mobile first; tap targets 44px+.
- * The Terminal table itself is in components/app/terminal.css. */
+ * Mono for numbers. Mobile first; tap targets 44px+. */
 .app { padding-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
 /* the Terminal used to run wider; every page now shares the 1200px content width */
 .wrap--wide { max-width: calc(var(--max) + 32px); }

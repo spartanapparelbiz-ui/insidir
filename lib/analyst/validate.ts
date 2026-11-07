@@ -31,7 +31,7 @@ const STARTERS = new Set("their the this that it its a an since price size of on
 /** Capitalised words that are never names to check. */
 const ALWAYS = new Set(["ET", "Insidir", "Form", "SEC", "I"]);
 
-export interface Verdict { ok: boolean; problems: string[] }
+interface Verdict { ok: boolean; problems: string[] }
 
 export function validateNote(note: string, facts: Facts): Verdict {
   const problems: string[] = [];

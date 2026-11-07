@@ -35,7 +35,7 @@ export function readBoardPnl(raw: unknown): Array<{ wallet: string; pnl: number 
   return out;
 }
 
-export interface BoardSource { getLeaderboardPage(o: { timePeriod: "ALL"; category?: string; limit?: number; cursor?: string | null; priority?: "hot" | "normal" }): Promise<unknown> }
+interface BoardSource { getLeaderboardPage(o: { timePeriod: "ALL"; category?: string; limit?: number; cursor?: string | null; priority?: "hot" | "normal" }): Promise<unknown> }
 
 /** The top `size` wallets by all-time profit, each once, with a tier (wallets under PRO_MIN dropped). */
 export async function readTop(poly: BoardSource, size = WATCHLIST_SIZE): Promise<Array<{ wallet: string; pnl: number; tier: Tier }>> {

@@ -12,13 +12,13 @@ import type { FeeModel, Level } from "../types";
 import { marginalTakerFee, takerFee } from "../fees";
 
 /** Size below this counts as an exhausted level (Polymarket sizes are decimals). */
-export const SIZE_EPSILON = 1e-9;
+const SIZE_EPSILON = 1e-9;
 /** Profit at or below this (dollars) counts as no profit. */
-export const PROFIT_EPSILON = 1e-9;
+const PROFIT_EPSILON = 1e-9;
 /** How many single-set decrements to try, besides level boundaries, when trimming for rounding. */
-export const TRIM_STEPS = 5;
+const TRIM_STEPS = 5;
 
-export interface BookLeg {
+interface BookLeg {
   /** Asks for the side being bought. Any order; invalid levels are ignored. */
   asks: Level[];
   fee: FeeModel;

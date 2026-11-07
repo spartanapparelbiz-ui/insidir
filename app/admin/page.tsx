@@ -7,7 +7,7 @@ import { SafetyLight } from "@/components/SafetyLight";
 import { BrandFoot } from "@/components/brand/Nav";
 import { ADMIN_COOKIE, adminConfigured, verifyAdminCookie } from "@/lib/admin";
 import { TRIAL } from "@/lib/plans";
-import { cancelReasonCounts, duration, postFunnel, retention, type PostRow, type Retention } from "@/lib/admin-stats";
+import { cancelReasonCounts, postFunnel, retention, type PostRow, type Retention } from "@/lib/admin-stats";
 import { abStats, freeAccessAccounts, FUNNEL_LABEL, funnelStats, sinceDays, utmStats, type AbRow, type FunnelRow } from "@/lib/analytics";
 import { getDb, hasDatabase } from "@/lib/db";
 import { accuracyOverview } from "@/lib/accuracy/store";
@@ -252,7 +252,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </ul>
         ) : <p className="muted small">No numbers yet.</p>}
       </section>
-
 
       <section id="cancels" className="sec2" data-testid="admin-cancels">
         <h2 className="sec2__h">Cancel reasons, last 90 days</h2>

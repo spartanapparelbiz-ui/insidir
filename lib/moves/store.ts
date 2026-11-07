@@ -2,7 +2,7 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { liveTabs } from "@/lib/features";
-import { follows, markets, millionaireBets, moves, traderRecords, waitlist, walletPnl, type FollowKind } from "@/lib/db/schema";
+import { follows, millionaireBets, moves, traderRecords, waitlist, walletPnl, type FollowKind } from "@/lib/db/schema";
 import { settleBets } from "@/lib/millionaires/bets";
 import type { FillPart, League, Move, Tab, TraderRecord } from "./types";
 import { fromParts, mergeParts } from "./detect";
@@ -163,30 +163,6 @@ export async function recordsFor(db: Db, wallets: readonly string[]): Promise<Ma
   return new Map(rs.map(r => [r.wallet, { wallet: r.wallet, name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, biggestBet: r.biggestBet, avgPrice: r.avgPrice, proven: r.proven, updatedAt: r.updatedAt.getTime() }]));
 }
 
-/** Top traders by all-time profit (20+ resolved markets, profit > 0). */
-export async function topTraders(db: Db, limit: number): Promise<TraderRecord[]> {
-  const rs = await db.select().from(traderRecords).where(and(gte(traderRecords.resolved, 20), sql`${traderRecords.profit} > 0`)).orderBy(desc(traderRecords.profit)).limit(limit);
-  return rs.map(r => ({ wallet: r.wallet, name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, updatedAt: r.updatedAt.getTime() }));
-}
-
-/** Top traders (as topTraders) who have made moves in what a member picked: their tabs, leagues and market
- *  categories. Topped up from the overall list when fewer qualify. */
-export async function topTradersFor(db: Db, p: { tabs: string[]; leagues: string[]; categories: string[] }, limit: number): Promise<TraderRecord[]> {
-  const tabs = p.tabs.filter(t => liveTabs().includes(t as Tab));
-  const pickIn = sql.join([
-    p.leagues.length ? sql`(m.tab = 'sports' and m.league in (${sql.join(p.leagues.map(l => sql`${l}`), sql`, `)}))` : tabs.includes("sports") ? sql`m.tab = 'sports'` : null,
-    p.categories.length ? sql`(m.tab = 'markets' and m.category in (${sql.join(p.categories.map(c => sql`${c}`), sql`, `)}))` : tabs.includes("markets") ? sql`m.tab = 'markets'` : null,
-  ].filter((x): x is ReturnType<typeof sql> => x !== null), sql` or `);
-  const picked = tabs.some(t => t === "sports" || t === "markets")
-    ? (await db.select().from(traderRecords).where(and(gte(traderRecords.resolved, 20), sql`${traderRecords.profit} > 0`,
-        sql`exists (select 1 from terminal.moves m where m.wallet = ${traderRecords.wallet} and m.hidden_at is null and (${pickIn}))`))
-        .orderBy(desc(traderRecords.profit)).limit(limit))
-    : [];
-  const out = picked.map(r => ({ wallet: r.wallet, name: r.name, resolved: r.resolved, won: r.won, lost: r.lost, profit: r.profit, biggestWin: r.biggestWin, updatedAt: r.updatedAt.getTime() }));
-  if (out.length < limit) for (const t of await topTraders(db, limit * 2)) if (out.length < limit && !out.some(o => o.wallet === t.wallet)) out.push(t);
-  return out;
-}
-
 export interface MoveQuery {
   tab?: Tab | null; min?: number; league?: League | null; wallet?: string | null; marketId?: string | null;
   /** Only moves at or before this time (a free viewer's clock), ms. */
@@ -252,13 +228,6 @@ export async function kalshiMatches(db: Db, polymarketIds: readonly string[]): P
   return new Map((r.rows as Array<{ poly: string; url: string }>).map(x => [x.poly, x.url]));
 }
 
-/** "Big money in the last 24h: $1.2M on Yes, $300k on No", per outcome side. */
-export async function moneyBySide(db: Db, marketId: string, since: Date): Promise<Array<{ outcome: string; side: "yes" | "no"; total: number }>> {
-  const r = await db.select({ outcome: sql<string>`max(${moves.outcome})`, side: moves.outcomeSide, total: sql<number>`sum(${moves.amount})::float` })
-    .from(moves).where(and(eq(moves.marketId, marketId), gte(moves.at, since))).groupBy(moves.outcomeSide);
-  return r;
-}
-
 export async function addWaitlist(db: Db, email: string, feature: string): Promise<void> {
   await db.insert(waitlist).values({ email: email.toLowerCase(), feature }).onConflictDoNothing();
 }
@@ -273,8 +242,3 @@ export async function unfollow(db: Db, userId: string, kind: FollowKind, target:
   await db.delete(follows).where(and(eq(follows.userId, userId), eq(follows.kind, kind), eq(follows.target, target)));
 }
 
-/** The stored market for a move (for the market page: title, live price, rules link). */
-export async function storedMarket(db: Db, venue: "polymarket" | "kalshi", id: string) {
-  const r = await db.select({ data: markets.data }).from(markets).where(and(eq(markets.venue, venue), eq(markets.id, id))).limit(1);
-  return r[0]?.data ?? null;
-}

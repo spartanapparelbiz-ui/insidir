@@ -2,14 +2,14 @@
  * people, 10 companies, 12 teams, 6 leagues and countries) as rounded squares of 88px, and the list of every entity
  * still on initials or a fallback, with why. Both go to the bucket (art/qa/) and, so they can be read without
  * bucket access, to the log as base64 lines "QA-FILE <name> <part>/<parts> <data>". Server only. */
-import sharp, { type Sharp, type OverlayOptions } from "sharp";
+import sharp, { type OverlayOptions } from "sharp";
 import type { Db } from "@/lib/db";
 import { entityArt } from "@/lib/db/schema";
 import { getObject, bucket, putObject } from "./s3";
 
 const TILE = 176, GAP = 32, COLS = 8;
 
-export function dumpToLog(name: string, buf: Buffer): void {
+function dumpToLog(name: string, buf: Buffer): void {
   const b64 = buf.toString("base64"), size = 3000, parts = Math.ceil(b64.length / size);
   for (let i = 0; i < parts; i++) console.log(`QA-FILE ${name} ${i + 1}/${parts} ${b64.slice(i * size, (i + 1) * size)}`);
 }

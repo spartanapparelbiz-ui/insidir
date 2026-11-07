@@ -55,7 +55,7 @@ export async function settleBets(db: Db, marketId: string, result: "yes" | "no" 
 
 /** Members' logged copies (one-tap copy) settle with the market: a win pays amount ÷ price at the member's own price,
  *  a loss is the whole amount, a void returns it. */
-export async function settleCopies(db: Db, marketId: string, result: "yes" | "no" | "void", at: Date): Promise<void> {
+async function settleCopies(db: Db, marketId: string, result: "yes" | "no" | "void", at: Date): Promise<void> {
   const w = and(eq(betCopies.marketId, marketId), isNull(betCopies.result));
   if (result === "void") { await db.update(betCopies).set({ result: "void", pnl: 0, settledAt: at }).where(w); return; }
   await db.update(betCopies).set({

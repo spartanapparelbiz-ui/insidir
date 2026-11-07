@@ -20,14 +20,14 @@ export interface ShareCardData {
 }
 
 export type ShareFormat = "og" | "story";
-export const SHARE_SIZE: Record<ShareFormat, { width: number; height: number }> = { og: { width: 1200, height: 630 }, story: { width: 1080, height: 1920 } };
+const SHARE_SIZE: Record<ShareFormat, { width: number; height: number }> = { og: { width: 1200, height: 630 }, story: { width: 1080, height: 1920 } };
 
 /** The palette (app/tokens.css): black, white, greys; green only for money and wins, the loss colour for losses. */
 export const OG = { ink: "#0B0B12", paper: "#FFFFFF", grey1: "#F2F2F4", grey2: "#E6E6EA", grey3: "#5B6070", money: "#087A55", loss: "#C2410C" } as const;
 const C = { ink: OG.ink, surface: "#1B1B24", line: OG.grey3, paper: OG.paper, steel: OG.grey2, dim: OG.grey3, violet: OG.paper };
 const cents = (c: number) => (Number.isInteger(Math.round(c * 10) / 10) ? Math.round(c) : (Math.round(c * 10) / 10).toFixed(1)) + "¢";
 const usd = (v: number) => `${v < 0 ? "−" : ""}$${Math.abs(v).toFixed(2)}`;
-export function lastedText(ms: number): string {
+function lastedText(ms: number): string {
   const m = Math.max(1, Math.round(ms / 60_000));
   if (m < 60) return `${m} min`;
   const h = Math.floor(m / 60);

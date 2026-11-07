@@ -93,10 +93,10 @@ export interface Entities {
   titleTokens: string[];
 }
 
-export type MatchInput = Pick<VMarket, "title" | "eventTitle" | "yesLabel" | "noLabel" | "category" | "seriesId" | "closeTime" | "strike" | "rules">;
+type MatchInput = Pick<VMarket, "title" | "eventTitle" | "yesLabel" | "noLabel" | "category" | "seriesId" | "closeTime" | "strike" | "rules">;
 
 const GENERIC_LABEL_RE = /^\s*(yes|no|y|n|true|false)?\s*$/i;
-export function isGenericLabel(s: string | null | undefined): boolean {
+function isGenericLabel(s: string | null | undefined): boolean {
   return s === null || s === undefined || GENERIC_LABEL_RE.test(s);
 }
 
@@ -571,7 +571,7 @@ export function compatibleDates(a: DateMention, b: DateMention): boolean {
 }
 
 /** Entity keys with weights, for blocking and weighted overlap. */
-export const ENTITY_WEIGHTS = { team: 3, person: 3, asset: 3, org: 2, place: 2, year: 1, date: 2 } as const;
+const ENTITY_WEIGHTS = { team: 3, person: 3, asset: 3, org: 2, place: 2, year: 1, date: 2 } as const;
 
 export function entityKeys(e: Entities): Map<string, number> {
   const out = new Map<string, number>();
@@ -588,7 +588,7 @@ export function entityKeys(e: Entities): Map<string, number> {
 const VP_RE = /\b(?:vice[- ]president(?:ial)?|veep|vp)\b/gi;
 /** "Vice president" is its own office: a market about the VP never pairs with one about the president. The
  *  "president" condition stays only when the text still names the presidency once VP phrases are removed. */
-export function officeWords(conditions: string[], text: string): string[] {
+function officeWords(conditions: string[], text: string): string[] {
   if (!VP_RE.test(text)) return conditions;
   VP_RE.lastIndex = 0;
   const rest = text.replace(VP_RE, " ");
@@ -601,7 +601,7 @@ const ANY_TIME_RULES = /\bat any (?:time|point)\b|\bany (?:one[- ]minute|1[- ]mi
 const AT_TIME_TITLE = /\b(?:at (?:the )?close|closing price|close (?:above|below|at|over|under))\b/i;
 const AT_TIME_RULES = /\b(?:price|value|level|rate) (?:at|as of) \d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|\bclosing price\b/i;
 /** "Reaches $100k by Friday" (any time) vs "above $100k at 5pm ET Friday" (at a set time): different outcomes. */
-export function measureOf(m: Pick<MatchInput, "title" | "yesLabel" | "rules">, titleHasTime: boolean): Entities["measure"] {
+function measureOf(m: Pick<MatchInput, "title" | "yesLabel" | "rules">, titleHasTime: boolean): Entities["measure"] {
   const head = `${m.title} ${m.yesLabel}`;
   const rules = (m.rules ?? "").slice(0, 1500);
   if (ANY_TIME_TITLE.test(head) || ANY_TIME_RULES.test(rules)) return "any_time";

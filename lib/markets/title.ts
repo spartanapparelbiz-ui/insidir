@@ -7,7 +7,7 @@
  * ("today", "tomorrow", "yesterday", "Tue Nov 3"). Club names lose FC/CF/SC and take their common names. Pure; safe on
  * the client. */
 
-export interface HumanTitle { title: string; when: string | null }
+interface HumanTitle { title: string; when: string | null }
 
 /** Common names for clubs whose exchange names are long or formal. */
 const CLUBS: ReadonlyArray<readonly [RegExp, string]> = [

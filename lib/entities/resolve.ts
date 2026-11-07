@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { marketSlug, parseMarketSlug } from "./slug";
 
-export interface MarketRef { id: string; title: string }
+interface MarketRef { id: string; title: string }
 
 /** The market a slug names (millionaire bets first, then the markets the matcher holds), or null. Several markets on one
  *  6-hex prefix: the one whose title gives the same words. */

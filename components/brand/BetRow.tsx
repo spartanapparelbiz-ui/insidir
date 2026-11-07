@@ -8,7 +8,7 @@ import { dollars } from "@/lib/money";
 import { PriceMove, Side, signedDollars, TierBadge } from "./Bits";
 import { TeamPair } from "@/components/system/Team";
 
-export function agoShort(ms: number, now: number): string {
+function agoShort(ms: number, now: number): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));
   if (s < 90) return "just now";
   if (s < 3600) return `${Math.round(s / 60)}m ago`;
@@ -17,7 +17,7 @@ export function agoShort(ms: number, now: number): string {
 }
 
 /** A Millionaire's bet this size or more is shown in gold. */
-export const GOLD_MIN = 50_000;
+const GOLD_MIN = 50_000;
 
 export function BetRow({ bet, now, href, className = "", settle, copyHref }: { bet: BoardBet | GroupedBet; now: number; href?: string; className?: string; settle?: number;
   /** Members: the copy ticket for this bet. */

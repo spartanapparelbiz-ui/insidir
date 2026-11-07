@@ -8,7 +8,7 @@ import { arbInputUsable, findCrossArbs, type ArbInput } from "./arb";
 import { asksFor, bestAsk, daysUntil, lastClose, stableId, venueSideLabel, worseSafety, yesMid } from "./common";
 
 /** Smallest mid-price gap, in cents, worth showing. */
-export const SECOND_OPINION_MIN_GAP_CENTS = 5;
+const SECOND_OPINION_MIN_GAP_CENTS = 5;
 export const SECOND_OPINION_NOTE = "Not risk-free: this is a price gap on one side only.";
 
 export function findSecondOpinions(inputs: readonly ArbInput[], now: number, minGapCents: number = SECOND_OPINION_MIN_GAP_CENTS): Opportunity[] {

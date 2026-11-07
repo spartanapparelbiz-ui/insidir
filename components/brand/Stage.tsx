@@ -10,11 +10,11 @@ import { PHOTOS } from "@/lib/brand/images";
 import { Globe } from "./Globe";
 import { BrandPicture } from "./BrandPicture";
 
-export type StageBg = { kind: "globe"; dark?: number; faint?: boolean; poster?: boolean } | { kind: "photo"; photo: Photo; dark?: number; priority?: boolean } | { kind: "none" };
+type StageBg = { kind: "globe"; dark?: number; faint?: boolean; poster?: boolean } | { kind: "photo"; photo: Photo; dark?: number; priority?: boolean } | { kind: "none" };
 
 const GLOBE = "/brand/globe.mp4", POSTER = "/brand/globe-poster.webp";
 const has = (p: string) => { try { return existsSync(join(process.cwd(), "public", p)); } catch { return false; } };
-export const globeReady = (): boolean => has(GLOBE);
+const globeReady = (): boolean => has(GLOBE);
 
 function Bg({ bg }: { bg: StageBg }) {
   if (bg.kind === "none") return null;

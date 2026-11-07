@@ -2,13 +2,11 @@
 /* One toast at a time, in plain words: "Saved", "Alerts on", "Copied". Auto-hides after 3 seconds; announced to
  * screen readers (role="status"); errors stay until dismissed and use role="alert". Mounted once in app/layout.tsx;
  * any client component calls useToast(). */
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 type Kind = "ok" | "error";
 interface Toast { id: number; text: string; kind: Kind }
 const Ctx = createContext<(text: string, kind?: Kind) => void>(() => undefined);
-
-export const useToast = () => useContext(Ctx);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<Toast | null>(null);

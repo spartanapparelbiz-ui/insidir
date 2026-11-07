@@ -3,7 +3,7 @@
  * picks, forecasts and anything about who is behind an account, and says "Not in Insidir's data." for the rest. Pure. */
 import { TRACKERS } from "@/lib/trackers";
 
-export type Plan = { tool: string; args: Record<string, unknown> } | { refuse: "advice" | "identity" | "not_covered" };
+type Plan = { tool: string; args: Record<string, unknown> } | { refuse: "advice" | "identity" | "not_covered" };
 
 export const NOT_COVERED = "Not in Insidir's data.";
 export const NO_ADVICE = "Insidir shows what happened in the data. It doesn't give advice, picks or forecasts.";
@@ -84,4 +84,3 @@ export function planFor(question: string, ctx: { wallet?: string | null } = {}):
   return { refuse: "not_covered" };
 }
 
-export { suggestionsFor } from "./suggest";

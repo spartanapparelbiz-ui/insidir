@@ -10,7 +10,7 @@ import { trustFacts, type TrustFacts } from "@/lib/trust";
 
 const DAY = 86_400_000;
 
-export interface Proof {
+interface Proof {
   volume30d: number;
   positionsWeek: number;
   verifiedAccounts: number;

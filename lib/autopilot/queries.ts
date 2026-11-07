@@ -9,7 +9,7 @@ import type { Backtest } from "./backtest";
 import { specKey } from "./backtest";
 import { cleanSpec, type RuleSpec } from "./rules";
 
-export type MatchRow = typeof autopilotMatches.$inferSelect;
+type MatchRow = typeof autopilotMatches.$inferSelect;
 export interface Paper { matches: number; open: number; won: number; lost: number; void: number; exited: number; staked: number; net: number }
 
 /** One paper position's P&L, or null while open. Pure. */
@@ -38,7 +38,7 @@ export function paper(rows: readonly Pick<MatchRow, "status" | "stake" | "paperE
   return p;
 }
 
-export interface RuleView { id: number; name: string; starter: string | null; active: boolean; spec: RuleSpec; paper: Paper; backtest: Backtest | null }
+interface RuleView { id: number; name: string; starter: string | null; active: boolean; spec: RuleSpec; paper: Paper; backtest: Backtest | null }
 
 export async function rulesFor(db: Db, userId: string): Promise<RuleView[]> {
   const rules = await db.select().from(autopilotRules).where(eq(autopilotRules.userId, userId)).orderBy(desc(autopilotRules.createdAt));

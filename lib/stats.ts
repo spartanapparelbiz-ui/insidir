@@ -75,7 +75,7 @@ export function etSlot(ms: number): { day: number; hour: number } {
 
 /* ---------- series ---------- */
 
-export interface Point { t: number; v: number }
+interface Point { t: number; v: number }
 
 /** Cumulative net over settled moves, by settle time, from `since` (the window's first point is 0 at `since`). */
 export function pnlSeries(settled: readonly StatMove[], since: number | null = null): Point[] {
@@ -85,12 +85,6 @@ export function pnlSeries(settled: readonly StatMove[], since: number | null = n
   for (const m of l) { v += m.pnl ?? 0; out.push({ t: m.settledAt!, v }); }
   return out;
 }
-
-/** Chart windows: 1W 1M 3M 1Y All. */
-export const CHART_WINDOWS = [
-  { key: "1w", label: "1W", days: 7 }, { key: "1m", label: "1M", days: 30 }, { key: "3m", label: "3M", days: 91 },
-  { key: "1y", label: "1Y", days: 365 }, { key: "all", label: "All", days: null },
-] as const;
 
 /* ---------- single facts ---------- */
 

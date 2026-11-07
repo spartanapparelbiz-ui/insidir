@@ -7,7 +7,7 @@
  *   refreshPlan        the access check (and their memberships, for the dates the account page shows), stored.
  *   effectivePlan      what a stored account may use right now. */
 import { randomBytes } from "node:crypto";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { DEFAULT_SETTINGS, users } from "@/lib/db/schema";
 import type { Plan } from "@/lib/types";
@@ -16,7 +16,6 @@ import { checkAccess, fetchMembership, fetchMemberships, fetchPayment, grants, p
 
 export const newUserId = (): string => "usr_" + randomBytes(12).toString("base64url");
 export const normEmail = (e: string): string => e.trim().toLowerCase();
-export { sha256 } from "@/lib/hash";
 
 type UserRow = typeof users.$inferSelect;
 
@@ -61,7 +60,7 @@ async function findUser(db: Db, ref: { userId?: string | null; whopUserId?: stri
     ?? (ref.email ? await by(eq(users.email, normEmail(ref.email))) : null);
 }
 
-export interface Applied { userId: string | null; plan: Plan | null; created: boolean }
+interface Applied { userId: string | null; plan: Plan | null; created: boolean }
 
 /** The 18+ confirmation a pay-first checkout carried (an ISO time), if any. */
 const ageFrom = (m: Record<string, string>): Date | null => { const d = m.insidir_age_18 ? new Date(m.insidir_age_18) : null; return d && !Number.isNaN(d.getTime()) ? d : null; };
@@ -109,8 +108,3 @@ export async function applyBillingEvent(db: Db, type: string, ref: WebhookRef, n
   return { userId: user.id, plan, created };
 }
 
-/** For the admin and tests: how many accounts currently have each plan. */
-export async function planCounts(db: Db): Promise<Record<string, number>> {
-  const rows = await db.select({ plan: users.plan, n: sql<number>`count(*)::int` }).from(users).groupBy(users.plan);
-  return Object.fromEntries(rows.map(r => [r.plan, Number(r.n)]));
-}

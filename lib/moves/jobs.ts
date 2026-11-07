@@ -33,12 +33,12 @@ import { classify, sportsLeagueOf } from "./classify";
 import type { FillPart } from "./types";
 import { readClosedRows, type ClosedPosition } from "@/lib/profiles/trader";
 import { savePositions, tabHints, trackWallets } from "@/lib/profiles/store";
-import { isObject, rows } from "@/lib/exchanges/parse";
+import { isObject } from "@/lib/exchanges/parse";
 import { provenFrom } from "@/lib/smart/proven";
 import { saveOpen } from "@/lib/smart/store";
 
 export const MOVES_MS = Number(process.env.MOVES_MS ?? 15_000);
-export const RECORD_STALE_MS = 12 * 3_600_000;
+const RECORD_STALE_MS = 12 * 3_600_000;
 /** Closed-position pages read per wallet (50 each). A wallet with more history than this gets no record rather than
  *  a partial one. */
 export const RECORD_MAX_PAGES = 100;
@@ -228,7 +228,7 @@ export async function recordsOnce(db: Db, poly: PolymarketClient, now: number, p
 
 /** LEADERBOARD_WALLETS per window from Polymarket's public leaderboard, so /top covers the real top traders. Their
  *  records are built from their own resolved positions like everyone else's. */
-export const LEADERBOARD_WALLETS = 100;
+const LEADERBOARD_WALLETS = 100;
 export async function leaderboardOnce(db: Db, poly: PolymarketClient): Promise<number> {
   const seen = new Map<string, ReturnType<typeof readLeaderboard>[number]>();
   for (const timePeriod of ["ALL", "MONTH", "WEEK"] as const) {

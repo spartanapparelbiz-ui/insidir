@@ -14,7 +14,7 @@ import { isCategory, type CategorySlug } from "@/lib/brand/categories";
 import { kalshiMatchesFull, openFor, yesPrices } from "./store";
 import { decision, type Decision } from "@/lib/millionaires/decided";
 
-export interface Ticket {
+interface Ticket {
   betId: string;
   marketId: string;
   title: string;
@@ -65,7 +65,7 @@ export async function ticketFor(db: Db, betId: string, region: Region | null): P
   };
 }
 
-export const MIN_COPY = 1, MAX_COPY = 100_000;
+const MIN_COPY = 1, MAX_COPY = 100_000;
 
 /** "I placed it": logs the member's copy at the price the ticket showed them (their venue's, else Polymarket's now,
  *  else the wallet's). Once per member and bet; a settled bet can't be logged. */

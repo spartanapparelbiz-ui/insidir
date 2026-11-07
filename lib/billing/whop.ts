@@ -13,16 +13,16 @@ import type { Plan } from "@/lib/types";
 
 /** Whop's origin. Overridable only so end-to-end tests can point at a local mock Whop (qa/e2e/mock-whop.ts). */
 const API_ORIGIN = (process.env.WHOP_API_ORIGIN ?? "https://api.whop.com").replace(/\/+$/, "");
-export const WHOP_API = `${API_ORIGIN}/api/v1`;
+const WHOP_API = `${API_ORIGIN}/api/v1`;
 /** Whop's Elements script (the embedded checkout). Overridable for the same reason. */
 export const ELEMENTS_URL = process.env.WHOP_ELEMENTS_URL || "https://cdn.whop.com/elements/amber/elements.js";
-export const WEBHOOK_TOLERANCE_SECONDS = 300;
+const WEBHOOK_TOLERANCE_SECONDS = 300;
 
 const env = (k: string): string => process.env[k] ?? "";
 const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
-export const obj = (v: unknown): Record<string, unknown> | null => (typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
+const obj = (v: unknown): Record<string, unknown> | null => (typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
 
-export type PaidPlan = Exclude<Plan, "free">;
+type PaidPlan = Exclude<Plan, "free">;
 
 /* ---------- memberships → plan ---------- */
 
@@ -48,12 +48,12 @@ function whopTime(v: unknown): number | null {
   return null;
 }
 
-export function readMetadata(v: unknown): Record<string, string> {
+function readMetadata(v: unknown): Record<string, string> {
   const o = obj(v) ?? {};
   return Object.fromEntries(Object.entries(o).filter((e): e is [string, string] => typeof e[1] === "string"));
 }
 
-export function readMembership(m: Record<string, unknown>): MembershipLite | null {
+function readMembership(m: Record<string, unknown>): MembershipLite | null {
   const id = str(m.id);
   if (!id || !id.startsWith("mem_")) return null;
   const user = obj(m.user);
@@ -79,7 +79,7 @@ export function readMemberships(body: unknown): MembershipLite[] {
 
 /** Statuses that give access. A membership set to cancel stays active (or "canceling") until its period ends;
  *  one behind on payment ("past_due") keeps access only until the end of the period already paid for. */
-export const GRANTING = new Set(["active", "trialing", "canceling"]);
+const GRANTING = new Set(["active", "trialing", "canceling"]);
 export function grants(m: Pick<MembershipLite, "status" | "renewalPeriodEnd">, now: number): boolean {
   if (GRANTING.has(m.status)) return true;
   return m.status === "past_due" && m.renewalPeriodEnd !== null && m.renewalPeriodEnd > now;
@@ -89,7 +89,7 @@ export interface PlanIds { insidirProduct: string; insidirPlan: string }
 export const planIds = (): PlanIds => ({ insidirProduct: env("WHOP_PRODUCT_INSIDIR"), insidirPlan: env("WHOP_PLAN_INSIDIR") });
 
 /** Whether a membership is for Insidir (its plan or its product). */
-export function planOf(m: Pick<MembershipLite, "productId" | "planId">, ids: PlanIds): PaidPlan | null {
+function planOf(m: Pick<MembershipLite, "productId" | "planId">, ids: PlanIds): PaidPlan | null {
   return (ids.insidirProduct && m.productId === ids.insidirProduct) || (ids.insidirPlan && m.planId === ids.insidirPlan) ? "insidir" : null;
 }
 
@@ -147,7 +147,7 @@ export async function fetchPayment(id: string): Promise<{ membershipId: string |
   return p ? readPayment(p) : null;
 }
 
-export function readPayment(p: Record<string, unknown>) {
+function readPayment(p: Record<string, unknown>) {
   const user = obj(p.user);
   return { membershipId: str(obj(p.membership)?.id) ?? str(p.membership_id), metadata: readMetadata(p.metadata),
     email: str(user?.email)?.toLowerCase() ?? null, whopUserId: str(user?.id) ?? str(p.user_id) };

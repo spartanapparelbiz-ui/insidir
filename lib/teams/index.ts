@@ -12,9 +12,7 @@ const REG = registry as unknown as { leagues: Record<string, { label: string; te
 const INDEX = new Map<string, RegTeam>();
 for (const [league, l] of Object.entries(REG.leagues)) for (const t of l.teams) INDEX.set(`${league}:${t.abbr}`, t);
 
-export const LEAGUES = Object.keys(REG.leagues);
-export const leagueLabel = (league: string) => REG.leagues[league]?.label ?? league.toUpperCase();
-export const logosOff = (): boolean => (process.env.LOGOS ?? "").toLowerCase() === "off";
+const logosOff = (): boolean => (process.env.LOGOS ?? "").toLowerCase() === "off";
 
 /** Every team in the registry, by league (for /admin/art). */
 export function allTeams(): Array<{ league: string; label: string; teams: TeamArt[] }> {
@@ -50,4 +48,3 @@ export function matchupFor(url: string | null | undefined, title?: string | null
   return [one(g.a, 0), one(g.b, 1)];
 }
 
-export { monogram, discInk } from "./mark";

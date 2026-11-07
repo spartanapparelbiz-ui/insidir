@@ -71,7 +71,6 @@ const DAY_UTC = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric
 export const calDay = (d: string) => DAY_UTC.format(new Date(`${d}T12:00:00Z`));
 const perShare = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const YMD_ET = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/New_York" });
 /** "Filed Oct 24": the filing day, Eastern (today too: a date, never "today"). */
 const filedWhen = (filedAt: number, _now: number) => DAY.format(new Date(filedAt));
 /** "2026-09-30" → "Q3 2026": the calendar quarter a 13F's period ends. */

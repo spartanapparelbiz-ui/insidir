@@ -51,7 +51,7 @@ export function recycleLimitMb(env: Record<string, string | undefined> = process
 }
 
 /** A job's run that grew RSS by at least this much is logged with its name (see jobGrowthLine). */
-export const JOB_GROWTH_LOG_MB = 20;
+const JOB_GROWTH_LOG_MB = 20;
 
 /** "memory: sweep +312 MB (rss 498 MB; also running: moves, smart)" when one run of a job grew RSS by
  *  JOB_GROWTH_LOG_MB or more, else null. Jobs overlap, so the others running at the time are named too. */

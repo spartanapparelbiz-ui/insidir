@@ -16,14 +16,14 @@ import { MAX_TRADES_PER_DAY } from "@/lib/moves/detect";
 
 export const PROVEN_MIN_SETTLED = 30;
 export const SCREEN_DAYS = 14;
-export const MM_WINDOW_MS = 3_600_000;
+const MM_WINDOW_MS = 3_600_000;
 export const MM_MARKETS = 3;
 export const ARB_SHARE = 0.4;
 export const ARB_MIN_MARKETS = 10;
 
-export type Exclusion = "market maker" | "high frequency" | "arbitrage" | "under 30 settled";
+type Exclusion = "market maker" | "high frequency" | "arbitrage" | "under 30 settled";
 export interface Trade { marketId: string; outcomeSide: "yes" | "no"; side: "BUY" | "SELL"; at: number }
-export interface Screen { reason: Exclusion | null; trades: number; markets: number; bothSides: number; mmMarkets: number; busiestDay: number }
+interface Screen { reason: Exclusion | null; trades: number; markets: number; bothSides: number; mmMarkets: number; busiestDay: number }
 
 /** A wallet's recent trades → why it isn't a picker, or null. Pure. */
 export function screenTrades(trades: readonly Trade[]): Screen {
@@ -62,7 +62,7 @@ export function settledCount(resolved: number | null, closed: number | null): nu
   return Math.max(Number(resolved ?? 0), Number(closed ?? 0));
 }
 
-export interface ScreenSource { trades(wallet: string, sinceMs: number): Promise<Trade[]> }
+interface ScreenSource { trades(wallet: string, sinceMs: number): Promise<Trade[]> }
 
 /** Screens the $1M+ wallets screened longest ago (or never), `perRun` at a time, each at most once a day. */
 export async function screenWallets(db: Db, src: ScreenSource, now: number, perRun = 15): Promise<{ screened: number; proven: number; excluded: number }> {

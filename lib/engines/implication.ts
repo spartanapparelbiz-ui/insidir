@@ -17,7 +17,7 @@ import type { FillOptions } from "./book";
 import { lockImplication, type Implication } from "./common";
 
 /** Default largest gap between the two markets' close times (different seasons shouldn't pair): 180 days. */
-export const IMPLICATION_MAX_CLOSE_GAP_MS = 180 * 86_400_000;
+const IMPLICATION_MAX_CLOSE_GAP_MS = 180 * 86_400_000;
 
 export interface ImplicationRule {
   id: string;

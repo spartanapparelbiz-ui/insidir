@@ -37,8 +37,7 @@
     "react": "^19.1.10",
     "react-dom": "^19.1.10",
     "sharp": "^0.35.5",
-    "web-push": "^3.6.7",
-    "zod": "^4.6.7"
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

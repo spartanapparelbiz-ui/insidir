@@ -11,9 +11,9 @@ import { takerFee } from "./fees";
 import type { FeeModel, Side, Venue } from "./types";
 
 /** Float tolerance, in dollars, when checking that a total fits inside the typed amount. */
-export const AMOUNT_EPSILON = 1e-9;
+const AMOUNT_EPSILON = 1e-9;
 /** The largest amount the calculator accepts, in dollars (anything above is treated as this). */
-export const MAX_AMOUNT = 10_000_000;
+const MAX_AMOUNT = 10_000_000;
 
 export interface CalcLeg {
   label: string;
@@ -32,7 +32,7 @@ export interface CalcInput {
   maxSets: number;
 }
 
-export interface CalcLegResult {
+interface CalcLegResult {
   label: string;
   venue: Venue;
   side: Side;
@@ -43,7 +43,7 @@ export interface CalcLegResult {
   fee: number;
 }
 
-export type CalcReason =
+type CalcReason =
   /** Sets were found. */
   | "ok"
   /** The amount doesn't cover one set with fees. */
@@ -53,7 +53,7 @@ export type CalcReason =
   /** The amount or the deal's numbers aren't usable. */
   | "invalid";
 
-export interface CalcResult {
+interface CalcResult {
   sets: number;
   legs: CalcLegResult[];
   /** Sum of leg costs before fees. */

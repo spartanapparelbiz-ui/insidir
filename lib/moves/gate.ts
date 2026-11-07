@@ -3,7 +3,7 @@
  *   Insidir ($39/mo, the one plan): everything, live. */
 import type { Plan } from "@/lib/types";
 
-export interface MovePlan {
+interface MovePlan {
   delayMs: number;
   records: boolean;
   /** null = unlimited; 0 = none. */
@@ -14,7 +14,7 @@ export interface MovePlan {
   priceGaps: boolean;
 }
 
-export const MOVE_PLANS: Record<Plan, MovePlan> = {
+const MOVE_PLANS: Record<Plan, MovePlan> = {
   free: { delayMs: 30 * 60_000, records: false, maxFollows: 0, alerts: false, customRules: false, dailyEmail: false, priceGaps: false },
   insidir: { delayMs: 0, records: true, maxFollows: null, alerts: true, customRules: true, dailyEmail: true, priceGaps: true },
 };

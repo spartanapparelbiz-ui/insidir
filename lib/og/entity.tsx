@@ -5,11 +5,11 @@ import { ImageResponse } from "next/og";
 import { PAST } from "@/lib/copy";
 import { loadFonts, OG, OgLogo } from "@/lib/share-card";
 
-export const OG_SIZE = { width: 1200, height: 630 } as const;
+const OG_SIZE = { width: 1200, height: 630 } as const;
 /** The entity pages' share card: portrait, 4:5 (a phone's feed). */
 export const OG_PORTRAIT = { width: 1080, height: 1350 } as const;
 
-export interface EntityOg {
+interface EntityOg {
   kicker: string;
   title: string;
   line?: string | null;

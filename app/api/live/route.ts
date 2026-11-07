@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 /* The live stream (Server-Sent Events). Each connection gets the events its viewer may see, when they may see them
  * (lib/live/view.ts: the free plan's 30-minute delay, the region, redaction), plus the scanner's real status every
  * few seconds. The browser closes it while the tab is hidden (components/live/useLive.ts). */

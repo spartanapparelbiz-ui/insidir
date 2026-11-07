@@ -30,7 +30,7 @@ export interface MatchCache {
   set(key: string, decision: MatchDecision): Promise<void>;
 }
 
-export interface MemoryMatchCache extends MatchCache {
+interface MemoryMatchCache extends MatchCache {
   readonly map: Map<string, MatchDecision>;
   writes: number;
 }
@@ -59,7 +59,7 @@ export function createMemoryCache(initial?: Iterable<[string, MatchDecision]>): 
   return cache;
 }
 
-export interface MemoryUsageStore extends LlmUsageStore {
+interface MemoryUsageStore extends LlmUsageStore {
   readonly spend: Map<string, number>;
 }
 

@@ -2,7 +2,7 @@
  * side's price is 97¢ or more (all but won) or 3¢ or less (all but lost). Rows, the price chart and the copy ticket
  * show "Decided" with the result instead of Copy. Pure. */
 export type Decision = "won" | "lost" | "void" | "closed";
-export const DECIDED_HI = 0.97, DECIDED_LO = 0.03;
+const DECIDED_HI = 0.97, DECIDED_LO = 0.03;
 
 export function decision(b: { result?: string | null; closed?: boolean | null; priceNow: number | null }): Decision | null {
   if (b.result === "won" || b.result === "lost" || b.result === "void") return b.result;
