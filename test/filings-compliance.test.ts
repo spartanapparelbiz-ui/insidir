@@ -72,17 +72,24 @@ describe("Filings compliance", () => {
     }
   });
   it("the /edgar landing: disclaimer pinned to the viewport, real checkout, the site's nav, no per-visitor database read", () => {
-    const land = readFileSync(join(ROOT, "components/filings/EdgarLanding.tsx"), "utf8");
-    expect(land).toContain('<p className="el-bar" role="note" data-testid="el-disclaimer">{RESEARCH_DISCLAIMER}</p>');
-    expect(readFileSync(join(ROOT, "components/filings/filings.css"), "utf8")).toMatch(/\.el-bar \{ position: fixed;[^}]*bottom: 0;/);
-    expect(land).toContain('const CHECKOUT = "/go?step=checkout&from=edgar"');
+    const land = readFileSync(join(ROOT, "components/filings/landing/EdgarLanding.tsx"), "utf8");
+    expect(land).toContain('<p className="lp-bar" role="note" data-testid="el-disclaimer">{RESEARCH_DISCLAIMER}</p>');
+    const css = readFileSync(join(ROOT, "components/filings/landing/landing.css"), "utf8");
+    expect(css).toMatch(/\.lp-bar \{ position: fixed;[^}]*bottom: 0;/);
+    // One typeface, colours from brand tokens only, no heavy weights.
+    expect(css).not.toMatch(/monospace|#[0-9a-fA-F]{3,8}\b|font-weight:\s*(700|800|900|bold)/);
+    expect(land).toContain('export const CHECKOUT = "/go?step=checkout&from=edgar"');
     expect(land).toContain("<Paywall ");
     const page = readFileSync(join(ROOT, "app/edgar/page.tsx"), "utf8");
     // Data from the shared 30-second preview cache only: no per-visitor query, no cookies read by the page itself.
     expect(page).toMatch(/await previewFor\(getDb\(\), now\)/);
     expect(page).not.toMatch(/cookies\(|headers\(|getViewer|select\(/);
-    expect(readFileSync(join(ROOT, "lib/filings/preview.ts"), "utf8")).toMatch(/memo\("filings:preview", PREVIEW_MS/);
     expect(page).toContain("<BrandNav fixed />");
+    expect(readFileSync(join(ROOT, "lib/filings/preview.ts"), "utf8")).toMatch(/memo\("filings:preview", PREVIEW_MS/);
     expect(readFileSync(join(ROOT, "app/api/edgar/preview/route.ts"), "utf8")).toMatch(/public, max-age=15, s-maxage=30/);
+    // Motion is opt-in: only with html.bm (no reduced motion), loaded after first paint.
+    const motion = readFileSync(join(ROOT, "components/filings/landing/Motion.tsx"), "utf8");
+    expect(motion).toMatch(/if \(!html\.classList\.contains\("bm"\)\) return;/);
+    expect(motion).toMatch(/import\("gsap"\)/);
   });
 });

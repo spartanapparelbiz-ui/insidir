@@ -7,11 +7,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BrandFoot, BrandNav } from "@/components/brand/Nav";
-import { EdgarLanding } from "@/components/filings/EdgarLanding";
+import { EdgarLanding } from "@/components/filings/landing/EdgarLanding";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import { EMPTY_PREVIEW, previewFor } from "@/lib/filings/preview";
-import "@/components/filings/filings.css";
+import "@/components/filings/landing/landing.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -25,11 +25,9 @@ export default async function EdgarPage() {
   const data = hasDatabase() ? await previewFor(getDb(), now).catch(() => EMPTY_PREVIEW(now)) : EMPTY_PREVIEW(now);
   return (
     <main className="b-root" data-testid="edgar-landing">
-      <div className="el-page">
-        <BrandNav fixed />
-        <EdgarLanding initial={data} />
-        <div className="el-foot"><BrandFoot inline /></div>
-      </div>
+      <BrandNav fixed />
+      <EdgarLanding initial={data} />
+      <div className="lp-foot"><BrandFoot inline /></div>
     </main>
   );
 }

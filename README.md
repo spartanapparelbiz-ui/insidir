@@ -194,7 +194,10 @@ keeps crawlers out of the app. Congress trades are not a source (a test fails if
 
 ### `/edgar`: the SEC landing
 
-A public page (off until `FEATURES_READY` has `filings`) that is useful before sign-up: the last 72 hours of
+A public page (off until `FEATURES_READY` has `filings`), on deep navy (`--lp-ink`, `--lp-ink-2`, `--lp-blue`, `--lp-sky` in
+`app/brand.css`), whose hero is a WebGL globe lit by the page's own filings (`components/filings/landing/FilingGlobe.tsx`:
+no library, paused offscreen, a still frame under reduced motion) and whose desk tilts flat on scroll (GSAP, loaded
+after first paint). It is useful before sign-up: the last 72 hours of
 open-market Form 4 trades, $1M+ purchases, clusters and 8-Ks in a live, virtualized table visitors can search, filter,
 sort and hover without an account (`components/filings/EdgarLanding.tsx`). Clicking a row or "Set an alert" opens the
 membership drawer (the shared `Paywall`, into `/go?step=checkout&from=edgar`).

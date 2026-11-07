@@ -44,9 +44,20 @@ export interface PreviewRow {
 }
 export interface PreviewMatch { id: number; kind: AnomalyRow["kind"]; t: string; co: string; groups: number; total: number | null; ws: string; we: string; at: number; count: number | null }
 export interface PreviewStats { f4Hour: number; f4Day: number; pDay: number; sDay: number; eightKDay: number }
-export interface Preview { generatedAt: number; edgar: EdgarHealth | null; stats: PreviewStats; rows: PreviewRow[]; matches: PreviewMatch[] }
+export interface Preview {
+  generatedAt: number; edgar: EdgarHealth | null; stats: PreviewStats; rows: PreviewRow[]; matches: PreviewMatch[];
+  /** Form 4 and 4/A accepted per hour over the last 24 hours, oldest first; the last bin is the hour so far. */
+  hours: number[];
+}
 
-export const EMPTY_PREVIEW = (now: number): Preview => ({ generatedAt: now, edgar: null, stats: { f4Hour: 0, f4Day: 0, pDay: 0, sDay: 0, eightKDay: 0 }, rows: [], matches: [] });
+export const EMPTY_PREVIEW = (now: number): Preview => ({ generatedAt: now, edgar: null, stats: { f4Hour: 0, f4Day: 0, pDay: 0, sDay: 0, eightKDay: 0 }, rows: [], matches: [], hours: Array(24).fill(0) });
+
+/** Counts keyed by "hours ago" (0 = the last 60 minutes) → 24 bins, oldest first. Anything outside 0–23 is dropped. */
+export function hourBins(counts: ReadonlyArray<{ ago: number; n: number }>): number[] {
+  const out = Array<number>(24).fill(0);
+  for (const { ago, n } of counts) if (Number.isInteger(ago) && ago >= 0 && ago < 24) out[23 - ago] = (out[23 - ago] ?? 0) + n;
+  return out;
+}
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -74,7 +85,7 @@ export const previewMatch = (a: AnomalyRow): PreviewMatch => ({ id: a.id, kind: 
 export const previewFor = (db: Db, now = Date.now()): Promise<Preview> => memo("filings:preview", PREVIEW_MS, async () => {
   const since = new Date(now - PREVIEW_HOURS * 3_600_000);
   const shown = sql`not (${secFilings.payload} ? 'unparsed')`;
-  const [f4, k8, matches, [counts], edgar] = await Promise.all([
+  const [f4, k8, matches, [counts], hourly, edgar] = await Promise.all([
     db.select().from(secFilings).where(and(gte(secFilings.acceptedAt, since), sql`${secFilings.form} = '4'`, shown,
       sql`(${secFilings.payload}->'codes') ?| array['P','S']`)).orderBy(desc(secFilings.acceptedAt)).limit(PREVIEW_F4),
     db.select().from(secFilings).where(and(gte(secFilings.acceptedAt, since), inArray(secFilings.form, ["8-K"]))).orderBy(desc(secFilings.acceptedAt)).limit(PREVIEW_8K),
@@ -86,11 +97,13 @@ export const previewFor = (db: Db, now = Date.now()): Promise<Preview> => memo("
       sDay: sql<number>`count(*) filter (where ${secFilings.form} = '4' and (${secFilings.payload}->'codes') ? 'S')::int`,
       eightKDay: sql<number>`count(*) filter (where ${secFilings.form} in ('8-K','8-K/A'))::int`,
     }).from(secFilings).where(gte(secFilings.acceptedAt, new Date(now - 86_400_000))),
+    db.select({ ago: sql<number>`floor(extract(epoch from (${new Date(now)}::timestamptz - ${secFilings.acceptedAt})) / 3600)::int`, n: sql<number>`count(*)::int` })
+      .from(secFilings).where(and(gte(secFilings.acceptedAt, new Date(now - 86_400_000)), inArray(secFilings.form, ["4", "4/A"]))).groupBy(sql`1`),
     edgarHealth(db).catch(() => null),
   ]);
   const rows = [...f4, ...k8].map(toRow).map(previewRow).filter((r): r is PreviewRow => r !== null).sort((a, b) => b.at - a.at);
   return {
-    generatedAt: now, edgar, rows,
+    generatedAt: now, edgar, rows, hours: hourBins(hourly),
     stats: counts ?? { f4Hour: 0, f4Day: 0, pDay: 0, sDay: 0, eightKDay: 0 },
     matches: matches.map(m => previewMatch({ id: m.id, key: m.key, kind: m.kind, cik: m.issuerCik, ticker: m.ticker, company: m.company, windowStart: m.windowStart,
       windowEnd: m.windowEnd, total: m.total, facts: m.facts, ruleVersion: m.ruleVersion, detectedAt: m.detectedAt.getTime() })),

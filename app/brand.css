@@ -30,6 +30,8 @@
    * per SEC record type (code P purchase, code S sale, 8-K event). Never used for gains or losses. */
   --term-void: #050505; --term-slate: #0a0a0a; --term-line: #1c1c1e; --term-line-2: #2c2c2e;
   --term-p: #10b981; --term-s: #e5484d; --term-8k: #22b8cf;
+  /* The /edgar landing: deep navy surfaces and the blue its light comes from (components/filings/landing). */
+  --lp-ink: #070b1a; --lp-ink-2: #0d1430; --lp-blue: #5b7cfa; --lp-sky: #9db7ff;
   --e-reveal: cubic-bezier(.16, 1, .3, 1);
   --e-soft: cubic-bezier(.25, .8, .3, 1);
   --gut: calc(40 * var(--u));

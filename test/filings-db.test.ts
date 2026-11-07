@@ -188,6 +188,9 @@ describe.skipIf(!URL0)("Filings in Postgres", () => {
     expect(p.rows[1]).toMatchObject({ v: 1_401_817.5, own: "Doe Jane" });
     expect(p.stats).toMatchObject({ f4Day: 2, pDay: 1, eightKDay: 2 });
     expect(p.matches.map(m => m.kind).sort()).toEqual(["cluster", "whale"]);
+    // The CEO's Form 4 was accepted ~6.5 hours before NOW; the unparsed 4/A (~10.5 hours) counts too.
+    expect(p.hours).toHaveLength(24);
+    expect(p.hours.reduce((a, b) => a + b, 0)).toBe(2);
   });
 
   it("deleting an account deletes its lists, journal and desk", async () => {

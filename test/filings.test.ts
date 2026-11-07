@@ -14,7 +14,7 @@ import { parseOwnership } from "@/lib/stocks/form4";
 import { bucketOf, derive, filterRows, mergeRows, NO_FILTER, type RowFilter } from "@/lib/filings/filter";
 import { JournalBody } from "@/lib/filings/validate";
 import { edgarLight } from "@/components/filings/Terminal";
-import { previewRow } from "@/lib/filings/preview";
+import { hourBins, previewRow } from "@/lib/filings/preview";
 
 const fx = (name: string) => readFileSync(join(__dirname, "fixtures/sec", name), "utf8");
 const DAY = 86_400_000;
@@ -255,5 +255,16 @@ describe("the public preview (/edgar)", () => {
   });
   it("an 8-K keeps its item numbers", () => {
     expect(previewRow({ ...base, form: "8-K", payload: { kind: "8-K", items: ["2.02"] } })).toMatchObject({ f: "8-K", code: null, items: ["2.02"] });
+  });
+});
+
+describe("the hourly chart's bins", () => {
+  it("24 bins, oldest first; the last is the hour so far; out-of-range counts are dropped", () => {
+    const b = hourBins([{ ago: 0, n: 5 }, { ago: 23, n: 2 }, { ago: 3, n: 7 }, { ago: 24, n: 9 }, { ago: -1, n: 9 }]);
+    expect(b).toHaveLength(24);
+    expect(b[23]).toBe(5);
+    expect(b[0]).toBe(2);
+    expect(b[20]).toBe(7);
+    expect(b.reduce((x, y) => x + y, 0)).toBe(14);
   });
 });

@@ -111,7 +111,9 @@ describe("design system", () => {
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e", "#1a1a1a", "#f2c35b", "#0b0b0b",
       // The Filings terminal's surfaces, hairlines and record-type colours (docs/RESEARCH-DESK.md), as brand tokens.
-      "#0a0a0a", "#1c1c1e", "#2c2c2e", "#10b981", "#e5484d", "#22b8cf"];
+      "#0a0a0a", "#1c1c1e", "#2c2c2e", "#10b981", "#e5484d", "#22b8cf",
+      // The /edgar landing's navy surfaces and blue light.
+      "#070b1a", "#0d1430", "#5b7cfa", "#9db7ff"];
     const brand = read("app/brand.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     for (const c of new Set(brand.match(/#[0-9a-f]{3,8}\b/g))) expect(spec, c).toContain(c);
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css" && f !== "app/brand.css")) {
