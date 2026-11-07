@@ -14,7 +14,12 @@
  *   whales    every WHALE_MS:  Polymarket trades over $10K
  *   moves     every MOVES_MS (15s): big money moves from Polymarket and Kalshi; settle every 10 min; trader records
  *             and resolved positions every 5 min, the public leaderboard's wallets every 6 h, profile pictures daily (lib/moves/jobs.ts)
- *   stocks    off: no SEC or stock-price jobs
+ *   sec:form4 every STOCKS_FORM4_MS (2 min): every new Form 4 and 4/A on EDGAR's live feed into terminal.filings and
+ *             terminal.insider_trades (lib/stocks/jobs.ts form4Once; docs/INSIDIR-V3.md §3). No stock prices.
+ *   sec:backfill every FORM4_BACKFILL_MS (1 min): every issuer's Form 4s from EDGAR's daily form index, newest day
+ *             first, back to FORM4_BACKFILL_FROM (lib/stocks/backfill.ts). Shares the one SecClient (8 req/s) with sec:form4.
+ *   accuracy:filings every hour: 20 random Form 4 lines re-read from EDGAR (lib/accuracy/filings.ts)
+ *             All three need SEC_USER_AGENT and stop with STOCKS_INGEST=0.
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *   follow:seen every minute: the price Insidir showed each position at and the tag times of Momentum / Early / Late
  *             (lib/follow/seen.ts), new positions first, then the backlog
@@ -44,6 +49,9 @@ import { provenBackfillOnce } from "@/lib/moves/proven-backfill";
 import { refreshWatchlist, WATCHLIST_MS, WatchCache, watchlistAge } from "@/lib/millionaires/watchlist";
 import { avatarsOnce, dedupeOnce, leagueBackfillOnce, repairSwappedOnce, leaderboardOnce, reclassifyOnce, MOVES_MS, movesOnce, movesPoller, realizeOnce, recordsOnce, settleMovesOnce } from "@/lib/moves/jobs";
 import { SecClient } from "@/lib/stocks/sec";
+import { form4Once, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
+import { BACKFILL_MS, backfillOnce } from "@/lib/stocks/backfill";
+import { passed, runFilingsCheck } from "@/lib/accuracy/filings";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -244,6 +252,30 @@ async function accuracyOnce(poly: PolymarketClient, kalshi: KalshiClient, sec: S
   for (const l of run.lines.filter(x => x.status === "mismatch")) log(`accuracy mismatch: ${l.kind}/${l.what} ${l.target} | ${l.label} | ${l.problems.join("; ")}`);
 }
 
+/** The SEC jobs (V3), each with a heartbeat after every successful run. */
+function secJobs(sec: SecClient): Array<() => void> {
+  return [
+    every("sec:form4", STOCKS_FORM4_MS, async () => {
+      const r = await form4Once(getDb(), sec);
+      await heartbeat(getDb(), "sec:form4", r.errors === 0, r.errors ? `${r.errors} filings failed to read` : null, { ...r, requests: sec.stats.requests, throttled: sec.stats.throttled });
+      if (r.read || r.errors) log(`sec:form4: ${r.read} filings read, ${r.trades} lines, ${r.amendments} amendments, ${r.errors} failed`);
+    }),
+    every("sec:backfill", BACKFILL_MS, async () => {
+      const r = await backfillOnce(getDb(), sec, Date.now());
+      await heartbeat(getDb(), "sec:backfill", true, r.failed ? `${r.failed} filings set aside after 3 tries` : null, { ...r, since: r.since ?? "" });
+      if (r.read || r.listed || r.errors) log(`sec:backfill: ${r.days} days, ${r.listed} listed, ${r.read} read, ${r.skipped} already read, ${r.errors} errors, ${r.requests} requests; complete since ${r.since ?? "not yet"}`);
+    }),
+    every("accuracy:filings", ACCURACY_MS, async () => {
+      const r = await runFilingsCheck(getDb(), sec);
+      const count = (st: string) => r.lines.filter(l => l.status === st).length;
+      const stats = { ok: count("ok"), mismatch: count("mismatch"), skipped: count("skipped"), passed: passed(r.lines) ? 1 : 0 };
+      await heartbeat(getDb(), "accuracy:filings", stats.mismatch === 0, stats.mismatch ? `${stats.mismatch} mismatches` : null, stats);
+      log(`accuracy:filings: ${stats.ok} ok, ${stats.mismatch} mismatched, ${stats.skipped} skipped${stats.passed ? " (passed)" : ""}`);
+      for (const l of r.lines.filter(x => x.status === "mismatch")) log(`accuracy:filings mismatch: ${l.target} | ${l.label} | ${l.problems.join("; ")}`);
+    }),
+  ];
+}
+
 /** The jobs running right now, so a clean restart can wait for them to finish. */
 const runningJobs = new Set<string>();
 
@@ -279,7 +311,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi, watch) : null;
   const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
   const sec = SecClient.fromEnv();
-  // The SEC client stays for the accuracy audit of older stock moves; the stock jobs are gone.
+  // One SEC client: the Form 4 jobs (secJobs) and the accuracy audit share its throttle.
   const stops = [
     ...(gaps ? [every("gaps", BOOKS_MS, () => gapsOnce(gaps, lastTickAt))] : []),
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
@@ -438,7 +470,9 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
         log(`moves: ${n} leaderboard wallets tracked`);
       }),
     ] : []),
-    // Stocks are off: no SEC or stock-price jobs.
+    // SEC Form 4 database (docs/INSIDIR-V3.md §3): the live feed, the daily-index backfill and their accuracy check.
+    // One SecClient for all of them, so together they stay under the SEC's limit. No stock-price jobs.
+    ...(sec && stocksIngestOn() ? secJobs(sec) : []),
     every("ratelimits", 60_000, async () => {
       const s = rateLimitStats();
       log("rate limits:", Object.entries(s).map(([k, v]) => `${k} ${v.requests} req, ${v.rateLimited} 429s, ${v.retries} retries`).join(" | "));

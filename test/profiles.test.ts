@@ -9,7 +9,7 @@ import { insiderWho, parseProfileId, personName, profileHref, roleOf } from "@/l
 import { insiderTotals, quarterChanges, topHoldings, tradesByFiling } from "@/lib/profiles/sec";
 import { byMarket, categoryOf, readClosedRows, showStats, traderStats, windowStats, type MarketResult } from "@/lib/profiles/trader";
 import { etDay, whyLine, type WhyFacts } from "@/lib/profiles/why";
-import { form4List, tradeRows } from "@/lib/stocks/history";
+import { form4List, isOpenMarket, tradeRows } from "@/lib/stocks/history";
 import type { Ownership } from "@/lib/stocks/form4";
 
 const DAY = 86_400_000;
@@ -110,13 +110,13 @@ describe("trader stats", () => {
 /* ---------- SEC: insiders and funds ---------- */
 
 const own = (o: Partial<Ownership> = {}): Ownership => ({
-  issuerCik: "0001045810", issuerName: "NVIDIA CORP", ticker: "NVDA", documentType: "4",
+  issuerCik: "0001045810", issuerName: "NVIDIA CORP", ticker: "NVDA", documentType: "4", period: "2026-10-20", aff10b5One: null, originalDate: null,
   owners: [{ cik: "0001197647", name: "HUANG JEN HSUN", isDirector: true, isOfficer: true, isTenPercentOwner: false, officerTitle: "President and CEO", otherText: null }],
   lines: [
-    { code: "P", acquiredDisposed: "A", derivative: false, date: "2026-10-20", shares: 1000, price: 140.5, value: 140_500, security: "Common Stock" },
-    { code: "S", acquiredDisposed: "D", derivative: false, date: "2026-10-21", shares: 500, price: 150, value: 75_000, security: "Common Stock" },
-    { code: "M", acquiredDisposed: "A", derivative: false, date: "2026-10-21", shares: 900, price: 10, value: 9000, security: "Common Stock" },
-    { code: "P", acquiredDisposed: "A", derivative: true, date: "2026-10-21", shares: 10, price: 5, value: 50, security: "Option" },
+    { code: "P", acquiredDisposed: "A", derivative: false, date: "2026-10-20", shares: 1000, price: 140.5, value: 140_500, security: "Common Stock", ownedAfter: null, direct: true, notes: [] },
+    { code: "S", acquiredDisposed: "D", derivative: false, date: "2026-10-21", shares: 500, price: 150, value: 75_000, security: "Common Stock", ownedAfter: null, direct: true, notes: [] },
+    { code: "M", acquiredDisposed: "A", derivative: false, date: "2026-10-21", shares: 900, price: 10, value: 9000, security: "Common Stock", ownedAfter: null, direct: true, notes: [] },
+    { code: "P", acquiredDisposed: "A", derivative: true, date: "2026-10-21", shares: 10, price: 5, value: 50, security: "Option", ownedAfter: null, direct: true, notes: [] },
     ...(o.lines ?? []),
   ],
   ...Object.fromEntries(Object.entries(o).filter(([k]) => k !== "lines")),
@@ -124,16 +124,17 @@ const own = (o: Partial<Ownership> = {}): Ownership => ({
 
 describe("insider history", () => {
   const url = "https://www.sec.gov/Archives/edgar/data/1045810/000119764726000001/0001197647-26-000001-index.htm";
-  it("keeps every open-market buy and sale of stock, nothing else, with its filing", () => {
+  it("keeps every transaction line as filed, open-market or not, with its filing (docs/INSIDIR-V3.md §4)", () => {
     const rows = tradeRows(own(), "000119764726000001", NOW, url);
-    expect(rows.map(r => [r.code, r.line, r.value])).toEqual([["P", 0, 140_500], ["S", 1, 75_000]]);
-    expect(rows[0]).toMatchObject({ ownerCik: "1197647", issuerCik: "1045810", company: "NVIDIA", ticker: "NVDA", role: "The CEO", url });
-    expect(tradeRows(own({ documentType: "4/A" }), "x", NOW, url)).toEqual([]);
+    expect(rows.map(r => [r.code, r.line, r.value, r.derivative])).toEqual([["P", 0, 140_500, false], ["S", 1, 75_000, false], ["M", 2, 9000, false], ["P", 3, 50, true]]);
+    expect(rows.filter(isOpenMarket).map(r => r.line)).toEqual([0, 1]);
+    expect(rows[0]).toMatchObject({ ownerCik: "1197647", issuerCik: "1045810", company: "NVIDIA", ticker: "NVDA", role: "The CEO", url, form: "4", isDirector: true, isOfficer: true, officerTitle: "President and CEO" });
+    expect(tradeRows(own({ documentType: "4/A" }), "x", NOW, url).map(r => r.form)).toEqual(["4/A", "4/A", "4/A", "4/A"]);
   });
   it("a jointly filed line is stored for each owner with a CIK", () => {
     const o = own({ owners: [...own().owners, { cik: "0000000002", name: "HUANG FAMILY TRUST", isDirector: false, isOfficer: false, isTenPercentOwner: false, officerTitle: null, otherText: null },
       { cik: null, name: "Nobody", isDirector: false, isOfficer: false, isTenPercentOwner: false, officerTitle: null, otherText: null }] });
-    expect(tradeRows(o, "a", NOW, url).filter(r => r.code === "P").map(r => r.ownerCik)).toEqual(["1197647", "2"]);
+    expect(tradeRows(o, "a", NOW, url).filter(r => r.line === 0).map(r => r.ownerCik)).toEqual(["1197647", "2"]);
   });
   it("totals and one row per filing and side", () => {
     const base = { company: "Nvidia", ticker: "NVDA", url, filedAt: NOW };

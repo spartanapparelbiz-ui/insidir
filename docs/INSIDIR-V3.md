@@ -1,14 +1,15 @@
 # Insidir V3: SEC research terminal
 
-Status: **proposal (November 7, 2026).** Nothing in this file is built yet. It does not override docs/INSIDIR-V2.md
-or docs/BRIEF.md until it is adopted. When it is, code comments cite it as `docs/INSIDIR-V3.md §N`.
+Status: **adopted (November 7, 2026).** This brief overrides docs/INSIDIR-V2.md and docs/BRIEF.md where they
+conflict; V2's Coming soon rule (§2) and accuracy check (§12) still apply. Code comments cite it as
+`docs/INSIDIR-V3.md §N`. Steps 1 and 2 of §6 are built; the rest is not.
 
-## §0 Positioning (the copy, as given)
+## §0 Positioning (the copy, as adopted)
 
 > **Insidir: SEC research terminal**
 >
-> Insider filings, financials and announcements straight from SEC EDGAR, on one dense screen. The data terminals
-> charge $2,000+ a month for, at $39.
+> Insider filings, financials and announcements straight from SEC EDGAR, on one dense screen. Terminal-grade SEC data
+> for $39 a month.
 >
 > **Modules**
 > - Company reports: delayed price chart, trailing-twelve-month financials, filings and insider history on one page
@@ -16,46 +17,56 @@ or docs/BRIEF.md until it is adopted. When it is, code comments cite it as `docs
 > - Insider activity: open-market buys and sells by officers and directors, kept separate from option exercises and
 >   stock grants
 > - People: officers, directors and 10% owners, across every board they sit on
-> - Watchlists and alerts: save tickers and get an in-app alert the moment a new filing lands
+> - Watchlists and alerts: save tickers and get an in-app alert within minutes of a filing reaching EDGAR
 > - Research journal: tag companies Researching, Watching or Passed, with private notes next to the filings
 >
 > Every number comes from an official SEC filing. No AI summaries, no price targets, nothing simulated.
 >
-> $39 a month. Cancel any time.
+> $1 for 3 days, then $39 a month. Cancel any time.
 >
 > Research software from Aethric LLC. Not a broker or investment adviser. Information, not advice.
 
-This replaces the prediction-market product ("Bet with the people who actually win", lib/brand/copy.ts). Billing,
+The delayed price chart ships wearing the Coming soon badge (§1.1–1.2), so "every number comes from an official SEC
+filing" holds for everything that is live. This replaces the prediction-market product ("Bet with the people who actually win", lib/brand/copy.ts). Billing,
 Whop, auth, accounts and the $39 plan (lib/plans.ts) carry over unchanged.
 
-## §1 Copy issues to settle before it ships
+## §1 Copy issues, and how each was settled
 
-Each of these is a line in §0 that is not true of what we have, or that needs a decision. Fix the copy or build the
-thing; don't ship the line as is.
+Each of these was a line in the first draft of §0 that wasn't true of what we have, or needed a decision. The answer
+under each is the decision (November 7, 2026).
 
 1. **"Every number comes from an official SEC filing" vs. "delayed price chart".** Prices don't come from the SEC.
    Change the line to "Every filing number comes from an official SEC filing; prices are delayed and labelled with
    their source", or drop the chart.
+   **Settled:** the chart is Coming soon; no page shows a price until it is licensed.
 2. **Price licensing.** lib/stocks/prices.ts reads Stooq's CSV and Yahoo's chart API. docs/INSIDIR-V2.md §3a already
    found that no free daily price source we checked is licensed for commercial display. A paid chart is a product
    on a $39 subscription, so the chart needs a paid display license (e.g. a delayed-quotes vendor) before launch,
    or it ships wearing the Coming soon badge (V2 §2).
+   **Settled:** no vendor yet. Stooq and Yahoo stay off every page; test/compliance-v3.test.ts fails if a V3 page
+   reaches lib/stocks/prices.ts.
 3. **"The data terminals charge $2,000+ a month for".** A comparison with competitors' prices is a factual claim.
    Keep it only with a dated, citable source for the number (e.g. a published list price), or reword to something
    that doesn't name a figure. The sentence also needs its grammar fixed: "…the data that terminals charge $2,000+
    a month for, at $39."
+   **Settled:** dropped. The line is "Terminal-grade SEC data for $39 a month."
 4. **"Announcements".** The modules list has no announcements module. Either add 8-K filings to the filings database
    and company report (§3, Filings) or drop the word.
 5. **"The moment a new filing lands".** We poll EDGAR's current-filings feed (every 2 minutes today). Say "within
    minutes of a filing reaching EDGAR", or keep "the moment" only if the alert latency is measured and under a
    minute.
+   **Settled:** "within minutes of a filing reaching EDGAR".
 6. **"Not a broker or investment adviser."** Good, and it should replace the betting footer
    (components/brand/Nav.tsx, lib/brand/copy.ts LEGAL). Have counsel confirm the publisher's-exclusion wording,
    given watchlists and alerts are personalised.
 7. **"No AI summaries"** means lib/research (the model-backed Research ask) and lib/analyst stay off the product, and
    test/compliance.test.ts should gain a check that no user-facing route calls them.
+   **Settled:** test/compliance-v3.test.ts walks every V3 page's run-time import graph and fails on anything under
+   lib/research or lib/analyst.
 8. **Free tier.** The copy says $39 a month and nothing about a trial. lib/plans.ts TRIAL is $1 for 3 days. Decide:
    keep the trial and say so, or drop it (the Whop plan and `whop:setup`'s check change with it).
+   **Settled:** keep $1 for 3 days, then $39 a month, and the copy says so. lib/plans.ts and the Whop plan stay as
+   they are.
 
 ## §2 What already exists
 
@@ -152,7 +163,13 @@ except the price chart (§1.1).
   `plan_10b5_1`. Migration in drizzle/.
 - Forms 3 and 5 for the People module (initial holdings and annual reports).
 - Amendments (4/A): V2 skipped them. A research database should show them, linked to the filing they amend, and the
-  amended figures should replace the original's in totals.
+  amended figures should replace the original's in totals. **As built** (lib/stocks/filings.ts): a 4/A names only
+  the day its original was filed (dateOfOriginalSubmission), so it is matched within the same issuer, reporting
+  owners and period of report to the original filed that day. Only an unambiguous match supersedes; a 4/A that fits
+  no original, or several, is shown as filed and replaces nothing.
+- 10b5-1 (`plan_10b5_1`, as built): the line's own footnote decides. Without one, an unchecked 10b5-1 box means no;
+  a checked box leaves the line unknown, because the box covers the filing, not a line. The box itself is kept on
+  `filings.plan_10b5_1`.
 - lib/stocks/sec.ts allowedSecUrl: add `data.sec.gov/api/xbrl/companyfacts/CIK##########.json`, the daily form
   index (`/Archives/edgar/daily-index/…`) and the current-filings feed for the other alerting forms. Same throttle.
 - New tables: `companies` (CIK, name, tickers, SIC, fiscal year end, refreshed_at), `company_facts` (CIK, tag,
@@ -174,8 +191,9 @@ except the price chart (§1.1).
 Each step ships on its own, behind the Coming soon rule (V2 §2) until it passes its tests and a 20-row accuracy
 check re-read from EDGAR (V2 §12, extended to V3 tables).
 
-1. Data: widen Form 4 storage (§4), backfill all issuers, `filings` table. No new pages.
-2. SEC filings database (`/filings`) and Insider activity (`/insiders`).
+1. Data: widen Form 4 storage (§4), backfill all issuers, `filings` table. No new pages. **Built.**
+2. SEC filings database (`/filings`) and Insider activity (`/insiders`). **Built**, members only and Coming soon
+   until `npm run check:filings` passes 20 of 20 on production and `filings` is added to FEATURES_READY.
 3. Company reports without the chart: header, filings, insider history, TTM financials.
 4. People.
 5. Watchlists and in-app alerts.
@@ -183,10 +201,13 @@ check re-read from EDGAR (V2 §12, extended to V3 tables).
 7. New landing and pricing with the §0 copy, as corrected under §1; retire the betting product (§5).
 8. Price chart, once a display licence is in place.
 
-## §7 Open decisions
+## §7 Decisions (November 7, 2026)
 
-- Trial or no trial (§1.8).
-- Keep 13F fund holdings as a module? They're built, and not in the copy.
-- Price data vendor and its cost (§1.2), which sets whether $39 still works.
-- The $2,000+ comparison: keep with a source, or reword (§1.3).
-- What happens to current members of the betting product: migrate, refund, or a notice period.
+- Trial: keep $1 for 3 days, then $39 a month. The copy says so.
+- 13F fund holdings: the code stays (lib/stocks/form13f.ts), out of the launch. Its jobs aren't scheduled.
+- Price chart: Coming soon. No price vendor yet, so Stooq and Yahoo stay off every page.
+- The $2,000+ line: dropped for "Terminal-grade SEC data for $39 a month."
+- Alerts copy: "within minutes of a filing reaching EDGAR".
+- No AI: lib/research and lib/analyst stay off every V3 page, enforced by test/compliance-v3.test.ts.
+- Still open: what happens to current members of the betting product (migrate, refund, or a notice period), decided
+  before step 7.

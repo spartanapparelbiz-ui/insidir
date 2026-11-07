@@ -302,6 +302,13 @@
       "when": 1793880000000,
       "tag": "0042_kalshi_history",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793900000000,
+      "tag": "0044_sec_filings",
+      "breakpoints": true
     }
   ]
 }

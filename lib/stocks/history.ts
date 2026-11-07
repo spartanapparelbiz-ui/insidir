@@ -1,14 +1,14 @@
 /* SEC history for profiles and "why this matters" (docs/INSIDIR-V2.md §6, Stocks):
- *   insider trades  every open-market buy (P) and sale (S) of stock on each Form 4 the Stocks job reads, plus the
+ *   insider trades  every transaction line on each Form 4 and 4/A the Stocks job reads (docs/INSIDIR-V3.md §4), plus the
  *                   EDGAR history of each insider who made a $100k+ buy ("owner") and of their company ("issuer"),
  *                   up to HISTORY_YEARS back. A history is complete from `completeSince` on: every Form 4 filed from
  *                   that date has been read.
  *   funds           each tracked fund's last FUND_QUARTERS 13F-HRs, read in full (tables that add up to the cover).
  * Every row keeps the filing it came from. Nothing is estimated: values are shares × the reported price. */
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { fundFilings, fundHoldings, funds, insiderTrades, secHistory } from "@/lib/db/schema";
-import { companyName, filingIndexUrl, indexTimestamp, ownershipCandidates, parseOwnership, roleWord, type Ownership } from "./form4";
+import { companyName, filingIndexUrl, indexTimestamp, ownershipCandidates, parseOwnership, plan10b5One, roleWord, type Ownership } from "./form4";
 import { cik10, filingIndex13f, thirteenFFilings } from "./form13f";
 import type { SecClient } from "./sec";
 
@@ -21,27 +21,39 @@ export const FUND_QUARTERS = 8;
 
 export type TradeRow = typeof insiderTrades.$inferInsert;
 
-/** A Form 4's open-market buys and sales of stock (non-derivative P acquired / S disposed), one row per line and
- *  reporting owner with a CIK. Amendments are left out: they restate a filing. */
+/** Every transaction line on a Form 4 or 4/A, one row per line and reporting owner with a CIK (docs/INSIDIR-V3.md §4):
+ *  every transaction code as filed, Table I and Table II, with shares, price and value only when the filing gives them.
+ *  Open-market trades are code P (acquired) and S (disposed) on Table I; pages keep them apart from every other code. */
 export function tradeRows(o: Ownership, accession: string, filedAt: number, url: string): TradeRow[] {
-  if (/\/A$/i.test(o.documentType)) return [];
   const out: TradeRow[] = [];
   const company = companyName(o.issuerName);
+  const form = /\/A$/i.test(o.documentType) ? "4/A" : "4";
   o.lines.forEach((l, line) => {
-    if (l.derivative || l.value === null || l.shares === null || l.shares <= 0 || l.price === null) return;
-    const code = l.code === "P" && l.acquiredDisposed === "A" ? "P" : l.code === "S" && l.acquiredDisposed === "D" ? "S" : null;
-    if (!code) return;
+    if (!l.code) return;
     for (const owner of o.owners) {
       if (!owner.cik || !/^\d{1,10}$/.test(owner.cik)) continue;
       out.push({ accession, line, ownerCik: String(Number(owner.cik)), ownerName: owner.name, role: roleWord(owner), issuerCik: String(Number(o.issuerCik)),
-        company, ticker: o.ticker, code, tradeDate: l.date, shares: l.shares, price: l.price, value: l.value, filedAt: new Date(filedAt), url });
+        company, ticker: o.ticker, code: l.code, tradeDate: l.date, shares: l.shares, price: l.price, value: l.value, filedAt: new Date(filedAt), url,
+        form, acquiredDisposed: l.acquiredDisposed, derivative: l.derivative, security: l.security, ownedAfter: l.ownedAfter, direct: l.direct,
+        plan10b5_1: plan10b5One(l, o.aff10b5One), isDirector: owner.isDirector, isOfficer: owner.isOfficer, isTenPercent: owner.isTenPercentOwner,
+        officerTitle: owner.officerTitle, superseded: false });
     }
   });
   return out;
 }
 
+/** An open-market purchase or sale of the stock itself (Table I, P acquired or S disposed). Pure. */
+export const isOpenMarket = (r: Pick<TradeRow, "code" | "acquiredDisposed" | "derivative">): boolean =>
+  !r.derivative && ((r.code === "P" && r.acquiredDisposed === "A") || (r.code === "S" && r.acquiredDisposed === "D"));
+
+/** Inserts the rows, or rewrites them when the filing is read again (an older row gains the V3 columns). `superseded`
+ *  is left alone: only linkAmendments sets it. */
 export async function saveTrades(db: Db, list: readonly TradeRow[]): Promise<void> {
-  for (let i = 0; i < list.length; i += 500) await db.insert(insiderTrades).values(list.slice(i, i + 500)).onConflictDoNothing();
+  const keep = new Set(["accession", "ownerCik", "line", "superseded"]);
+  const set = Object.fromEntries(Object.entries(getTableColumns(insiderTrades)).filter(([k]) => !keep.has(k)).map(([k, c]) => [k, sql.raw(`excluded."${c.name}"`)]));
+  for (let i = 0; i < list.length; i += 500) {
+    await db.insert(insiderTrades).values(list.slice(i, i + 500)).onConflictDoUpdate({ target: [insiderTrades.accession, insiderTrades.ownerCik, insiderTrades.line], set });
+  }
 }
 
 /** A filing's ownership document and when it reached EDGAR; null when it has no ownership XML. */

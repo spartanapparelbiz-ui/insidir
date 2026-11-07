@@ -610,8 +610,11 @@ export const secSeen = terminal.table("sec_seen", {
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Open-market buys (P) and sales (S) of stock from Form 4 filings, one row per filing line and reporting owner
- *  (lib/stocks/history.ts). From every Form 4 the Stocks job reads, plus each insider's and company's EDGAR history. */
+/** Every transaction line on the Form 4s and 4/As we read, one row per filing line and reporting owner
+ *  (lib/stocks/history.ts form4Rows; docs/INSIDIR-V3.md §4). `code` is the SEC transaction code as filed (P open-market
+ *  purchase, S open-market sale, M option exercise, A grant or award, F tax withholding, G gift, …). shares, price and
+ *  value are null when the filing leaves them out (a grant at no price has no value). `superseded` is set when a later
+ *  4/A restates the filing (lib/stocks/filings.ts linkAmendments); totals leave superseded rows out. */
 export const insiderTrades = terminal.table("insider_trades", {
   accession: text("accession").notNull(),
   line: integer("line").notNull(),
@@ -621,20 +624,85 @@ export const insiderTrades = terminal.table("insider_trades", {
   issuerCik: text("issuer_cik").notNull(),
   company: text("company").notNull(),
   ticker: text("ticker"),
-  code: text("code").$type<"P" | "S">().notNull(),
+  code: text("code").notNull(),
   tradeDate: text("trade_date"),
-  shares: doublePrecision("shares").notNull(),
-  price: doublePrecision("price").notNull(),
-  value: doublePrecision("value").notNull(),
+  shares: doublePrecision("shares"),
+  price: doublePrecision("price"),
+  value: doublePrecision("value"),
   filedAt: timestamp("filed_at", { withTimezone: true }).notNull(),
   url: text("url").notNull(),
+  /** "4" or "4/A". */
+  form: text("form").notNull().default("4"),
+  /** "A" acquired or "D" disposed, as filed. */
+  acquiredDisposed: text("acquired_disposed"),
+  /** A line from Table II (options, warrants, units…) rather than Table I (the stock itself). */
+  derivative: boolean("derivative").notNull().default(false),
+  security: text("security"),
+  /** Shares (or derivative securities) owned after the transaction, as filed. */
+  ownedAfter: doublePrecision("owned_after"),
+  /** Direct (true) or indirect (false) ownership, as filed; null when the filing doesn't say. */
+  direct: boolean("direct"),
+  /** The filing marks the line as made under a Rule 10b5-1 plan (true) or not (false); null when it says neither. */
+  plan10b5_1: boolean("plan_10b5_1"),
+  isDirector: boolean("is_director"),
+  isOfficer: boolean("is_officer"),
+  isTenPercent: boolean("is_ten_percent"),
+  officerTitle: text("officer_title"),
+  superseded: boolean("superseded").notNull().default(false),
 }, t => [
   primaryKey({ columns: [t.accession, t.ownerCik, t.line] }),
   index("insider_trades_owner_idx").on(t.ownerCik, t.filedAt),
   index("insider_trades_issuer_idx").on(t.issuerCik, t.filedAt),
   index("insider_trades_ticker_idx").on(t.ticker),
   index("insider_trades_filed_idx").on(t.filedAt),
+  index("insider_trades_code_idx").on(t.code, t.filedAt),
 ]);
+
+/** Every Form 4 and 4/A we have read (docs/INSIDIR-V3.md §3, SEC filings), one row per accession, from the live feed
+ *  and the daily-index backfill (lib/stocks/filings.ts). owner_key is the reporting owners' CIKs sorted and joined,
+ *  which with issuer and period is how a 4/A is matched to the filing it amends. */
+export const filings = terminal.table("filings", {
+  accession: text("accession").primaryKey(),
+  form: text("form").notNull(),
+  issuerCik: text("issuer_cik").notNull(),
+  company: text("company").notNull(),
+  ticker: text("ticker"),
+  owners: jsonb("owners").$type<Array<{ cik: string | null; name: string; role: string }>>().notNull(),
+  ownerKey: text("owner_key").notNull(),
+  /** periodOfReport, the date of the earliest transaction the filing reports. */
+  period: text("period"),
+  filedAt: timestamp("filed_at", { withTimezone: true }).notNull(),
+  url: text("url").notNull(),
+  /** Transaction lines on the filing (both tables). */
+  lines: integer("lines").notNull(),
+  /** The filing's 10b5-1 checkbox (since April 2023); null on filings that predate it. */
+  plan10b5_1: boolean("plan_10b5_1"),
+  /** On a 4/A: the day the amended filing was filed, as the 4/A says (dateOfOriginalSubmission). */
+  originalDate: text("original_date"),
+  /** For a 4/A: the filing it amends, when that is unambiguous. */
+  amends: text("amends"),
+  /** The later 4/A that restates this filing. */
+  supersededBy: text("superseded_by"),
+  readAt: timestamp("read_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("filings_filed_idx").on(t.filedAt),
+  index("filings_issuer_idx").on(t.issuerCik, t.filedAt),
+  index("filings_ticker_idx").on(t.ticker),
+  index("filings_group_idx").on(t.issuerCik, t.ownerKey, t.period),
+]);
+
+/** The Form 4 backfill from EDGAR's daily form index (lib/stocks/backfill.ts), one row per calendar day (ET): the
+ *  filings still to read that day, and when every one of them had been read. */
+export const form4Days = terminal.table("form4_days", {
+  day: text("day").primaryKey(),
+  /** Form 4 and 4/A filings in the day's index; null until the index has been read. */
+  listed: integer("listed"),
+  pending: jsonb("pending").$type<Array<{ accession: string; cik: string; tries?: number }>>().notNull().default([]),
+  /** Filings that failed three reads, left for a person to look at. */
+  failed: jsonb("failed").$type<string[]>().notNull().default([]),
+  doneAt: timestamp("done_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /** A stock's daily closing price (ticker upper-case, date "YYYY-MM-DD"), from a free daily price source
  *  (lib/stocks/prices.ts), for the tickers insiders bought and SPY (the S&P 500). Insider and company pages read it;

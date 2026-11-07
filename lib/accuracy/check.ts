@@ -24,7 +24,7 @@ import type { Move } from "@/lib/moves/types";
 import { marketsFor } from "@/lib/profiles/store";
 import { readClosedRows, traderStats } from "@/lib/profiles/trader";
 import { cik10, fundAdds, thirteenFFilings } from "@/lib/stocks/form13f";
-import { readOwnership, tradeRows } from "@/lib/stocks/history";
+import { checkTradeLine } from "./filings";
 import { readForm4, thirteenFPositions } from "@/lib/stocks/jobs";
 import type { SecClient } from "@/lib/stocks/sec";
 import type { VMarket } from "@/lib/types";
@@ -153,21 +153,9 @@ export async function checkRecord(db: Db, wallet: string, now: number): Promise<
   return errs;
 }
 
-/** A stored insider trade line against the Form 4 re-read from EDGAR. */
+/** A stored insider trade line against the Form 4 re-read from EDGAR (every field: lib/accuracy/filings.ts). */
 export async function checkTrade(sec: SecClient, t: Record<string, unknown>): Promise<string[]> {
-  const acc = String(t.accession);
-  const m = /\/data\/(\d+)\//.exec(String(t.url));
-  if (!m || !String(t.url).includes(acc)) return ["link is not this filing"];
-  const got = await source(() => readOwnership(sec, `https://www.sec.gov/Archives/edgar/data/${m[1]}/${acc}/`));
-  if (!got) return ["no ownership XML in the filing"];
-  const line = tradeRows(got.ownership, acc, 0, String(t.url)).find(r => r.line === Number(t.line) && r.ownerCik === t.owner_cik);
-  if (!line) return ["line not in the filing"];
-  const errs: string[] = [];
-  if (line.code !== t.code) errs.push(`code ${t.code} vs filing ${line.code}`);
-  if (line.shares !== Number(t.shares)) errs.push(`shares ${t.shares} vs filing ${line.shares}`);
-  if (!near(line.value, Number(t.value), 0.01)) errs.push(`value ${t.value} vs filing ${line.value}`);
-  if (line.tradeDate !== (t.trade_date ?? null)) errs.push(`date ${t.trade_date} vs filing ${line.tradeDate}`);
-  return errs;
+  return source(() => checkTradeLine(sec, t));
 }
 
 /** A stored 13F holding against the fund's information table re-read. */

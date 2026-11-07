@@ -21,6 +21,8 @@ export function allowedSecUrl(input: string): boolean {
     if (u.hostname === "data.sec.gov") return !u.search && /^\/submissions\/CIK\d{10}\.json$/.test(u.pathname);
     if (u.hostname !== "www.sec.gov") return false;
     if (/^\/Archives\/edgar\/data\/\d+\/\d{18}\/[A-Za-z0-9_.-]+$/.test(u.pathname)) return !u.search;
+    // The daily form index (lib/stocks/backfill.ts): every filing EDGAR accepted that day, by form type.
+    if (/^\/Archives\/edgar\/daily-index\/\d{4}\/QTR[1-4]\/form\.\d{8}\.idx$/.test(u.pathname)) return !u.search;
     // The current-filings Atom feed for Form 4, paged.
     if (u.pathname === "/cgi-bin/browse-edgar") {
       const keys = [...u.searchParams.keys()].sort().join(",");
@@ -53,9 +55,11 @@ export class SecClient {
   }
 
   async text(url: string): Promise<string> { return this.get(url, false) as Promise<string>; }
+  /** The body, or null when EDGAR answers 404 (a daily index for a day with no filings, or not posted yet). */
+  async textOrNull(url: string): Promise<string | null> { return this.get(url, false, true) as Promise<string | null>; }
   async json<T = unknown>(url: string): Promise<T> { return this.get(url, true) as Promise<T>; }
 
-  private async get(url: string, json: boolean): Promise<unknown> {
+  private async get(url: string, json: boolean, missingOk = false): Promise<unknown> {
     if (!allowedSecUrl(url)) throw new Error(`Disallowed SEC URL: ${url}`);
     for (let attempt = 0; attempt < 3; attempt++) {
       await this.turn();
@@ -77,6 +81,7 @@ export class SecClient {
         await new Promise(r => setTimeout(r, Number.isFinite(retry) && retry > 0 ? Math.min(30_000, retry * 1000) : (attempt + 1) * 1500));
         continue;
       }
+      if (res.status === 404 && missingOk) { this.stats.ok++; return null; }
       if (!res.ok) { this.stats.errors++; this.stats.lastError = `SEC responded ${res.status}`; throw new Error(`SEC responded ${res.status}`); }
       this.stats.ok++;
       const body = await res.text();

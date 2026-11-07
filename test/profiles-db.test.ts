@@ -163,7 +163,9 @@ describe.skipIf(!URL0)("profiles in Postgres", () => {
     h = (await db.select().from(schema.secHistory))[0]!;
     expect([h.completeSince, h.pending.length]).toEqual(["2025-01-10", 0]);
     const trades = await db.select().from(schema.insiderTrades);
-    expect(new Set(trades.map(t => t.code))).toEqual(new Set(["P"]));
+    // Every code is kept (docs/INSIDIR-V3.md §4): the CEO's open-market buy, and the shares withheld for tax.
+    expect(new Set(trades.map(t => t.code))).toEqual(new Set(["P", "F"]));
+    expect(new Set(trades.filter(t => !t.derivative && t.code === "P").map(t => t.acquiredDisposed))).toEqual(new Set(["A"]));
     expect(new Set(trades.map(t => t.accession))).toEqual(new Set(["000121415626000002", "000121415626000001"]));
     expect(trades.every(t => t.url.includes(t.accession) && t.ownerCik === "1214156")).toBe(true);
     expect(asked.every(u => u.startsWith("https://data.sec.gov/") || u.startsWith("https://www.sec.gov/Archives/edgar/data/1214156/"))).toBe(true);

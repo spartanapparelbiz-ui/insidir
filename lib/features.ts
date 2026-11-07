@@ -16,6 +16,9 @@ export const FEATURES = {
   price_gaps: "Price gaps",
   crypto: "Crypto",
   stocks: "Stocks",
+  /** The Form 4 database and insider activity (/filings, /insiders; docs/INSIDIR-V3.md §3). Ready once the 20-row EDGAR
+   *  accuracy check (lib/accuracy/filings.ts) passes on production. */
+  filings: "SEC filings and insider activity",
 } as const;
 export type Feature = keyof typeof FEATURES;
 
