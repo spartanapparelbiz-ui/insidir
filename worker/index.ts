@@ -40,6 +40,9 @@
  *
  * Every job catches its own errors: a venue being down pauses that venue, never the worker. 429s are logged. */
 import { tagOnce } from "@/lib/trackers-tag";
+import { nightlyDue, RECORD_MS, recordOnce } from "@/lib/record/job";
+/** The day (ET) the record's nightly full pass last ran. */
+let recordNightlyDay: string | null = null;
 import { marketInfoOnce } from "@/lib/markets/info";
 import { seenOnce, seenProgress } from "@/lib/follow/seen";
 import { followableCsv } from "@/lib/follow/report";
@@ -363,6 +366,19 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       await heartbeat(getDb(), "twins:bets", true, null, { games: r.events, twins: r.twins });
       if (r.twins) log(`twins:bets: ${r.events} games, ${r.twins} twins, ${r.auto} approved themselves`);
     })] : []),
+    // The public record (/record, lib/record/job.ts): every 15 minutes, and a full pass nightly at 3 AM ET.
+    every("record:refresh", RECORD_MS, async () => {
+      const r = await recordOnce(getDb(), clients.polymarket instanceof PolymarketClient ? clients.polymarket : null, Date.now());
+      log(`record: ${r.logged} logged, ${r.unusual} unusual, ${r.disagreement} disagreement, ${r.sourced} sourced, ${r.sold} sold, ${r.priced} priced, ${r.settled} settled`);
+      await heartbeat(getDb(), "record:refresh", true, null).catch(() => undefined);
+    }),
+    every("record:nightly", 60 * 60_000, async () => {
+      const n = nightlyDue(Date.now(), recordNightlyDay);
+      if (!n.due) return;
+      const r = await recordOnce(getDb(), clients.polymarket instanceof PolymarketClient ? clients.polymarket : null, Date.now(), { full: true });
+      recordNightlyDay = n.day;
+      log(`record nightly: ${r.logged} logged, ${r.unusual} unusual, ${r.sourced} sourced, ${r.sold} sold, ${r.priced} priced, ${r.settled} settled`);
+    }),
     // Proven wallets only: market makers, high-frequency accounts and arbitrage screened out daily.
     ...(clients.polymarket instanceof PolymarketClient ? [every("millionaires:screen", 5 * 60_000, async () => {
       const poly = clients.polymarket as PolymarketClient;

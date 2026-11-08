@@ -112,7 +112,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
       <Stage bg={{ kind: "globe", dark: 0.7 }} testid="market-bets" labelledBy="bets-h">
         <div className="b-head"><Lines as="h2" id="bets-h" lines={["Every bet."]} size={48} />{member ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
         {m.bets.length ? (
-          <ul className="b-rows s-board" data-testid="market-bet-rows">{m.bets.slice(0, 100).map(b => <li key={b.id} data-entity="bet"><BetRow bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
+          <ul className="b-rows s-board" data-testid="market-bet-rows">{m.bets.slice(0, 100).map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
         ) : <p className="b-empty b-center">{member ? "No bets yet." : "No bets older than an hour yet."}</p>}
       </Stage>
 

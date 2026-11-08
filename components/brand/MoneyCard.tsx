@@ -53,7 +53,7 @@ export function MoneyCard({ m, positions = [], locked = false, className = "", t
       {mil.length && !locked ? (
         <ul className="b-wrows" data-testid="wallet-rows">
           {mil.map((p, i) => (
-            <li key={`${p.wallet}:${p.side}`} className="b-wrow" {...st(build, 1 + i * 0.08)}>
+            <li key={`${p.short}:${p.side}:${i}`} className="b-wrow" {...st(build, 1 + i * 0.08)}>
               <TierBadge tier={p.tier} />
               <span><Side outcome={p.outcome} side={p.side} /> <span className="b-small">{p.short}</span></span>
               <span className="b-num" style={{ fontWeight: 600 }}>{dollars(p.dollars)}</span>

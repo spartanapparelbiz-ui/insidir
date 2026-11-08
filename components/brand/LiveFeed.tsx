@@ -12,7 +12,9 @@ import { BetRow } from "./BetRow";
 
 export interface FeedState { now: number; pulse: Pulse; bets: BoardBet[] }
 
-export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true, board = false, copy = false, tier = "millionaire" }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean;
+export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true, board = false, copy = false, tier = "millionaire", polymarket = false }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean;
+  /** The viewer is outside the US: Verify may show the Polymarket market page. */
+  polymarket?: boolean;
   /** Wallets up $1M+ (the default) or Pro ($100K–$1M): never mixed. */
   tier?: "millionaire" | "pro";
   /** /board: visitors get bets 60 minutes late (the API applies it). */
@@ -51,7 +53,7 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
         <ul className="b-rows" data-testid="feed-rows" aria-live="polite">
           {rows.map((b, i) => (
             <li key={b.id}>
-              <BetRow bet={b} now={s.now} href={links ? marketPath(b.marketId, b.title) : undefined} copyHref={copy && !decision(b) ? `/copy/${encodeURIComponent(b.id)}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
+              <BetRow polymarket={polymarket} bet={b} now={s.now} href={links ? marketPath(b.marketId, b.title) : undefined} copyHref={copy && !decision(b) ? `/copy/${encodeURIComponent(b.id)}` : undefined} className={first.current.has(b.id) ? "" : "b-new"}
                 settle={settle && first.current.has(b.id) ? 0.6 + i * 0.07 : undefined} />
             </li>
           ))}

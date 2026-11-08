@@ -96,12 +96,13 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
             ...(last30.n > last10.n ? [{ label: `Last ${last30.n} closed`, value: `${last30.won}–${last30.lost}, ${signed(last30.net)}` }] : []),
           ]} />
           <Panel className="s-col s-col--wide"><Rows label="The last 10 closed" testid="wallet-last10" rows={closed.slice(0, 10).map(m => ({ key: m.marketId, title: m.title, sub: `${dollars(m.moneyIn)} in`, right: signed(m.pnl) }))} /></Panel>
+          <p className="b-small b-center" data-testid="wallet-record-link">Every position we&apos;ve flagged from this wallet, losses included: <a className="s-link" href={`/record?wallet=${wallet}`}>its record</a>{paid ? <> · Verify <a className="s-link" href={`https://polygonscan.com/address/${wallet}`} target="_blank" rel="noopener noreferrer" data-testid="wallet-verify">the wallet on Polygonscan</a></> : null}.</p>
         </Stage>
       ) : null}
 
       <Stage bg={{ kind: "globe", dark: 0.65 }} testid="wallet-today" labelledBy="w-t">
         <div className="b-head"><Lines as="h2" id="w-t" lines={["Today's bets."]} size={48} />{paid ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
-        {today.length ? <ul className="b-rows s-board" data-testid="wallet-today-rows">{today.map(b => <li key={b.id} data-entity="bet"><BetRow bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
+        {today.length ? <ul className="b-rows s-board" data-testid="wallet-today-rows">{today.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
           : <p className="b-empty b-center">No bets from this wallet since midnight ET{paid ? "" : " (an hour late)"}.</p>}
       </Stage>
 

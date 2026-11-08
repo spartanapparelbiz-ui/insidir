@@ -4,6 +4,7 @@
  * buys on the venue, then "I placed it" logs it here, and it settles with the market (lib/millionaires/bets.ts
  * settleCopies). Wallets by tier, profit and short address only. Server only. */
 import { humanLine } from "@/lib/markets/title";
+import type { BetVerify } from "@/lib/millionaires/queries";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { betCopies } from "@/lib/db/schema";
@@ -37,11 +38,14 @@ export interface Ticket {
   settled: "won" | "lost" | "void" | null;
   /** Settled, closed, or priced 97¢+/3¢- (lib/millionaires/decided.ts): no copy. */
   decided: Decision | null;
+  /** Verify's sources, ungated: a page shows it to a visitor only through lockVerify (lib/millionaires/queries.ts). */
+  verify: BetVerify;
 }
 
 export async function ticketFor(db: Db, betId: string, region: Region | null): Promise<Ticket | null> {
   const r = await db.execute(sql`select b.id, b.wallet, b.tier, b.market_id, b.market_title, b.outcome, b.outcome_side, b.amount::float as amount,
-      b.price::float as price, b.at, b.url, b.result, b.yes_label, b.no_label, b.category, w.pnl::float as pnl, t.won, t.lost, coalesce(i.closed, false) as closed
+      b.price::float as price, b.at, b.url, b.result, b.yes_label, b.no_label, b.category, w.pnl::float as pnl, t.won, t.lost, coalesce(i.closed, false) as closed,
+      b.transaction_hash, b.fetched_at, i.updated_at as price_at, coalesce((select tw.kalshi_url from terminal.market_twins tw where tw.polymarket_id = b.market_id and tw.status = 'approved'), b.kalshi_url) as kalshi_url
     from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet left join terminal.trader_records t on t.wallet = b.wallet
     left join terminal.market_info i on i.source = 'polymarket' and i.market_id = b.market_id
     where b.id = ${betId}`);
@@ -62,6 +66,8 @@ export async function ticketFor(db: Db, betId: string, region: Region | null): P
     theirPrice: Number(b.price), priceNow: yes === undefined ? null : side === "yes" ? yes : 1 - yes,
     open: o.open, yourPrice: o.yourPrice, settled: (b.result as Ticket["settled"]) ?? null,
     decided: decision({ result: (b.result as string | null) ?? null, closed: Boolean(b.closed), priceNow: yes === undefined ? null : side === "yes" ? yes : 1 - yes }),
+    verify: { tx: (b.transaction_hash as string | null) ?? null, address: String(b.wallet), kalshi: (b.kalshi_url as string | null) ?? null, polymarket: Boolean(b.url),
+      fetchedAt: b.price_at ? new Date(b.price_at as string).getTime() : b.fetched_at ? new Date(b.fetched_at as string).getTime() : null, locked: false },
   };
 }
 

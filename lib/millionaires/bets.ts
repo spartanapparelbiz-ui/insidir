@@ -27,9 +27,26 @@ export function betsFrom(moves: readonly Move[], tierOf: (wallet: string) => Tie
       category: categoryOf({ title: m.marketTitle, event: m.eventTitle, venueCategory: m.category, tab: m.tab, league: m.league, url: m.url }),
       url: m.url, yesLabel: labels?.get(m.marketId)?.yesLabel ?? null, noLabel: labels?.get(m.marketId)?.noLabel ?? null,
       at: new Date(m.at), lastAt: new Date(m.lastAt),
+      // Provenance (Verify): the fills' Polygon transactions, their raw trades and when they were fetched.
+      transactionHash: m.sourceRefs?.[0] ?? null, txHashes: m.sourceRefs?.length ? m.sourceRefs : null,
+      raw: m.rawFills && Object.keys(m.rawFills).length ? m.rawFills : null, fetchedAt: new Date(),
     });
   }
   return out;
+}
+
+/** A position's size and average price from every fill it ever had (its stored raw trades, by fill id), not just the
+ *  fills still in the poller's buffer: a position that kept buying past the buffer's window was undercounted. Fills
+ *  are the Data API trades the poller saw (keys "<tx>:<wallet>:<market>:<outcome>:<ms>"); dollars are size × price, as
+ *  the board shows them (Polymarket's fee is on top, on chain). */
+export async function sizeFromFills(db: Db, ids: readonly string[]): Promise<void> {
+  if (!ids.length) return;
+  await db.execute(sql`update terminal.millionaire_bets b set amount = round(f.usd::numeric, 2)::float8, price = f.usd / f.shares
+    from (select b2.id, sum((e.value->>'size')::float8 * (e.value->>'price')::float8) as usd, sum((e.value->>'size')::float8) as shares
+          from terminal.millionaire_bets b2, jsonb_each(b2.raw) e
+          where b2.id in (${sql.join(ids.map(i => sql`${i}`), sql`, `)}) and e.key ~ '^0x[0-9a-fA-F]{64}:' and e.value->>'side' = 'BUY'
+          group by b2.id) f
+    where b.id = f.id and f.shares > 0 and f.usd >= b.amount`);
 }
 
 /** Upserts bets. The tier stays what it was when the bet was first seen; size, price and last fill follow the run. */
@@ -40,8 +57,14 @@ export async function saveBets(db: Db, rows: readonly BetRow[]): Promise<number>
     set: { amount: sql`excluded.amount`, price: sql`excluded.price`, lastAt: sql`excluded.last_at`, url: sql`coalesce(excluded.url, ${millionaireBets.url})`,
       // The category is re-read on every run, so a better rule (esports, the Masters) corrects live bets too.
       category: sql`excluded.category`,
-      yesLabel: sql`coalesce(excluded.yes_label, ${millionaireBets.yesLabel})`, noLabel: sql`coalesce(excluded.no_label, ${millionaireBets.noLabel})` },
+      yesLabel: sql`coalesce(excluded.yes_label, ${millionaireBets.yesLabel})`, noLabel: sql`coalesce(excluded.no_label, ${millionaireBets.noLabel})`,
+      // Provenance accumulates: every transaction and raw fill ever seen for the position, the first hash kept.
+      transactionHash: sql`coalesce(${millionaireBets.transactionHash}, excluded.transaction_hash)`,
+      txHashes: sql`(select jsonb_agg(distinct x) from jsonb_array_elements(coalesce(${millionaireBets.txHashes}, '[]'::jsonb) || coalesce(excluded.tx_hashes, '[]'::jsonb)) x)`,
+      raw: sql`case when excluded.raw is null then ${millionaireBets.raw} else coalesce(${millionaireBets.raw}, '{}'::jsonb) || excluded.raw end`,
+      fetchedAt: sql`excluded.fetched_at` },
   });
+  await sizeFromFills(db, rows.map(r => r.id));
   return rows.length;
 }
 

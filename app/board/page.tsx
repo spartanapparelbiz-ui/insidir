@@ -66,7 +66,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
         {member ? (
           <>
             {stream ? <div className="s-col s-col--wide"><Stream data={stream} /></div> : null}
-            <LiveBoard initial={[...bets]} now={now} n={40} cat={cat} tier={tier} links />
+            <LiveBoard initial={[...bets]} now={now} n={40} cat={cat} tier={tier} links polymarket={viewer.region === "non_us"} />
           </>
         ) : (
           <div className="s-board">
@@ -84,7 +84,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
               {CATEGORIES.map(c => <a key={c.slug} className="b-btn b-panel-pill" aria-pressed={cat === c.slug} href={href(c.slug, pro)}>{c.name}</a>)}
               <a className="b-btn b-panel-pill" aria-pressed={pro} href={href(cat, !pro)} data-testid="filter-pro" title="Wallets up $100K–$1M">Pro</a>
             </ChipRow>
-            <LiveFeed initial={{ now, pulse: pl, bets: [...bets] }} n={30} cats={cat ? [cat] : []} board copy={false} tier={tier} />
+            <LiveFeed initial={{ now, pulse: pl, bets: [...bets] }} n={30} cats={cat ? [cat] : []} board copy={false} tier={tier} polymarket={viewer.region === "non_us"} />
           </div>
         )}
         <p className="b-small b-center">Information, not advice.</p>

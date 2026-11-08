@@ -54,6 +54,7 @@ function toMove(id: string, fills: readonly Fill[], info: MarketInfo | undefined
     tab: tab as Tab, league, category: info?.category ?? "other", url: info?.url ?? f0.url, result: null, settledAt: null,
     sourceRefs: f0.source === "polymarket" ? txHashes(fills) : null,
     parts: f0.source === "polymarket" ? fills.map(f => ({ id: f.id, c: f.contracts, p: f.price, at: f.at })) : null,
+    rawFills: f0.source === "polymarket" ? Object.fromEntries(fills.filter(f => f.raw).map(f => [f.id, f.raw!])) : null,
   };
 }
 

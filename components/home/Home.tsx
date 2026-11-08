@@ -72,7 +72,8 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
             <div className="b-head"><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest bets of $5K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p></div>
             {d.stream ? <div className="s-col s-col--wide"><Stream data={d.stream} /></div> : null}
             <LiveBoard initial={d.board.slice(0, 10)} now={d.now} />
-            <div className="b-center"><div className="b-ctas"><Pill href="/board" kind="ghost">The full board</Pill></div></div>
+            <div className="b-center"><div className="b-ctas"><Pill href="/board" kind="ghost">The full board</Pill></div>
+              <p className="b-small" style={{ marginTop: 10 }} data-testid="home-record-link">Every position we&apos;ve flagged, losses included: <a className="s-link" href="/record">the record</a>.</p></div>
           </Stage>
         ) : null}
 

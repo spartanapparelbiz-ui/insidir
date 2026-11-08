@@ -18,6 +18,22 @@ import { shortWallet, type Tier } from "./watchlist";
 export const VISITOR_DELAY_MS = 60 * 60_000;
 const HOUR = 3_600_000, DAY = 86_400_000;
 
+export interface BetVerify {
+  /** The first Polygon transaction behind the position; null when not known yet (or hidden from a visitor). */
+  tx: string | null;
+  /** The wallet's address, for its Polygonscan page only (never its Polymarket profile); null when hidden. */
+  address: string | null;
+  /** The same market on Kalshi, when it lists it. */
+  kalshi: string | null;
+  /** A Polymarket market page exists (the link is /verify/pm/<market>, which checks the viewer's region server-side:
+   *  the Polymarket URL itself never leaves the server). */
+  polymarket: boolean;
+  /** When the price shown was fetched (the price now when there is one, else the bet's own fetch), epoch ms. */
+  fetchedAt: number | null;
+  /** True when the transaction and address are hidden because the side is (a visitor, an open market). */
+  locked: boolean;
+}
+
 export interface BoardBet {
   id: string;
   /** Shortened ("0x5668…5839"); `wallet` only for members (to follow). */
@@ -45,6 +61,10 @@ export interface BoardBet {
   url: string | null;
   /** A game's two teams (lib/teams: by the game in the URL), for their logos; null when it isn't a game. */
   teams?: [TeamArt, TeamArt] | null;
+  /** Verify (components/brand/Verify.tsx): the raw sources behind the row. A visitor never gets the transaction or the
+   *  wallet's address while the side is hidden (a Polygonscan transaction shows which outcome was bought, and the
+   *  address page lists it): redact() drops both until the market settles. */
+  verify: BetVerify;
 }
 
 type Row = Record<string, unknown>;
@@ -64,6 +84,11 @@ function toBet(r: Row, member: boolean): BoardBet {
     // The Polymarket URL never leaves the server (a US user never gets a Polymarket link, payloads included); it is read
     // here only for the game's two teams.
     url: null, teams: matchupFor(r.url as string | null, String(r.event_title || r.market_title)),
+    verify: {
+      tx: r.transaction_hash ? String(r.transaction_hash) : null, address: String(r.wallet),
+      kalshi: r.twin_kalshi_url ? String(r.twin_kalshi_url) : r.kalshi_url ? String(r.kalshi_url) : null, polymarket: Boolean(r.url),
+      fetchedAt: r.price_at ? t(r.price_at) : r.fetched_at ? t(r.fetched_at) : null, locked: false,
+    },
   };
 }
 
@@ -96,15 +121,26 @@ export async function recentBets(db: Db, f: BetFilter): Promise<BoardBet[]> {
   if (f.tier) w.push(sql`b.tier = ${f.tier}`);
   if (f.marketId) w.push(sql`b.market_id = ${f.marketId}`);
   if (f.open) w.push(sql`b.result is null and (i.closed is null or not i.closed)`);
-  const r = await db.execute(sql`select b.*, i.yes_price, coalesce(i.closed, false) as closed, w.pnl from terminal.millionaire_bets b
+  const r = await db.execute(sql`select b.*, i.yes_price, i.updated_at as price_at, coalesce(i.closed, false) as closed, w.pnl, tw.kalshi_url as twin_kalshi_url from terminal.millionaire_bets b
     left join terminal.market_info i on i.source = b.source and i.market_id = b.market_id
+    left join terminal.market_twins tw on tw.polymarket_id = b.market_id and tw.status = 'approved'
     left join terminal.watchlist w on w.wallet = b.wallet
     where ${sql.join(w.map(x => sql`(${x})`), sql` and `)} order by b.at desc limit ${f.limit ?? 20}`);
   return (r.rows as Row[]).map(x => toBet(x, Boolean(f.member))).map(b => (f.member || f.withSide ? b : redact(b)));
 }
 
 /** A bet as a visitor gets it: everything but the side (and the prices that would give the side away). */
-export const redact = (b: BoardBet): BoardBet => ({ ...b, outcome: null, side: null, priceThen: null, priceNow: null, wallet: null });
+/** Verify for someone who can't see the side yet: no transaction, no address (both show which outcome was bought). */
+export const lockVerify = (v: BetVerify): BetVerify => ({ ...v, tx: null, address: null, locked: true });
+
+/** Verify as a viewer may see it: members everything; a visitor the transaction only once the market settled, and the
+ *  wallet's address page never (it lists the wallet's open trades too). */
+export const verifyFor = (v: BetVerify, member: boolean, settled: boolean): BetVerify => (member ? v : settled ? { ...v, address: null } : lockVerify(v));
+
+export const redact = (b: BoardBet): BoardBet => ({ ...b, outcome: null, side: null, priceThen: null, priceNow: null, wallet: null,
+  // A Polygonscan transaction (or the wallet's address page) shows which outcome was bought: hidden until it settles.
+  // The wallet's address page lists all its trades (its open ones too), so a visitor never gets it, even once settled.
+  verify: b.result === null ? lockVerify(b.verify) : { ...b.verify, address: null } });
 
 
 /** /board for visitors: bets 60 minutes late (the live count stays live); members see them as they land. */

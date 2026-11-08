@@ -137,7 +137,7 @@ export default async function ResultsPage() {
 
       <Stage bg={{ kind: "globe", dark: 0.7 }} testid="results-latest" labelledBy="rl-h">
         <div className="b-head"><Lines as="h2" id="rl-h" lines={["The latest settled."]} size={48} /></div>
-        {latest.length ? <ul className="b-rows s-board" data-testid="results-rows">{latest.map(b => <li key={b.id} data-entity="bet"><BetRow bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
+        {latest.length ? <ul className="b-rows s-board" data-testid="results-rows">{latest.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
           : <p className="b-empty b-center">Nothing settled yet.</p>}
         <p className="b-center b-small" style={{ marginTop: 14 }}><a href="/board">Every bet on the board</a></p>
         {member ? null : <div className="b-center"><div className="b-ctas"><Pill href="/go" data-checkout="results">Start for ${TRIAL.fee}</Pill></div></div>}

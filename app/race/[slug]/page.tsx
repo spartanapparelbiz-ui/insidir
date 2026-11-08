@@ -90,7 +90,7 @@ export default async function RacePage({ params }: { params: Promise<{ slug: str
 
       <Stage bg={{ kind: "globe", dark: 0.7 }} testid="race-bets" labelledBy="race-b-h">
         <div className="b-head"><Lines as="h2" id="race-b-h" lines={["Every bet."]} size={48} />{member ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
-        {bets.length ? <ul className="b-rows s-board" data-testid="race-bet-rows">{bets.map(b => <li key={b.id} data-entity="bet"><BetRow bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
+        {bets.length ? <ul className="b-rows s-board" data-testid="race-bet-rows">{bets.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
           : <p className="b-empty b-center">{member ? "No bets yet." : "No bets older than an hour yet."}</p>}
       </Stage>
 

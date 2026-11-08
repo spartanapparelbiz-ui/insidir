@@ -66,7 +66,10 @@ export async function goData(db: Db, cats: readonly CategorySlug[], now: number,
   const cards: AhaCard[] = [];
   for (const [i, m] of three.entries()) {
     const open = paid || i === 0;
-    cards.push({ m: open ? m : lockMoney(m), positions: open ? await safe(positions(db, m.marketId), []) : [], locked: !open });
+    // A visitor's free card shows each position's tier and short address only: the full address (whose Polygonscan page
+    // lists the wallet's open trades) is for members.
+    const pos = open ? await safe(positions(db, m.marketId), []) : [];
+    cards.push({ m: open ? m : lockMoney(m), positions: paid ? pos : pos.map(x => ({ ...x, wallet: "" })), locked: !open });
   }
   return {
     now, paid, pulse: p, hook: hooks[0] ? (paid ? hooks[0] : { ...hooks[0], pnl: null }) : null, // a wallet's record is for members

@@ -4,6 +4,7 @@
  * data. */
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
+import { recordOnce } from "@/lib/record/job";
 
 const MIN = 60_000, DAY = 86_400_000;
 export const MW = (n: number) => `0xe2e0000000000000000000000000000000000${String(n).padStart(3, "0")}`;
@@ -16,7 +17,8 @@ const GAME_URL: Record<string, string> = {
 };
 
 export async function seedMillionaires(db: Db, now: number): Promise<void> {
-  await db.execute(sql`truncate terminal.watchlist, terminal.millionaire_bets`);
+  // record_log is append-only (a DELETE does nothing); a test run starts it over with TRUNCATE.
+  await db.execute(sql`truncate terminal.watchlist, terminal.millionaire_bets, terminal.record_log`);
   const wallets: Array<[number, "millionaire" | "pro", number]> = [[1, "millionaire", 3_100_000], [2, "millionaire", 2_400_000], [3, "millionaire", 1_500_000], [4, "millionaire", 1_200_000], [5, "pro", 450_000], [6, "pro", 210_000]];
   for (const [n, tier, pnl] of wallets) await db.execute(sql`insert into terminal.watchlist (wallet, tier, pnl, refreshed_at) values (${MW(n)}, ${tier}, ${pnl}, ${new Date(now)})`);
   const bet = (id: string, n: number, tier: string, market: string, title: string, outcome: string, side: "yes" | "no", amount: number, price: number, category: string, mins: number, yes: string, no: string, result: string | null = null) =>
@@ -33,6 +35,11 @@ export async function seedMillionaires(db: Db, now: number): Promise<void> {
   await bet("e2e:mb7", 2, "millionaire", MIL_MARKETS.pol, P, "Yes", "yes", 50_000, 0.62, "politics", 15, "Yes", "No");
   await bet("e2e:mb8", 6, "pro", MIL_MARKETS.soc, S, "Arsenal FC", "yes", 9_000, 0.41, "soccer", 40, "Arsenal FC", "Chelsea FC");
   for (let i = 0; i < 30; i++) await bet(`e2e:ms${i}`, 1 + (i % 4), "millionaire", `0xe2emilsettled${i}`, `E2E fixture: settled market ${i}`, "Yes", "yes", 10_000, 0.45, "football", (10 + i) * 24 * 60, "Yes", "No", i < 20 ? "won" : "lost");
+  // Provenance (Verify): a Polygon transaction for every fixture bet but one ("Source pending"), fetched now. Test data.
+  await db.execute(sql`update terminal.millionaire_bets set transaction_hash = '0x' || lpad(to_hex(abs(hashtext(id))), 64, 'e'),
+    tx_hashes = jsonb_build_array('0x' || lpad(to_hex(abs(hashtext(id))), 64, 'e')), fetched_at = ${new Date(now)}, raw = '{"fixture": true}'::jsonb where id <> 'e2e:mb8'`);
+  // The public record, as the record job keeps it (no venue reads in a test run).
+  await recordOnce(db, null, now);
   // The markets themselves, as the sweep stores them (so a check of one resolves).
   for (const [id, title, yes, no, p] of [[MIL_MARKETS.nfl, N, "Chiefs", "Bills", 0.51], [MIL_MARKETS.pol, P, "Yes", "No", 0.66], [MIL_MARKETS.soc, S, "Arsenal FC", "Chelsea FC", 0.44]] as const) {
     const data = { venue: "polymarket", id, title, eventTitle: title, yesLabel: yes, noLabel: no, url: `https://polymarket.com/event/${id.slice(2)}`, yesPrice: p, volume24h: 50_000, active: true, result: null, closeTime: now + 7 * DAY, category: "sports" };

@@ -11,9 +11,9 @@ import { COMPANY, DATA_COMPANY, GAMBLER, FOOTER } from "@/lib/copy";
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
 const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m": kind, style: { "--d": `${d}s` } as CSSProperties } : {});
 
-const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["SEC terminal", "/sec"], ["Record", "/results"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
+const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["SEC terminal", "/sec"], ["Record", "/record"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
 /** Members: the same bar, their places. No sidebar anywhere. */
-const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Autopilot", "/autopilot"], ["Book", "/book"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["SEC", "/sec"]];
+const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Autopilot", "/autopilot"], ["Book", "/book"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Record", "/record"], ["SEC", "/sec"]];
 
 export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true, autopilot = false }: { autopilot?: boolean; fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
   /** The Start for $1 pill (off on /login, which has its own way in). */
@@ -72,7 +72,7 @@ export function BrandFoot({ inline = false }: { inline?: boolean }) {
   return (
     <footer className={`b-foot${inline ? " b-foot--inline" : ""}`} data-testid="brand-foot">
       <nav aria-label="Footer">
-        {[["Markets", "/markets"], ["Board", "/board"], ["Record", "/results"], ["FAQ", "/faq"], ["Methodology", "/methodology"], ["Our data", "/data"], ["Status", "/status"], ["Security", "/security"],
+        {[["Markets", "/markets"], ["Board", "/board"], ["Record", "/record"], ["Results", "/results"], ["FAQ", "/faq"], ["Methodology", "/methodology"], ["Our data", "/data"], ["Status", "/status"], ["Security", "/security"],
           ["Disclosures", "/disclosures"], ["Terms", "/terms"], ["Privacy", "/privacy"], ["Credits", "/credits"], ["Changelog", "/changelog"]].map(([t, h]) => <a key={t} href={h}>{t}</a>)}
       </nav>
       <div className="b-foot__legal">

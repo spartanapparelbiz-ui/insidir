@@ -7,6 +7,7 @@ import type { GroupedBet } from "@/lib/millionaires/group";
 import { dollars } from "@/lib/money";
 import { PriceMove, Side, signedDollars, TierBadge } from "./Bits";
 import { TeamPair } from "@/components/system/Team";
+import { Verify } from "./Verify";
 
 export function agoShort(ms: number, now: number): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));
@@ -19,9 +20,11 @@ export function agoShort(ms: number, now: number): string {
 /** A Millionaire's bet this size or more is shown in gold. */
 export const GOLD_MIN = 50_000;
 
-export function BetRow({ bet, now, href, className = "", settle, copyHref }: { bet: BoardBet | GroupedBet; now: number; href?: string; className?: string; settle?: number;
+export function BetRow({ bet, now, href, className = "", settle, copyHref, polymarket = false }: { bet: BoardBet | GroupedBet; now: number; href?: string; className?: string; settle?: number;
   /** Members: the copy ticket for this bet. */
-  copyHref?: string }) {
+  copyHref?: string;
+  /** The viewer is outside the US: Verify may show the Polymarket market page. */
+  polymarket?: boolean }) {
   const name = <>{bet.title}</>;
   const teams = bet.teams ?? null;
   const n = "n" in bet ? bet.n : 1;
@@ -47,6 +50,7 @@ export function BetRow({ bet, now, href, className = "", settle, copyHref }: { b
         {bet.outcome && decision(bet) ? <span className="b-small" data-testid="bet-decided">{decidedText(decision(bet)!, bet.outcome)}</span> : null}
         {copyHref ? <a className="b-btn b-panel-pill b-copy" href={copyHref} data-testid="bet-copy" aria-label={`Copy this bet: ${bet.title}`}>Copy</a> : null}
       </span>
+      {bet.verify ? <Verify v={bet.verify} marketId={bet.marketId} polymarket={polymarket} /> : null}
     </div>
   );
 }
