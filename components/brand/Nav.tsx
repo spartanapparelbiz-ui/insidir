@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
+import { ThemeToggle } from "./ThemeToggle";
 import { COMPANY, DATA_COMPANY, GAMBLER, FOOTER } from "@/lib/copy";
 
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
@@ -47,6 +48,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
         <span {...q(motion, "quiet", 0.46)}><Logo /></span>
         <nav className="b-nav-links" aria-label="Primary">{links.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
         <div className="b-nav-actions">
+          <span {...q(motion, "settle", 0.66)}><ThemeToggle /></span>
           {member ? <a className="b-btn b-panel-pill" href="/settings" data-testid="nav-account" {...q(motion, "settle", 0.68)}>Account</a> : <a className="b-btn b-panel-pill" href="/login" {...q(motion, "settle", 0.68)}>Log in</a>}
           {member || !start ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
           <button ref={burger} {...q(motion, "settle", 0.68)} className="b-burger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="b-menu" onClick={e => { e.stopPropagation(); setOpen(!open); }}><span /></button>
