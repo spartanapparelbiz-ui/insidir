@@ -17,8 +17,8 @@ export default function HelpPage() {
 
       <h2>Do it yourself</h2>
       <ul>
-        <li><strong>Cancel or change your card</strong>: <Link href="/settings#billing">Settings → Billing</Link>: cancel there in one step; Change card on Whop opens your Insidir membership on Whop.</li>
-        <li><strong>Can&apos;t sign in</strong>: sign in with the same Whop account you paid with, on <Link href="/login">Sign in</Link>.</li>
+        <li><strong>Cancel or change your card</strong>: <Link href="/settings#billing">Settings → Billing</Link>: cancel there in one step, or change your card.</li>
+        <li><strong>Can&apos;t sign in</strong>: sign in with the same email you paid with, on <Link href="/login">Sign in</Link>.</li>
         <li><strong>Turn pings on or off</strong>: <Link href="/settings">Settings</Link>.</li>
         <li><strong>Delete your account</strong>: <Link href="/settings#delete">Settings → Delete account</Link>.</li>
         <li><strong>A number looks wrong</strong>: every card links its source. Compare <Link href="/status">Status</Link>, then tell us.</li>

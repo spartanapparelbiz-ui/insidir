@@ -12,7 +12,7 @@ export const CHANGELOG: ChangeDay[] = [
   { date: "2026-10-30", items: [
     "Followable returns: every tracker shows what $100 on each position would have made at the price Insidir showed it, plus one point.",
     "Open now, and a public leaderboard of trackers over 30 days and all time.",
-    "Sign-in and payments through Whop.",
+    "Secure sign-in and checkout.",
     "The home page's interactive laptops: click one to see live positions from that market.",
   ] },
   { date: "2026-10-29", items: [
