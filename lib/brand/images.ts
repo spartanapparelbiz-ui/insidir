@@ -9,7 +9,8 @@
 import palette from "./palette.json";
 
 export type PhotoFile = "hero" | "cta" | "markets" | "politics" | "tech" | "oil" | "hurricane" | "racing" | "tennis" | "baseball" | "basketball" | "soccer" | "golf"
-  | "football" | "hockey" | "esports" | "elections" | "world" | "culture" | "space";
+  | "football" | "hockey" | "esports" | "elections" | "world" | "culture" | "space"
+  | "street";
 
 /** Where a photo comes from and its license, listed on /credits (CC BY and CC BY-SA need the credit shown). */
 export interface PhotoCredit { by: string; source: string; license: string; licenseUrl: string }
@@ -28,6 +29,7 @@ const POS: Record<PhotoFile, string> = {
   hero: "50% 80%", cta: "50% 78%", markets: "60% 75%", politics: "60% 80%", tech: "70% 75%", oil: "66% 75%", hurricane: "30% 45%",
   racing: "50% 60%", tennis: "40% 55%", baseball: "55% 75%", basketball: "30% 40%", soccer: "75% 75%", golf: "40% 55%",
   football: "50% 60%", hockey: "80% 45%", esports: "50% 55%", elections: "50% 40%", world: "50% 70%", culture: "50% 60%", space: "64% 60%",
+  street: "50% 80%",
 };
 const AMBIENT = palette as Record<string, string>;
 
@@ -66,11 +68,15 @@ export const PHOTOS: Record<PhotoFile, Photo> = {
   culture: photo("culture", "A concert crowd under falling confetti and stage lights", "#1a1614", unsplash("dannyhowe", "1533174072545-7a4b6ad7a6c3")),
   space: photo("space", "A rocket's launch streak arcing over the water at night, Kennedy Space Center", "#141a2a",
     { by: "NASA/Frank Michaux", source: "https://images.nasa.gov/details/KSC-20250115-PH-FMX02_0001", license: "Public domain (NASA)", licenseUrl: "https://www.nasa.gov/nasa-brand-center/images-and-media/" }),
+  /* Landing art (2026-11-07): generated night scenes in one mood (rain, sodium light, people at work), each
+   * 1672×941 upscaled 4× with Real-ESRGAN (x4plus) and resized to 6144, checked by eye against its original. */
+  street: photo("street", "People crossing a rain-wet street between towers at dusk, taxis behind them", "#242428"),
 };
 
 /** The page slots: what each section of the site sits on. */
-export type Slot = "hero" | "cta" | "markets" | "space" | "world";
-export const SLOT: Record<Slot, PhotoFile> = { hero: "hero", cta: "cta", markets: "markets", space: "hurricane", world: "racing" };
+export type Slot = "hero" | "cta" | "markets" | "space" | "world" | "spotlight";
+/** space: the landing's record and the legal pages · world: pricing · spotlight: the landing's wallet spotlight. */
+export const SLOT: Record<Slot, PhotoFile> = { hero: "hero", cta: "cta", markets: "markets", space: "hurricane", world: "racing", spotlight: "street" };
 
 /** Slots and categories using a related photo until their own arrives (shown in the pull request, kept honest here):
  *  nearest first. A row of cards takes the first one no other card in it uses (categoryPhotos). */

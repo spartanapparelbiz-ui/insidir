@@ -9,6 +9,7 @@ import type { LandingData } from "@/lib/brand/landing";
 import { mil } from "@/lib/brand/pulse";
 import { heavierSide, verdict } from "@/lib/brand/verdict";
 import { MEMBERS, PAST, STAGES } from "@/lib/brand/copy";
+import { slotPhoto } from "@/lib/brand/images";
 import { dollars } from "@/lib/money";
 import { cents, Lines, Pill, Side, signedDollars, TierBadge } from "../Bits";
 import { Stage } from "../Stage";
@@ -204,7 +205,7 @@ export function SpotlightStage({ d }: { d: LandingData }) {
   const s = d.spotlight;
   if (!s) return null;
   return (
-    <Stage testid="spotlight" labelledBy="spotlight-h">
+    <Stage bg={{ kind: "photo", photo: slotPhoto("spotlight"), dark: 0.6 }} testid="spotlight" labelledBy="spotlight-h">
       <div className="b-head"><Lines id="spotlight-h" lines={STAGES.spotlight} size={64} /></div>
       <div className="b-col b-glass b-pad" style={{ maxWidth: "min(100%, calc(820 * var(--u)))", margin: "0 auto", display: "grid", gap: 14 }}>
         <div className="b-kv" style={{ flexWrap: "wrap" }}>
