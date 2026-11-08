@@ -30,7 +30,7 @@ export const HOW = [
 
 /** The demo's chapters (qa/record-site.ts → public/media/site-<id>-<desk|phone>.*), what each shows. */
 export const WATCH = [
-  { id: "board", t: "The board", url: "insidir.com/board", d: "Every millionaire bet, then one market: its money per side and Kalshi's price." },
+  { id: "board", t: "The board", url: "insidir.com/board", d: "Every millionaire bet with its side, live, then a copy ticket: their price and the price now." },
   { id: "markets", t: "Every market", url: "insidir.com/markets", d: "Each category ranked by millionaire money, down to the game." },
   { id: "record", t: "The record", url: "insidir.com/results", d: "How the millionaires' bets settled, by category. Losses included." },
 ] as const;
@@ -53,7 +53,7 @@ export const STAGES = {
   why: ["Why Insidir."],
   how: ["How it works."],
   watch: ["See it work."],
-  watchSub: "Recorded on the live site: real pages, real money, nothing staged.",
+  watchSub: "What members see, recorded with live data: real bets, real money, nothing staged.",
   final: ["Bet with the people", "who actually win."],
 } as const;
 

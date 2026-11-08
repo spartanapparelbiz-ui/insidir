@@ -57,8 +57,16 @@ const FLOWS: Record<string, (p: Page, start: () => void, d: Device, k: number) =
     await p.waitForTimeout(1200);
     await glide(p, 360 * k, 1300);
     await p.waitForTimeout(800);
-    await press(p, 'a[href^="/market/"]:visible', d);
-    await p.waitForURL(/\/market\//);
+    if (await p.locator('a[href^="/market/"]:visible').count()) {
+      // A visitor: into one market.
+      await press(p, 'a[href^="/market/"]:visible', d);
+      await p.waitForURL(/\/market\//);
+    } else {
+      // A member: a bet, then its copy ticket (the side, the price then and now, one tap to the venue).
+      await press(p, '[data-testid="bet-row"]:visible', d);
+      await p.waitForTimeout(900);
+      await press(p, '[data-testid="bet-row"]:visible >> text=/^Copy/', d);
+    }
     await p.waitForLoadState("networkidle");
     await p.waitForTimeout(2200);
     await glide(p, 420 * k, 1600);
