@@ -7,6 +7,7 @@
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
 import { electionDay } from "@/lib/brand/pulse";
 import type { CSSProperties } from "react";
+import { category as categoryInfo } from "@/lib/brand/categories";
 import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
 import { slotPhoto } from "@/lib/brand/images";
 import type { LandingData } from "@/lib/brand/landing";
@@ -20,6 +21,7 @@ import { Stage } from "../Stage";
 import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
+import { StickyStart } from "./StickyStart";
 import { RaceRow } from "./ElectionLive";
 import { HowStage, WatchStage, WhyStage } from "./Why";
 import { ElectionStage } from "./Value";
@@ -32,8 +34,16 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
         <HeroLine initial={d.pulse} />
+        {/* Onboarding starts here: the funnel's first question (/go's "What do you bet on?"), answered in one tap. */}
+        <div className="b-heropick" data-m="settle" style={{ "--d": ".8s" } as CSSProperties} data-testid="hero-pick">
+          <span className="b-heropick__q">{HERO.ask}</span>
+          <div className="b-heropick__row">
+            {HERO.picks.map(c => <a key={c} className="b-heropick__chip" href={`/go?step=where&cats=${c}`} data-testid="hero-chip" data-checkout="hero-pick">{categoryInfo(c).name}</a>)}
+            <a className="b-heropick__chip b-heropick__chip--more" href="/go?step=cats" data-testid="hero-chip-more">More</a>
+          </div>
+        </div>
         <div className="b-ctas">
-          <Pill href="/go" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
+          <Pill href="/go?step=cats" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
           <Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>
         </div>
       </div>
@@ -147,6 +157,7 @@ function Rest({ d }: { d: LandingData }) {
       <Pricing />
       <FaqStage />
       <Final />
+      {d.member ? null : <StickyStart />}
       {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
     </>
   );

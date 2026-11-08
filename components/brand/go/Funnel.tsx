@@ -9,7 +9,7 @@ import { BrandPicture } from "@/components/brand/BrandPicture";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { beacon } from "@/components/app/beacon";
 import { PingSetup } from "@/components/app/PingSetup";
-import { CATEGORIES, category as categoryInfo, categoryPhoto, type CategorySlug } from "@/lib/brand/categories";
+import { CATEGORIES, category as categoryInfo, categoryPhoto, isCategory, type CategorySlug } from "@/lib/brand/categories";
 import type { AhaCard, GoData } from "@/lib/go/data";
 import { SIZES, WHERE, type Size, type Where } from "@/lib/go/answers";
 import { leadLine } from "@/lib/autopilot/lead-line";
@@ -109,9 +109,12 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
   const [followed, setFollowed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const s = load();
-    const next = safeNextPath(new URLSearchParams(location.search).get("next"));
+    const s = load(), q = new URLSearchParams(location.search);
+    const next = safeNextPath(q.get("next"));
     if (next) { s.next = next; store(s); }
+    // ?cats= from the landing's "What do you bet on?" chips: the first answer, already given.
+    const picked = (q.get("cats") ?? "").split(",").filter((c): c is CategorySlug => isCategory(c));
+    if (picked.length) { s.cats = [...new Set([...picked, ...s.cats])]; store(s); }
     setA(s);
   }, []);
   const put = (p: Partial<Answers>) => setA(prev => { const n = { ...prev, ...p }; store(n); return n; });

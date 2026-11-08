@@ -9,6 +9,9 @@ export const HERO = {
   h1: ["Bet with the people", "who actually win."],
   sub: "On Kalshi, in seconds, and know when they get out.",
   /** Under it, the live line (components/brand/HeroLine.tsx): "Wallets up $1M+ bet $X today. Which side were you on?" */
+  /** The onboarding's first question, on the first screen: one tap answers it and opens /go at the next step. */
+  ask: "What do you bet on?",
+  picks: ["football", "basketball", "soccer", "elections", "tennis", "esports"],
 } as const;
 export const ASK_PLACEHOLDER = "Paste your bet: a Kalshi or Polymarket link, or type it";
 export const PROBLEM = {
