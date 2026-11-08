@@ -39,7 +39,10 @@ test("landing: the story (why, how, the demo), then value (free tiles); sides lo
     await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$1M\+ bet \$\d+K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
   }
   await expect(page.getByTestId("hero-sample")).toHaveAttribute("href", "#free");
-  await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
+  await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go?step=cats");
+  // The first onboarding question on the first screen: a chip opens /go with that answer given, at the next step.
+  await expect(page.getByTestId("hero-chip")).toHaveCount(6);
+  await expect(page.getByTestId("hero-chip").first()).toHaveAttribute("href", "/go?step=where&cats=football");
   // Why Insidir: four rows; How it works: three steps; See it work: the demo, three chapters of real recordings.
   await expect(page.getByTestId("why-rows").locator("li")).toHaveCount(4);
   await expect(page.getByTestId("how-steps").locator("li")).toHaveCount(3);

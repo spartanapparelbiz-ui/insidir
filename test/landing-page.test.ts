@@ -52,7 +52,10 @@ describe("V2 landing page", () => {
     expect(copy.STAGES.final).toEqual(["Bet with the people", "who actually win."]);
     expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing).toContain('<Pill href="/go" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
+    expect(landing).toContain('<Pill href="/go?step=cats" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
+    // The onboarding's first question on the first screen: each chip opens /go at the next step with it answered.
+    expect(landing).toContain('href={`/go?step=where&cats=${c}`}');
+    expect(copy.HERO.ask).toBe("What do you bet on?");
     expect(landing).toContain('<Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>');
     const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
