@@ -42,7 +42,7 @@ export default async function ResultsPage() {
     const db = getDb();
     [rec, latest, kal] = await Promise.all([
       memo("results:record", 60_000, () => millionaireRecord(db, now)).catch(() => null),
-      recentBets(db, { now, all: true, tier: "millionaire", limit: 200, member: true }).then(l => l.filter(b => b.result).slice(0, 30)).catch(() => []),
+      recentBets(db, { now, all: true, tier: "millionaire", limit: 200, member: true }).then(l => l.filter(b => b.result).slice(0, 10)).catch(() => []),
       memo("results:kalshi", 60_000, () => kalshiPingRecord(db, now)).catch(() => null),
     ]);
     rules = await memo("results:rules", 60_000, async () => ((await db.select().from(autopilotBacktests).where(eq(autopilotBacktests.key, REPORT_KEY)).limit(1))[0]?.result ?? null) as unknown as RulesReport | null).catch(() => null);
@@ -50,35 +50,9 @@ export default async function ResultsPage() {
   const n = rec ? settledCount(rec.total) : 0, kn = kal ? settledCount(kal.total) : 0;
   return (
     <Frame member={member} current="board" testid="results-page">
-      <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6, priority: true }} first testid="results-hero" labelledBy="r-h">
+      <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6, priority: true }} first testid="results-own" labelledBy="ro-h">
         <div className="b-head">
-          <Lines as="h1" id="r-h" lines={["Following the pings", "on Kalshi."]} size={56} />
-          <p className="b-sub" data-m="lift">Every time a $1M+ wallet bought into a market Kalshi also lists, we pinged members with Kalshi&apos;s price. Here is what $100 at that price did.</p>
-        </div>
-        <Panel className="s-col" testid="results-kalshi">
-          {kal && kn ? (
-            <>
-              <p className="s-big b-num" data-testid="results-kalshi-tally">{tallyText(kal.total)}</p>
-              {kal.net !== null
-                ? <p className="b-sub" data-testid="results-kalshi-net">${STAKE} on every ping at Kalshi&apos;s price: {dollars(kal.total.staked)} in, <b>{signed(kal.net)}</b> back, before Kalshi&apos;s fees.</p>
-                : <p className="b-small" data-testid="results-kalshi-building">The ${STAKE}-a-ping line shows from {MIN_SETTLED} settled pings: {kn} so far, {kal.pinged} sent in the last {kal.days} days.</p>}
-              <p className="b-small">Kalshi&apos;s price when the ping went out, the same side the wallet bought. {PAST}</p>
-            </>
-          ) : <p className="b-empty" data-testid="results-kalshi-empty">{kal && kal.pinged ? `${kal.pinged} ${kal.pinged === 1 ? "ping" : "pings"} on Kalshi markets in the last ${kal.days} days; none has settled yet.` : "No ping on a Kalshi market has settled yet. The record starts with the first one."}</p>}
-        </Panel>
-        {kal && kal.latest.length ? (
-          <Panel className="s-col s-prose">
-            <table data-testid="results-kalshi-rows">
-              <thead><tr><th scope="col">Ping</th><th scope="col">Kalshi then</th><th scope="col">Result</th></tr></thead>
-              <tbody>{kal.latest.slice(0, 10).map(p => <tr key={p.id}><th scope="row">{p.kind === "add" ? "Added to" : "Bought"} {p.outcome} · {p.title}</th><td className="b-num">{Math.round(p.kalshiPrice * 100)}¢</td><td>{p.result === "won" ? "Won" : p.result === "lost" ? "Lost" : p.result === "void" ? "Voided" : "Open"}</td></tr>)}</tbody>
-            </table>
-          </Panel>
-        ) : null}
-      </Stage>
-
-      <Stage bg={{ kind: "globe", dark: 0.6 }} testid="results-own" labelledBy="ro-h">
-        <div className="b-head">
-          <Lines as="h2" id="ro-h" lines={["How the millionaires' bets", "actually did."]} size={48} />
+          <Lines as="h1" id="ro-h" lines={["How the millionaires' bets", "actually did."]} size={56} />
           <p className="b-sub" data-m="lift">Every settled bet from a wallet up $1M+ in the last {rec?.days ?? 30} days, at the price they paid. Losses included.</p>
         </div>
         <Panel className="s-col" testid="results-total">
@@ -106,6 +80,32 @@ export default async function ResultsPage() {
         </Stage>
       ) : null}
 
+      <Stage testid="results-hero" labelledBy="r-h">
+        <div className="b-head">
+          <Lines as="h2" id="r-h" lines={["Following the pings", "on Kalshi."]} size={48} />
+          <p className="b-sub" data-m="lift">Every time a $1M+ wallet bought into a market Kalshi also lists, we pinged members with Kalshi&apos;s price. Here is what $100 at that price did.</p>
+        </div>
+        <Panel className="s-col" testid="results-kalshi">
+          {kal && kn ? (
+            <>
+              <p className="s-big b-num" data-testid="results-kalshi-tally">{tallyText(kal.total)}</p>
+              {kal.net !== null
+                ? <p className="b-sub" data-testid="results-kalshi-net">${STAKE} on every ping at Kalshi&apos;s price: {dollars(kal.total.staked)} in, <b>{signed(kal.net)}</b> back, before Kalshi&apos;s fees.</p>
+                : <p className="b-small" data-testid="results-kalshi-building">The ${STAKE}-a-ping line shows from {MIN_SETTLED} settled pings: {kn} so far, {kal.pinged} sent in the last {kal.days} days.</p>}
+              <p className="b-small">Kalshi&apos;s price when the ping went out, the same side the wallet bought. {PAST}</p>
+            </>
+          ) : <p className="b-empty" data-testid="results-kalshi-empty">{kal && kal.pinged ? `${kal.pinged} ${kal.pinged === 1 ? "ping" : "pings"} on Kalshi markets in the last ${kal.days} days; none has settled yet.` : "No ping on a Kalshi market has settled yet. The record starts with the first one."}</p>}
+        </Panel>
+        {kal && kal.latest.length ? (
+          <Panel className="s-col s-prose">
+            <table data-testid="results-kalshi-rows">
+              <thead><tr><th scope="col">Ping</th><th scope="col">Kalshi then</th><th scope="col">Result</th></tr></thead>
+              <tbody>{kal.latest.slice(0, 10).map(p => <tr key={p.id}><th scope="row">{p.kind === "add" ? "Added to" : "Bought"} {p.outcome} · {p.title}</th><td className="b-num">{Math.round(p.kalshiPrice * 100)}¢</td><td>{p.result === "won" ? "Won" : p.result === "lost" ? "Lost" : p.result === "void" ? "Voided" : "Open"}</td></tr>)}</tbody>
+            </table>
+          </Panel>
+        ) : null}
+      </Stage>
+
       {rules && rules.rows.length ? (
         <Stage testid="results-rules" labelledBy="rr-h">
           <div className="b-head"><Lines as="h2" id="rr-h" lines={["Every rule we tested."]} size={48} />
@@ -128,7 +128,7 @@ export default async function ResultsPage() {
           <Panel className="s-col s-prose">
             <table data-testid="results-by-day">
               <thead><tr><th scope="col">Day (ET)</th><th scope="col">Record</th><th scope="col">${STAKE} a bet</th></tr></thead>
-              <tbody>{rec.byDay.slice(0, 14).map(d => <tr key={d.day}><th scope="row">{dayLabel(d.day)}</th><td>{tallyText(d)}</td><td className="b-num">{signed(d.back - d.staked)}</td></tr>)}</tbody>
+              <tbody>{rec.byDay.slice(0, 7).map(d => <tr key={d.day}><th scope="row">{dayLabel(d.day)}</th><td>{tallyText(d)}</td><td className="b-num">{signed(d.back - d.staked)}</td></tr>)}</tbody>
             </table>
           </Panel>
         </Stage>
@@ -138,6 +138,7 @@ export default async function ResultsPage() {
         <div className="b-head"><Lines as="h2" id="rl-h" lines={["The latest settled."]} size={48} /></div>
         {latest.length ? <ul className="b-rows s-board" data-testid="results-rows">{latest.map(b => <li key={b.id} data-entity="bet"><BetRow bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
           : <p className="b-empty b-center">Nothing settled yet.</p>}
+        <p className="b-center b-small" style={{ marginTop: 14 }}><a href="/board">Every bet on the board</a></p>
         {member ? null : <div className="b-center"><div className="b-ctas"><Pill href="/go" data-checkout="results">Start for ${TRIAL.fee}</Pill></div></div>}
       </Stage>
     </Frame>

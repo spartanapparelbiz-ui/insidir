@@ -3,18 +3,13 @@
  * sides. Then live previews of what members get (a verdict and prices, board rows and a ping, the Daily Brief's top 3,
  * a followed wallet's last results, tonight's biggest race or game). Anything without data comes back empty and its
  * tile says so or steps aside: no number is ever made up. Server only. */
-import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import type { CategorySlug } from "@/lib/brand/categories";
-import { BOARD_DELAY_MS, lastResults, liveCategories, marketMoney, midnightET, positions, pulse, recentBets, topWallets,
+import { BOARD_DELAY_MS, lastResults, midnightET, positions, pulse, recentBets,
   type BoardBet, type CategoryLive, type MarketMoney, type Position, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
 import { leadRule, type Lead } from "@/lib/autopilot/lead";
 import { memo } from "@/lib/memo";
-import { KalshiClient, PolymarketClient } from "@/lib/exchanges";
-
-let clients: { kalshi: KalshiClient; polymarket: PolymarketClient } | null = null;
-const gapClients = () => (clients ??= { kalshi: new KalshiClient(), polymarket: new PolymarketClient() });
-import { electionBoard, electionDay, priceGaps, pulseData, walletSpotlight, type ElectionBoard, type PriceGap, type Race, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
+import { electionBoard, electionDay, pulseData, type ElectionBoard, type PriceGap, type Race, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
 
 const DAY = 86_400_000;
 
@@ -56,17 +51,6 @@ export interface LandingData {
   gaps: PriceGap[];
 }
 
-/** The newest Read that priced both venues (the members' "better price" preview). */
-function bestPrice(db: Db): Promise<BestPrice | null> {
-  return memo("brand:best-price", 5 * 60_000, async () => {
-    const r = await db.execute(sql`select data from terminal.reads
-      where data->'polymarket'->>'yesPrice' is not null and data->'kalshi'->>'yesPrice' is not null order by created_at desc limit 1`);
-    const d = (r.rows[0] as { data: Record<string, any> } | undefined)?.data; // eslint-disable-line @typescript-eslint/no-explicit-any
-    if (!d) return null;
-    const pm = d.polymarket?.yesPrice ?? null, k = d.kalshi ? (d.kalshi.inverted ? 1 - d.kalshi.yesPrice : d.kalshi.yesPrice) : null;
-    return { question: String(d.question), yes: { polymarket: pm === null ? null : Number(pm), kalshi: k === null ? null : Number(k) } };
-  });
-}
 
 export const milDollars = (m: MarketMoney): number => m.millionaire.yes.dollars + m.millionaire.no.dollars;
 const NIGHT: readonly CategorySlug[] = ["elections", "politics", "football", "basketball", "baseball", "hockey", "soccer", "tennis", "golf", "racing"];
@@ -76,14 +60,16 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   const midnight = midnightET(now);
   const [p, today, day, last3, board, categories, pr, wallets, best, recent] = await Promise.all([
     safe(pulse(db, now), EMPTY_PULSE),
-    safe(marketMoney(db, { since: midnight, limit: 20, now }), [] as MarketMoney[]),
-    safe(marketMoney(db, { since: now - DAY, limit: 20, now }), [] as MarketMoney[]),
+    // The landing (components/brand/landing/Landing.tsx) shows the hero, Free, the record and Election Day only since
+    // 2026-11-08: the per-market money, categories, wallet spotlight and price gaps it no longer shows aren't loaded.
+    Promise.resolve([] as MarketMoney[]),
+    Promise.resolve([] as MarketMoney[]),
     safe(recentBets(db, { now, limit: 3, tier: "millionaire", withSide: true }), [] as BoardBet[]),
     safe(recentBets(db, { now, limit: 2, member }), [] as BoardBet[]),
-    safe(liveCategories(db, now), { window: "day" as const, list: [] }),
+    Promise.resolve({ window: "day" as const, list: [] }),
     safe(leadRule(db), null),
-    safe(topWallets(db, [], now, 1), [] as TopWallet[]),
-    safe(bestPrice(db), null),
+    Promise.resolve([] as TopWallet[]),
+    Promise.resolve(null),
     safe(recentBets(db, { now, since: now - DAY, limit: 200, member: true, tier: "millionaire" }), [] as BoardBet[]),
   ]);
   const byMil = (l: MarketMoney[]) => [...l].filter(m => milDollars(m) > 0).sort((a, b) => milDollars(b) - milDollars(a));
@@ -98,10 +84,10 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   const [pulse2, election, spotlight, stake, gaps, lead, races] = await Promise.all([
     safe(pulseData(db, now, p.sinceMidnight, pool), { today: p.sinceMidnight, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
     electionDay(now) ? safe(electionBoard(db, now, member), null) : Promise.resolve(null),
-    safe(walletSpotlight(db), null),
+    Promise.resolve(null),
     // Your stake runs on the leading rule only: the best of many trackers was a pick after the fact.
     Promise.resolve(pr ? { n: pr.settled, won: pr.won, lost: pr.lost, staked: pr.settled * pr.perBet, net: pr.net, roi: pr.roi, stake: pr.perBet } : null),
-    safe(priceGaps(db, gapClients(), now), [] as PriceGap[]),
+    Promise.resolve([] as PriceGap[]),
     safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
     electionDay(now) ? Promise.resolve(null) : safe(electionBoard(db, now, false), null),
   ]);
