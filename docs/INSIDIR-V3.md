@@ -2,7 +2,8 @@
 
 Status: **adopted (November 7, 2026).** This brief overrides docs/INSIDIR-V2.md and docs/BRIEF.md where they
 conflict; V2's Coming soon rule (§2) and accuracy check (§12) still apply. Code comments cite it as
-`docs/INSIDIR-V3.md §N`. Steps 1 and 2 of §6 are built; the rest is not.
+`docs/INSIDIR-V3.md §N`. Steps 1–7 of §6 are built (step 7 as decided in §7: the terminal alongside the betting
+product, not replacing it); step 8, the price chart, waits for a licensed vendor.
 
 ## §0 Positioning (the copy, as adopted)
 
@@ -97,6 +98,10 @@ public. Nothing is estimated, rounded into a different figure, or computed from 
 except the price chart (§1.1).
 
 ### Company reports (`/company/[ticker]`)
+
+As built, two rules differ from the first draft below: an annual figure must come from a 10-K (some companies' 10-Qs
+report trailing-twelve-month figures, which are not a fiscal year), and a revenue line is named for the concept the
+company actually tagged ("Revenue from contracts with customers" excludes a bank's interest income).
 
 - Header: name as filed (lib/stocks/names.ts), ticker, CIK, exchange, SIC industry, fiscal year end, from
   `data.sec.gov/submissions/CIK##########.json`.
@@ -193,12 +198,17 @@ check re-read from EDGAR (V2 §12, extended to V3 tables).
 
 1. Data: widen Form 4 storage (§4), backfill all issuers, `filings` table. No new pages. **Built.**
 2. SEC filings database (`/filings`) and Insider activity (`/insiders`). **Built**, members only and Coming soon
-   until `npm run check:filings` passes 20 of 20 on production and `filings` is added to FEATURES_READY.
-3. Company reports without the chart: header, filings, insider history, TTM financials.
-4. People.
-5. Watchlists and in-app alerts.
-6. Research journal.
-7. New landing and pricing with the §0 copy, as corrected under §1; retire the betting product (§5).
+   until `npm run check:filings` passes 20 of 20 on production and `filings` is added to FEATURES_READY (or to
+   SEC_FEATURES_READY, which takes only the SEC terminal's keys).
+3. Company reports without the chart: header, filings, insider history, TTM financials. **Built** (`/company/[ticker]`,
+   lib/stocks/company.ts). Live once `npm run check:companies` passes 20 of 20 on production (`companies`).
+4. People. **Built** (`/people/[cik]`, from Forms 3, 4 and 5, which the feed and backfill now read). Live with
+   `people`, after `filings`.
+5. Watchlists and in-app alerts. **Built** (`/watchlists`; 8-K, 10-Q, 10-K and Schedules 13D/G from EDGAR's live
+   feed; latency measured and shown on /status). Live with `watchlists`.
+6. Research journal. **Built** (`/journal`, and on each company report). Live with `journal`.
+7. New landing and pricing with the §0 copy, as corrected under §1. **Built as `/sec`**, linked from the nav, beside
+   the betting product, which stays up (§7). Retiring the betting product is a later decision.
 8. Price chart, once a display licence is in place.
 
 ## §7 Decisions (November 7, 2026)
@@ -209,5 +219,6 @@ check re-read from EDGAR (V2 §12, extended to V3 tables).
 - The $2,000+ line: dropped for "Terminal-grade SEC data for $39 a month."
 - Alerts copy: "within minutes of a filing reaching EDGAR".
 - No AI: lib/research and lib/analyst stay off every V3 page, enforced by test/compliance-v3.test.ts.
-- Still open: what happens to current members of the betting product (migrate, refund, or a notice period), decided
-  before step 7.
+- Current members and the betting product (November 8, 2026): run both for now. The SEC terminal ships at `/sec` with
+  nav links; the betting product stays up and linked, and its members get the terminal on the same $39 plan.
+  Retiring it is a separate, later decision.

@@ -7,6 +7,8 @@
  * Server/worker only. */
 
 export const SEC_MIN_GAP_MS = 125;
+/** The `type` values the current-filings feed may be asked for. */
+export const CURRENT_TYPES: readonly string[] = ["3", "4", "5", "8-K", "10-K", "10-Q", "SCHEDULE 13D", "SCHEDULE 13G"];
 
 /** A usable SEC_USER_AGENT: some name and an email address. */
 export function secUserAgent(env: Record<string, string | undefined> = process.env): string | null {
@@ -18,15 +20,18 @@ export function allowedSecUrl(input: string): boolean {
   try {
     const u = new URL(input);
     if (u.protocol !== "https:" || u.username || u.password || u.port || u.hash) return false;
-    if (u.hostname === "data.sec.gov") return !u.search && /^\/submissions\/CIK\d{10}\.json$/.test(u.pathname);
+    // Submissions (a company's or a person's filing list) and XBRL company facts (docs/INSIDIR-V3.md §3, company reports).
+    if (u.hostname === "data.sec.gov") return !u.search && /^\/(submissions|api\/xbrl\/companyfacts)\/CIK\d{10}\.json$/.test(u.pathname);
     if (u.hostname !== "www.sec.gov") return false;
     if (/^\/Archives\/edgar\/data\/\d+\/\d{18}\/[A-Za-z0-9_.-]+$/.test(u.pathname)) return !u.search;
     // The daily form index (lib/stocks/backfill.ts): every filing EDGAR accepted that day, by form type.
     if (/^\/Archives\/edgar\/daily-index\/\d{4}\/QTR[1-4]\/form\.\d{8}\.idx$/.test(u.pathname)) return !u.search;
-    // The current-filings Atom feed for Form 4, paged.
+    // EDGAR's ticker → CIK list.
+    if (u.pathname === "/files/company_tickers.json") return !u.search;
+    // The current-filings Atom feed, paged: ownership forms (3, 4, 5) and the forms watchlists alert on.
     if (u.pathname === "/cgi-bin/browse-edgar") {
       const keys = [...u.searchParams.keys()].sort().join(",");
-      return u.searchParams.get("action") === "getcurrent" && u.searchParams.get("type") === "4" && u.searchParams.get("output") === "atom" &&
+      return u.searchParams.get("action") === "getcurrent" && CURRENT_TYPES.includes(u.searchParams.get("type") ?? "") && u.searchParams.get("output") === "atom" &&
         (keys === "action,count,output,type" || keys === "action,count,output,start,type");
     }
     return false;

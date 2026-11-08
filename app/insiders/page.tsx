@@ -7,10 +7,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
 import { Coverage, Filters, PAGE_SIZE, Pager, SecHead, SecPage, SecSoon, Tabs, Totals, TradesTable } from "@/components/sec/Sec";
-import { getViewer } from "@/lib/auth/viewer";
+import { secViewer } from "@/components/sec/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
-import { isPaid } from "@/lib/plans";
 import { coverageSince } from "@/lib/stocks/backfill";
 import { openMarketTotals, parseQuery, searchTrades, tabOf, type TabKey, type TradeView } from "@/lib/stocks/filings";
 
@@ -20,8 +19,7 @@ export const metadata: Metadata = { title: "Insider activity", description: "Ope
 type Params = Record<string, string | string[] | undefined>;
 
 export default async function InsidersPage({ searchParams }: { searchParams: Promise<Params> }) {
-  const viewer = await getViewer();
-  const paid = isPaid(viewer.plan);
+  const { paid, unread } = await secViewer();
   if (!isReady("filings")) {
     return (
       <Frame member={paid} current="board" testid="insiders-page">
@@ -51,7 +49,7 @@ export default async function InsidersPage({ searchParams }: { searchParams: Pro
   return (
     <Frame member current="board" testid="insiders-page">
       <SecPage testid="insiders">
-        <SecHead current="insiders" title={q.ticker ? `Insider activity · ${q.ticker}` : "Insider activity"}
+        <SecHead current="insiders" unread={unread} title={q.ticker ? `Insider activity · ${q.ticker}` : "Insider activity"}
           sub="What officers, directors and 10% owners reported on Form 4. Open-market purchases and sales first; option exercises, grants, tax withholding and gifts each in their own tab." />
         <Coverage since={since} />
         <Filters action="/insiders" q={q} tab={tab} codes={tab === "other"} />

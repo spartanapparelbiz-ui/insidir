@@ -7,7 +7,7 @@ export const RETIRED: ReadonlyArray<readonly [string, string]> = [
   ["/check", "/board"], ["/check/history", "/board"], ["/check/:id/:rest+", "/board"], ["/read/:id/:rest+", "/board"],
   ["/trader/:wallet", "/wallet/:wallet"], ["/p/:id", "/wallet/:id"], ["/top", "/wallets"], ["/whales", "/wallets"],
   ["/trackers", "/wallets"], ["/trackers/:slug*", "/wallets"], ["/sports", "/board?cat=sports"],
-  ["/stocks", "/board"], ["/company/:t*", "/board"], ["/insider-trading/:t*", "/board"], ["/insiders/:id+", "/insiders"],
+  ["/stocks", "/board"], ["/insider-trading/:t*", "/board"], ["/insiders/:id+", "/insiders"],
   ["/funds/:id*", "/board"], ["/deal/:id*", "/board"], ["/terminal", "/board"], ["/research", "/board"],
   ["/discover", "/markets"], ["/feed", "/board"], ["/gaps", "/board"], ["/splits", "/board"], ["/splits/:rest*", "/board"],
   ["/open", "/board"], ["/position/:id*", "/board"], ["/pnl", "/copies"], ["/receipts", "/results"], ["/receipts/:rest*", "/results"],

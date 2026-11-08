@@ -19,17 +19,31 @@ export const FEATURES = {
   /** The Form 4 database and insider activity (/filings, /insiders; docs/INSIDIR-V3.md §3). Ready once the 20-row EDGAR
    *  accuracy check (lib/accuracy/filings.ts) passes on production. */
   filings: "SEC filings and insider activity",
+  /** Company reports (/company/[ticker]): ready once `npm run check:companies` passes 20 of 20 on production. */
+  companies: "Company reports",
+  /** People (/people/[cik]): built from the Form 3, 4 and 5 database, so ready with `filings`. */
+  people: "People",
+  watchlists: "Watchlists and alerts",
+  journal: "Research journal",
+  /** The delayed price chart: needs a licensed price vendor (docs/INSIDIR-V3.md §1.2). */
+  price_chart: "Price chart",
 } as const;
 export type Feature = keyof typeof FEATURES;
 
 const DEFAULT_READY: Feature[] = ["feed", "records", "follows"];
 /** Insidir sends no email, so the email features never switch on; Crypto waits for its own launch. */
-const NEVER_YET: Feature[] = ["crypto", "alerts_email", "daily_email"];
+const NEVER_YET: Feature[] = ["crypto", "alerts_email", "daily_email", "price_chart"];
+
+/** The SEC terminal's features (docs/INSIDIR-V3.md §6). They can also be switched on with SEC_FEATURES_READY, a comma
+ *  list of these keys only, added to FEATURES_READY, so turning one on never means rewriting the betting product's list. */
+export const SEC_FEATURES: readonly Feature[] = ["filings", "companies", "people", "watchlists", "journal"];
 
 export function readyFeatures(env: Record<string, string | undefined> = process.env): Set<Feature> {
   const raw = env.FEATURES_READY;
-  const list = raw === undefined ? DEFAULT_READY : raw.split(",").map(s => s.trim()).filter((s): s is Feature => Object.hasOwn(FEATURES, s));
-  return new Set(list.filter(f => !NEVER_YET.includes(f)));
+  const keys = (v: string) => v.split(",").map(s => s.trim()).filter((s): s is Feature => Object.hasOwn(FEATURES, s));
+  const list = raw === undefined ? DEFAULT_READY : keys(raw);
+  const sec = keys(env.SEC_FEATURES_READY ?? "").filter(f => SEC_FEATURES.includes(f));
+  return new Set([...list, ...sec].filter(f => !NEVER_YET.includes(f)));
 }
 
 export const isReady = (f: Feature, env?: Record<string, string | undefined>): boolean => readyFeatures(env).has(f);

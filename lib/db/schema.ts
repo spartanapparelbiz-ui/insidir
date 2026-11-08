@@ -1,5 +1,6 @@
 /* Insidir Terminal's tables, in their own PostgreSQL schema ("terminal") so they never collide with the old
  * stock product's tables in the same Railway database (those are left untouched). Drizzle ORM. */
+import { sql } from "drizzle-orm";
 import type { NearMiss } from "@/lib/engines/near-miss";
 import { boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { MarketPair, Opportunity, Plan, Region, Safety, Venue, VMarket, WhaleTrade } from "@/lib/types";
@@ -631,7 +632,7 @@ export const insiderTrades = terminal.table("insider_trades", {
   value: doublePrecision("value"),
   filedAt: timestamp("filed_at", { withTimezone: true }).notNull(),
   url: text("url").notNull(),
-  /** "4" or "4/A". */
+  /** "3", "4" or "5", or an amendment ("4/A"). */
   form: text("form").notNull().default("4"),
   /** "A" acquired or "D" disposed, as filed. */
   acquiredDisposed: text("acquired_disposed"),
@@ -667,7 +668,8 @@ export const filings = terminal.table("filings", {
   issuerCik: text("issuer_cik").notNull(),
   company: text("company").notNull(),
   ticker: text("ticker"),
-  owners: jsonb("owners").$type<Array<{ cik: string | null; name: string; role: string }>>().notNull(),
+  /** Reporting owners as filed; the relationship flags are on filings read since People (docs/INSIDIR-V3.md §3). */
+  owners: jsonb("owners").$type<Array<{ cik: string | null; name: string; role: string; isDirector?: boolean; isOfficer?: boolean; isTenPercent?: boolean; officerTitle?: string | null }>>().notNull(),
   ownerKey: text("owner_key").notNull(),
   /** periodOfReport, the date of the earliest transaction the filing reports. */
   period: text("period"),
@@ -689,7 +691,105 @@ export const filings = terminal.table("filings", {
   index("filings_issuer_idx").on(t.issuerCik, t.filedAt),
   index("filings_ticker_idx").on(t.ticker),
   index("filings_group_idx").on(t.issuerCik, t.ownerKey, t.period),
+  index("filings_owners_idx").using("gin", sql`${t.owners} jsonb_path_ops`),
 ]);
+
+/** An SEC registrant (docs/INSIDIR-V3.md §3, company reports), from EDGAR's ticker list and its submissions file
+ *  (lib/stocks/company.ts). `wantedAt` asks the worker to read it (a page visit, a watchlist, a new 10-K or 10-Q);
+ *  `refreshedAt` is when it last was. `factsAt` is null when EDGAR has no XBRL company facts for it. */
+export const companies = terminal.table("companies", {
+  cik: text("cik").primaryKey(),
+  name: text("name").notNull(),
+  tickers: text("tickers").array().notNull().default(sql`'{}'::text[]`),
+  exchanges: text("exchanges").array().notNull().default(sql`'{}'::text[]`),
+  sic: text("sic"),
+  sicDescription: text("sic_description"),
+  /** "MMDD", as EDGAR gives it ("0630"). */
+  fiscalYearEnd: text("fiscal_year_end"),
+  stateOfIncorporation: text("state_of_incorporation"),
+  category: text("category"),
+  wantedAt: timestamp("wanted_at", { withTimezone: true }),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true }),
+  factsAt: timestamp("facts_at", { withTimezone: true }),
+}, t => [index("companies_wanted_idx").on(t.wantedAt), index("companies_tickers_idx").using("gin", t.tickers)]);
+
+/** XBRL facts from a company's 10-K and 10-Q filings (data.sec.gov companyfacts), only the concepts the company report
+ *  reads (lib/stocks/company.ts CONCEPTS), the last few years. One row per value as each filing reported it. */
+export const companyFacts = terminal.table("company_facts", {
+  cik: text("cik").notNull(),
+  concept: text("concept").notNull(),
+  unit: text("unit").notNull(),
+  /** "" for an instant (a balance on a date). */
+  start: text("start").notNull(),
+  end: text("end").notNull(),
+  value: doublePrecision("value").notNull(),
+  /** The filing it was reported in, "0000080424-26-000256". */
+  accn: text("accn").notNull(),
+  form: text("form").notNull(),
+  fy: integer("fy"),
+  fp: text("fp"),
+  filed: text("filed").notNull(),
+}, t => [primaryKey({ columns: [t.cik, t.concept, t.unit, t.start, t.end, t.accn] }), index("company_facts_cik_idx").on(t.cik, t.concept)]);
+
+/** Every SEC filing of a company: from its submissions file (the last two years) and, for the forms watchlists alert on,
+ *  from EDGAR's live feed (lib/stocks/current.ts). `items` are an 8-K's item numbers as filed ("2.02,9.01"). */
+export const companyFilings = terminal.table("company_filings", {
+  accession: text("accession").primaryKey(),
+  cik: text("cik").notNull(),
+  form: text("form").notNull(),
+  filedOn: text("filed_on").notNull(),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  reportDate: text("report_date"),
+  items: text("items"),
+  description: text("description"),
+  url: text("url").notNull(),
+  /** When Insidir first saw it (the alert latency starts at acceptedAt). */
+  seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("company_filings_cik_idx").on(t.cik, t.filedOn), index("company_filings_seen_idx").on(t.seenAt)]);
+
+/** A member's named SEC watchlist (docs/INSIDIR-V3.md §3, watchlists and alerts) and which forms alert from it. */
+export const secWatchlists = terminal.table("sec_watchlists", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  /** Form families that alert: "ownership" (Forms 3, 4, 5), "8-K", "10-Q", "10-K", "13D/G". */
+  forms: text("forms").array().notNull().default(sql`'{ownership}'::text[]`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("sec_watchlists_user_idx").on(t.userId)]);
+
+/** A ticker (by its company's CIK) or a person (reporting-owner CIK) on a watchlist. */
+export const secWatchlistItems = terminal.table("sec_watchlist_items", {
+  watchlistId: integer("watchlist_id").notNull().references(() => secWatchlists.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"company" | "person">().notNull(),
+  cik: text("cik").notNull(),
+  label: text("label").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.watchlistId, t.kind, t.cik] }), index("sec_watchlist_items_cik_idx").on(t.kind, t.cik)]);
+
+/** An in-app alert: a new filing for something on one of the member's watchlists, once per member and filing.
+ *  latency_ms is from EDGAR's acceptance to the alert being created. */
+export const secAlerts = terminal.table("sec_alerts", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  accession: text("accession").notNull(),
+  form: text("form").notNull(),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  latencyMs: integer("latency_ms"),
+  readAt: timestamp("read_at", { withTimezone: true }),
+}, t => [uniqueIndex("sec_alerts_user_accession_idx").on(t.userId, t.accession), index("sec_alerts_user_idx").on(t.userId, t.createdAt)]);
+
+/** The research journal (docs/INSIDIR-V3.md §3): a member's status and private note on a company. Never shared, never
+ *  indexed, deleted with the account. */
+export const journalEntries = terminal.table("journal_entries", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  cik: text("cik").notNull(),
+  status: text("status").$type<"researching" | "watching" | "passed">().notNull(),
+  note: text("note").notNull().default(""),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.cik] })]);
 
 /** The Form 4 backfill from EDGAR's daily form index (lib/stocks/backfill.ts), one row per calendar day (ET): the
  *  filings still to read that day, and when every one of them had been read. */

@@ -65,10 +65,11 @@ test("/insiders: open-market first and alone; exercises in their own tab; the re
   await expect(page.getByTestId("sec-totals")).toHaveCount(0);
   await page.goto("/insiders?tab=grants");
   await expect(page.getByTestId("sec-empty")).toBeVisible();
-  // A ticker opens that company's activity.
+  // A ticker opens that company's report; a ticker filter keeps to its activity.
   await page.goto("/insiders");
   await table.getByRole("link", { name: "PG", exact: true }).click();
-  await expect(page).toHaveURL(/\/insiders\?ticker=PG$/);
+  await expect(page).toHaveURL(/\/company\/PG$/);
+  await page.goto("/insiders?ticker=PG");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("PG");
   await expect(rows).toHaveCount(1);
 });

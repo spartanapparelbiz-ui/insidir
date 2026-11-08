@@ -146,7 +146,14 @@ describe("SEC client", () => {
     expect(allowedSecUrl("https://www.sec.gov/Archives/edgar/data/320193/000032019326000101/index.json")).toBe(true);
     expect(allowedSecUrl("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=100&start=100")).toBe(true);
     expect(allowedSecUrl("https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=1")).toBe(false);
-    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers.json")).toBe(false);
+    // V3 (docs/INSIDIR-V3.md §3): the ticker list, XBRL company facts, and the current feed for the alerting forms.
+    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers.json")).toBe(true);
+    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers.json?x=1")).toBe(false);
+    expect(allowedSecUrl("https://www.sec.gov/files/company_tickers_exchange.json")).toBe(false);
+    expect(allowedSecUrl("https://data.sec.gov/api/xbrl/companyfacts/CIK0000080424.json")).toBe(true);
+    expect(allowedSecUrl("https://data.sec.gov/api/xbrl/frames/us-gaap/Revenues/USD/CY2026.json")).toBe(false);
+    for (const t of ["8-K", "10-Q", "10-K", "SCHEDULE+13D", "SCHEDULE+13G", "3", "5"]) expect(allowedSecUrl(`https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=${t}&output=atom&count=100`), t).toBe(true);
+    expect(allowedSecUrl("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=S-1&output=atom&count=100")).toBe(false);
     expect(allowedSecUrl("http://data.sec.gov/submissions/CIK0001067983.json")).toBe(false);
     expect(allowedSecUrl("https://efts.sec.gov/LATEST/search-index?q=house")).toBe(false);
   });

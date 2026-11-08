@@ -11,7 +11,11 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = resolve(__dirname, "..");
 /** The V3 pages. Add each new V3 page here. */
-export const V3_PAGES = ["app/filings/page.tsx", "app/insiders/page.tsx"];
+export const V3_PAGES = ["app/filings/page.tsx", "app/insiders/page.tsx", "app/company/[ticker]/page.tsx", "app/people/[cik]/page.tsx", "app/watchlists/page.tsx",
+  "app/journal/page.tsx", "app/sec/page.tsx", "app/api/watchlists/route.ts", "app/api/journal/route.ts", "app/api/sec-alerts/route.ts"];
+/** The V3 pages a member uses (the landing and API routes aside): members only, behind their own Coming soon flag. */
+const GATED: Array<[string, string]> = [["app/filings/page.tsx", "filings"], ["app/insiders/page.tsx", "filings"], ["app/company/[ticker]/page.tsx", "companies"],
+  ["app/people/[cik]/page.tsx", "people"], ["app/watchlists/page.tsx", "watchlists"], ["app/journal/page.tsx", "journal"]];
 const NO_AI = ["lib/research/", "lib/analyst/"];
 const NO_PRICES = ["lib/stocks/prices.ts"];
 
@@ -63,7 +67,7 @@ describe("V3 pages", () => {
   it("no buy or sell signals, ratings or price targets in what the pages and their components say", () => {
     const BANNED = /\b(price target|target price|buy signal|sell signal|strong buy|strong sell|should (buy|sell)|buy now|sell now|undervalued|overvalued|outperform|underperform|upside|downside|bullish|bearish|insider info|guaranteed|risk-free)\b/i;
     const bad: string[] = [];
-    for (const f of [...V3_PAGES, "components/sec/Sec.tsx"]) {
+    for (const f of [...V3_PAGES, "components/sec/Sec.tsx", "components/sec/Actions.tsx", "lib/brand/sec-copy.ts"]) {
       const src = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
       const text = [...src.matchAll(/>([^<>{}]+)</g), ...src.matchAll(/["'`]([^"'`]*\s[^"'`]*)["'`]/g)].map(m => m[1]!);
       for (const t of text) if (BANNED.test(t)) bad.push(`${f}: ${t.trim()}`);
@@ -74,12 +78,19 @@ describe("V3 pages", () => {
   it("every table row links to its filing on sec.gov, and the pages are members-only behind the Coming soon rule", () => {
     const sec = readFileSync(join(ROOT, "components/sec/Sec.tsx"), "utf8");
     expect(sec.match(/<FilingLink /g)?.length).toBe(2);
+    // The company report's financials, filings and People's seats link each row to its filing too.
+    expect(readFileSync(join(ROOT, "app/company/[ticker]/page.tsx"), "utf8").match(/factSource\(co\.cik, s\)|href=\{f\.url\}/g)?.length).toBe(2);
+    expect(readFileSync(join(ROOT, "app/people/[cik]/page.tsx"), "utf8")).toMatch(/href=\{s\.lastUrl\}/);
     expect(sec).toMatch(/target="_blank" rel="noopener noreferrer"/);
-    for (const p of V3_PAGES) {
+    for (const [p, feature] of GATED) {
       const src = readFileSync(join(ROOT, p), "utf8");
-      expect(src).toMatch(/if \(!isReady\("filings"\)\)/);
-      expect(src).toMatch(/if \(!paid\) redirect\("\/go"\)/);
-      expect(src.indexOf('isReady("filings")')).toBeLessThan(src.indexOf("searchParams;"));
+      expect(src, p).toMatch(new RegExp(`if \\(!isReady\\("${feature}"\\)\\)`));
+      expect(src, p).toMatch(/if \(!paid\) redirect\("\/go"\)/);
+      // Coming soon is decided before anything is read from the database.
+      const body = src.slice(src.indexOf("export default"));
+      expect(body.indexOf(`isReady("${feature}")`), p).toBeGreaterThan(-1);
+      expect(body.indexOf(`isReady("${feature}")`), p).toBeLessThan(Math.min(...["getDb()", "await load("].map(k => body.indexOf(k)).filter(i => i >= 0)));
     }
+    for (const r of ["app/api/watchlists/route.ts", "app/api/journal/route.ts", "app/api/sec-alerts/route.ts"]) expect(readFileSync(join(ROOT, r), "utf8"), r).toMatch(/memberOrNull\(\)/);
   });
 });

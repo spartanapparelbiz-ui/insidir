@@ -13,7 +13,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { filings, insiderTrades } from "@/lib/db/schema";
 import { companyName, filingIndexUrl, roleWord, type Ownership } from "./form4";
-import { readOwnership, saveTrades, tradeRows, type TradeRow } from "./history";
+import { formOf, readOwnership, saveTrades, tradeRows, type TradeRow } from "./history";
 import type { SecClient } from "./sec";
 
 export type FilingRow = typeof filings.$inferInsert;
@@ -25,8 +25,9 @@ export const ownerKey = (o: Pick<Ownership, "owners">): string =>
 /** A filing's row. Pure. */
 export function filingRow(o: Ownership, accession: string, filedAt: number, url: string): FilingRow {
   return {
-    accession, form: /\/A$/i.test(o.documentType) ? "4/A" : "4", issuerCik: String(Number(o.issuerCik)), company: companyName(o.issuerName), ticker: o.ticker,
-    owners: o.owners.map(x => ({ cik: x.cik && /^\d{1,10}$/.test(x.cik) ? String(Number(x.cik)) : null, name: x.name, role: roleWord(x) })),
+    accession, form: formOf(o), issuerCik: String(Number(o.issuerCik)), company: companyName(o.issuerName), ticker: o.ticker,
+    owners: o.owners.map(x => ({ cik: x.cik && /^\d{1,10}$/.test(x.cik) ? String(Number(x.cik)) : null, name: x.name, role: roleWord(x),
+      isDirector: x.isDirector, isOfficer: x.isOfficer, isTenPercent: x.isTenPercentOwner, officerTitle: x.officerTitle })),
     ownerKey: ownerKey(o), period: o.period, filedAt: new Date(filedAt), url, lines: o.lines.filter(l => l.code).length, plan10b5_1: o.aff10b5One,
     originalDate: o.originalDate,
   };
@@ -48,12 +49,13 @@ const sameFilingDay = (receivedOn: string, filedOn: string): boolean => {
 export function amendmentLinks(group: readonly GroupItem[]): Links {
   const out: Links = { amends: new Map(), supersededBy: new Map() };
   const sorted = [...group].sort((a, b) => a.filedAt.getTime() - b.filedAt.getTime() || a.accession.localeCompare(b.accession));
-  const originals = sorted.filter(g => g.form === "4");
+  const base = (f: string) => f.replace(/\/A$/, "");
+  const originals = sorted.filter(g => !g.form.endsWith("/A"));
   /** The latest version of each original, by the original's accession. */
   const latest = new Map(originals.map(o => [o.accession, o]));
   for (const g of sorted) {
-    if (g.form !== "4/A") continue;
-    const before = originals.filter(o => o.filedAt.getTime() <= g.filedAt.getTime());
+    if (!g.form.endsWith("/A")) continue;
+    const before = originals.filter(o => base(o.form) === base(g.form)).filter(o => o.filedAt.getTime() <= g.filedAt.getTime());
     // The original received on the 4/A's date; failing that, one received up to three days before it (an evening filing).
     const exact = g.originalDate === null ? before : before.filter(o => filedOnEt(o.filedAt) === g.originalDate);
     const fits = exact.length || g.originalDate === null ? exact : before.filter(o => sameFilingDay(filedOnEt(o.filedAt), g.originalDate!));
@@ -69,7 +71,7 @@ export function amendmentLinks(group: readonly GroupItem[]): Links {
 export async function linkAmendments(db: Db, issuerCik: string, key: string, period: string | null): Promise<void> {
   const where = and(eq(filings.issuerCik, issuerCik), eq(filings.ownerKey, key), period === null ? isNull(filings.period) : eq(filings.period, period));
   const group = await db.select({ accession: filings.accession, form: filings.form, filedAt: filings.filedAt, lines: filings.lines, originalDate: filings.originalDate }).from(filings).where(where).orderBy(asc(filings.filedAt));
-  if (group.length < 2 && !group.some(g => g.form === "4/A")) return;
+  if (group.length < 2 && !group.some(g => g.form.endsWith("/A"))) return;
   const links = amendmentLinks(group);
   for (const g of group) {
     await db.update(filings).set({ amends: links.amends.get(g.accession) ?? null, supersededBy: links.supersededBy.get(g.accession) ?? null }).where(eq(filings.accession, g.accession));
@@ -117,6 +119,10 @@ export interface Query {
   to?: string;
   /** Minimum value in dollars (lines with a value only). */
   min?: number;
+  /** One reporting owner, by CIK (People pages). */
+  owner?: string;
+  /** One company, by CIK (company reports). */
+  issuer?: string;
 }
 
 const DATE = { test: (s: string) => { const t = Date.parse(`${s}T12:00:00Z`); return /^\d{4}-\d{2}-\d{2}$/.test(s) && Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === s; } };
@@ -127,10 +133,11 @@ const TICKER = /^[A-Z][A-Z0-9.-]{0,9}$/;
 export function parseQuery(p: Record<string, string | string[] | undefined>): Query {
   const one = (k: string) => { const v = p[k]; return (Array.isArray(v) ? v[0] : v)?.trim() ?? ""; };
   const q = one("q").slice(0, 80), ticker = one("ticker").toUpperCase(), role = one("role"), code = one("code").toUpperCase(), from = one("from"), to = one("to");
-  const min = Number(one("min"));
+  const min = Number(one("min")), owner = one("owner"), issuer = one("issuer");
   return {
     ...(q ? { q } : {}), ...(TICKER.test(ticker) ? { ticker } : {}), ...(role === "director" || role === "officer" || role === "ten" ? { role } : {}),
     ...(CODE.test(code) ? { code } : {}), ...(DATE.test(from) ? { from } : {}), ...(DATE.test(to) ? { to } : {}), ...(Number.isFinite(min) && min > 0 ? { min } : {}),
+    ...(/^\d{1,10}$/.test(owner) && Number(owner) > 0 ? { owner: String(Number(owner)) } : {}), ...(/^\d{1,10}$/.test(issuer) && Number(issuer) > 0 ? { issuer: String(Number(issuer)) } : {}),
   };
 }
 
@@ -152,6 +159,8 @@ export async function searchFilings(db: Db, q: Query, opts: { limit: number; off
   if (q.ticker) w.push(sql`upper(f.ticker) = ${q.ticker}`);
   if (q.from) w.push(sql`f.filed_at >= ${startOfDay(q.from)}`);
   if (q.to) w.push(sql`f.filed_at <= ${endOfDay(q.to)}`);
+  if (q.issuer) w.push(sql`f.issuer_cik = ${q.issuer}`);
+  if (q.owner) w.push(sql`f.owners @> ${JSON.stringify([{ cik: q.owner }])}::jsonb`);
   const lineW = [sql`t.accession = f.accession`];
   if (q.code) w.push(sql`exists (select 1 from terminal.insider_trades t where t.accession = f.accession and t.code = ${q.code})`);
   if (q.role) w.push(sql`exists (select 1 from terminal.insider_trades t where t.accession = f.accession and ${roleSql(q.role)})`);
@@ -210,7 +219,8 @@ export type TradeView = typeof insiderTrades.$inferSelect;
 /** Transaction lines, newest first, in one tab, matching the query. Superseded lines (restated by a later 4/A) are
  *  left out. The open-market tab is Table I P acquired and S disposed only. */
 export async function searchTrades(db: Db, tab: TabKey, q: Query, opts: { limit: number; offset?: number }): Promise<TradeView[]> {
-  const w = [sql`not t.superseded`];
+  // Only lines read under V3 (they have a filings row): older V2 history rows lack the V3 columns.
+  const w = [sql`not t.superseded`, sql`exists (select 1 from terminal.filings f where f.accession = t.accession)`];
   if (tab === "open") w.push(sql`not t.derivative and ((t.code = 'P' and t.acquired_disposed = 'A') or (t.code = 'S' and t.acquired_disposed = 'D'))`);
   else if (tab === "other") w.push(sql`(t.code not in (${sql.join(NAMED.map(c => sql`${c}`), sql`, `)}) or ((t.code = 'P' or t.code = 'S') and (t.derivative or t.acquired_disposed is distinct from case when t.code = 'P' then 'A' else 'D' end)))`);
   else w.push(sql`t.code in (${sql.join([...TABS.find(t => t.key === tab)!.codes].map(c => sql`${c}`), sql`, `)})`);
@@ -221,6 +231,8 @@ export async function searchTrades(db: Db, tab: TabKey, q: Query, opts: { limit:
   if (q.from) w.push(sql`coalesce(t.trade_date, to_char(t.filed_at at time zone 'America/New_York', 'YYYY-MM-DD')) >= ${q.from}`);
   if (q.to) w.push(sql`coalesce(t.trade_date, to_char(t.filed_at at time zone 'America/New_York', 'YYYY-MM-DD')) <= ${q.to}`);
   if (q.min) w.push(sql`t.value >= ${q.min}`);
+  if (q.owner) w.push(sql`t.owner_cik = ${q.owner}`);
+  if (q.issuer) w.push(sql`t.issuer_cik = ${q.issuer}`);
   const r = await db.execute(sql`select * from terminal.insider_trades t where ${sql.join(w, sql` and `)}
     order by t.filed_at desc, t.accession desc, t.line asc, t.owner_cik asc limit ${opts.limit} offset ${opts.offset ?? 0}`);
   return (r.rows as Array<Record<string, unknown>>).map(tradeFromRow);
@@ -243,11 +255,13 @@ export function tradeFromRow(r: Record<string, unknown>): TradeView {
 export async function openMarketTotals(db: Db, q: Query, now: number): Promise<{ bought: number; sold: number; buyers: number; sellers: number; from: string; to: string }> {
   const to = q.to ?? new Date(now).toISOString().slice(0, 10);
   const from = q.from ?? new Date(now - 30 * 86_400_000).toISOString().slice(0, 10);
-  const w = [sql`not t.superseded`, sql`not t.derivative`, sql`((t.code = 'P' and t.acquired_disposed = 'A') or (t.code = 'S' and t.acquired_disposed = 'D'))`,
+  const w = [sql`not t.superseded`, sql`exists (select 1 from terminal.filings f where f.accession = t.accession)`, sql`not t.derivative`, sql`((t.code = 'P' and t.acquired_disposed = 'A') or (t.code = 'S' and t.acquired_disposed = 'D'))`,
     sql`coalesce(t.trade_date, to_char(t.filed_at at time zone 'America/New_York', 'YYYY-MM-DD')) between ${from} and ${to}`];
   if (q.q) w.push(sql`(t.company ilike ${like(q.q)} or t.ticker ilike ${like(q.q)} or t.owner_name ilike ${like(q.q)})`);
   if (q.ticker) w.push(sql`upper(t.ticker) = ${q.ticker}`);
   if (q.role) w.push(roleSql(q.role));
+  if (q.owner) w.push(sql`t.owner_cik = ${q.owner}`);
+  if (q.issuer) w.push(sql`t.issuer_cik = ${q.issuer}`);
   // One owner's line counts once even when several owners share it (a fund and its manager on one filing).
   const r = await db.execute(sql`select
       coalesce(sum(value) filter (where code = 'P'), 0)::float as bought, coalesce(sum(value) filter (where code = 'S'), 0)::float as sold,

@@ -27,7 +27,7 @@ export type TradeRow = typeof insiderTrades.$inferInsert;
 export function tradeRows(o: Ownership, accession: string, filedAt: number, url: string): TradeRow[] {
   const out: TradeRow[] = [];
   const company = companyName(o.issuerName);
-  const form = /\/A$/i.test(o.documentType) ? "4/A" : "4";
+  const form = formOf(o);
   o.lines.forEach((l, line) => {
     if (!l.code) return;
     for (const owner of o.owners) {
@@ -40,6 +40,12 @@ export function tradeRows(o: Ownership, accession: string, filedAt: number, url:
     }
   });
   return out;
+}
+
+/** The form as filed: "3", "4", "5", or an amendment ("4/A"). Pure. */
+export function formOf(o: Pick<Ownership, "documentType">): string {
+  const t = o.documentType.trim().toUpperCase().replace(/\s+/g, "");
+  return /^[345](\/A)?$/.test(t) ? t : /\/A$/.test(t) ? "4/A" : "4";
 }
 
 /** An open-market purchase or sale of the stock itself (Table I, P acquired or S disposed). Pure. */

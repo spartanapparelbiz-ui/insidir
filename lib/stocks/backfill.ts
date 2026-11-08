@@ -4,7 +4,7 @@
  *
  *   Days     one terminal.form4_days row per day from FORM4_BACKFILL_FROM (default: a year back) to yesterday, US
  *            Eastern. Newest days first, so recent coverage comes in before old.
- *   A day    its index read once (Form 4 and 4/A, one entry per accession), then each filing EDGAR's live feed hasn't
+ *   A day    its index read once (Forms 3, 4 and 5 and amendments, one entry per accession), then each filing EDGAR's live feed hasn't
  *            already given us is read (index.json + the ownership XML: two requests) and stored (lib/stocks/filings.ts).
  *            A filing that fails is retried on later runs; after three failures it is set aside in `failed` so one
  *            broken submission can't hold a day open. A day is done when nothing is pending.
@@ -47,15 +47,15 @@ export const indexUrl = (day: string): string => {
   return `https://www.sec.gov/Archives/edgar/daily-index/${y}/QTR${Math.ceil(Number(m) / 3)}/form.${y}${m}${d}.idx`;
 };
 
-/** A daily form index → its Form 4 and 4/A filings, once per accession (EDGAR lists a Form 4 under each filer: the
- *  issuer and every reporting owner). Pure. */
-export function parseFormIndex(text: string): Array<{ accession: string; cik: string; form: "4" | "4/A" }> {
-  const out = new Map<string, { accession: string; cik: string; form: "4" | "4/A" }>();
+/** A daily form index → its ownership filings (Forms 3, 4 and 5 and their amendments), once per accession (EDGAR lists
+ *  one under each filer: the issuer and every reporting owner). Pure. */
+export function parseFormIndex(text: string): Array<{ accession: string; cik: string; form: string }> {
+  const out = new Map<string, { accession: string; cik: string; form: string }>();
   for (const raw of text.split(/\r?\n/)) {
-    const m = /^(4|4\/A)\s+.*?\s(\d{1,10})\s+(\d{8})\s+edgar\/data\/(\d{1,10})\/(\d{10})-(\d{2})-(\d{6})\.txt\s*$/.exec(raw);
+    const m = /^([345](?:\/A)?)\s+.*?\s(\d{1,10})\s+(\d{8})\s+edgar\/data\/(\d{1,10})\/(\d{10})-(\d{2})-(\d{6})\.txt\s*$/.exec(raw);
     if (!m) continue;
     const accession = `${m[5]}${m[6]}${m[7]}`;
-    if (!out.has(accession)) out.set(accession, { accession, cik: m[4]!, form: m[1] as "4" | "4/A" });
+    if (!out.has(accession)) out.set(accession, { accession, cik: m[4]!, form: m[1]! });
   }
   return [...out.values()];
 }

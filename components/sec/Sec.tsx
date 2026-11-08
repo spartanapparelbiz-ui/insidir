@@ -26,15 +26,23 @@ export function relationship(t: Pick<TradeView, "isDirector" | "isOfficer" | "is
   return parts.length ? parts.join(" · ") : t.role.replace(/^(The|An|A) /, "").replace(/^./, c => c.toUpperCase());
 }
 
-export function SecHead({ title, sub, current }: { title: string; sub: string; current: "filings" | "insiders" }) {
+export type Section = "filings" | "insiders" | "company" | "people" | "watchlists" | "journal";
+const SECTIONS: ReadonlyArray<[Section, string, string]> = [["filings", "SEC filings", "/filings"], ["insiders", "Insider activity", "/insiders"], ["watchlists", "Watchlists", "/watchlists"], ["journal", "Journal", "/journal"]];
+
+/** The SEC pages' own tabs, with the unread alert count on Watchlists. */
+export function SecHead({ title, sub, current, unread = 0, children }: { title: string; sub: string; current: Section; unread?: number; children?: ReactNode }) {
   return (
     <header className="sec-head">
       <nav className="sec-tabs" aria-label="SEC research">
-        <Link href="/filings" aria-current={current === "filings" ? "page" : undefined}>SEC filings</Link>
-        <Link href="/insiders" aria-current={current === "insiders" ? "page" : undefined}>Insider activity</Link>
+        {SECTIONS.map(([k, label, href]) => (
+          <Link key={k} href={href} aria-current={current === k ? "page" : undefined} data-tab={k}>
+            {label}{k === "watchlists" && unread ? <span className="sec-badge" data-testid="unread-badge" aria-label={`${unread} unread`}>{unread > 99 ? "99+" : unread}</span> : null}
+          </Link>
+        ))}
       </nav>
       <h1 className="sec-h1">{title}</h1>
       <p className="sec-sub">{sub}</p>
+      {children}
     </header>
   );
 }
@@ -85,7 +93,8 @@ function FilingLink({ url, form, accession }: { url: string; form: string; acces
   return <a href={url} target="_blank" rel="noopener noreferrer" className="sec-link" title={`Accession ${short(accession)} on sec.gov`}>Form {form}<span className="sr-only"> {short(accession)} on sec.gov</span> ↗</a>;
 }
 
-const tickerLink = (ticker: string | null) => (ticker ? <Link href={`/insiders?ticker=${encodeURIComponent(ticker)}`} className="sec-tick">{ticker}</Link> : null);
+const tickerLink = (ticker: string | null) => (ticker ? <Link href={`/company/${encodeURIComponent(ticker)}`} className="sec-tick">{ticker}</Link> : null);
+export const personLink = (cik: string | null, name: string) => (cik ? <Link href={`/people/${cik}`} className="sec-person">{personName(name)}</Link> : <>{personName(name)}</>);
 
 export function TradesTable({ rows, open }: { rows: readonly TradeView[]; open: boolean }) {
   if (!rows.length) return <p className="sec-empty" data-testid="sec-empty">No transactions match.</p>;
@@ -103,7 +112,7 @@ export function TradesTable({ rows, open }: { rows: readonly TradeView[]; open: 
             <td data-label="Filed">{etDate(t.filedAt)}<span className="sec-dim"> {etTime(t.filedAt)}</span></td>
             <td data-label="Traded">{day(t.tradeDate)}</td>
             <td data-label="Company">{t.company} {tickerLink(t.ticker)}</td>
-            <td data-label="Person">{personName(t.ownerName)}<span className="sec-dim"> {relationship(t)}</span></td>
+            <td data-label="Person">{personLink(t.ownerCik, t.ownerName)}<span className="sec-dim"> {relationship(t)}</span></td>
             <td data-label="Transaction"><abbr title={CODE_NAMES[t.code] ?? "Code as filed"} className="sec-code">{t.code}</abbr> {open ? (t.code === "P" ? "Purchase" : "Sale") : (CODE_NAMES[t.code] ?? "As filed")}
               {t.acquiredDisposed ? <span className="sec-dim"> ({t.acquiredDisposed === "A" ? "acquired" : "disposed"})</span> : null}</td>
             {open ? null : <td data-label="Security">{t.security ?? "—"}{t.derivative ? <span className="sec-dim"> derivative</span> : null}</td>}
@@ -136,7 +145,7 @@ export function FilingsTable({ rows }: { rows: readonly FilingView[] }) {
               {f.supersededBy ? <span className="sec-flag" title={`Restated by ${short(f.supersededBy)}`}>Amended</span> : null}
               {f.amends ? <span className="sec-flag sec-flag--dim" title={`Amends ${short(f.amends)}`}>Amendment</span> : null}</td>
             <td data-label="Company">{f.company} {tickerLink(f.ticker)}</td>
-            <td data-label="Owners">{f.owners.slice(0, 3).map((o, i) => <span key={i} className="sec-owner">{personName(o.name)}<span className="sec-dim"> {o.role.replace(/^(The|An|A) /, "")}</span></span>)}{f.owners.length > 3 ? <span className="sec-dim"> +{f.owners.length - 3} more</span> : null}</td>
+            <td data-label="Owners">{f.owners.slice(0, 3).map((o, i) => <span key={i} className="sec-owner">{personLink(o.cik, o.name)}<span className="sec-dim"> {o.role.replace(/^(The|An|A) /, "")}</span></span>)}{f.owners.length > 3 ? <span className="sec-dim"> +{f.owners.length - 3} more</span> : null}</td>
             <td data-label="Period">{day(f.period)}</td>
             <td data-label="Codes">{f.codes.length ? f.codes.map(c => <abbr key={c} title={CODE_NAMES[c] ?? "Code as filed"} className="sec-code">{c}</abbr>) : <span className="sec-dim">Holdings only</span>}</td>
             <td data-label="Purchases" className="r">{f.bought ? usd0(f.bought) : "—"}</td>
@@ -181,6 +190,13 @@ export function SecSoon({ title, line }: { title: string; line: string }) {
     </section>
   );
 }
+
+/** A feature not live yet inside a page that is: the badge and one line, nothing else. */
+export function SoonLine({ what }: { what: string }) {
+  return <p className="sec-soonline"><span className="soon">Coming soon</span> {what}</p>;
+}
+
+export const fmt = { usd, usd0, price, count, etDate, etTime, day, short };
 
 export function SecPage({ children, testid }: { children: ReactNode; testid: string }) {
   return <div className="sec" data-testid={testid}>{children}</div>;
