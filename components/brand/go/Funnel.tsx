@@ -14,7 +14,7 @@ import type { AhaCard, GoData } from "@/lib/go/data";
 import { SIZES, WHERE, type Size, type Where } from "@/lib/go/answers";
 import { leadLine } from "@/lib/autopilot/lead-line";
 import { dollars } from "@/lib/money";
-import { Arrow, Lines, m, signedDollars, TierBadge } from "../Bits";
+import { Arrow, Lines, m, Mark, signedDollars, TierBadge } from "../Bits";
 import { MoneyCard } from "../MoneyCard";
 import { PAY_BULLETS, Paywall } from "../Paywall";
 import { BrandFoot } from "../Nav";
@@ -26,6 +26,8 @@ export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "pa
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
  * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
+/** The steps before paying, as the header counts them ("building" plays by itself and isn't a step). */
+const PRE: Step[] = ["hook", "cats", "where", "size", "aha", "paywall", "checkout"];
 export const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "size", paywall: "aha", checkout: "paywall" };
 const KEY = "insidir_go";
 
@@ -197,7 +199,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               return (
                 <button key={c.slug} type="button" className="b-tile" aria-pressed={on} data-testid="go-tile" data-cat={c.slug} {...st(0.4 + i * 0.03)}
                   onClick={() => put({ cats: on ? a.cats.filter(x => x !== c.slug) : [...a.cats, c.slug] })}>
-                  
+                  <span className="b-tile__img"><BrandPicture src={categoryPhoto(c.slug).src} fill priority={i < 6} sizes="(max-width: 552px) 33vw, (max-width: 1160px) 25vw, 170px" /></span>
                   <span className="b-tile__check" aria-hidden="true"><svg viewBox="0 0 11 9" fill="none"><path d="M1 4.5 4 7.5 10 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                   <span className="b-tile__name">{c.name}</span>
                 </button>
@@ -309,8 +311,13 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       break;
   }
   return (
-    <main className="b-root" data-testid="go" data-step={step}>
+    <main className="b-root b-go" data-testid="go" data-step={step}>
       {bg}
+      {/* The header: the mark in the middle, the step count on the right (before paying; after, it's account setup). */}
+      <header className="b-go-top" aria-hidden="true">
+        <span className="b-go-top__mark"><Mark /></span>
+        {PRE.includes(step) ? <span className="b-go-top__n">Step {PRE.indexOf(step) + 1} of {PRE.length}</span> : null}
+      </header>
       <div className="b-go-bar" role="progressbar" aria-label="Your progress" aria-valuemin={1} aria-valuemax={ORDER.length} aria-valuenow={ORDER.indexOf(step) + 1}
         aria-valuetext={`Step ${ORDER.indexOf(step) + 1} of ${ORDER.length}`} data-testid="go-progress"><span style={{ transform: `scaleX(${progress})` }} /></div>
       {step === "hook" ? <a className="b-go-back" href="/" aria-label="Back to the home page" data-testid="go-back"><BackArrow /></a>

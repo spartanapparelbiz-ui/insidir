@@ -12,7 +12,7 @@
 .sec-cov { color: var(--dim); margin: 8px 0 14px; }
 .sec-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 10px; align-items: end; padding: 12px; border: 1px solid var(--glass-line); border-radius: 12px; background: var(--panel); }
 .sec-filters label { display: grid; gap: 4px; color: var(--dim); font-size: 12px; font-weight: 500; }
-.sec-filters input, .sec-filters select { font: inherit; font-size: 13px; color: var(--ink); background: rgba(255, 255, 255, .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; min-width: 0; width: 100%; }
+.sec-filters input, .sec-filters select { font: inherit; font-size: 13px; color: var(--ink); background: rgb(var(--fg-rgb, 255 255 255) / .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; min-width: 0; width: 100%; }
 .sec .sec-btn { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 0; background: var(--white-btn); color: var(--btn-ink); cursor: pointer; }
 .sec-clear { color: var(--dim); align-self: center; text-align: center; }
 .sec-wrap { overflow-x: auto; border: 1px solid var(--glass-line); border-radius: 12px; margin-top: 12px; }
@@ -21,10 +21,10 @@
 .sec-table thead th { position: sticky; top: 0; background: var(--panel); color: var(--dim); font-weight: 500; font-size: 12px; }
 .sec-table td:nth-child(3), .sec-table td:nth-child(4) { white-space: normal; min-width: 150px; }
 .sec-table .r { text-align: right; }
-.sec-table tbody tr:hover { background: rgba(255, 255, 255, .03); }
+.sec-table tbody tr:hover { background: rgb(var(--fg-rgb, 255 255 255) / .03); }
 .sec-dim { color: var(--dim); font-size: 12px; }
 .sec-tick { margin-left: 4px; font-weight: 600; color: var(--ink); border-bottom: 1px dotted var(--dim); }
-.sec-code { display: inline-block; min-width: 18px; padding: 0 5px; margin-right: 3px; border-radius: 4px; background: rgba(255, 255, 255, .1); text-align: center; font-weight: 600; text-decoration: none; }
+.sec-code { display: inline-block; min-width: 18px; padding: 0 5px; margin-right: 3px; border-radius: 4px; background: rgb(var(--fg-rgb, 255 255 255) / .1); text-align: center; font-weight: 600; text-decoration: none; }
 .sec-owner { display: block; }
 .sec-flag { margin-left: 6px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--gold); color: var(--gold); font-size: 11px; }
 .sec-flag--dim { border-color: var(--glass-line); color: var(--dim); }
@@ -65,7 +65,7 @@
 .sec-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
 .sec .sec-ghost { font: inherit; font-weight: 500; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--glass-line); background: transparent; color: var(--ink); cursor: pointer; }
 .sec-panel { padding: 12px; border: 1px solid var(--glass-line); border-radius: 12px; background: var(--panel); }
-.sec-panel textarea, .sec-panel input, .sec-panel select { font: inherit; font-size: 13px; color: var(--ink); background: rgba(255, 255, 255, .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; width: 100%; }
+.sec-panel textarea, .sec-panel input, .sec-panel select { font: inherit; font-size: 13px; color: var(--ink); background: rgb(var(--fg-rgb, 255 255 255) / .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; width: 100%; }
 .sec-panel textarea { min-height: 96px; resize: vertical; }
 .sec-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sec-row > * { flex: 1 1 140px; }
@@ -79,7 +79,7 @@
 .sec-alert-unread { font-weight: 600; }
 .sec-fin td:first-child { white-space: normal; }
 .sec-meta, .sec-actions, .sec-head { min-width: 0; overflow-wrap: anywhere; }
-.sec select, .sec input:not([type="checkbox"]) { font: inherit; font-size: 13px; color: var(--ink); background: rgba(255, 255, 255, .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; min-width: 0; }
+.sec select, .sec input:not([type="checkbox"]) { font: inherit; font-size: 13px; color: var(--ink); background: rgb(var(--fg-rgb, 255 255 255) / .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; min-width: 0; }
 .sec select option { color: var(--btn-ink); }
 .sec-actions .sec-row { flex: 1 1 320px; max-width: 460px; }
 .sec-actions .sec-row > * { flex: 0 1 auto; }
