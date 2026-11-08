@@ -52,7 +52,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const s = user.settings;
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   // Notices from the no-JS form fallbacks (saved).
-  const cancelNote = q.cancel === "done" ? null : q.cancel === "reason" ? "Pick one reason to cancel." : q.cancel === "failed" ? "Whop didn't take the cancellation. Try again, or cancel on your Whop orders page." : q.cancel === "none" ? "We couldn't find your subscription. Cancel on your Whop orders page." : null;
+  const cancelNote = q.cancel === "done" ? null : q.cancel === "reason" ? "Pick one reason to cancel." : q.cancel === "failed" ? "The cancellation didn't go through. Try again, or write to hello@aethric.llc and we'll cancel it for you." : q.cancel === "none" ? "We couldn't find your subscription. Write to hello@aethric.llc and we'll cancel it for you." : null;
   const notice = q.saved ? "Saved." : q.cancel === "done" ? "Cancelled. You keep access until the end of the period you paid for." : null;
   const confirmDelete = q.delete === "confirm";
   const plan = PLANS[viewer.plan];
@@ -116,17 +116,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {paid ? (
                 <div><dt className="b-small">{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? `Your ${TRIAL_ADJ} trial ends` : "Next charge"}</dt>
                   <dd className="s-strong">{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="b-small"> · {m.status === "trialing" ? `then ${m.renewalPrice} unless you cancel` : m.renewalPrice}</span> : null}</>
-                    : mem === "error" ? <span className="b-small">Couldn&apos;t load it now; it&apos;s on Whop.</span> : <span className="b-small">Shown on Whop (Change card on Whop)</span>}</dd></div>
+                    : mem === "error" ? <span className="b-small">Couldn&apos;t load it now. Try again in a moment.</span> : <span className="b-small">Shown under Change card</span>}</dd></div>
               ) : null}
             </dl>
             {paid ? (
               <>
                 {user.cancelAtPeriodEnd ? <p className="b-small" data-testid="cancels-on">Cancels on {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of this billing period"}. You keep access until then.</p> : null}
                 <div className="b-ctas">
-                  <a className={BTN} href={manage} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Change card on Whop</a>
+                  <a className={BTN} href={manage} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Change card</a>
                   {viewer.plan === "insidir" ? <a className={BTN} href={unlockHref()} data-unlock="settings-pro">Go Pro</a> : null}
                 </div>
-                <p className="b-small">Payments go through Whop. Cancel below in one step; you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
+                <p className="b-small">Cancel below in one step; you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
                 {!user.cancelAtPeriodEnd ? (
                   <details className="s-details" id="cancel" open={Boolean(cancelNote)}>
                     <summary className="s-link">Cancel subscription</summary>

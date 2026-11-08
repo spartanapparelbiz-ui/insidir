@@ -28,10 +28,10 @@ export default function TermsPage() {
 
       <h2>Your account and payment</h2>
       <ul>
-        <li>You sign in with Whop and pay on Whop&apos;s checkout. Whop&apos;s own terms apply to payment.</li>
+        <li>Payments are processed by our payment provider, Whop, whose terms also apply to payment.</li>
         <li>Membership starts with {TRIAL_DAYS} for ${TRIAL.fee}, then $39 a month, renewing monthly until you cancel. If you cancel within the {TRIAL_DAYS}, you aren&apos;t charged the $39.</li>
-        <li>Cancel anytime in <Link href="/settings#billing">Account</Link> (pick one reason) or on your <a href="https://whop.com/@me/settings/orders" target="_blank" rel="noopener noreferrer">Whop orders page</a>. You keep access until the end of the period you paid for.</li>
-        <li>Refunds follow Whop&apos;s process and the law where you live. Write to us if something went wrong and we&apos;ll make it right where we can.</li>
+        <li>Cancel anytime in <Link href="/settings#billing">Account</Link> (pick one reason). You keep access until the end of the period you paid for.</li>
+        <li>Refunds follow the law where you live. Write to us if something went wrong and we&apos;ll make it right where we can.</li>
         <li>You can delete your account in <Link href="/settings">Settings</Link> at any time.</li>
       </ul>
 

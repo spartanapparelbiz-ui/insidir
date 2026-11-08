@@ -13,7 +13,7 @@ import { slotPhoto } from "@/lib/brand/images";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Sign in", description: "Sign in to Insidir with Whop.", robots: { index: false } };
+export const metadata: Metadata = { title: "Sign in", description: "Sign in to Insidir.", robots: { index: false } };
 
 const ERRORS: Record<string, string> = {
   cancelled: "Sign-in was cancelled. Continue when you're ready.",
@@ -35,7 +35,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <Stage bg={{ kind: "photo", photo: slotPhoto("cta"), dark: 0.55, priority: true }} first testid="login" labelledBy="login-h">
         <div className="b-head b-center">
           <Lines as="h1" id="login-h" lines={["Welcome back."]} size={64} />
-          <p className="b-sub" data-m="lift">Sign in with the Whop account you paid with.</p>
+          <p className="b-sub" data-m="lift">Sign in with the email you paid with.</p>
           {sp.error && ERRORS[sp.error] ? <p className="b-msg aerr" role="alert">{ERRORS[sp.error]}</p> : null}
           <div className="b-ctas"><ContinueButton next={next} /></div>
           <p className="b-small">No password here.</p>

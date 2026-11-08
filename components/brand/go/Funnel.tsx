@@ -78,7 +78,7 @@ function Checkout({ elementsUrl, ageConfirmed }: { elementsUrl: string; ageConfi
       {state === "error" ? <p className="b-msg" role="alert">The checkout didn&apos;t open. <button type="button" className="b-btn b-panel-pill" onClick={() => void open()}>Try again</button></p> : null}
       {state === "unconfigured" ? <p className="b-msg" role="alert">Checkout isn&apos;t open yet. Come back soon.</p> : null}
       <div ref={box} className="b-glass" style={{ overflow: "hidden", padding: 8, background: "#fff", color: "#000", minHeight: state === "ready" ? 320 : 0 }} hidden={state !== "ready"} data-testid="go-checkout-frame" />
-      <p className="b-small">Apple Pay, Google Pay or card · Secure checkout by Whop · Cancel anytime in Account</p>
+      <p className="b-small">Apple Pay, Google Pay or card · Secure checkout · Cancel anytime in Account</p>
     </div>
   );
 }
@@ -251,11 +251,11 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       body = (
         <GoStage testid={unlocked ? "go-unlocked" : "go-aha"}>
           <div className="b-head"><Lines as="h1" lines={unlocked ? ["You're in."] : ["Where they're", "betting now."]} size={64} /></div>
-          {waiting ? <p className="b-sub" role="status" data-testid="go-confirming">Confirming your payment with Whop…</p> : d.aha.cards.length ? <AhaCards cards={d.aha.cards} more={d.aha.more} /> : <p className="b-empty">No millionaire money in {firstCat} in the last week yet.</p>}
+          {waiting ? <p className="b-sub" role="status" data-testid="go-confirming">Confirming your payment…</p> : d.aha.cards.length ? <AhaCards cards={d.aha.cards} more={d.aha.more} /> : <p className="b-empty">No millionaire money in {firstCat} in the last week yet.</p>}
           {lead && !unlocked ? <p className="b-small" style={{ marginTop: 16 }} {...m("quiet", 1)} data-testid="go-record">{lead} Past results, not a promise. <a href="/results">Every rule we tested</a>.</p> : null}
           <div className="b-ctas">
             {unlocked
-              ? <a className="b-btn b-btn-lg b-primary" href={signedIn ? "/go?step=save" : `/login/start?next=${encodeURIComponent("/go?step=save")}`} data-testid="go-signin" aria-disabled={waiting}  {...st(1.1, { opacity: waiting ? 0.5 : 1 })}>{signedIn ? "Continue" : "Sign in with Whop"}<Arrow /></a>
+              ? <a className="b-btn b-btn-lg b-primary" href={signedIn ? "/go?step=save" : `/login/start?next=${encodeURIComponent("/go?step=save")}`} data-testid="go-signin" aria-disabled={waiting}  {...st(1.1, { opacity: waiting ? 0.5 : 1 })}>{signedIn ? "Continue" : "Sign in"}<Arrow /></a>
               : <button type="button" className="b-btn b-btn-lg b-primary" onClick={() => go("paywall")} data-testid="go-next" {...st(1.1)}>See every side<Arrow /></button>}
           </div>
         </GoStage>

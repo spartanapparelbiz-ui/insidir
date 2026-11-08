@@ -30,10 +30,10 @@ const COMPARE: Array<[string, string, string]> = [
 ];
 
 const BILLING = [
-  { id: "cancel", q: "How do I cancel?", a: "One tap in Account, or on your Whop orders page. No emails, no calls. You keep access until the end of the period you paid for." },
+  { id: "cancel", q: "How do I cancel?", a: "One tap in Account. No emails, no calls. You keep access until the end of the period you paid for." },
   { id: "dollar", q: `What is the $${TRIAL.fee} trial?`, a: `Your first ${TRIAL.days} days cost $${TRIAL.fee}, with everything a member gets. Cancel inside those ${TRIAL.days} days and $${TRIAL.fee} is all you pay.` },
-  { id: "after", q: `What happens after ${TRIAL.days} days?`, a: `It becomes $${PLANS.insidir.price}/month, charged by Whop on the same card, until you cancel.` },
-  { id: "refunds", q: "Can I get a refund?", a: "Payments and refunds are handled by Whop. Request one from your Whop orders page, or write to hello@aethric.llc and we'll sort it out with them." },
+  { id: "after", q: `What happens after ${TRIAL.days} days?`, a: `It becomes $${PLANS.insidir.price}/month, charged to the same card, until you cancel.` },
+  { id: "refunds", q: "Can I get a refund?", a: "Write to hello@aethric.llc and we'll sort it out." },
 ];
 
 interface Week { today: number; wallets: number; twins: number; audit: { ok: number; checked: number } | null }
@@ -75,7 +75,7 @@ export default async function PricingPage() {
           <p className="b-small">{TRIAL_LINE}. Cancel anytime.</p>
           <ul className="s-lockrows">{MEMBER_GETS.map(t => <li key={t}><span>✓ {t}</span></li>)}</ul>
           <div className="b-ctas">{member ? <Pill href="/">Open Insidir</Pill> : <Pill href="/go" data-checkout="pricing">Start for ${TRIAL.fee}</Pill>}</div>
-          <p className="b-small">Secure sign-in and payments by Whop. Apple Pay and Google Pay where your device has them.</p>
+          <p className="b-small">Secure checkout. Apple Pay and Google Pay where your device has them.</p>
         </Panel>
       </Stage>
 

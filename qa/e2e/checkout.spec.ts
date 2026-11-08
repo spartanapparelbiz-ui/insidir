@@ -81,7 +81,7 @@ test("pay first: /go opens the checkout signed out → pay → Whop sign-in → 
   await expect(page).toHaveURL(/\/login\?next=(%2F|\/)settings/);
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   await expect(page.getByTestId("continue")).toHaveText("Continue");
-  await expect(page.getByText("Secure sign-in and payments by Whop.")).toBeVisible();
+  await expect(page.getByText("Secure sign-in and checkout.")).toBeVisible();
   await expect(page.locator('input[type="password"], input[type="email"]')).toHaveCount(0);
   await expect(page.getByText(/forgot password/i)).toHaveCount(0);
   await page.screenshot({ path: `qa/screenshots/login-${w}.png` });

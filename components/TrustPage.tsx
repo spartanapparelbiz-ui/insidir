@@ -29,7 +29,7 @@ export async function TrustPage({ path, title, updated, lead, children, cta = tr
         {cta && !member ? (
           <div className="b-center">
             <div className="b-ctas"><Pill href="/go" data-checkout="text" data-testid="text-start">Start for ${TRIAL.fee}</Pill></div>
-            <p className="b-small">{TRIAL_LINE}, then $39 a month. Cancel anytime. Secure sign-in and payments by Whop.</p>
+            <p className="b-small">{TRIAL_LINE}, then $39 a month. Cancel anytime. Secure checkout.</p>
           </div>
         ) : null}
       </Stage>

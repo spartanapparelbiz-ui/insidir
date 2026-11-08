@@ -12,7 +12,7 @@ export function ContinueButton({ next, fresh = false, label = "Continue" }: { ne
       <a className={`b-btn b-btn-lg b-primary acta${busy ? " is-busy" : ""}`} href={`/login/start?${q}`} data-testid="continue" aria-busy={busy || undefined} onClick={() => setBusy(true)}>
         {busy ? <span className="acta__spin" aria-hidden="true" /> : null}<span>{label}</span>
       </a>
-      <p className="continue__by">Secure sign-in and payments by Whop.</p>
+      <p className="continue__by">Secure sign-in and checkout.</p>
     </div>
   );
 }

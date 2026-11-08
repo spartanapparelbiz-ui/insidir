@@ -35,7 +35,7 @@ export function Welcome({ status, next = "/" }: { status: string | null; next?: 
   return (
     <div className="b-head" aria-live="polite" data-testid="setting-up">
       <Lines as="h1" lines={[slow ? "Payment received, finishing up" : "Setting up your account…"]} size={56} />
-      {slow ? <p className="b-sub">Your payment went through. Your account is still being set up; this page keeps asking Whop. Refresh in a moment, or write to <a className="s-link" href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : <p className="b-sub">Whop is confirming your payment. This takes a few seconds.</p>}
+      {slow ? <p className="b-sub">Your payment went through. Your account is still being set up; this page updates by itself. Refresh in a moment, or write to <a className="s-link" href="mailto:hello@aethric.llc">hello@aethric.llc</a> and we&apos;ll sort it out.</p> : <p className="b-sub">Confirming your payment. This takes a few seconds.</p>}
       <span className="s-meterbar s-wait" aria-hidden="true"><span className="s-grow" /></span>
       {slow ? <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => location.reload()}>Refresh</button></div> : null}
     </div>
