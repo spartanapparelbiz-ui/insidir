@@ -5,6 +5,7 @@
  *   action=delete id               remove the rule (its log stays with its matches)
  * Redirects back to /autopilot with a notice. Members only. */
 import { and, count, eq } from "drizzle-orm";
+import { appUrl } from "@/lib/app-url";
 import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb } from "@/lib/db";
@@ -16,10 +17,10 @@ import { starter } from "@/lib/autopilot/starters";
 
 export const dynamic = "force-dynamic";
 
-const back = (req: NextRequest, q: string) => NextResponse.redirect(new URL(`/autopilot?${q}`, req.url), 303);
+const back = (req: NextRequest, q: string) => NextResponse.redirect(new URL(`/autopilot?${q}`, appUrl()), 303);
 export async function POST(req: NextRequest) {
   const viewer = await getViewer();
-  if (!viewer.user || !isPaid(viewer.plan)) return NextResponse.redirect(new URL("/login?next=/autopilot", req.url), 303);
+  if (!viewer.user || !isPaid(viewer.plan)) return NextResponse.redirect(new URL("/login?next=/autopilot", appUrl()), 303);
   const userId = viewer.user.id, db = getDb();
   const f = await req.formData();
   const action = String(f.get("action") ?? ""), id = Number(f.get("id"));

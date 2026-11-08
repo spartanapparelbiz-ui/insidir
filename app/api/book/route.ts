@@ -5,6 +5,7 @@
  *   action=push at            the daily summary push time ("HH:MM", empty = off)
  * Redirects back to /book. Members only; only their own rows. */
 import { eq } from "drizzle-orm";
+import { appUrl } from "@/lib/app-url";
 import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth/viewer";
 import { getDb } from "@/lib/db";
@@ -13,12 +14,12 @@ import { isPaid } from "@/lib/plans";
 import { correctCopy, markMatch } from "@/lib/book/book";
 
 export const dynamic = "force-dynamic";
-const back = (req: NextRequest, q: string) => NextResponse.redirect(new URL(`/book?${q}`, req.url), 303);
+const back = (req: NextRequest, q: string) => NextResponse.redirect(new URL(`/book?${q}`, appUrl()), 303);
 const centsOf = (v: FormDataEntryValue | null) => { const n = Number(v); return v === null || v === "" || !Number.isFinite(n) ? null : n / 100; };
 
 export async function POST(req: NextRequest) {
   const viewer = await getViewer();
-  if (!viewer.user || !isPaid(viewer.plan)) return NextResponse.redirect(new URL("/login?next=/book", req.url), 303);
+  if (!viewer.user || !isPaid(viewer.plan)) return NextResponse.redirect(new URL("/login?next=/book", appUrl()), 303);
   const db = getDb(), userId = viewer.user.id, f = await req.formData();
   const action = String(f.get("action") ?? ""), id = Number(f.get("id"));
   if ((action === "placed" || action === "skipped") && Number.isInteger(id)) {

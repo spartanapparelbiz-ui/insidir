@@ -2,6 +2,7 @@
  * beyond our own first-party events. ?ref= (our accounts' links) is kept first-touch too. New cookies are also passed on the request, so the very first render already
  * sees its variant (otherwise the page would render "a" while the cookie says "b"). */
 import { NextResponse, type NextRequest } from "next/server";
+import { appUrl } from "@/lib/app-url";
 
 const YEAR = 365 * 86_400;
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
@@ -9,7 +10,7 @@ const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "ut
 export function middleware(req: NextRequest) {
   // A bare ticker (/NVDA, crawled from old links to the retired stock pages) goes to that company's report
   // (docs/INSIDIR-V3.md §3). Upper case only: every page of ours is lower case.
-  if (/^\/[A-Z][A-Z.]{0,5}$/.test(req.nextUrl.pathname)) return NextResponse.redirect(new URL(`/company/${encodeURIComponent(req.nextUrl.pathname.slice(1))}`, req.url), 301);
+  if (/^\/[A-Z][A-Z.]{0,5}$/.test(req.nextUrl.pathname)) return NextResponse.redirect(new URL(`/company/${encodeURIComponent(req.nextUrl.pathname.slice(1))}`, appUrl()), 301);
   const set: Array<{ name: string; value: string; maxAge: number; httpOnly: boolean }> = [];
   if (!req.cookies.get("insidir_vid")) {
     const bytes = crypto.getRandomValues(new Uint8Array(16));
