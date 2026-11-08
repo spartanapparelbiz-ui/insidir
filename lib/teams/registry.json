@@ -4784,6 +4784,17 @@
      "note": "polymarket: source 200×200, under 400px"
     },
     {
+     "abbr": "ccga",
+     "name": "College of Coastal Georgia Mariners",
+     "short": "College of Coastal Georgia Mariners",
+     "color": "#187caa",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "ccmo",
      "name": "Central Bible Saints",
      "short": "Central Bible Saints",
@@ -5288,6 +5299,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_det_60000153.png"
     },
     {
+     "abbr": "dild",
+     "name": "Dillard Blue Devils",
+     "short": "Dillard Blue Devils",
+     "color": "#164b99",
+     "logo": "/teams/cbb/dild",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Dillard Blue Devils-ae8d399dcf.png"
+    },
+    {
      "abbr": "drake",
      "name": "Drake Bulldogs",
      "short": "Drake",
@@ -5336,6 +5357,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_dxst_60000750.png"
+    },
+    {
+     "abbr": "earl",
+     "name": "Earlham Quakers",
+     "short": "Earlham Quakers",
+     "color": "#842e47",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 228×221, under 400px"
     },
     {
      "abbr": "ecar",
@@ -5999,8 +6031,8 @@
     {
      "abbr": "jac",
      "name": "Lindenwood Lions",
-     "short": "Lindenwood Lions",
-     "color": "#9f9f60",
+     "short": "Lindenwood",
+     "color": "#000000",
      "logo": "/teams/cbb/jac",
      "dark": false,
      "source": "polymarket",
@@ -7255,6 +7287,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_nw_60000100.png"
     },
     {
+     "abbr": "nwcoll",
+     "name": "Northwest Eagles",
+     "short": "Northwest Eagles",
+     "color": "#633196",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 300×300, under 400px"
+    },
+    {
      "abbr": "nwost",
      "name": "Northwestern Oklahoma State Rangers",
      "short": "Northwestern Oklahoma State Rangers",
@@ -7434,6 +7477,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_pitt_60000028.png"
+    },
+    {
+     "abbr": "platt",
+     "name": "SUNY-Plattsburgh Cardinals",
+     "short": "SUNY-Plattsburgh Cardinals",
+     "color": "#d42130",
+     "logo": "/teams/cbb/platt",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/SUNY-Plattsburgh Cardinals-52e41abb13.jpg",
+     "note": "background keyed out"
     },
     {
      "abbr": "port",
@@ -7849,6 +7903,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_sfl_60000011.png"
+    },
+    {
+     "abbr": "shen",
+     "name": "Shenandoah Hornets",
+     "short": "Shenandoah Hornets",
+     "color": "#1943ae",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 250×279, under 400px"
     },
     {
      "abbr": "siena",
@@ -8551,13 +8616,13 @@
     {
      "abbr": "usi",
      "name": "Southern Indiana Screaming Eagles",
-     "short": "Southern Indiana Screaming Eagles",
+     "short": "S Indiana",
      "color": "#134f89",
-     "logo": null,
+     "logo": "/teams/cbb/usi",
      "dark": false,
-     "source": null,
-     "sourceUrl": null,
-     "note": "polymarket: source 70×70, under 400px"
+     "source": "espn",
+     "sourceUrl": "https://a.espncdn.com/guid/2b1e219f-fc2c-3866-826d-2dddbdacbef4/logos/primary_logo_on_black_color.png",
+     "espn": "Southern Indiana Screaming Eagles"
     },
     {
      "abbr": "utah",
