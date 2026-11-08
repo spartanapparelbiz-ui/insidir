@@ -1099,3 +1099,13 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
   .b-demo[data-kind="phone"] .b-demo__video { aspect-ratio: 780 / 1688; max-height: 82dvh; object-fit: cover; object-position: top; }
   .b-demo__ctl { right: 12px; bottom: 12px; } .b-demo__btn { height: 36px; min-width: 36px; font-size: 13px; padding: 0 14px; }
 }
+
+/* ---------- Inner pages (components/brand/app/Frame.tsx): simpler. Each stage is as tall as its content, not a full
+ * screen; only the page's first stage carries a photo; the rest sit on black, divided by a hairline. ---------- */
+.b-root--page .b-stage { min-height: auto; align-items: flex-start; }
+.b-root--page .b-stage:not([data-first]) { border-top: 1px solid rgba(255, 255, 255, .07); }
+.b-root--page .b-stage:not([data-first]) .b-stage__bg { display: none; }
+.b-root--page .b-stage:not([data-first]) .b-stage__in { padding-top: calc(76 * var(--u)); padding-bottom: calc(68 * var(--u)); }
+.b-root--page .b-stage[data-first] .b-stage__in { padding-bottom: calc(72 * var(--u)); }
+@media (max-width: 1160px) { .b-root--page .b-stage:not([data-first]) .b-stage__in { padding-top: 56px; padding-bottom: 52px; } }
+@media (max-width: 552px) { .b-root--page .b-stage:not([data-first]) .b-stage__in { padding: 48px 20px 44px; } .b-root--page .b-stage[data-first] .b-stage__in { padding-bottom: 48px; } }

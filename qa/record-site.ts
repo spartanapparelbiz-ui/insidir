@@ -1,5 +1,7 @@
 /* Records the landing's demo videos ("See it work", components/brand/landing/Why.tsx) from the live site
- * (https://insidir.com, or SITE_URL) as a visitor: real pages, real data, nothing staged. Three complete flows:
+ * (https://insidir.com, or SITE_URL) as a visitor, or as a member with MEMBER_TOKEN (a session cookie): real pages, real
+ * data, nothing staged. The landing's set is the member view, recorded against a local build whose database was filled
+ * with live Polymarket data by the worker's own jobs (the watchlist, then the trade poller). Three complete flows:
  *   board    the board's live bets, a tap into one market: its Kalshi price, money per side, the chart, every bet
  *   markets  every market people bet on, a tap into a category, a tap into its top market
  *   record   how the millionaires' bets settled, by category, losses included, and every rule we tested
@@ -112,6 +114,8 @@ async function record(name: string, d: Device) {
   // A returning visitor: no first-visit prompts over the page.
   await ctx.addInitScript(() => { try { localStorage.setItem("insidir_tips_done", "1"); } catch { /* ignore */ } });
   await ctx.addCookies([{ name: "insidir_pay_closed", value: "1", url: SITE }]);
+  // MEMBER_TOKEN: record signed in as a member (the side of every bet, live), e.g. against a local build of real data.
+  if (process.env.MEMBER_TOKEN) await ctx.addCookies([{ name: "insidir_session", value: process.env.MEMBER_TOKEN, url: SITE }]);
   const page = await ctx.newPage();
   // Chrome's screencast at device pixels: every frame is a JPEG with its time; ffmpeg holds each until the next.
   const cdp = await ctx.newCDPSession(page);
