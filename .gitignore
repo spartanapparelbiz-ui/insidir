@@ -12,3 +12,5 @@ public/brand/gen/
 qa/reports/crawl.json
 qa/reports/crawl.md
 qa/reports/lh-*.json
+qa/.demo/
+qa/.site-rec/
