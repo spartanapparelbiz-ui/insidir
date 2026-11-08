@@ -1399,3 +1399,44 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 .s-explain__spark { color: var(--violet); }
 .s-explain__label { margin: 0; font-size: 12px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
 .s-explain__text { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink); }
+
+/* ---------- Verify (components/brand/Verify.tsx): small source links on every position row ---------- */
+.b-verify { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 12px; color: var(--dim); }
+.b-verify__label { font-weight: 600; color: var(--ink-muted); }
+.b-verify a { color: var(--ink-muted); text-decoration: underline; text-decoration-color: var(--glass-line); text-underline-offset: 2px; }
+.b-verify a:hover { color: var(--ink); text-decoration-color: currentColor; }
+.b-verify__off { color: var(--dim); }
+.b-verify__at { color: var(--dim); }
+.b-row .b-verify { grid-column: 1 / -1; margin-top: 6px; }
+.s-row { flex-wrap: wrap; }
+.s-row__verify { flex-basis: 100%; padding: 0 0 12px; }
+
+/* ---------- The record (/record) ---------- */
+.b-rec__filters { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: end; margin-bottom: 18px; }
+.b-rec__field { display: grid; gap: 4px; }
+.b-rec__field .s-input { padding: 9px 10px; font-size: 14px; }
+.b-rec__go { grid-column: 1 / -1; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.b-rec__head, .b-rec__row { display: grid; grid-template-columns: 112px minmax(170px, 2fr) 92px 150px 96px 56px 72px 76px 58px 64px; gap: 10px; align-items: center; }
+.b-rec__head { padding: 0 0 8px; border-bottom: 1px solid var(--glass-line); font-size: 11.5px; font-weight: 500; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; }
+.b-rec__rows { list-style: none; margin: 0; padding: 0; }
+.b-rec__row { padding: 12px 0; border-bottom: 1px solid var(--glass-line); font-size: 13.5px; }
+.b-rec__when { color: var(--dim); font-size: 12.5px; }
+.b-rec__mkt { display: grid; gap: 4px; min-width: 0; }
+.b-rec__mkt a { color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.b-rec__flags { display: flex; flex-wrap: wrap; gap: 4px; }
+.b-rec__flag { font-size: 11px; color: var(--dim); border: 1px solid var(--glass-line); border-radius: 999px; padding: 0 7px; }
+.b-rec__who { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.b-rec__res { font-weight: 600; font-size: 12.5px; }
+.b-rec__res--won { color: var(--up); } .b-rec__res--lost { color: var(--down); } .b-rec__res--sold { color: var(--ink-muted); } .b-rec__res--open, .b-rec__res--void { color: var(--dim); }
+.b-rec__verify { grid-column: 1 / -1; }
+.b-rec__pager { display: flex; gap: 10px; margin-top: 16px; }
+@media (max-width: 1100px) {
+  .b-rec__filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .b-rec__head { display: none; }
+  /* Phones: each position a small card, labels beside the values. */
+  .b-rec__row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; padding: 14px 0; }
+  .b-rec__when { grid-column: 1 / -1; order: -2; }
+  .b-rec__mkt { grid-column: 1 / -1; order: -1; }
+  .b-rec__c[data-label]:not(.b-rec__when):not(.b-rec__mkt)::before { content: attr(data-label); display: block; font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 1px; }
+  .b-rec__who { grid-column: span 2; }
+}

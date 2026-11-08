@@ -1066,11 +1066,67 @@ export const millionaireBets = terminal.table("millionaire_bets", {
   lastAt: timestamp("last_at", { withTimezone: true }).notNull(),
   result: text("result").$type<"won" | "lost" | "void">(),
   settledAt: timestamp("settled_at", { withTimezone: true }),
+  /* Provenance (Verify, components/brand/Verify.tsx; migration 0046). The source is `source`, the wallet address is
+   * `wallet` and the Polymarket market page is `url`; these add the rest. */
+  /** The first Polygon transaction behind the position (https://polygonscan.com/tx/…); null until known ("Source pending"). */
+  transactionHash: text("transaction_hash"),
+  /** Every Polygon transaction behind it (its fills), each once. */
+  txHashes: jsonb("tx_hashes").$type<string[]>(),
+  /** The same market on Kalshi, when it lists it (terminal.market_twins, approved). */
+  kalshiUrl: text("kalshi_url"),
+  /** When the source data was last fetched from the venue. */
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }),
+  /** The source response: each fill's Data API trade, slimmed (lib/moves/sources.ts slimTrade), by fill id. Rows from
+   *  before 0046 hold what was kept then ({ backfill: "moves.parts", parts }). Server only: never sent to a browser. */
+  raw: jsonb("raw").$type<Record<string, unknown>>(),
 }, t => [
   index("millionaire_bets_at_idx").on(t.at),
   index("millionaire_bets_category_at_idx").on(t.category, t.at),
   index("millionaire_bets_market_idx").on(t.marketId),
   index("millionaire_bets_wallet_idx").on(t.wallet),
+]);
+
+/** The public record (/record, lib/record): every position that ever hit the board or was flagged, losses included.
+ *  Append-only: rows are never filtered out or deleted (a rule in migration 0046 turns DELETE into nothing); the record
+ *  job (lib/record/job.ts) only adds rows, adds flags and moves price now, result and exit forward.
+ *    flags   millionaire | pro (the tier it hit the board as) · unusual (a new wallet's big long shot) · disagreement
+ *            (its side held 70%+ of the millionaire money in a market priced at 50¢ or less on that side)
+ *    result  won | lost | void once the market settles; sold when the wallet exited (90%+ sold) before it settled, at
+ *            exit_price; null while open. */
+export const recordLog = terminal.table("record_log", {
+  id: text("id").primaryKey(),
+  flaggedAt: timestamp("flagged_at", { withTimezone: true }).notNull(),
+  flags: text("flags").array().notNull(),
+  source: text("source").notNull(),
+  marketId: text("market_id").notNull(),
+  marketTitle: text("market_title").notNull(),
+  eventTitle: text("event_title").notNull(),
+  category: text("category").notNull(),
+  wallet: text("wallet"),
+  /** millionaire | pro, or new (an unusual bet's wallet, new to Polymarket and not on the watchlist). */
+  tier: text("tier").$type<"millionaire" | "pro" | "new">().notNull(),
+  outcome: text("outcome").notNull(),
+  outcomeSide: text("outcome_side").$type<"yes" | "no">().notNull(),
+  entryPrice: doublePrecision("entry_price").notNull(),
+  size: doublePrecision("size").notNull(),
+  transactionHash: text("transaction_hash"),
+  txHashes: jsonb("tx_hashes").$type<string[]>(),
+  marketUrl: text("market_url"),
+  kalshiUrl: text("kalshi_url"),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }),
+  raw: jsonb("raw").$type<Record<string, unknown>>(),
+  /** The position's side now (0..1), and when it was read. Settled: 1 or 0 (void: the last price). Sold: unchanged. */
+  priceNow: doublePrecision("price_now"),
+  priceAt: timestamp("price_at", { withTimezone: true }),
+  result: text("result").$type<"won" | "lost" | "void" | "sold">(),
+  exitPrice: doublePrecision("exit_price"),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  loggedAt: timestamp("logged_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("record_log_flagged_idx").on(t.flaggedAt),
+  index("record_log_category_idx").on(t.category, t.flaggedAt),
+  index("record_log_wallet_idx").on(t.wallet),
+  index("record_log_open_idx").on(t.result, t.marketId),
 ]);
 
 /** One-tap copy v1 (lib/copies/tickets.ts): a member's log of a millionaire bet they placed themselves ("I placed it").

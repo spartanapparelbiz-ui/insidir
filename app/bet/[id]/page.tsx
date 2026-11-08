@@ -3,6 +3,8 @@
  * market first. Visitors: a bet under 60 minutes old waits, and the side is locked, as on the board. Shareable: its link
  * preview is a 1080×1350 card (./opengraph-image.tsx). Not advice. */
 import type { Metadata } from "next";
+import { Verify } from "@/components/brand/Verify";
+import { verifyFor } from "@/lib/millionaires/queries";
 import { notFound } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { Frame } from "@/components/brand/app/Frame";
@@ -106,6 +108,7 @@ export default async function BetPage({ params }: { params: Promise<{ id: string
             <div className="b-ctas"><Pill href="/go" data-testid="bet-start" data-checkout="bet">Start for $1</Pill></div>
           </Panel>
         )}
+        <p className="b-small b-center" style={{ marginTop: 12 }}><Verify v={verifyFor(t.verify, member, Boolean(t.settled))} marketId={t.marketId} polymarket={viewer.region === "non_us"} /></p>
         <div className="s-col">
           <KalshiFirst twin={twin} yesLabel={member ? t.outcome : "Yes"} noLabel="the other side" polyYes={member ? t.priceNow : null} polyUrl={null} region={viewer.region} result={result} testid="bet-kalshi" />
         </div>

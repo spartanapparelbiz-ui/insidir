@@ -2,6 +2,8 @@
  * tier and record, their price against the price now, the entry-vs-now chart, the member's amount, Open on Kalshi (US) / Polymarket, and
  * "I placed it" to log it. Visitors see the bet without its side and a Start for $1. Insidir never places trades. */
 import type { Metadata } from "next";
+import { Verify } from "@/components/brand/Verify";
+import { verifyFor } from "@/lib/millionaires/queries";
 import { notFound } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
 import { Lines, Panel, Pill, ScrollFx, Stage } from "@/components/system";
@@ -60,6 +62,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
             <div className="b-ctas"><Pill href="/go" data-testid="copy-start" data-checkout="copy">Start for $1</Pill></div>
           </Panel>
         )}
+        <p className="b-small b-center" style={{ marginTop: 12 }}><Verify v={verifyFor(t.verify, member, Boolean(t.settled))} marketId={t.marketId} polymarket={viewer.region === "non_us"} /></p>
         <p className="b-small b-center">Information, not advice. Millionaires lose bets too. Insidir never places a bet or holds money.</p>
       </Stage>
       <ScrollFx />

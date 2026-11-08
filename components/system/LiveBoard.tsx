@@ -5,6 +5,7 @@
  * change is the only green or red. One row of category chips that scrolls sideways. Refreshes every 30 s while visible.
  * "Wallets up $1M+" means $1M+: Pro wallets ($100K–$1M) only under the Pro filter. */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Verify } from "@/components/brand/Verify";
 import { CATEGORIES, category as categoryInfo, type CategorySlug } from "@/lib/brand/categories";
 import { decidedText, decision } from "@/lib/millionaires/decided";
 import { groupBets } from "@/lib/millionaires/group";
@@ -18,7 +19,9 @@ const ago = (ms: number, now: number) => { const s = Math.max(0, Math.round((now
 /** n: rows to fetch; cat: the server-side category (the board's ?cat=, kept when it refreshes); tier: millionaire
  *  ($1M+, the default) or pro; links: category chips as links to /board (the full board) rather than an in-place
  *  filter. */
-export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: serverCat = null, tier = "millionaire", links = false }: { initial: BoardBet[]; now: number; copy?: boolean; n?: number; cat?: CategorySlug | null; tier?: "millionaire" | "pro"; links?: boolean }) {
+export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: serverCat = null, tier = "millionaire", links = false, polymarket = false }: { initial: BoardBet[]; now: number; copy?: boolean; n?: number; cat?: CategorySlug | null; tier?: "millionaire" | "pro"; links?: boolean;
+  /** The viewer is outside the US: Verify may show the Polymarket market page. */
+  polymarket?: boolean }) {
   const [bets, setBets] = useState(initial);
   const [now, setNow] = useState(now0);
   const [cat, setCat] = useState<CategorySlug | "all">("all");
@@ -66,6 +69,7 @@ export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: server
                 <span className="s-row__ago b-small">{ago(b.at, now)}</span>
                 <span className="b-small s-row__meta">{b.n > 1 ? `${b.n} bets · ` : ""}on <b>{b.outcome}</b> at {b.n > 1 ? "avg " : ""}{cents(b.priceThen)} · now {cents(b.priceNow)}{d ? <span className={d > 0 ? "s-up" : "s-down"}> {d > 0 ? "up" : "down"} {Math.abs(d)}¢</span> : null} · {b.short}{b.pnl !== null ? ` (${b.pnl >= 0 ? "+" : "−"}${dollars(Math.abs(b.pnl))} all-time)` : ""}</span>
               </button>
+              {b.verify ? <span className="s-row__verify"><Verify v={b.verify} marketId={b.marketId} polymarket={polymarket} compact /></span> : null}
               {on ? <span className="s-row__act">{dec ? <span className="b-small">{decidedText(dec, b.outcome)}</span> : copy ? <a className="b-btn b-btn-lg b-primary" href={`/copy/${encodeURIComponent(b.id)}`} data-testid="bet-copy">Copy at {cents(b.priceNow)}</a> : null}</span> : null}
             </li>
           );

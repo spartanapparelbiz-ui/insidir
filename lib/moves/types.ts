@@ -59,6 +59,9 @@ export interface Move {
   /** When Insidir first showed it, and its side's price then (lib/follow): where following it starts. */
   seenAt?: number | null;
   seenPrice?: number | null;
+  /** Polymarket, in memory only (never stored on terminal.moves): each fill's raw trade by fill id, for the position's
+   *  provenance snapshot (terminal.millionaire_bets.raw). */
+  rawFills?: Record<string, Record<string, unknown>> | null;
 }
 
 /** An SEC Form 4 insider buy, or a fund's 13F add versus its previous 13F (lib/stocks). */
@@ -87,6 +90,9 @@ export interface Fill {
   walletName: string | null;
   at: number;
   url: string | null;
+  /** Polymarket: the trade as the Data API returned it, slimmed to the provenance fields (lib/moves/sources.ts slimTrade:
+   *  never the account's name, pseudonym or picture). Kept on the position for Verify (lib/millionaires/bets.ts). */
+  raw?: Record<string, unknown>;
 }
 
 /** A Polymarket wallet's record from its real resolved positions. */

@@ -12,6 +12,15 @@ import type { Fill } from "./types";
 import { isBlockedName } from "./names";
 import { profileAvatar, profileBlocked } from "./avatar";
 
+/** The provenance fields of a Data API trade, as returned. Never the account's name, pseudonym, bio or picture: a wallet
+ *  is only ever its tier and short address (lib/millionaires/watchlist.ts shortWallet). */
+const TRADE_KEEP = ["proxyWallet", "side", "asset", "conditionId", "size", "price", "timestamp", "outcome", "outcomeIndex", "transactionHash", "slug", "eventSlug", "title"] as const;
+export function slimTrade(t: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of TRADE_KEEP) if (t[k] !== undefined) out[k] = t[k];
+  return out;
+}
+
 export function readPolymarketFills(raw: unknown): Fill[] {
   const out: Fill[] = [];
   for (const t of rows(raw)) {
@@ -26,7 +35,7 @@ export function readPolymarketFills(raw: unknown): Fill[] {
       source: "polymarket", id: `${str(t.transactionHash) ?? "tx"}:${wallet}:${marketId}:${idx ?? 0}:${at}`,
       marketId, eventTitle: str(t.eventTitle) ?? str(t.title) ?? marketId, marketTitle: str(t.title) ?? marketId,
       outcome, outcomeSide: idx === 1 ? "no" : "yes", side, contracts, price, wallet: wallet.toLowerCase(), walletName: publicUsername(t), at,
-      url: polymarketUrl(str(t.eventSlug), str(t.slug)),
+      url: polymarketUrl(str(t.eventSlug), str(t.slug)), raw: slimTrade(t),
     });
   }
   return out;
