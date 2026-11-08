@@ -1,8 +1,10 @@
 {
   "baseball": "#757e96",
   "basketball": "#966345",
+  "capitol": "#908696",
   "cta": "#7d7596",
   "culture": "#96794a",
+  "diner": "#967c66",
   "elections": "#3858a8",
   "esports": "#964973",
   "football": "#967f49",
@@ -13,9 +15,12 @@
   "markets": "#b7927c",
   "oil": "#a44433",
   "politics": "#1e4996",
+  "press": "#968d92",
   "racing": "#537b96",
   "soccer": "#589196",
   "space": "#747e96",
+  "stadium": "#5d7c96",
+  "street": "#5f7096",
   "tech": "#7d7896",
   "tennis": "#964310",
   "world": "#968857"
