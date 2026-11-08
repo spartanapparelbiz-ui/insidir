@@ -39,12 +39,20 @@ const INDEX = [
   "8-K              PROCTER & GAMBLE CO                                           80424       20261105    edgar/data/80424/0000080424-26-000270.txt",
 ].join("\n");
 
-/** A stand-in for EDGAR: the Nov 5 daily index, each filing's index.json and XML; 404 for everything else. */
-function edgar(only?: (acc: string) => boolean) {
+/** What EDGAR really answers for a daily index that doesn't exist (a holiday): S3's AccessDenied, as 403. */
+const ACCESS_DENIED = `<?xml version="1.0" encoding="UTF-8"?>\n<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>X</RequestId><HostId>Y</HostId></Error>`;
+/** The SEC's rate-limit answer: an HTML page, also 403. */
+const RATE_LIMITED = "<html><head><title>SEC.gov | Request Rate Threshold Exceeded</title></head><body>Your request has been identified as part of a network of automated tools…</body></html>";
+
+/** A stand-in for EDGAR: the Nov 5 daily index, each filing's index.json and XML; 404 for everything else, or the
+ *  answer `missing` gives for an index that isn't there. */
+function edgar(only?: (acc: string) => boolean, missing: (url: string) => Response | null = () => null) {
   const asked: string[] = [];
   const fetcher = async (url: string) => {
     asked.push(url);
     if (url.endsWith("/form.20261105.idx")) return new Response(INDEX);
+    const m403 = url.endsWith(".idx") ? missing(url) : null;
+    if (m403) return m403;
     const m = /\/data\/\d+\/(\d{18})\/(.+)$/.exec(url);
     const f = m ? FILINGS[m[1]!] : undefined;
     if (f && (!only || only(m![1]!))) {
@@ -108,6 +116,21 @@ describe.skipIf(!URL0)("the Form 4 database in Postgres", () => {
     const again = edgar();
     expect(await backfillOnce(db, again.sec, NOW, 150, ENV)).toMatchObject({ read: 0, listed: 0 });
     expect(again.asked).toEqual([]);
+  });
+
+  it("a day with no index (403 AccessDenied, as EDGAR answers for a holiday) is closed; a rate-limit 403 is an error that stops nothing", async () => {
+    await db.execute(sql`truncate terminal.form4_days, terminal.sec_seen, terminal.filings, terminal.insider_trades`);
+    // Nov 4 rate-limited, every other missing day S3's AccessDenied: the backfill still reads Nov 5 and closes the rest.
+    const e = edgar(undefined, url => url.endsWith("/form.20261104.idx") ? new Response(RATE_LIMITED, { status: 403 }) : new Response(ACCESS_DENIED, { status: 403 }));
+    const r = await backfillOnce(db, e.sec, NOW, 150, ENV);
+    expect(r).toMatchObject({ listed: 3, read: 3, errors: 1 });
+    const open = (await db.execute(sql`select day from terminal.form4_days where done_at is null order by day`)).rows;
+    expect(open).toEqual([{ day: "2026-11-04" }]);
+    // The day before it is still open, so coverage starts after it.
+    expect(await coverageSince(db, NOW, ENV)).toBe("2026-11-05");
+    // Once EDGAR answers, it closes too.
+    expect(await backfillOnce(db, edgar(undefined, () => new Response(ACCESS_DENIED, { status: 403 })).sec, NOW, 150, ENV)).toMatchObject({ errors: 0 });
+    expect(await coverageSince(db, NOW, ENV)).toBe("2026-11-01");
   });
 
   it("a filing EDGAR can't serve is retried, then set aside after three tries so the day can close", async () => {

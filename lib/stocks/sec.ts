@@ -60,7 +60,8 @@ export class SecClient {
   }
 
   async text(url: string): Promise<string> { return this.get(url, false) as Promise<string>; }
-  /** The body, or null when EDGAR answers 404 (a daily index for a day with no filings, or not posted yet). */
+  /** The body, or null when the file isn't there: EDGAR answers 404, or 403 with S3's AccessDenied (what a daily index
+   *  for a holiday or a weekend gets). The SEC's rate-limit 403 is an HTML page, not AccessDenied: still an error. */
   async textOrNull(url: string): Promise<string | null> { return this.get(url, false, true) as Promise<string | null>; }
   async json<T = unknown>(url: string): Promise<T> { return this.get(url, true) as Promise<T>; }
 
@@ -86,7 +87,13 @@ export class SecClient {
         await new Promise(r => setTimeout(r, Number.isFinite(retry) && retry > 0 ? Math.min(30_000, retry * 1000) : (attempt + 1) * 1500));
         continue;
       }
-      if (res.status === 404 && missingOk) { this.stats.ok++; return null; }
+      if (missingOk && res.status === 404) { this.stats.ok++; return null; }
+      if (missingOk && res.status === 403) {
+        const body = await res.text().catch(() => "");
+        if (/<Code>AccessDenied<\/Code>/.test(body)) { this.stats.ok++; return null; }
+        this.stats.errors++; this.stats.throttled++; this.stats.lastError = "SEC responded 403";
+        throw new Error("SEC responded 403");
+      }
       if (!res.ok) { this.stats.errors++; this.stats.lastError = `SEC responded ${res.status}`; throw new Error(`SEC responded ${res.status}`); }
       this.stats.ok++;
       const body = await res.text();
