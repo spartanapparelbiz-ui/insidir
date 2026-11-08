@@ -57,4 +57,5 @@ export const Mark = () => (
   <svg viewBox="0 0 64 64" aria-hidden="true" fill="currentColor"><rect x="0" y="0" width="40" height="18" /><rect x="0" y="0" width="18" height="46" /><rect x="46" y="18" width="18" height="46" /><rect x="24" y="46" width="40" height="18" /></svg>
 );
 
-export const Logo = ({ href = "/" }: { href?: string }) => <a className="b-logo" href={href} aria-label="Insidir home"><Mark /><span>insidir</span></a>;
+/** The nav's logo: the mark alone, small (the name is in the page title, the footer and the emails). */
+export const Logo = ({ href = "/" }: { href?: string }) => <a className="b-logo" href={href} aria-label="Insidir home"><Mark /></a>;
