@@ -1,11 +1,13 @@
-/* Two landing stages that show instead of tell:
- *   Why Insidir: the problem it solves, in four rows (what you can't see today → what Insidir shows you).
- *   See it work: three real recordings of the live site on a phone (qa/record-site.ts), playing on a loop. */
+/* The landing's story, shown not told:
+ *   Why Insidir: the problem in four rows (what you can't see today → what Insidir shows you).
+ *   How it works: three steps.
+ *   See it work: the demo player (./Demo.tsx), recordings of the live site, big. */
 import type { CSSProperties } from "react";
-import { PROBLEM, STAGES, WATCH } from "@/lib/brand/copy";
+import { HOW, PROBLEM, STAGES } from "@/lib/brand/copy";
 import { slotPhoto } from "@/lib/brand/images";
 import { Lines, m } from "../Bits";
 import { Stage } from "../Stage";
+import { Demo } from "./Demo";
 
 export function WhyStage() {
   return (
@@ -27,6 +29,23 @@ export function WhyStage() {
   );
 }
 
+export function HowStage() {
+  return (
+    <Stage testid="how" labelledBy="how-h" className="b-stage--how">
+      <div className="b-head"><Lines id="how-h" lines={STAGES.how} size={64} /></div>
+      <ol className="b-how" data-testid="how-steps">
+        {HOW.map((s, i) => (
+          <li key={s.t} className="b-how__step" data-m="settle" style={{ "--d": `${0.45 + i * 0.1}s` } as CSSProperties}>
+            <span className="b-how__n b-num">{i + 1}</span>
+            <h3 className="b-how__t">{s.t}</h3>
+            <p className="b-how__d">{s.d}</p>
+          </li>
+        ))}
+      </ol>
+    </Stage>
+  );
+}
+
 export function WatchStage() {
   return (
     <Stage testid="watch" labelledBy="watch-h" className="b-stage--watch">
@@ -34,20 +53,7 @@ export function WatchStage() {
         <Lines id="watch-h" lines={STAGES.watch} size={64} />
         <p className="b-sub" {...m("lift", 0.4)}>{STAGES.watchSub}</p>
       </div>
-      <div className="b-watch" data-testid="watch-videos">
-        {WATCH.map((w, i) => (
-          <figure key={w.id} className="b-watch__item" data-m="settle" style={{ "--d": `${0.5 + i * 0.1}s` } as CSSProperties}>
-            <div className="b-phone">
-              <video className="b-phone__screen" autoPlay muted loop playsInline preload="metadata" poster={`/media/site-${w.id}-poster.jpg`}
-                aria-label={`${w.t}: a recording of the live site`} data-testid="watch-video">
-                <source src={`/media/site-${w.id}.webm`} type="video/webm" />
-                <source src={`/media/site-${w.id}.mp4`} type="video/mp4" />
-              </video>
-            </div>
-            <figcaption className="b-watch__cap"><b>{w.t}</b><span>{w.d}</span></figcaption>
-          </figure>
-        ))}
-      </div>
+      <Demo />
     </Stage>
   );
 }

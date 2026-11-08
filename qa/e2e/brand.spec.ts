@@ -16,12 +16,12 @@ import { MW } from "./seed-millionaires";
 const post = (path: string, body: unknown) => fetch(`http://localhost:${WHOP_PORT}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 const closed = { name: "insidir_pay_closed", value: "1", url: "http://localhost:3100" };
 
-test("landing: value first (free tiles), then what members get; sides locked only where they're members'", async ({ page, context }) => {
+test("landing: the story (why, how, the demo), then value (free tiles); sides locked only where they're members'", async ({ page, context }) => {
   test.setTimeout(60_000);
   await context.addCookies([closed]);
   await page.goto("/");
-  // Election Day (Nov 3–4 ET only), the spotlight, your stake and price gaps step aside when there is nothing real to show.
-  const order = ["hero", "pulse", "free", "members", "markets", "proof", "pricing", "faq", "final-cta"];
+  // Election Day (Nov 3–4 ET only) leads when it's on; the rest is one story, in order.
+  const order = ["hero", "why", "how", "watch", "free", "proof", "pricing", "faq", "final-cta"];
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
@@ -40,15 +40,12 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   }
   await expect(page.getByTestId("hero-sample")).toHaveAttribute("href", "#free");
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
-  // The Pulse: today's millionaire money, the biggest bet (side free), the hottest market; every card says something real.
-  // Since midnight ET: $299K once all six fixture bets (8–90 minutes old) fall after midnight; just after midnight,
-  // part or none of it (the card then says there's none yet today).
-  if (etMinutes > 95) await expect(page.getByTestId("pulse-total")).toContainText("$299K");
-  else await expect(page.getByTestId("pulse-total")).toContainText(/\$\d+K|No millionaire money yet today/);
-  if (etMinutes > 95) await expect(page.getByTestId("pulse-biggest")).toContainText("Millionaire");
-  else await expect(page.getByTestId("pulse-biggest")).toContainText(/Millionaire|No millionaire bet yet today/);
-  await expect(page.getByTestId("pulse-hottest")).toContainText("Chiefs vs. Bills");
-  for (const id of ["pulse-total", "pulse-biggest", "pulse-hottest", "pulse-disagree", "pulse-unusual"]) await expect(page.getByTestId(id)).toBeVisible();
+  // Why Insidir: four rows; How it works: three steps; See it work: the demo, three chapters of real recordings.
+  await expect(page.getByTestId("why-rows").locator("li")).toHaveCount(4);
+  await expect(page.getByTestId("how-steps").locator("li")).toHaveCount(3);
+  await expect(page.getByTestId("demo-tab")).toHaveCount(3);
+  const src = await page.getByTestId("demo-video").locator("source").first().getAttribute("src");
+  expect((await page.request.get(src!)).status()).toBe(200);
   await page.screenshot({ path: shotName("brand-hero", page) });
 
   // Free right now, a live sample: today's #1 millionaire bet whole (side included), the board 60 minutes late, one race.
@@ -67,16 +64,6 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await expect(page.getByTestId("free-race")).toBeVisible();
   await page.screenshot({ path: shotName("brand-free", page) });
 
-  // What members get: five steps beside a phone showing real screens (on phones, each step shows its own).
-  const members = page.getByTestId("members");
-  await members.scrollIntoViewIfNeeded();
-  await expect(page.getByTestId("member-row")).toHaveCount(5);
-  await expect(members.getByTestId("screen-market").first()).toContainText("Millionaires");
-  await expect(members.getByTestId("screen-brief").first()).toContainText("Chiefs vs. Bills");
-  await expect(members.getByTestId("screen-wallet").first()).toContainText("Millionaire");
-  await expect(members).toContainText("$1 for 3 days, then $39/month.");
-  await page.screenshot({ path: shotName("brand-members", page) });
-
   // A tap on a free bet: the pop-up names what they just saw.
   await top.getByTestId("bet-row").first().click();
   const sheet = page.getByTestId("pay-sheet");
@@ -93,6 +80,7 @@ test("landing: value first (free tiles), then what members get; sides locked onl
   await expect(page.getByTestId("proof")).toContainText("“Bets of $50K+” on Kalshi · $25 a bet · 64 won of 118 settled · 180 days");
   await expect(page.getByTestId("proof")).not.toContainText("on every");
   await expect(page.getByTestId("pricing")).toContainText("Less than one bad bet.");
+  await expect(page.getByTestId("pricing")).toContainText("$1 for three days, then $39 a month.");
   await expect(page.getByTestId("final-cta").getByRole("heading")).toHaveText("Bet with the people who actually win.");
   await expect(page.getByTestId("brand-foot")).toContainText("Gambling problem? Call 1-800-GAMBLER.");
   await noHorizontalScroll(page);

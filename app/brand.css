@@ -1053,24 +1053,49 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
   .b-why__n { font-size: 12px; } .b-why__pain { font-size: 14px; } .b-why__fix { font-size: 18px; }
 }
 
-/* ---------- See it work: three recordings of the live site in phone frames ---------- */
-.b-stage--watch { background: radial-gradient(120% 70% at 50% 100%, #111 0%, #000 62%); }
-.b-watch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(40 * var(--u)); width: 100%; max-width: calc(1040 * var(--u)); margin: 0 auto; }
-.b-watch__item { margin: 0; display: grid; gap: calc(18 * var(--u)); justify-items: center; }
-.b-phone { position: relative; width: 100%; max-width: calc(272 * var(--u)); aspect-ratio: 390 / 844; padding: calc(9 * var(--u)); border-radius: calc(46 * var(--u));
-  background: linear-gradient(160deg, #232323 0%, #0b0b0b 45%, #232323 100%);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 calc(30 * var(--u)) calc(80 * var(--u)) rgba(0, 0, 0, .7), 0 0 calc(120 * var(--u)) rgba(96, 103, 150, .18); }
-.b-phone__screen { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: calc(37 * var(--u)); background: #000; }
-.b-watch__cap { display: grid; gap: calc(4 * var(--u)); text-align: center; max-width: calc(280 * var(--u)); }
-.b-watch__cap b { font-weight: 600; font-size: calc(17 * var(--u)); color: #fff; }
-.b-watch__cap span { font-size: calc(13.5 * var(--u)); color: #b8c2cf; line-height: 1.45; }
+/* ---------- How it works: three steps on a hairline ---------- */
+.b-stage--how { background: radial-gradient(90% 60% at 50% 0%, #111 0%, #000 70%); }
+.b-how { list-style: none; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(48 * var(--u)); width: 100%; max-width: calc(1080 * var(--u)); counter-reset: how; }
+.b-how__step { display: grid; gap: calc(12 * var(--u)); align-content: start; padding-top: calc(22 * var(--u)); border-top: 1px solid rgba(255, 255, 255, .16); }
+.b-how__n { width: calc(34 * var(--u)); height: calc(34 * var(--u)); border-radius: 50%; display: grid; place-items: center; font-size: calc(14 * var(--u)); font-weight: 600; color: #000; background: #fff; }
+.b-how__t { margin: 0; font-size: calc(26 * var(--u)); font-weight: 600; letter-spacing: calc(-0.6 * var(--u)); color: #fff; }
+.b-how__d { margin: 0; font-size: calc(15.5 * var(--u)); line-height: 1.55; color: #b8c2cf; }
 @media (max-width: 860px) {
-  /* Phones side by side, scrolled sideways, each most of the screen wide. */
-  .b-watch { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: min(72vw, 300px); gap: 18px; max-width: none; overflow-x: auto; scroll-snap-type: x mandatory;
-    padding: 4px var(--gut, 20px) 12px; margin: 0 calc(-1 * var(--gut, 20px)); scrollbar-width: none; }
-  .b-watch::-webkit-scrollbar { display: none; }
-  .b-watch__item { scroll-snap-align: center; gap: 14px; }
-  .b-phone { max-width: none; padding: 8px; border-radius: 40px; }
-  .b-phone__screen { border-radius: 32px; }
-  .b-watch__cap b { font-size: 16px; } .b-watch__cap span { font-size: 13px; }
+  .b-how { grid-template-columns: 1fr; gap: 26px; max-width: 560px; }
+  .b-how__step { padding-top: 18px; gap: 10px; }
+  .b-how__n { width: 30px; height: 30px; font-size: 13px; } .b-how__t { font-size: 22px; } .b-how__d { font-size: 15px; }
+}
+
+/* ---------- See it work: the demo player (components/brand/landing/Demo.tsx), as wide as the page ---------- */
+.b-stage--watch { background: radial-gradient(120% 70% at 50% 100%, #111 0%, #000 62%); }
+.b-stage--watch .b-stage__in { max-width: none; }
+.b-demo { width: 100%; max-width: calc(1200 * var(--u)); margin: 0 auto; display: grid; gap: calc(22 * var(--u)); }
+.b-demo__tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(18 * var(--u)); }
+.b-demo__tab { appearance: none; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: grid; gap: calc(6 * var(--u)); color: #b8c2cf; font: inherit; }
+.b-demo__tab b { font-size: calc(16 * var(--u)); font-weight: 600; color: rgba(255, 255, 255, .55); transition: color .2s ease; }
+.b-demo__tab > span:last-child { font-size: calc(13.5 * var(--u)); line-height: 1.45; opacity: .7; transition: opacity .2s ease; }
+.b-demo__tab[aria-selected="true"] b { color: #fff; }
+.b-demo__tab[aria-selected="true"] > span:last-child { opacity: 1; }
+.b-demo__tab:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 4px; }
+.b-demo__bar { display: block; height: 2px; background: rgba(255, 255, 255, .16); border-radius: 2px; overflow: hidden; margin-bottom: calc(8 * var(--u)); }
+.b-demo__bar > span { display: block; height: 100%; background: #fff; transform-origin: left; transition: transform .25s linear; }
+.b-demo__frame { position: relative; border-radius: calc(16 * var(--u)); overflow: hidden; background: #050505;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .1), 0 calc(40 * var(--u)) calc(120 * var(--u)) rgba(0, 0, 0, .8), 0 0 calc(160 * var(--u)) rgba(96, 103, 150, .16); }
+.b-demo__chrome { display: flex; align-items: center; gap: calc(7 * var(--u)); height: calc(38 * var(--u)); padding: 0 calc(16 * var(--u)); background: #181818; border-bottom: 1px solid rgba(255, 255, 255, .06); }
+.b-demo__chrome i { width: calc(11 * var(--u)); height: calc(11 * var(--u)); border-radius: 50%; background: #5b5b5b; }
+.b-demo__chrome span { margin: 0 auto; transform: translateX(calc(-27 * var(--u))); font-size: calc(12.5 * var(--u)); color: #d9d9d9; background: #232323; border-radius: 999px; padding: calc(4 * var(--u)) calc(18 * var(--u)); }
+.b-demo__video { display: block; width: 100%; aspect-ratio: 1920 / 1200; object-fit: cover; background: #000; cursor: pointer; }
+.b-demo__ctl { position: absolute; right: calc(14 * var(--u)); bottom: calc(14 * var(--u)); display: flex; gap: calc(8 * var(--u)); }
+.b-demo__btn { appearance: none; border: 1px solid rgba(255, 255, 255, .18); background: rgba(0, 0, 0, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  color: #fff; font: inherit; font-size: calc(13 * var(--u)); font-weight: 500; height: calc(36 * var(--u)); min-width: calc(36 * var(--u)); padding: 0 calc(14 * var(--u)); border-radius: 999px; cursor: pointer; }
+.b-demo__btn:hover { background: rgba(0, 0, 0, .8); }
+@media (max-width: 860px) {
+  /* Phones: the phone recording, the full width of the screen, chapters as a row above it. */
+  .b-demo { gap: 16px; max-width: 520px; }
+  .b-demo__tabs { gap: 12px; }
+  .b-demo__tab b { font-size: 14px; } .b-demo__tab > span:last-child { display: none; }
+  .b-demo__bar { margin-bottom: 6px; }
+  .b-demo__frame { border-radius: 28px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .12), 0 30px 80px rgba(0, 0, 0, .8); }
+  .b-demo[data-kind="phone"] .b-demo__video { aspect-ratio: 780 / 1688; max-height: 82dvh; object-fit: cover; object-position: top; }
+  .b-demo__ctl { right: 12px; bottom: 12px; } .b-demo__btn { height: 36px; min-width: 36px; font-size: 13px; padding: 0 14px; }
 }
