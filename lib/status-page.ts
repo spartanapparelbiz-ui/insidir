@@ -4,6 +4,8 @@
  * Server only. */
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
+import { coverageSince } from "@/lib/stocks/backfill";
+import { alertLatency } from "@/lib/stocks/watchlists";
 
 /** When this web process started: its last deploy or restart. */
 export const STARTED_AT = Date.now();
@@ -19,6 +21,8 @@ export interface Status {
   at: number;
   sources: SourceFresh[];
   jobs: JobBeat[];
+  /** The SEC terminal: the day from which every Form 4 is read, and watchlist alerts' speed over the last day. */
+  sec: { since: string | null; alerts: number; p50s: number | null; p95s: number | null };
   backfill: BackfillRate | null;
   checks: CheckRun[];
   web: { startedAt: number; commit: string | null; deployment: string | null };
@@ -48,6 +52,14 @@ const JOBS: Array<[RegExp, string, number]> = [
   [/^accuracy$/, "Accuracy check", HOUR],
   [/^monitor:money-path$/, "Live tests", 15 * MIN],
   [/^smart:splits$/, "Positioning", 5 * MIN],
+  // The SEC research terminal (docs/INSIDIR-V3.md §3).
+  [/^sec:form4$/, "SEC: insider filings, live", 2 * MIN],
+  [/^sec:backfill$/, "SEC: insider filings, backfill", MIN],
+  [/^sec:current$/, "SEC: 8-K, 10-Q, 10-K, 13D/G, live", 2 * MIN],
+  [/^sec:companies$/, "SEC: company reports", MIN],
+  [/^sec:alerts$/, "SEC: watchlist alerts", MIN],
+  [/^accuracy:filings$/, "SEC: Form 4 accuracy check", HOUR],
+  [/^accuracy:companies$/, "SEC: financials accuracy check", HOUR],
 ];
 
 export const lightOf = (age: number | null, [amber, red]: [number, number]): Light => (age === null ? "red" : age > red ? "red" : age > amber ? "amber" : "green");
@@ -104,6 +116,8 @@ export async function readStatus(db: Db, now: number): Promise<Status> {
   const checks = (c.rows as Array<{ run_at: string; ok: number; checked: number; mismatch: number }>).map(r => ({ runAt: new Date(r.run_at).getTime(), ok: Number(r.ok), checked: Number(r.checked), mismatch: Number(r.mismatch) }));
   const lights = [...sources.map(s => s.light), ...jobs.map(j => j.light)];
   const overall: Light = lights.includes("red") ? "red" : lights.includes("amber") ? "amber" : "green";
-  return { at: now, sources, jobs, backfill, checks, overall,
+  const [since, latency] = await Promise.all([coverageSince(db, now).catch(() => null), alertLatency(db, now).catch(() => null)]);
+  const sec = { since, alerts: latency?.alerts ?? 0, p50s: latency?.p50s ?? null, p95s: latency?.p95s ?? null };
+  return { at: now, sources, jobs, backfill, checks, overall, sec,
     web: { startedAt: STARTED_AT, commit: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? null, deployment: process.env.RAILWAY_DEPLOYMENT_ID ?? null } };
 }

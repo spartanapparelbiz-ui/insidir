@@ -4,6 +4,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { saveFiling } from "@/lib/stocks/filings";
+import { parseFacts, parseSubmissions } from "@/lib/stocks/company";
+import { companies, companyFacts, companyFilings } from "@/lib/db/schema";
 import { filingIndexUrl, parseOwnership } from "@/lib/stocks/form4";
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
@@ -83,7 +85,7 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
   if (!/e2e/.test(new URL(url).pathname)) throw new Error(`Refusing to seed ${url}: not an e2e database`);
   const db = getDb();
   const now = Date.now();
-  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks, terminal.market_info, terminal.move_tags, terminal.filings, terminal.form4_days CASCADE`);
+  await db.execute(sql`TRUNCATE terminal.opportunities, terminal.receipts, terminal.whale_trades, terminal.worker_heartbeats, terminal.sessions, terminal.users, terminal.push_subscriptions, terminal.alerts_sent, terminal.events, terminal.webhook_events, terminal.live_events, terminal.near_misses, terminal.markets, terminal.moves, terminal.trader_records, terminal.follows, terminal.waitlist, terminal.trader_positions, terminal.tracked_wallets, terminal.insider_trades, terminal.sec_history, terminal.funds, terminal.fund_filings, terminal.fund_holdings, terminal.accuracy_checks, terminal.market_info, terminal.move_tags, terminal.filings, terminal.form4_days, terminal.companies, terminal.company_facts, terminal.company_filings, terminal.sec_watchlists, terminal.sec_alerts, terminal.journal_entries CASCADE`);
   const u = universe(now);
   // The markets the last sweep saw (the landing page's "Scanning N markets" line counts these).
   await saveMarkets(db, u.markets);
@@ -276,6 +278,12 @@ export async function seed(): Promise<{ opps: Opportunity[] }> {
     ["000008042426000271", "80424", "pg-ms", "2026-11-05T14:03:41Z"]] as const) {
     await saveFiling(db, parseOwnership(fx(`${name}.xml`)), acc, Date.parse(at), filingIndexUrl(cik, acc));
   }
+  // A company report (docs/INSIDIR-V3.md §3): Procter & Gamble from its real submissions and company facts, read already.
+  const sub = parseSubmissions(JSON.parse(fx("pg-submissions.json")), "2025-01-01");
+  const { filings: pgFilings, cik: pgCik, ...pgHead } = sub;
+  await db.insert(companies).values({ cik: pgCik, ...pgHead, refreshedAt: new Date(now), factsAt: new Date(now) });
+  await db.insert(companyFilings).values(pgFilings.map(f => ({ ...f, seenAt: new Date(now - 7 * DAY) })));
+  await db.insert(companyFacts).values(parseFacts(JSON.parse(fx("pg-companyfacts.json")), "2022-01-01").map(f => ({ cik: pgCik, ...f })));
   return { opps: deals };
 }
 

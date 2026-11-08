@@ -19,7 +19,12 @@
  *   sec:backfill every FORM4_BACKFILL_MS (1 min): every issuer's Form 4s from EDGAR's daily form index, newest day
  *             first, back to FORM4_BACKFILL_FROM (lib/stocks/backfill.ts). Shares the one SecClient (8 req/s) with sec:form4.
  *   accuracy:filings every hour: 20 random Form 4 lines re-read from EDGAR (lib/accuracy/filings.ts)
- *             All three need SEC_USER_AGENT and stop with STOCKS_INGEST=0.
+ *   sec:tickers daily: EDGAR's ticker list (lib/stocks/company.ts)
+ *   sec:companies every minute: companies asked for, then active issuers: submissions and XBRL facts
+ *   sec:current every SEC_CURRENT_MS (2 min): 8-K, 10-Q, 10-K, Schedules 13D/G from the live feed (lib/stocks/current.ts)
+ *   sec:alerts every minute: watchlist alerts for new filings (lib/stocks/watchlists.ts)
+ *   accuracy:companies every hour: 20 stored XBRL facts re-read from EDGAR (lib/accuracy/companies.ts)
+ *             All of them need SEC_USER_AGENT, share the one SecClient and stop with STOCKS_INGEST=0.
  *   settle    every SETTLE_MS: record how each logged deal resolved
  *   follow:seen every minute: the price Insidir showed each position at and the tag times of Momentum / Early / Late
  *             (lib/follow/seen.ts), new positions first, then the backlog
@@ -52,6 +57,10 @@ import { SecClient } from "@/lib/stocks/sec";
 import { form4Once, STOCKS_FORM4_MS, stocksIngestOn } from "@/lib/stocks/jobs";
 import { BACKFILL_MS, backfillOnce } from "@/lib/stocks/backfill";
 import { passed, runFilingsCheck } from "@/lib/accuracy/filings";
+import { runCompaniesCheck } from "@/lib/accuracy/companies";
+import { companiesOnce, tickersOnce } from "@/lib/stocks/company";
+import { CURRENT_MS, currentOnce, watchedCompanies } from "@/lib/stocks/current";
+import { alertsOnce as secAlertsOnce } from "@/lib/stocks/watchlists";
 import { marketKey } from "@/lib/engines/common";
 import { settle } from "@/lib/engines/receipts";
 import { bigTrades } from "@/lib/engines/whales";
@@ -264,6 +273,36 @@ function secJobs(sec: SecClient): Array<() => void> {
       const r = await backfillOnce(getDb(), sec, Date.now());
       await heartbeat(getDb(), "sec:backfill", true, r.failed ? `${r.failed} filings set aside after 3 tries` : null, { ...r, since: r.since ?? "" });
       if (r.read || r.listed || r.errors) log(`sec:backfill: ${r.days} days, ${r.listed} listed, ${r.read} read, ${r.skipped} already read, ${r.errors} errors, ${r.requests} requests; complete since ${r.since ?? "not yet"}`);
+    }),
+    // Company reports (docs/INSIDIR-V3.md §3): EDGAR's ticker list daily; companies someone asked for, then active
+    // issuers, a few a minute; the live feed for 8-K, 10-Q, 10-K and Schedules 13D/G; watchlist alerts every minute.
+    every("sec:tickers", 24 * 3_600_000, async () => {
+      const n = await tickersOnce(getDb(), sec);
+      await heartbeat(getDb(), "sec:tickers", true, null, { tickers: n });
+      log(`sec:tickers: ${n} companies`);
+    }),
+    every("sec:companies", 60_000, async () => {
+      const r = await companiesOnce(getDb(), sec, Date.now());
+      await heartbeat(getDb(), "sec:companies", r.errors === 0, r.errors ? `${r.errors} companies failed to read` : null, r);
+      if (r.read || r.errors) log(`sec:companies: ${r.read} read, ${r.facts} facts, ${r.errors} failed`);
+    }),
+    every("sec:current", CURRENT_MS, async () => {
+      const r = await currentOnce(getDb(), sec, Date.now(), ciks => watchedCompanies(getDb(), ciks));
+      await heartbeat(getDb(), "sec:current", r.errors === 0, r.errors ? `${r.errors} feeds failed` : null, r);
+      if (r.added || r.errors) log(`sec:current: ${r.added} new filings of ${r.seen} seen, ${r.errors} feeds failed`);
+    }),
+    every("sec:alerts", 60_000, async () => {
+      const r = await secAlertsOnce(getDb(), Date.now());
+      await heartbeat(getDb(), "sec:alerts", true, null, { made: r.made, p50Ms: r.p50Ms ?? -1, maxMs: r.maxMs ?? -1 });
+      if (r.made) log(`sec:alerts: ${r.made} alerts, median ${Math.round((r.p50Ms ?? 0) / 1000)}s after EDGAR, slowest ${Math.round((r.maxMs ?? 0) / 1000)}s`);
+    }),
+    every("accuracy:companies", ACCURACY_MS, async () => {
+      const r = await runCompaniesCheck(getDb(), sec);
+      const count = (st: string) => r.lines.filter(l => l.status === st).length;
+      const stats = { ok: count("ok"), mismatch: count("mismatch"), skipped: count("skipped"), passed: passed(r.lines) ? 1 : 0 };
+      await heartbeat(getDb(), "accuracy:companies", stats.mismatch === 0, stats.mismatch ? `${stats.mismatch} mismatches` : null, stats);
+      log(`accuracy:companies: ${stats.ok} ok, ${stats.mismatch} mismatched, ${stats.skipped} skipped${stats.passed ? " (passed)" : ""}`);
+      for (const l of r.lines.filter(x => x.status === "mismatch")) log(`accuracy:companies mismatch: ${l.target} | ${l.label} | ${l.problems.join("; ")}`);
     }),
     every("accuracy:filings", ACCURACY_MS, async () => {
       const r = await runFilingsCheck(getDb(), sec);

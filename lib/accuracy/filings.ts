@@ -20,7 +20,7 @@ const same = (a: number | null, b: number | null, tol: number) => (a === null ||
 /** One stored line (a terminal.insider_trades row as SQL returns it) against its filing re-read from EDGAR, and the
  *  line's terminal.filings row when given (null: there should be one and there isn't). Throws only when EDGAR can't be
  *  reached. */
-export async function checkTradeLine(sec: SecClient, raw: Record<string, unknown>, filing?: Record<string, unknown> | null): Promise<string[]> {
+export async function checkTradeLine(sec: SecClient, raw: Record<string, unknown>, filing?: Record<string, unknown> | null, fields: "v3" | "v2" = "v3"): Promise<string[]> {
   const t = tradeFromRow(raw);
   const m = /^https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/(\d+)\/(\d{18})\//.exec(t.url);
   if (!m || m[2] !== t.accession) return ["link is not this filing on sec.gov"];
@@ -30,8 +30,15 @@ export async function checkTradeLine(sec: SecClient, raw: Record<string, unknown
   if (!line) return ["line not in the filing"];
   const errs: string[] = [];
   const cmp = (name: string, ours: unknown, theirs: unknown) => { if ((ours ?? null) !== (theirs ?? null)) errs.push(`${name} ${String(ours)} vs filing ${String(theirs)}`); };
-  cmp("form", t.form, line.form);
   cmp("code", t.code, line.code);
+  if (fields === "v2") {
+    // A row from before V3: only the columns it was written with.
+    if (!same(t.shares, line.shares ?? null, 0)) errs.push(`shares ${t.shares} vs filing ${line.shares}`);
+    if (!same(t.value, line.value ?? null, 0.01)) errs.push(`value ${t.value} vs filing ${line.value}`);
+    cmp("date", t.tradeDate, line.tradeDate);
+    return errs;
+  }
+  cmp("form", t.form, line.form);
   cmp("acquired/disposed", t.acquiredDisposed, line.acquiredDisposed);
   cmp("derivative", t.derivative, line.derivative);
   cmp("date", t.tradeDate, line.tradeDate);

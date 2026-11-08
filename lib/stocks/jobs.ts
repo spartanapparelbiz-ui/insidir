@@ -32,7 +32,9 @@ async function seen(db: Db, keys: string[]): Promise<Set<string>> {
 }
 const markSeen = (db: Db, key: string) => db.insert(secSeen).values({ key }).onConflictDoNothing();
 
-const atomUrl = (start: number) => `https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom&count=100${start ? `&start=${start}` : ""}`;
+const atomUrl = (start: number, type = "4") => `https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=${type}&output=atom&count=100${start ? `&start=${start}` : ""}`;
+/** The ownership forms read live: Form 4 pages back up to FORM4_PAGES; Forms 3 and 5 are rarer, one page each. */
+const LIVE: ReadonlyArray<[string, number]> = [["4", FORM4_PAGES], ["3", 1], ["5", 1]];
 
 /** One Form 4 filing → its insider-buy move (null when it has none of $100k+) and every open-market buy and sale on it. */
 export async function readForm4Full(sec: SecClient, f: AtomFiling): Promise<{ move: Move | null; trades: TradeRow[] }> {
@@ -57,19 +59,21 @@ export const readForm4 = async (sec: SecClient, f: AtomFiling): Promise<Move | n
 export async function form4Once(db: Db, sec: SecClient): Promise<{ read: number; trades: number; amendments: number; errors: number }> {
   const fresh: AtomFiling[] = [];
   const queued = new Set<string>();
-  for (let page = 0; page < FORM4_PAGES && fresh.length < FORM4_PER_RUN; page++) {
-    const batch = parseAtom(await sec.text(atomUrl(page * 100))).filter(f => !queued.has(f.accession));
-    if (!batch.length) break;
-    const known = await seen(db, batch.map(f => seenKey(f.accession)));
-    const unknown = batch.filter(f => !known.has(seenKey(f.accession)));
-    for (const f of unknown) { queued.add(f.accession); fresh.push(f); }
-    if (!unknown.length) break;
+  for (const [type, pages] of LIVE) {
+    for (let page = 0; page < pages && fresh.length < FORM4_PER_RUN; page++) {
+      const batch = parseAtom(await sec.text(atomUrl(page * 100, type))).filter(f => !queued.has(f.accession));
+      if (!batch.length) break;
+      const known = await seen(db, batch.map(f => seenKey(f.accession)));
+      const unknown = batch.filter(f => !known.has(seenKey(f.accession)));
+      for (const f of unknown) { queued.add(f.accession); fresh.push(f); }
+      if (!unknown.length) break;
+    }
   }
   let read = 0, trades = 0, amendments = 0, errors = 0;
   for (const f of fresh.slice(0, FORM4_PER_RUN)) {
     try {
       const got = await readAndSave(db, sec, f.filerCik, f.accession, { at: f.publishedAt });
-      if (got) { trades += got.trades.length; if (got.filing.form === "4/A") amendments++; }
+      if (got) { trades += got.trades.length; if (got.filing.form.endsWith("/A")) amendments++; }
       await markSeen(db, seenKey(f.accession));
       read++;
     } catch { errors++; }

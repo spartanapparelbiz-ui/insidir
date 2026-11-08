@@ -48,8 +48,40 @@
   .sec-table thead { display: none; }
   .sec-table, .sec-table tbody, .sec-table tr, .sec-table td { display: block; width: 100%; }
   .sec-table tr { border: 1px solid var(--glass-line); border-radius: 12px; padding: 6px 10px; margin-bottom: 8px; background: var(--panel); }
-  .sec-table td { border: 0; padding: 3px 0; white-space: normal; text-align: right; min-width: 0; }
+  .sec-table td, .sec-table th[scope="row"] { border: 0; padding: 3px 0; white-space: normal; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+  .sec-table th[scope="row"] { display: block; text-align: left; }
   .sec-table td::after { content: ""; display: block; clear: both; }
   .sec-table td::before { content: attr(data-label); float: left; margin-right: 12px; color: var(--dim); font-size: 12px; text-align: left; }
   .sec-table .r { text-align: right; }
 }
+.sec-badge { margin-left: 6px; display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--violet); color: var(--btn-ink); font-size: 11px; font-weight: 700; text-align: center; }
+.sec-person { border-bottom: 1px dotted var(--dim); }
+.sec-soonline { color: var(--dim); margin: 8px 0; }
+.sec-section { margin-top: 28px; }
+.sec-h2 { font-size: 18px; font-weight: 500; margin: 0 0 8px; }
+.sec-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 8px 0 0; color: var(--dim); }
+.sec-meta dt { display: inline; }
+.sec-meta dd { display: inline; margin: 0 0 0 4px; color: var(--ink-muted); }
+.sec-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.sec .sec-ghost { font: inherit; font-weight: 500; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--glass-line); background: transparent; color: var(--ink); cursor: pointer; }
+.sec-panel { padding: 12px; border: 1px solid var(--glass-line); border-radius: 12px; background: var(--panel); }
+.sec-panel textarea, .sec-panel input, .sec-panel select { font: inherit; font-size: 13px; color: var(--ink); background: rgba(255, 255, 255, .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; width: 100%; }
+.sec-panel textarea { min-height: 96px; resize: vertical; }
+.sec-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sec-row > * { flex: 1 1 140px; }
+.sec-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.sec-chips a { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--glass-line); color: var(--dim); }
+.sec-chips a[aria-current="page"] { color: var(--btn-ink); background: var(--white-btn); }
+.sec-msg { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+.sec-lists { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.sec-items { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 4px; }
+.sec-items li { display: flex; justify-content: space-between; gap: 8px; }
+.sec-alert-unread { font-weight: 600; }
+.sec-fin td:first-child { white-space: normal; }
+.sec-meta, .sec-actions, .sec-head { min-width: 0; overflow-wrap: anywhere; }
+.sec select, .sec input:not([type="checkbox"]) { font: inherit; font-size: 13px; color: var(--ink); background: rgba(255, 255, 255, .04); border: 1px solid var(--glass-line); border-radius: 8px; padding: 7px 8px; min-width: 0; }
+.sec select option { color: var(--btn-ink); }
+.sec-actions .sec-row { flex: 1 1 320px; max-width: 460px; }
+.sec-actions .sec-row > * { flex: 0 1 auto; }
+.sec .soon, .b-root .soon { display: inline-block; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--violet); background: transparent; box-shadow: none; color: var(--violet); font-size: 11px; font-weight: 600; margin-right: 6px; height: auto; }
+ul.sec-meta { list-style: none; padding: 0; }

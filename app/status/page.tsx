@@ -66,6 +66,10 @@ export default async function StatusPage() {
               <span className="stat__note">{j.ok ? `Last run ${ago(j.lastRunAt, now)}` : `Failed ${ago(j.lastRunAt, now)}${j.lastOkAt ? `, last worked ${ago(j.lastOkAt, now)}` : ""}`}</span><span className="stat__word">{WORD[j.light]}</span></li>)}
           </ul>
         ) : <p>No worker heartbeats recorded yet.</p>}
+        <p className="stat__fine" data-testid="status-sec">
+          SEC filings: {s.sec.since ? `every Form 3, 4 and 5 filed from ${s.sec.since} on has been read` : "the backfill of insider filings is still reading recent days"}.
+          {" "}{s.sec.alerts ? `Watchlist alerts in the last day: ${s.sec.alerts}, the median made ${s.sec.p50s}s after the filing reached EDGAR, 95% within ${s.sec.p95s}s.` : "No watchlist alerts in the last day."}
+        </p>
         {s.backfill ? (
           <p className="stat__fine" data-testid="status-backfill">
             Proven-wallet backfill, last run {ago(s.backfill.at, now)}: {s.backfill.wallets.toLocaleString("en-US")} wallets, {s.backfill.requests.toLocaleString("en-US")} requests at {s.backfill.reqPerSec}/s

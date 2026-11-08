@@ -52,16 +52,20 @@ export function easternToMs(text: string | null | undefined): number | null {
 
 export interface AtomFiling { accession: string; filerCik: string; indexBase: string; sourceUrl: string; formType: string; publishedAt: number | null }
 
-/** The current-filings Atom feed (getcurrent&type=4), Form 4 and 4/A only, once per accession. */
-export function parseAtom(xml: string): AtomFiling[] {
+/** The ownership forms: 3 (initial holdings), 4 (changes), 5 (annual), and their amendments. */
+export const OWNERSHIP_FORMS: readonly string[] = ["3", "3/A", "4", "4/A", "5", "5/A"];
+
+/** The current-filings Atom feed (getcurrent&type=3, 4 or 5), ownership forms only, once per accession. */
+export function parseAtom(xml: string, forms: readonly string[] = OWNERSHIP_FORMS): AtomFiling[] {
   const feed = (parser.parse(xml) as Node)?.feed as Node | undefined;
   if (!feed) throw new Error("Invalid SEC Atom feed");
   const seen = new Set<string>(), out: AtomFiling[] = [];
   for (const entry of list<Node>(feed.entry)) {
     const title = scalar(entry.title) ?? "";
-    // getcurrent&type=4 is a prefix search (424B prospectuses too): keep only real Form 4s.
-    const type = (scalar(entry["filing-type"]) ?? /^\s*([A-Z0-9][A-Z0-9 /]*?)\s+[-:–—]\s/i.exec(title)?.[1] ?? "").trim().replace(/\s+/g, " ").toUpperCase();
-    if (type !== "4" && type !== "4/A") continue;
+    // getcurrent&type=4 is a prefix search (424B prospectuses too): keep only the forms asked for.
+    const term = list<Node>(entry.category).map(c => String(c?.["@_term"] ?? "")).find(Boolean);
+    const type = (scalar(entry["filing-type"]) ?? (term || null) ?? /^\s*([A-Z0-9][A-Z0-9 /]*?)\s+[-:–—]\s/i.exec(title)?.[1] ?? "").trim().replace(/\s+/g, " ").toUpperCase();
+    if (!forms.includes(type)) continue;
     const href = list<Node>(entry.link).map(l => String(l?.["@_href"] ?? "")).find(h => h.includes("/Archives/edgar/data/"));
     if (!href) continue;
     let url: URL;

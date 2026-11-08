@@ -14,7 +14,7 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
   // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
   const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
   // Election Day leads the nav on Nov 3–4 ET (lib/brand/pulse.ts electionDay), then drops out.
-  if (page.viewportSize()!.width > 1160) expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "Record", "Pricing", "FAQ"]);
+  if (page.viewportSize()!.width > 1160) expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
   await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
   // The pitch (the footer's "isn't affiliated with … the SEC" aside).
@@ -41,7 +41,7 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
     expect(r.headers().location, path).toMatch(/\/board$/);
   }
   // A bare ticker and the old per-person pages land on insider activity (docs/INSIDIR-V3.md §3).
-  for (const [path, to] of [["/NVDA", /\/insiders\?ticker=NVDA$/], ["/insiders/1197647-jen-hsun-huang", /\/insiders$/]] as const) {
+  for (const [path, to] of [["/NVDA", /\/company\/NVDA$/], ["/insiders/1197647-jen-hsun-huang", /\/insiders$/]] as const) {
     const r = await page.request.get(path, { maxRedirects: 0 });
     expect(r.status(), path).toBe(301);
     expect(r.headers().location, path).toMatch(to);

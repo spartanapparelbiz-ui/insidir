@@ -153,9 +153,10 @@ export async function checkRecord(db: Db, wallet: string, now: number): Promise<
   return errs;
 }
 
-/** A stored insider trade line against the Form 4 re-read from EDGAR (every field: lib/accuracy/filings.ts). */
+/** A stored insider trade line against the Form 4 re-read from EDGAR (lib/accuracy/filings.ts): every V3 field for a
+ *  line read under V3 (it has acquired/disposed), only code, shares, value and date for an older V2 history row. */
 export async function checkTrade(sec: SecClient, t: Record<string, unknown>): Promise<string[]> {
-  return source(() => checkTradeLine(sec, t));
+  return source(() => checkTradeLine(sec, t, undefined, t.acquired_disposed == null ? "v2" : "v3"));
 }
 
 /** A stored 13F holding against the fund's information table re-read. */

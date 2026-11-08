@@ -16,7 +16,7 @@ export interface Url { loc: string; lastmod?: Date; changefreq?: "hourly" | "dai
 
 const HOUR = 3_600_000;
 /** Every public page on the keep list (test/routes.test.ts), and every category. */
-export const PAGES = ["/", "/election", "/board", "/markets", ...CATEGORIES.map(c => `/markets/${c.slug}`), "/wallets", "/results", "/pricing",
+export const PAGES = ["/", "/election", "/board", "/markets", ...CATEGORIES.map(c => `/markets/${c.slug}`), "/wallets", "/results", "/sec", "/pricing",
   "/faq", "/methodology", "/data", "/status", "/security", "/disclosures", "/about", "/help", "/changelog", "/credits", "/terms", "/privacy"];
 
 export async function sitemapUrls(type: SitemapType, now = Date.now()): Promise<Url[]> {

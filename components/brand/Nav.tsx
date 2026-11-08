@@ -10,9 +10,9 @@ import { COMPANY, DATA_COMPANY, GAMBLER, FOOTER } from "@/lib/copy";
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
 const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m": kind, style: { "--d": `${d}s` } as CSSProperties } : {});
 
-const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["Record", "/results"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
+const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["SEC terminal", "/sec"], ["Record", "/results"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
 /** Members: the same bar, their places. No sidebar anywhere. */
-const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Autopilot", "/autopilot"], ["Book", "/book"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"]];
+const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Autopilot", "/autopilot"], ["Book", "/book"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["SEC", "/sec"]];
 
 export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
   /** The Start for $1 pill (off on /login, which has its own way in). */

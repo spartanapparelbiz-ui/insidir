@@ -7,10 +7,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
 import { Coverage, Filters, FilingsTable, PAGE_SIZE, Pager, SecHead, SecPage, SecSoon } from "@/components/sec/Sec";
-import { getViewer } from "@/lib/auth/viewer";
+import { secViewer } from "@/components/sec/viewer";
 import { getDb, hasDatabase } from "@/lib/db";
 import { isReady } from "@/lib/features";
-import { isPaid } from "@/lib/plans";
 import { coverageSince } from "@/lib/stocks/backfill";
 import { parseQuery, searchFilings, type FilingView } from "@/lib/stocks/filings";
 
@@ -20,8 +19,7 @@ export const metadata: Metadata = { title: "SEC filings: the Form 4 database", d
 type Params = Record<string, string | string[] | undefined>;
 
 export default async function FilingsPage({ searchParams }: { searchParams: Promise<Params> }) {
-  const viewer = await getViewer();
-  const paid = isPaid(viewer.plan);
+  const { paid, unread } = await secViewer();
   if (!isReady("filings")) {
     return (
       <Frame member={paid} current="board" testid="filings-page">
@@ -47,7 +45,7 @@ export default async function FilingsPage({ searchParams }: { searchParams: Prom
   return (
     <Frame member current="board" testid="filings-page">
       <SecPage testid="filings">
-        <SecHead current="filings" title="SEC filings" sub="Every Form 4 and amendment we have read from SEC EDGAR, newest first. Each row opens the original filing on sec.gov." />
+        <SecHead current="filings" unread={unread} title="SEC filings" sub="Every Form 4 and amendment we have read from SEC EDGAR, newest first. Each row opens the original filing on sec.gov." />
         <Coverage since={since} />
         <Filters action="/filings" q={q} codes />
         <FilingsTable rows={rows.slice(0, PAGE_SIZE)} />

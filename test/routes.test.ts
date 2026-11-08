@@ -10,7 +10,7 @@ import { PAGES } from "@/lib/seo/sitemaps";
 const KEEP_MAIN = ["/", "/election", "/board", "/markets", "/markets/[category]", "/market/[slug]", "/race/[slug]", "/wallet/[address]", "/bet/[id]",
   "/wallets", "/copies", "/copies/yours", "/copy/[id]", "/go", "/login", "/settings", "/results", "/autopilot", "/t/[id]", "/book",
   // docs/INSIDIR-V3.md §3: the Form 4 database and insider activity.
-  "/filings", "/insiders"];
+  "/filings", "/insiders", "/company/[ticker]", "/people/[cik]", "/watchlists", "/journal", "/sec"];
 const KEEP_TEXT = ["/faq", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog", "/about", "/help"];
 const KEEP = new Set([...KEEP_MAIN, ...KEEP_TEXT]);
 /** Pages that are not on the keep list but never answer 200 to a visitor: admin (signed-in owners only), the dev gallery
@@ -27,7 +27,7 @@ function pages(dir: string, route = ""): string[] {
   return out;
 }
 
-const RETIRED_PREFIX = ["/check", "/read", "/stocks", "/company", "/insider-trading", "/insiders/", "/funds", "/deal", "/whales", "/terminal", "/research",
+const RETIRED_PREFIX = ["/check", "/read", "/stocks", "/insider-trading", "/insiders/", "/funds", "/deal", "/whales", "/terminal", "/research",
   "/discover", "/feed", "/gaps", "/splits", "/pnl", "/receipts", "/open", "/p/", "/position", "/trackers", "/sports", "/top", "/start", "/signin",
   "/welcome", "/onboarding", "/library", "/following", "/alerts", "/trader"];
 const retired = (href: string) => RETIRED_PREFIX.some(r => href === r || href.startsWith(r.endsWith("/") ? r : `${r}/`) || href.startsWith(`${r}?`));
