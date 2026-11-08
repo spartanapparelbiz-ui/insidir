@@ -21,6 +21,12 @@ export const PROBLEM = {
     ["You might be paying more than you need to.", "The better price, Kalshi vs. Polymarket."],
   ],
 } as const;
+/** The three recordings on the landing (qa/record-site.ts → public/media/site-<id>.*), what each shows. */
+export const WATCH = [
+  { id: "board", t: "The board", d: "Every $5K+ bet from wallets up $1M+, then one market: its money per side and Kalshi's price." },
+  { id: "markets", t: "Every market", d: "Each category ranked by the millionaire money in it, down to the game." },
+  { id: "record", t: "The record", d: "How the millionaires' bets settled, by category. Losses included." },
+] as const;
 export const START = `Start for $${TRIAL.fee}`;
 export const PAST = "Past results, not a promise.";
 export const LEGAL = "Information, not financial or betting advice. Operated by Aethric LLC.";
@@ -37,6 +43,9 @@ export const STAGES = {
   pricing: ["Less than", "one bad bet."],
   pricingSub: `$${TRIAL.fee} for three days, then $${PLANS.insidir.price} a month. Cancel anytime.`,
   faq: ["Questions."],
+  why: ["Why Insidir."],
+  watch: ["See it work."],
+  watchSub: "The live site on a phone: real pages, real money, nothing staged.",
   final: ["Bet with the people", "who actually win."],
 } as const;
 

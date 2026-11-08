@@ -1,8 +1,8 @@
 /* The landing: a scrolling page of stages in the hero spec's language. Each stage is a full-viewport black stage with
  * one background that never animates; its foreground performs once as it enters (components/brand/StageMotion.tsx).
- *   Hero (the globe) · The Pulse (a live dashboard that assembles as you scroll) · Free right now (a live sample, no
+ *   Hero (the globe) · Why Insidir (./Why.tsx) · The Pulse (a live dashboard that assembles as you scroll) · Free right now (a live sample, no
  *   account: today's #1 millionaire bet whole, the board 60 minutes late, one race in full) · Election Day board (Nov 3–4 ET only) · What members get (a sticky
- *   phone showing real screens) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
+ *   phone showing real screens) · See it work (recordings of the live site) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
  *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
 import { BrandPicture } from "@/components/brand/BrandPicture";
@@ -24,6 +24,7 @@ import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
 import { RaceRow } from "./ElectionLive";
+import { WatchStage, WhyStage } from "./Why";
 import { BoardLeadStage, ElectionStage, GapsStage, MembersStage, PulseStage, SpotlightStage, StakeStage } from "./Value";
 
 function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
@@ -46,7 +47,7 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
 function Free({ d }: { d: LandingData }) {
   const t = d.topBet, late = d.lead.slice(0, 4);
   return (
-    <Stage id="free" testid="free" labelledBy="free-h">
+    <Stage id="free" bg={{ kind: "photo", photo: slotPhoto("free"), dark: 0.66 }} testid="free" labelledBy="free-h">
       <div className="b-head"><Lines id="free-h" lines={STAGES.free} size={64} /><p className="b-sub">A live sample, no account.</p></div>
       <div className="b-tiles3">
         <section className="b-glass b-pad b-tile3" data-testid="free-top-bet" data-m="settle" style={{ "--d": ".6s" } as CSSProperties}>
@@ -137,7 +138,7 @@ function Pricing() {
 
 function FaqStage() {
   return (
-    <Stage id="faq" testid="faq" labelledBy="faq-h">
+    <Stage id="faq" bg={{ kind: "photo", photo: slotPhoto("faq"), dark: 0.7 }} testid="faq" labelledBy="faq-h">
       <div className="b-head"><Lines id="faq-h" lines={STAGES.faq} size={64} /></div>
       <Faq items={FAQ} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd() }} />
@@ -165,9 +166,11 @@ function Rest({ d }: { d: LandingData }) {
     <>
       {/* The lead: the Election Day board until Nov 4 ET, then the board. */}
       {d.election ? <ElectionStage d={d} /> : <BoardLeadStage d={d} />}
+      <WhyStage />
       <PulseStage d={d} />
       <Free d={d} />
       <MembersStage d={d} />
+      <WatchStage />
       <SpotlightStage d={d} />
       <StakeStage d={d} />
       <GapsStage d={d} />
