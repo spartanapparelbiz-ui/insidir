@@ -96,7 +96,7 @@ export function PulseStage({ d }: { d: LandingData }) {
 export function ElectionStage({ d }: { d: LandingData }) {
   if (!d.election) return null;
   return (
-    <Stage testid="election" labelledBy="election-h">
+    <Stage bg={{ kind: "photo", photo: slotPhoto("election"), dark: 0.6 }} testid="election" labelledBy="election-h">
       <div className="b-head"><Lines id="election-h" lines={STAGES.election} size={64} /></div>
       <ElectionLive initial={d.election} member={d.member} />
       {d.member ? null : <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" data-testid="election-start" data-checkout="election">Start for $1</Pill></div></div>}
@@ -233,7 +233,7 @@ export function SpotlightStage({ d }: { d: LandingData }) {
 export function StakeStage({ d }: { d: LandingData }) {
   if (!d.stake) return null;
   return (
-    <Stage testid="stake" labelledBy="stake-h">
+    <Stage bg={{ kind: "photo", photo: slotPhoto("stake"), dark: 0.6 }} testid="stake" labelledBy="stake-h">
       <div className="b-head"><Lines id="stake-h" lines={STAGES.stake} size={64} /></div>
       <StakeSlider r={d.stake} />
     </Stage>
