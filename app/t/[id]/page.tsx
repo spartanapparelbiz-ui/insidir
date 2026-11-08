@@ -2,6 +2,8 @@
  * contracts, cost), what the wallet paid, how long after their trade it was sent, and one button to the exact Kalshi
  * market. Only the member it was sent to sees it. Insidir never places the bet. */
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { isReady } from "@/lib/features";
 import { notFound } from "next/navigation";
 import { Frame } from "@/components/brand/app/Frame";
 import { Panel, Pill, Stage } from "@/components/system";
@@ -17,6 +19,7 @@ const cents = (p: number | null) => (p === null ? "No price" : `${Math.round(p *
 const TIME = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" });
 
 export default async function TicketPage({ params }: { params: Promise<{ id: string }> }) {
+  if (!isReady("autopilot")) redirect("/"); // Autopilot is off until reviewed (lib/features.ts)
   const [{ id }, viewer] = await Promise.all([params, requireMember("/autopilot")]);
   const n = Number(id);
   if (!Number.isInteger(n) || n <= 0) notFound();

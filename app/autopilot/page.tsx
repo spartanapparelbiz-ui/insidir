@@ -2,6 +2,8 @@
  * pushed within seconds (lib/autopilot/engine.ts). Starter rules turn on in one tap, each with its real backtest; every
  * rule keeps a paper portfolio; the log shows each match and each skip with its reason. Insidir never places a bet. */
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { isReady } from "@/lib/features";
 import { Frame } from "@/components/brand/app/Frame";
 import { Panel, Stage } from "@/components/system";
 import { Rows } from "@/components/system/Figures";
@@ -29,6 +31,8 @@ function Act({ action, id, label, testid }: { action: string; id: number; label:
 }
 
 export default async function AutopilotPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  // Off until a lawyer has reviewed it (lib/features.ts): members go home.
+  if (!isReady("autopilot")) redirect("/");
   const [viewer, q] = await Promise.all([requireMember("/autopilot"), searchParams]);
   const db = getDb(), now = Date.now(), userId = viewer.user!.id;
   const [rules, log, starterBts] = await Promise.all([rulesFor(db, userId).catch(() => []), logFor(db, userId).catch(() => []), backtestsFor(db, STARTERS.map(s => s.spec)).catch(() => new Map())]);

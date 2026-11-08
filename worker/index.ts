@@ -371,7 +371,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       if (r.screened) log(`millionaires:screen: ${r.screened} screened, ${r.proven} proven, ${r.excluded} excluded`);
     })] : []),
     // Autopilot: every active rule against each wallet move within seconds; settle; backtests for starters and rules.
-    ...(clients.kalshi instanceof KalshiClient ? [every("autopilot", 3_000, async () => { await autopilotOnce(getDb(), clients.kalshi as KalshiClient, Date.now(), log); })] : []),
+    // Autopilot's matching and pushes run only while it's switched on (lib/features.ts; off until legal review).
+    ...(clients.kalshi instanceof KalshiClient && isReady("autopilot") ? [every("autopilot", 3_000, async () => { await autopilotOnce(getDb(), clients.kalshi as KalshiClient, Date.now(), log); })] : []),
     every("autopilot:settle", 5 * 60_000, async () => { await settleMatches(getDb()); }),
     every("autopilot:backtests", 30 * 60_000, async () => { const n = await autopilotBacktestsOnce(getDb(), Date.now()); if (n) log(`autopilot:backtests: ${n} computed`); }),
     // The Book's daily summary, at each member's chosen time.

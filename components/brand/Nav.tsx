@@ -15,12 +15,13 @@ const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/boa
 /** Members: the same bar, their places. No sidebar anywhere. */
 const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Autopilot", "/autopilot"], ["Book", "/book"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["SEC", "/sec"]];
 
-export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true }: { fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
+export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true, autopilot = false }: { autopilot?: boolean; fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
   /** The Start for $1 pill (off on /login, which has its own way in). */
   start?: boolean;
   /** Election Day leads the links until the board closes (decided on the server: lib/brand/pulse.ts electionDay). */
   election?: boolean }) {
-  const base = member ? MEMBER_LINKS : LINKS;
+  // Autopilot shows only while it is switched on (lib/features.ts; the member shell passes it).
+  const base = member ? MEMBER_LINKS.filter(([, h]) => autopilot || h !== "/autopilot") : LINKS;
   const links: Array<[string, string]> = election ? (member ? [base[0]!, ["Election Day", "/election"], ...base.slice(1)] : [["Election Day", "/election"], ...base]) : base;
   const [open, setOpen] = useState(false);
   const burger = useRef<HTMLButtonElement>(null), menu = useRef<HTMLElement>(null);

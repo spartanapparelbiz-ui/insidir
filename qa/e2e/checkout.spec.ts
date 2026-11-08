@@ -2,7 +2,7 @@
  *   pricing → /go's checkout (18+ first, pay first) → pay → unlocked → Whop's sign-in (mocked OAuth: our login app,
  *   /reset/callback, PKCE) → the member home, a member by Whop's access check; the account linked to their Whop user.
  *   Sign out → the app is members only → /login: one "Continue" → back where they were going. Settings: "Manage
- *   subscription" goes to Whop's orders page. A refund ends access. A Whop account without Insidir gets the paywall.
+ *   subscription" (Change card on Whop) goes to the membership's own page on Whop. A refund ends access. A Whop account without Insidir gets the paywall.
  *   A buyer who paid signed out goes straight through Whop's sign-in and lands signed in. */
 import { expect, test } from "@playwright/test";
 import { WHOP_PORT } from "./env";
@@ -58,7 +58,8 @@ test("pay first: /go opens the checkout signed out → pay → Whop sign-in → 
 
   // Cancel: one reason is required; then Whop cancels at the end of the period and they keep access.
   await page.goto("/settings");
-  await expect(page.getByTestId("manage-subscription")).toHaveAttribute("href", "https://whop.com/@me/settings/orders");
+  // Change card opens the Insidir membership's own page on Whop (its manage_url), not Whop's list of every order.
+  await expect(page.getByTestId("manage-subscription")).toHaveAttribute("href", /\/manage$/);
   await page.getByText("Cancel subscription").click();
   const cancel = page.getByTestId("cancel-form");
   await cancel.getByRole("button", { name: "Cancel at the end of this period" }).click();

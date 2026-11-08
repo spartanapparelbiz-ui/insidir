@@ -47,6 +47,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const paid = isPaid(viewer.plan);
   const [mem, devices] = await Promise.all([paid ? membership(user.whopUserId, user.membershipId) : Promise.resolve(null), deviceCount(user.id)]);
   const m = mem === "error" ? null : mem;
+  // The Insidir membership's own page on Whop (its card, plan and cancel), not Whop's list of every order.
+  const manage = m?.manageUrl ?? user.manageUrl ?? MANAGE_URL;
   const s = user.settings;
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   // Notices from the no-JS form fallbacks (saved).
@@ -114,19 +116,19 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {paid ? (
                 <div><dt className="b-small">{user.cancelAtPeriodEnd ? "Access ends" : m?.status === "trialing" ? `Your ${TRIAL_ADJ} trial ends` : "Next charge"}</dt>
                   <dd className="s-strong">{m?.renewalPeriodEnd ? <>{day(m.renewalPeriodEnd)}{!user.cancelAtPeriodEnd && m.renewalPrice ? <span className="b-small"> · {m.status === "trialing" ? `then ${m.renewalPrice} unless you cancel` : m.renewalPrice}</span> : null}</>
-                    : mem === "error" ? <span className="b-small">Couldn&apos;t load it now. Manage subscription shows it.</span> : <span className="b-small">Shown in Manage subscription</span>}</dd></div>
+                    : mem === "error" ? <span className="b-small">Couldn&apos;t load it now; it&apos;s on Whop.</span> : <span className="b-small">Shown on Whop (Change card on Whop)</span>}</dd></div>
               ) : null}
             </dl>
             {paid ? (
               <>
                 {user.cancelAtPeriodEnd ? <p className="b-small" data-testid="cancels-on">Cancels on {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of this billing period"}. You keep access until then.</p> : null}
                 <div className="b-ctas">
-                  <a className={BTN} href={MANAGE_URL} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Manage subscription</a>
+                  <a className={BTN} href={manage} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Change card on Whop</a>
                   {viewer.plan === "insidir" ? <a className={BTN} href={unlockHref()} data-unlock="settings-pro">Go Pro</a> : null}
                 </div>
-                <p className="b-small">Your subscription is with Whop: change your card on your Whop orders page. If you cancel, you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
+                <p className="b-small">Payments go through Whop. Cancel below in one step; you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
                 {!user.cancelAtPeriodEnd ? (
-                  <details className="s-details" open={Boolean(cancelNote)}>
+                  <details className="s-details" id="cancel" open={Boolean(cancelNote)}>
                     <summary className="s-link">Cancel subscription</summary>
                     <form method="post" action="/api/billing/cancel" className="s-form" data-testid="cancel-form">
                       <fieldset className="s-opts">
@@ -155,7 +157,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
           <Panel className="s-form">
             <h2 id="delete" className="b-label">Delete account</h2>
-            <p className="b-small">Removes your account, follows, pings and checked bets from Insidir right away. It doesn&apos;t cancel your membership: {paid ? <>cancel it first on your <a className="s-link" href={MANAGE_URL} target="_blank" rel="noopener noreferrer">Whop orders page</a>.</> : "you have none."}</p>
+            <p className="b-small">Removes your account, follows, pings and checked bets from Insidir right away. It doesn&apos;t cancel your membership: {paid ? <>cancel it first under Billing above.</> : "you have none."}</p>
             <form method="post" action="/auth/delete" className="s-form" data-testid="delete-account">
               <label className="b-small" htmlFor="confirm-delete">Type DELETE to confirm</label>
               <input id="confirm-delete" className="s-input" name="confirm" autoComplete="off" required pattern="DELETE" aria-invalid={confirmDelete || undefined} />

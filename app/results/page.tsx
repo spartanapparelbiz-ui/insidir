@@ -4,6 +4,7 @@
  * every bet at the price the wallet paid (only from 30 settled bets), by day and by category, and the latest settled
  * bets (wallets as short addresses, never a name or a picture). Public. Past results, not a promise. */
 import type { Metadata } from "next";
+import { isReady } from "@/lib/features";
 import { Frame } from "@/components/brand/app/Frame";
 import { BetRow } from "@/components/brand/BetRow";
 import { Lines, Panel, Pill, Stage } from "@/components/system";
@@ -45,7 +46,7 @@ export default async function ResultsPage() {
       recentBets(db, { now, all: true, tier: "millionaire", limit: 200, member: true }).then(l => l.filter(b => b.result).slice(0, 10)).catch(() => []),
       memo("results:kalshi", 60_000, () => kalshiPingRecord(db, now)).catch(() => null),
     ]);
-    rules = await memo("results:rules", 60_000, async () => ((await db.select().from(autopilotBacktests).where(eq(autopilotBacktests.key, REPORT_KEY)).limit(1))[0]?.result ?? null) as unknown as RulesReport | null).catch(() => null);
+    if (isReady("autopilot")) rules = await memo("results:rules", 60_000, async () => ((await db.select().from(autopilotBacktests).where(eq(autopilotBacktests.key, REPORT_KEY)).limit(1))[0]?.result ?? null) as unknown as RulesReport | null).catch(() => null);
   }
   const n = rec ? settledCount(rec.total) : 0, kn = kal ? settledCount(kal.total) : 0;
   return (

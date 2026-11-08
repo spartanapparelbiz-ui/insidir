@@ -10,6 +10,7 @@
  * The fixture wallet is tier "pro", so member pings never see it; its rows are deleted after every run. The monitor
  * account has no devices, so nothing is ever pushed to anyone. */
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { isReady } from "@/lib/features";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { autopilotRules, DEFAULT_SETTINGS, positionEvents, sessions, users } from "@/lib/db/schema";
@@ -91,7 +92,7 @@ export async function runProduct(db: Db, d: ProductDeps): Promise<Step[]> {
     const get = (p: string) => f(base + p, { redirect: "manual", signal: AbortSignal.timeout(15_000), headers: { cookie: `insidir_session=${token}`, "user-agent": "InsidirMonitor/1" } });
     const home = await get("/");
     must(home.status === 200 && (await home.text()).includes('data-testid="member-home"'), `a member's / answered ${home.status} without the member home`);
-    for (const p of ["/autopilot", "/book"]) { const r = await get(p); must(r.status === 200, `a member's ${p} answered ${r.status}`); }
+    for (const p of [...(isReady("autopilot") ? ["/autopilot"] : []), "/book"]) { const r = await get(p); must(r.status === 200, `a member's ${p} answered ${r.status}`); }
   });
 
   await run("search", async () => {
@@ -115,7 +116,8 @@ export async function runProduct(db: Db, d: ProductDeps): Promise<Step[]> {
   const twin = (await db.execute(sql`select polymarket_id, kalshi_id from terminal.market_twins where status = 'approved' and (kalshi_close is null or kalshi_close > now() + interval '2 hours')
     order by updated_at desc limit 10`)).rows as Array<{ polymarket_id: string; kalshi_id: string }>;
   try {
-    const okAuto = await run("autopilot", async () => {
+    // Autopilot (and its exit ping) is checked only while it is switched on (lib/features.ts).
+    const okAuto = isReady("autopilot") && await run("autopilot", async () => {
       await cleanup(db);
       const ruleId = await monitorRule(db);
       await db.execute(sql`insert into terminal.trader_records (wallet, resolved, won, lost, profit, biggest_win, updated_at) values (${MONITOR_WALLET}, 40, 20, 20, 0, 0, now())

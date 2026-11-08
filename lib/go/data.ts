@@ -4,6 +4,7 @@
  * leading rule from the Kalshi backtest (lib/autopilot/lead.ts; none positive over 100+ settled → none), and the wallets
  * to follow. Server only. */
 import { sql } from "drizzle-orm";
+import { isReady } from "@/lib/features";
 import type { Db } from "@/lib/db";
 import { CATEGORY_SLUGS, isCategory, type CategorySlug } from "@/lib/brand/categories";
 import { betsToday, marketMoney, positions, pulse, recentBets, topWallets, VISITOR_DELAY_MS, type BoardBet, type MarketMoney, type Position, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
@@ -57,7 +58,7 @@ export async function goData(db: Db, cats: readonly CategorySlug[], now: number,
     safe(betsToday(db, cats, now), new Map<string, number>()),
     safe(marketMoney(db, { categories: cats.length ? cats : undefined, since: now - DAY, limit: 20, now }), [] as MarketMoney[]),
     safe(marketMoney(db, { categories: cats.length ? cats : undefined, since: now - 7 * DAY, limit: 3, now }), [] as MarketMoney[]),
-    safe(leadRule(db), null),
+    isReady("autopilot") ? safe(leadRule(db), null) : Promise.resolve(null), // backtest claims wait for legal review (lib/features.ts)
     safe(topWallets(db, cats, now, 3), [] as TopWallet[]),
   ]);
   const pool = today.length >= 3 ? today : [...today, ...week.filter(w => !today.some(t => t.marketId === w.marketId))];

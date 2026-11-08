@@ -25,6 +25,11 @@ export const FEATURES = {
   people: "People",
   watchlists: "Watchlists and alerts",
   journal: "Research journal",
+  /** Autopilot (/autopilot, /t/[id], its worker matching and pushes) and every line built on its Kalshi backtests (the
+   *  landing's record, the funnel's and paywall's record line, /results' rules table). Off until a lawyer has
+   *  reviewed it: it hands members a finished trade (market, side, limit price, contracts) on CFTC-regulated contracts
+   *  and advertises hypothetical returns. Switch on by adding "autopilot" to FEATURES_READY. */
+  autopilot: "Autopilot",
   /** The delayed price chart: needs a licensed price vendor (docs/INSIDIR-V3.md §1.2). */
   price_chart: "Price chart",
 } as const;
