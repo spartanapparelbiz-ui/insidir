@@ -6,6 +6,7 @@
  *   (one redirect) · 10 answers saved · 11 follow your first millionaire · 12 push · home.
  * The answers live in localStorage until they are saved to the account (POST /api/go/save) after sign-in. */
 import { BrandPicture } from "@/components/brand/BrandPicture";
+import { PHOTOS } from "@/lib/brand/images";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { beacon } from "@/components/app/beacon";
 import { PingSetup } from "@/components/app/PingSetup";
@@ -26,6 +27,8 @@ export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "pa
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
  * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
+/** The steps with the picture side (a photo and a live bet beside the question). */
+const ART: Step[] = ["hook", "where", "size", "paywall", "checkout"];
 /** The steps before paying, as the header counts them ("building" plays by itself and isn't a step). */
 const PRE: Step[] = ["hook", "cats", "where", "size", "aha", "paywall", "checkout"];
 export const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "size", paywall: "aha", checkout: "paywall" };
@@ -168,6 +171,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
   const hook = d.hook;
   const cats = a.cats.length ? a.cats : [];
   const firstCat = cats[0] ? categoryInfo(cats[0]).name : "your categories";
+  const artPhoto = cats[0] ? categoryPhoto(cats[0]) : PHOTOS.hero;
   // The record line: the best rule positive over 100+ settled bets on Kalshi, or none (never "every bet": it lost).
   const lead = d.lead ? leadLine(d.lead) : null;
 
@@ -322,7 +326,23 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
         aria-valuetext={`Step ${ORDER.indexOf(step) + 1} of ${ORDER.length}`} data-testid="go-progress"><span style={{ transform: `scaleX(${progress})` }} /></div>
       {step === "hook" ? <a className="b-go-back" href="/" aria-label="Back to the home page" data-testid="go-back"><BackArrow /></a>
         : BACK[step] ? <button type="button" className="b-go-back" aria-label="Back" data-testid="go-back" onClick={() => go(BACK[step]!)}><BackArrow /></button> : null}
-      <div key={step} style={{ position: "relative", zIndex: 2 }}>{body}</div>
+      {ART.includes(step) ? (
+        <div key={step} className="b-go-split">
+          {/* The picture side: the picked category's photo (the brand's, before a pick), and a live millionaire bet over it. */}
+          <aside className="b-go-art" aria-hidden="true">
+            <div className="b-go-art__frame">
+              <BrandPicture src={artPhoto.src} fill priority sizes="(max-width: 900px) 100vw, 50vw" style={{ objectPosition: artPhoto.pos }} />
+              <div className="b-go-art__card">
+                <span className="b-go-art__live"><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "bet" : "bets"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
+                {hook && step !== "hook" ? <p className="b-go-art__bet">A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : "$1M+ "}wallet just bet <b className="b-num">{dollars(hook.amount)}</b> on {hook.title}.</p>
+                  : <p className="b-go-art__bet">Every bet of $5K+ from wallets up $1M+, the second it lands.</p>}
+                {cats.length ? <span className="b-go-art__picks">Your feed: {names(cats)}</span> : null}
+              </div>
+            </div>
+          </aside>
+          <div className="b-go-main">{body}</div>
+        </div>
+      ) : <div key={step} style={{ position: "relative", zIndex: 2 }}>{body}</div>}
       <div style={{ position: "relative", zIndex: 2 }}><BrandFoot inline /></div>
     </main>
   );

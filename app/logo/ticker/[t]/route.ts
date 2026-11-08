@@ -2,6 +2,7 @@
  * Fetched once per ticker per server and kept in memory, then cached for 30 days by browsers and any CDN in front
  * (immutable). Without a logo from Logo.dev, the 128px file shipped in public/logos/stocks, when there is one. */
 import { existsSync } from "node:fs";
+import { appUrl } from "@/lib/app-url";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
 
@@ -26,6 +27,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ t: stri
       return new NextResponse(body, { headers: { ...HEADERS, "Content-Type": type } });
     }
   }
-  if (existsSync(join(process.cwd(), "public/logos/stocks", `${t}.webp`))) return NextResponse.redirect(new URL(`/logos/stocks/${t}.webp`, _req.url), 302);
+  if (existsSync(join(process.cwd(), "public/logos/stocks", `${t}.webp`))) return NextResponse.redirect(new URL(`/logos/stocks/${t}.webp`, appUrl()), 302);
   return new NextResponse(null, { status: 404 });
 }
