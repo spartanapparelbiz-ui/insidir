@@ -245,7 +245,7 @@ export function StakeStage({ d }: { d: LandingData }) {
 export function GapsStage({ d }: { d: LandingData }) {
   if (!d.gaps.length) return null;
   return (
-    <Stage testid="gaps" labelledBy="gaps-h">
+    <Stage bg={{ kind: "photo", photo: slotPhoto("gaps"), dark: 0.66 }} testid="gaps" labelledBy="gaps-h">
       <div className="b-head"><Lines id="gaps-h" lines={STAGES.gaps} size={64} /></div>
       <ul className="b-cards3" data-stagger="" data-testid="gap-rows" style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {d.gaps.map((g, i) => (

@@ -80,10 +80,11 @@ export const PHOTOS: Record<PhotoFile, Photo> = {
 };
 
 /** The page slots: what each section of the site sits on. */
-export type Slot = "hero" | "cta" | "markets" | "space" | "world" | "spotlight" | "stake" | "election";
-/** space: the landing's record and the legal pages · world: pricing · spotlight, stake, election: those landing stages. */
+export type Slot = "hero" | "cta" | "markets" | "space" | "world" | "spotlight" | "stake" | "election" | "why" | "free" | "gaps" | "faq";
+/** space: the landing's record and the legal pages · world: pricing · spotlight, stake, election, why, free, gaps, faq: those landing stages. */
 export const SLOT: Record<Slot, PhotoFile> = {
   hero: "hero", cta: "cta", markets: "markets", space: "press", world: "diner", spotlight: "street", stake: "stadium", election: "capitol",
+  why: "markets", free: "cta", gaps: "tech", faq: "politics",
 };
 
 /** Slots and categories using a related photo until their own arrives (shown in the pull request, kept honest here):
