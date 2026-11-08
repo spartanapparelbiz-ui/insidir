@@ -21,11 +21,18 @@ export const PROBLEM = {
     ["You might be paying more than you need to.", "The better price, Kalshi vs. Polymarket."],
   ],
 } as const;
-/** The three recordings on the landing (qa/record-site.ts → public/media/site-<id>.*), what each shows. */
+/** How it works: three steps, one sentence each. */
+export const HOW = [
+  { t: "See the money.", d: "Every $5K+ bet from a wallet up $1M+, the second it lands: the market, the side, the price." },
+  { t: "Get the ping.", d: "A push the moment a millionaire buys, adds to or sells out of a position in your categories." },
+  { t: "Bet at the better price.", d: "Kalshi's price beside Polymarket's, and one tap to the same bet. You decide; we never hold your money." },
+] as const;
+
+/** The demo's chapters (qa/record-site.ts → public/media/site-<id>-<desk|phone>.*), what each shows. */
 export const WATCH = [
-  { id: "board", t: "The board", d: "Every $5K+ bet from wallets up $1M+, then one market: its money per side and Kalshi's price." },
-  { id: "markets", t: "Every market", d: "Each category ranked by the millionaire money in it, down to the game." },
-  { id: "record", t: "The record", d: "How the millionaires' bets settled, by category. Losses included." },
+  { id: "board", t: "The board", url: "insidir.com/board", d: "Every millionaire bet, then one market: its money per side and Kalshi's price." },
+  { id: "markets", t: "Every market", url: "insidir.com/markets", d: "Each category ranked by millionaire money, down to the game." },
+  { id: "record", t: "The record", url: "insidir.com/results", d: "How the millionaires' bets settled, by category. Losses included." },
 ] as const;
 export const START = `Start for $${TRIAL.fee}`;
 export const PAST = "Past results, not a promise.";
@@ -44,8 +51,9 @@ export const STAGES = {
   pricingSub: `$${TRIAL.fee} for three days, then $${PLANS.insidir.price} a month. Cancel anytime.`,
   faq: ["Questions."],
   why: ["Why Insidir."],
+  how: ["How it works."],
   watch: ["See it work."],
-  watchSub: "The live site on a phone: real pages, real money, nothing staged.",
+  watchSub: "Recorded on the live site: real pages, real money, nothing staged.",
   final: ["Bet with the people", "who actually win."],
 } as const;
 

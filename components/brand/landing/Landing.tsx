@@ -1,18 +1,15 @@
-/* The landing: a scrolling page of stages in the hero spec's language. Each stage is a full-viewport black stage with
- * one background that never animates; its foreground performs once as it enters (components/brand/StageMotion.tsx).
- *   Hero (the globe) · Why Insidir (./Why.tsx) · The Pulse (a live dashboard that assembles as you scroll) · Free right now (a live sample, no
- *   account: today's #1 millionaire bet whole, the board 60 minutes late, one race in full) · Election Day board (Nov 3–4 ET only) · What members get (a sticky
- *   phone showing real screens) · See it work (recordings of the live site) · Wallet spotlight · Your stake · Price gaps · Markets (a sideways row) · Proof ·
- *   Pricing · FAQ · Final (the globe again, the footer inside). New stages: ./Value.tsx; scroll motion: ./ScrollFx.tsx.
+/* The landing: a scrolling page of stages in the hero spec's language, one story told simply. Each stage is a
+ * full-viewport black stage with one background that never animates; its foreground performs once as it enters
+ * (components/brand/StageMotion.tsx).
+ *   Hero (the globe) · [Election Day board, Nov 3–4 ET only] · Why Insidir (the problem) · How it works (three steps) ·
+ *   See it work (recordings of the live site, ./Demo.tsx) · Free right now (a live sample, no account) · The record ·
+ *   Pricing · FAQ · Final (the globe again, the footer inside). Stages: ./Why.tsx, ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
-import { BrandPicture } from "@/components/brand/BrandPicture";
 import { electionDay } from "@/lib/brand/pulse";
 import type { CSSProperties } from "react";
-import { category as categoryInfo, categoryPhotos } from "@/lib/brand/categories";
 import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
 import { slotPhoto } from "@/lib/brand/images";
 import type { LandingData } from "@/lib/brand/landing";
-import { dollars } from "@/lib/money";
 import { Lines, m, Pill } from "../Bits";
 import { BetRow } from "../BetRow";
 import { Faq } from "../Faq";
@@ -24,8 +21,8 @@ import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
 import { RaceRow } from "./ElectionLive";
-import { WatchStage, WhyStage } from "./Why";
-import { BoardLeadStage, ElectionStage, GapsStage, MembersStage, PulseStage, SpotlightStage, StakeStage } from "./Value";
+import { HowStage, WatchStage, WhyStage } from "./Why";
+import { ElectionStage } from "./Value";
 
 function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
   return (
@@ -80,30 +77,6 @@ function Free({ d }: { d: LandingData }) {
           <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/election">Every race</a>
         </section>
       </div>
-    </Stage>
-  );
-}
-
-function Markets({ d }: { d: LandingData }) {
-  const list = d.categories.list, photos = categoryPhotos(list.map(c => c.slug)), when = d.categories.window === "day" ? "today" : "this week";
-  return (
-    <Stage testid="markets" labelledBy="markets-h" className="b-stage--hrow" style={{ "--n": list.length } as CSSProperties}>
-      <div className="b-head"><Lines id="markets-h" lines={STAGES.markets} size={64} /></div>
-      {list.length ? (
-        <div className="b-hrow" data-hrow="" data-testid="category-cards">
-          <div className="b-htrack" data-htrack="">
-          {list.map((c, i) => (
-            <a key={c.slug} className="b-ccard" href={`/markets/${c.slug}`} data-testid="category-card" data-photo={photos[i]!.src} data-m="settle" style={{ "--d": `${0.5 + i * 0.06}s` } as CSSProperties}>
-              <span className="b-ccard__img"><BrandPicture src={photos[i]!.src} style={{ objectPosition: photos[i]!.pos }} fill sizes="(max-width: 552px) 157vw, (max-width: 1160px) 680px, 750px" priority={i < 2} /></span>
-              <span className="b-ccard__txt">
-                <h3 className="b-ccard__name">{categoryInfo(c.slug).name}</h3>
-                <span className="b-small" style={{ color: "var(--ink-muted)" }}>{c.millionaire ? `${dollars(c.millionaire)} millionaire money ${when}` : `${dollars(c.pro)} Pro money ${when}`}</span>
-              </span>
-            </a>
-          ))}
-          </div>
-        </div>
-      ) : <p className="b-empty" style={{ textAlign: "center" }}>No category has live millionaire money right now.</p>}
     </Stage>
   );
 }
@@ -164,17 +137,12 @@ function Final() {
 function Rest({ d }: { d: LandingData }) {
   return (
     <>
-      {/* The lead: the Election Day board until Nov 4 ET, then the board. */}
-      {d.election ? <ElectionStage d={d} /> : <BoardLeadStage d={d} />}
+      {/* Election Day (Nov 3–4 ET only) leads; otherwise the story: why, how, see it, try it free, the record. */}
+      {d.election ? <ElectionStage d={d} /> : null}
       <WhyStage />
-      <PulseStage d={d} />
-      <Free d={d} />
-      <MembersStage d={d} />
+      <HowStage />
       <WatchStage />
-      <SpotlightStage d={d} />
-      <StakeStage d={d} />
-      <GapsStage d={d} />
-      <Markets d={d} />
+      <Free d={d} />
       <Proof d={d} />
       <Pricing />
       <FaqStage />
