@@ -753,7 +753,7 @@ html.bm .b-row.b-new { animation: b-pillIn .7s var(--e-reveal) both, b-glow 2.4s
 /* A face: the disc is a neutral skeleton until the portrait loads; initials on the same disc when there is none. */
 .s-face { flex: none; position: relative; display: inline-grid; place-items: center; border-radius: 50%; overflow: hidden; background: var(--surface-3); box-shadow: 0 0 0 1px var(--glass-line); }
 .s-face img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity .25s ease; }
-.s-face.is-loading { background: linear-gradient(100deg, transparent 30%, rgb(var(--fg-rgb) / .09) 50%, transparent 70%) 0 0 / 300% 100% var(--surface-3); animation: s-skel 1.2s linear infinite; }
+.s-face.is-loading { background: linear-gradient(100deg, transparent 30%, var(--glass-line) 50%, transparent 70%) 0 0 / 300% 100% var(--surface-3); animation: s-skel 1.2s linear infinite; }
 .s-face.is-loading img { opacity: 0; }
 .s-face__ini { color: var(--ink-muted); font-weight: 600; letter-spacing: .02em; font-size: 15px; }
 .s-face--s .s-face__ini { font-size: 12px; } .s-face--l .s-face__ini { font-size: 28px; }

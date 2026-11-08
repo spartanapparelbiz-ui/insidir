@@ -4,7 +4,7 @@
  * homepage's scale (headlines in --u via <Lines size>, UI text in px); radii are the pill, the panel, the small corner
  * and the circle. */
 
-export const COLOR_VARS = ["--ink", "--ink-muted", "--panel", "--white-btn", "--btn-ink", "--glass-fill", "--glass-line", "--focus", "--up", "--down", "--dim",
+export const COLOR_VARS = ["--ink", "--ink-muted", "--ink-3", "--ink-4", "--page", "--surface-1", "--surface-2", "--surface-3", "--surface-4", "--panel", "--white-btn", "--btn-ink", "--glass-fill", "--glass-line", "--focus", "--up", "--down", "--dim",
   "--gold", "--gold-2", "--steel", "--yes", "--no", "--dem", "--rep", "--violet"] as const;
 
 /** The literal values behind the tokens (lower case). */
