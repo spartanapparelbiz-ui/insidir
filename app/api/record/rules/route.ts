@@ -1,6 +1,7 @@
 /* GET /api/record/rules: the rules report (lib/autopilot/report.ts): every starter rule and variant, backtested over
  * 180 days at Kalshi's ask + 1¢, losses included. Public: totals only, no bet, side or wallet. */
 import { eq } from "drizzle-orm";
+import { isReady } from "@/lib/features";
 import { NextResponse } from "next/server";
 import { getDb, hasDatabase } from "@/lib/db";
 import { autopilotBacktests } from "@/lib/db/schema";
@@ -9,6 +10,7 @@ import { REPORT_KEY } from "@/lib/autopilot/report";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!isReady("autopilot")) return NextResponse.json({ error: "Not available." }, { status: 404 });
   if (!hasDatabase()) return NextResponse.json({ report: null }, { status: 503 });
   const r = (await getDb().select().from(autopilotBacktests).where(eq(autopilotBacktests.key, REPORT_KEY)).limit(1).catch(() => []))[0];
   if (!r) return NextResponse.json({ report: null, computedAt: null });

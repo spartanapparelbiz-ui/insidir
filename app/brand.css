@@ -1389,3 +1389,13 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 }
 .b-stats--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 552px) { .b-stats--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- "Explain this market" (components/system/ExplainMarket.tsx) ---------- */
+.s-explain { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--glass-line); display: grid; gap: 8px; }
+.s-explain__btn { appearance: none; justify-self: start; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--glass-line); background: var(--surface-3); color: var(--ink); font-size: 14px; font-weight: 500; }
+.s-explain__btn:hover { background: var(--surface-4); }
+.s-explain__btn:disabled { opacity: .6; cursor: progress; }
+.s-explain__spark { color: var(--violet); }
+.s-explain__label { margin: 0; font-size: 12px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
+.s-explain__text { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink); }

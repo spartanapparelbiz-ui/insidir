@@ -4,6 +4,7 @@
  * a followed wallet's last results, tonight's biggest race or game). Anything without data comes back empty and its
  * tile says so or steps aside: no number is ever made up. Server only. */
 import type { Db } from "@/lib/db";
+import { isReady } from "@/lib/features";
 import type { CategorySlug } from "@/lib/brand/categories";
 import { BOARD_DELAY_MS, lastResults, midnightET, positions, pulse, recentBets,
   type BoardBet, type CategoryLive, type MarketMoney, type Position, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
@@ -67,7 +68,7 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
     safe(recentBets(db, { now, limit: 3, tier: "millionaire", withSide: true }), [] as BoardBet[]),
     safe(recentBets(db, { now, limit: 2, member }), [] as BoardBet[]),
     Promise.resolve({ window: "day" as const, list: [] }),
-    safe(leadRule(db), null),
+    isReady("autopilot") ? safe(leadRule(db), null) : Promise.resolve(null), // backtest claims wait for legal review (lib/features.ts)
     Promise.resolve([] as TopWallet[]),
     Promise.resolve(null),
     safe(recentBets(db, { now, since: now - DAY, limit: 200, member: true, tier: "millionaire" }), [] as BoardBet[]),

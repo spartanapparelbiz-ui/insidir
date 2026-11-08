@@ -22,6 +22,8 @@ import { betPath, marketPath } from "@/lib/entities/slug";
 import { resolveMarketSlug } from "@/lib/entities/resolve";
 import { dollars } from "@/lib/money";
 import { isPaid } from "@/lib/plans";
+import { ExplainMarket } from "@/components/system/ExplainMarket";
+import { explainOn } from "@/lib/analyst/market";
 import { EntityLd } from "@/lib/seo/jsonld";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +91,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
             <>
               {milTotal > 0 ? <><p className="b-label">Proven wallets, up $1M+</p><Bars label="Proven wallets up $1M+" rows={[{ key: "y", name: m.yesLabel, share: share(mil), text: sideText(mil, "yes") }, { key: "n", name: m.noLabel, share: 1 - share(mil), text: sideText(mil, "no") }]} /></> : <p className="b-small">No proven $1M+ wallet has bet on it.</p>}
               {proTotal > 0 ? <><p className="b-label">Smaller wallets, up $100K+ (not followed)</p><Bars label="Wallets up $100K+" rows={[{ key: "y", name: m.yesLabel, share: share(pro), text: sideText(pro, "yes") }, { key: "n", name: m.noLabel, share: 1 - share(pro), text: sideText(pro, "no") }]} /></> : null}
+              {explainOn() && (milTotal > 0 || proTotal > 0) ? <ExplainMarket marketId={ref.id} /> : null}
             </>
           ) : (
             <>
