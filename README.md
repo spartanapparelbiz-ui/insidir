@@ -83,6 +83,7 @@ Every variable is listed with comments in [`.env.example`](.env.example). The on
 | `SEC_USER_AGENT` | worker | name and monitored email for SEC EDGAR requests (required for the Stocks tab's Form 4 and 13F jobs; under 10 requests a second) |
 | `STOCKS_INGEST` | worker | `0` turns the SEC jobs off: sec:form4, sec:backfill, accuracy:filings (default on when `SEC_USER_AGENT` is set) |
 | `FORM4_BACKFILL_FROM` | worker | first day (`YYYY-MM-DD`) the Form 4 backfill reads from EDGAR's daily index; default a year back |
+| `SEC_FEATURES_READY` | web + worker | the SEC terminal's features to switch on (`filings`, `companies`, `people`, `watchlists`, `journal`), added to `FEATURES_READY`; any other key is ignored |
 | `SEC_CURRENT_MS` | worker | how often the live feed for 8-K, 10-Q, 10-K and Schedules 13D/G is read (default 120000 ms) |
 | `FORM4_BACKFILL_MS`, `FORM4_BACKFILL_PER_RUN` | worker | backfill cadence (default 60000 ms) and filings read per run (default 150, two requests each) |
 | `INSIDIR_13F_MANAGER_CIKS` | worker | funds followed for 13F adds, comma-separated CIKs (default: six large managers) |

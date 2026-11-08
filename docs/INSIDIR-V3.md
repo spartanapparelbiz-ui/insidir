@@ -198,7 +198,8 @@ check re-read from EDGAR (V2 §12, extended to V3 tables).
 
 1. Data: widen Form 4 storage (§4), backfill all issuers, `filings` table. No new pages. **Built.**
 2. SEC filings database (`/filings`) and Insider activity (`/insiders`). **Built**, members only and Coming soon
-   until `npm run check:filings` passes 20 of 20 on production and `filings` is added to FEATURES_READY.
+   until `npm run check:filings` passes 20 of 20 on production and `filings` is added to FEATURES_READY (or to
+   SEC_FEATURES_READY, which takes only the SEC terminal's keys).
 3. Company reports without the chart: header, filings, insider history, TTM financials. **Built** (`/company/[ticker]`,
    lib/stocks/company.ts). Live once `npm run check:companies` passes 20 of 20 on production (`companies`).
 4. People. **Built** (`/people/[cik]`, from Forms 3, 4 and 5, which the feed and backfill now read). Live with

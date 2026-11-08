@@ -11,6 +11,7 @@ import { parseCurrent } from "@/lib/stocks/current";
 import { amendmentLinks } from "@/lib/stocks/filings";
 import { formOf } from "@/lib/stocks/history";
 import { parseEntry } from "@/lib/journal";
+import { readyFeatures } from "@/lib/features";
 import { cleanForms, cleanName, FAMILY_KEYS } from "@/lib/stocks/watchlists";
 
 const fx = (n: string) => readFileSync(join(__dirname, "fixtures/sec/v3", n), "utf8");
@@ -125,5 +126,14 @@ describe("journal and watchlist input", () => {
     expect(cleanForms(["8-K", "ownership", "nope", "8-K"])).toEqual(["8-K", "ownership"]);
     expect(cleanForms("8-K")).toBeNull();
     expect(FAMILY_KEYS).toEqual(["ownership", "8-K", "10-Q", "10-K", "13D/G"]);
+  });
+});
+
+describe("switching the SEC terminal on", () => {
+  it("SEC_FEATURES_READY adds SEC features to FEATURES_READY and nothing else; the price chart never", () => {
+    const r = readyFeatures({ FEATURES_READY: "feed,records", SEC_FEATURES_READY: "filings, journal,price_gaps,price_chart,nope" });
+    expect([...r].sort()).toEqual(["feed", "filings", "journal", "records"]);
+    expect([...readyFeatures({ SEC_FEATURES_READY: "people" })].sort()).toEqual(["feed", "follows", "people", "records"]);
+    expect(readyFeatures({ FEATURES_READY: "price_chart" }).has("price_chart")).toBe(false);
   });
 });
