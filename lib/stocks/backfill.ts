@@ -83,7 +83,9 @@ export async function backfillOnce(db: Db, sec: SecClient, now: number, budget =
     let pending = d.pending, listed = d.listed, failed = d.failed;
     if (listed === null) {
       if (weekend(d.day)) { await db.update(form4Days).set({ listed: 0, doneAt: new Date(now), updatedAt: new Date(now) }).where(sql`${form4Days.day} = ${d.day}`); run.days++; continue; }
-      const body = await sec.textOrNull(indexUrl(d.day));
+      let body: string | null;
+      // One day's index failing (EDGAR down, rate-limited) never stops the other days.
+      try { body = await sec.textOrNull(indexUrl(d.day)); } catch { run.errors++; continue; }
       if (body === null) {
         // No index yet: wait for it, unless EDGAR has had three days (a holiday).
         if (addDays(d.day, 3) <= today) await db.update(form4Days).set({ listed: 0, doneAt: new Date(now), updatedAt: new Date(now) }).where(sql`${form4Days.day} = ${d.day}`);
