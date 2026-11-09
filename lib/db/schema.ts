@@ -37,6 +37,8 @@ export interface UserSettings {
   /** Categories that alert; empty = every category. Separate from the feed's category filter. */
   alertCategories: string[];
   /** No alerts between these local times ("HH:MM", 24-hour); null = no quiet hours. May wrap midnight. */
+  /** The 8 AM ET brief by email (lib/brief): off unless they opt in. The brief is always in the app at /brief. */
+  morningBriefEmail?: boolean;
   quietStart: string | null;
   quietEnd: string | null;
   /** Pro custom alert rules for big money moves (docs/INSIDIR-V2.md §7): any tab, league or size. */
@@ -1320,3 +1322,63 @@ export const twinAttempts = terminal.table("twin_attempts", {
   found: boolean("found").notNull(),
   at: timestamp("at", { withTimezone: true }).notNull(),
 });
+
+/** Bet Briefings (lib/briefing): one per market, side and position hash, rebuilt when a position changes or the price
+ *  moves 3¢+. facts is everything the text may say (computed in code); sections the sentences per section. */
+export const briefings = terminal.table("briefings", {
+  key: text("key").primaryKey(),
+  marketId: text("market_id").notNull(),
+  side: text("side").$type<"yes" | "no">(),
+  positionHash: text("position_hash").notNull(),
+  price: doublePrecision("price"),
+  facts: jsonb("facts").$type<Record<string, unknown>>().notNull(),
+  sections: jsonb("sections").$type<Record<string, string[]>>().notNull(),
+  origin: text("origin").$type<"model" | "template">().notNull(),
+  model: text("model"),
+  costUsd: doublePrecision("cost_usd").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("briefings_market_idx").on(t.marketId)]);
+
+/** Positions a member asked Insidir to watch ("Watch my bet", lib/watch): typed in, or read from their public
+ *  Polymarket address (origin "address"; read-only, no keys). state holds what the watcher already alerted on. */
+export const watchedBets = terminal.table("watched_bets", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  marketId: text("market_id").notNull(),
+  marketTitle: text("market_title").notNull(),
+  category: text("category"),
+  side: text("side").$type<"yes" | "no">().notNull(),
+  outcome: text("outcome").notNull(),
+  /** Average price paid, 0..1; dollars in; shares (dollars ÷ price unless the address said otherwise). */
+  price: doublePrecision("price").notNull(),
+  amount: doublePrecision("amount").notNull(),
+  shares: doublePrecision("shares").notNull(),
+  origin: text("origin").$type<"manual" | "address">().notNull().default("manual"),
+  address: text("address"),
+  lastPrice: doublePrecision("last_price"),
+  checkedAt: timestamp("checked_at", { withTimezone: true }),
+  state: jsonb("state").$type<Record<string, unknown>>().notNull().default({}),
+  result: text("result").$type<"won" | "lost" | "void" | "sold">(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+  removedAt: timestamp("removed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("watched_bets_user_idx").on(t.userId, t.createdAt)]);
+
+/** "What we told you": every briefing, alert and brief line Insidir showed a member, and how it turned out (result set
+ *  when the market settles), losses included. */
+export const toldLog = terminal.table("told_log", {
+  id: text("id").primaryKey(),
+  userId: text("user_id"),
+  kind: text("kind").$type<"briefing" | "alert" | "brief">().notNull(),
+  marketId: text("market_id"),
+  marketTitle: text("market_title"),
+  side: text("side").$type<"yes" | "no">(),
+  price: doublePrecision("price"),
+  headline: text("headline").notNull(),
+  body: text("body"),
+  facts: jsonb("facts").$type<Record<string, unknown>>(),
+  watchId: text("watch_id"),
+  result: text("result").$type<"won" | "lost" | "void">(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("told_log_user_idx").on(t.userId, t.createdAt)]);

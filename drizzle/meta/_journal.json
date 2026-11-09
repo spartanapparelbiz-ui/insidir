@@ -330,6 +330,13 @@
       "when": 1794000000000,
       "tag": "0047_attribution_metrics",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794010000000,
+      "tag": "0048_analyst_watch",
+      "breakpoints": true
     }
   ]
 }
