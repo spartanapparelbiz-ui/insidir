@@ -4763,6 +4763,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_cans_60000172.png"
     },
     {
+     "abbr": "cap",
+     "name": "Capital Comets",
+     "short": "Capital Comets",
+     "color": "#849a84",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "cark",
      "name": "Central Arkansas Bears",
      "short": "C Arkansas",
@@ -5309,6 +5320,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Dillard Blue Devils-ae8d399dcf.png"
     },
     {
+     "abbr": "doane",
+     "name": "Doane Tigers",
+     "short": "Doane Tigers",
+     "color": "#e27b32",
+     "logo": "/teams/cbb/doane",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Doane Tigers-646f6b7740.png"
+    },
+    {
      "abbr": "drake",
      "name": "Drake Bulldogs",
      "short": "Drake",
@@ -5440,6 +5461,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_emich_60000187.png"
+    },
+    {
+     "abbr": "emma",
+     "name": "Emmanuel (MA) Saints",
+     "short": "Emmanuel (MA) Saints",
+     "color": "#204d83",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "ersff",
@@ -6164,8 +6196,8 @@
     },
     {
      "abbr": "keuka",
-     "name": "Keuka Storm",
-     "short": "Keuka Storm",
+     "name": "Keuka Wolves",
+     "short": "Keuka Wolves",
      "color": "#107053",
      "logo": null,
      "dark": false,
@@ -6800,6 +6832,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_mphs_60000007.png"
+    },
+    {
+     "abbr": "mrcd",
+     "name": "California Merced Bobcats",
+     "short": "California Merced Bobcats",
+     "color": "#b78d1a",
+     "logo": "/teams/cbb/mrcd",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/California Merced Bobcats-d236adc09f.png"
     },
     {
      "abbr": "mrcy",
