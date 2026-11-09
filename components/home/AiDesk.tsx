@@ -6,6 +6,7 @@ import { PHOTOS } from "@/lib/brand/images";
 import type { Home } from "@/lib/home/data";
 import { dollars } from "@/lib/money";
 import { Panel, Pill, Stage } from "@/components/system";
+import { DayPicture } from "./DayPicture";
 
 const ASKS = ["Who's the best NFL wallet this month and what's he on today?", "Is anyone big against my bet?", "Why did the odds move?"];
 
@@ -33,6 +34,7 @@ export function AiDesk({ d }: { d: Home }) {
           {stats.map(s => <div key={s.k}><dd className="b-num">{s.v}</dd><dt>{s.k}</dt></div>)}
         </dl>
       ) : null}
+      <DayPicture d={d} />
       <div className="ai-grid">
         <Panel className="ai-card ai-card--wide" testid="ai-brief">
           <div className="ai-card__top"><p className="b-label">Today&apos;s brief</p><span className="ai-tag">{b?.origin === "model" ? "Written by the AI" : "From the data"}</span></div>
