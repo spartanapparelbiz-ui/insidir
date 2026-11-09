@@ -6,6 +6,14 @@ import type { Hit } from "@/lib/search/search";
 
 const KIND: Record<Hit["kind"], string> = { market: "Market", race: "Race", wallet: "Wallet" };
 
+/** A question for Ask Insidir, not a search: it ends with "?" or starts like one ("who's the best NFL wallet…"). A
+ *  pasted link or a wallet address is never a question. Pure. */
+export function isQuestion(text: string): boolean {
+  const t = text.trim();
+  if (!t || /^https?:\/\/|^0x[0-9a-f]{6,}/i.test(t)) return false;
+  return /\?\s*$/.test(t) || /^(who|whos|who's|what|whats|what's|why|how|is|are|which|when|does|did|has|have|any|anyone|should|can|show me|tell me)\b/i.test(t) && t.split(/\s+/).length >= 3;
+}
+
 /** `bar`: the terminal's command line in the top bar (components/brand/Nav.tsx): its own input id, the terminal
  *  placeholder and the <GO> key. */
 export function CommandBar({ open: open0 = false, bar = false, inputId = "desk-q" }: { open?: boolean; bar?: boolean; inputId?: string }) {
@@ -14,6 +22,7 @@ export function CommandBar({ open: open0 = false, bar = false, inputId = "desk-q
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [hits, setHits] = useState<Hit[] | null>(null);
+  const [ask, setAsk] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,13 +36,15 @@ export function CommandBar({ open: open0 = false, bar = false, inputId = "desk-q
   useEffect(() => { if (open) input.current?.focus(); }, [open]);
 
   async function find(text: string) {
+    // A question goes to Ask Insidir (answers only from Insidir's data, lib/ask/run.ts); anything else is a search.
+    if (isQuestion(text)) { window.location.assign(`/ask?q=${encodeURIComponent(text)}`); return; }
     setBusy(true); setMsg(null); setHits(null);
     try {
       const r = await fetch(`/api/search?q=${encodeURIComponent(text)}`, { cache: "no-store" });
       const j = await r.json().catch(() => ({})) as { go?: string | null; hits?: Hit[]; error?: string; note?: string };
       if (j.go) { window.location.assign(j.go); return; }
       if (j.hits?.length) setHits(j.hits);
-      else setMsg(j.note ?? j.error ?? "Nothing found. Try a team, a race, a wallet address, or paste a Polymarket or Kalshi link.");
+      else { setAsk(text); setMsg(j.note ?? j.error ?? "Nothing found. Try a team, a race, a wallet address, or paste a Polymarket or Kalshi link."); }
     } catch { setMsg("Couldn't reach Insidir. Try again."); }
     setBusy(false);
   }
@@ -50,6 +61,7 @@ export function CommandBar({ open: open0 = false, bar = false, inputId = "desk-q
       {open && (hits || msg) ? (
         <div className="s-cmd__pop" role="dialog" aria-label="Search results" data-testid="desk-search-result">
           {msg ? <p className="b-small" role="status">{msg}</p> : null}
+          {msg && ask ? <p className="b-small"><a className="s-link" href={`/ask?q=${encodeURIComponent(ask)}`} data-testid="cmd-ask">Ask Insidir: “{ask}”</a></p> : null}
           {hits ? (
             <ul className="s-choices">{hits.map(h => (
               <li key={h.href}><a href={h.href} data-entity={h.kind}><span>{h.title}{h.sub ? <span className="b-small b-dim"> · {h.sub}</span> : null}</span><span className="b-small b-dim">{KIND[h.kind]}</span></a></li>
