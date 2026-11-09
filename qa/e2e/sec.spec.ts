@@ -34,7 +34,7 @@ test("/filings: every Form 4 read, the amendment marked, each linked to sec.gov,
   await page.screenshot({ path: shotName("filings", page), fullPage: true });
   // The search form is a GET: its result is a link.
   await page.getByLabel("Company, ticker or person").fill("procter");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("button", { name: "Search" }).click();
   await expect(page).toHaveURL(/\/filings\?q=procter/);
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText("M");

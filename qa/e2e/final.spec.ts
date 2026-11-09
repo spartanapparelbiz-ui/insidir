@@ -56,7 +56,7 @@ test("content is visible at rest: a full-page screenshot with no scrolling shows
     const r = h.getBoundingClientRect();
     return { text: (h.textContent ?? "").trim().slice(0, 40), o, x: r.x, y: r.y + scrollY, w: r.width, h: r.height };
   }));
-  expect(heads.length).toBeGreaterThanOrEqual(5);
+  expect(heads.length).toBeGreaterThan(6);
   for (const hd of heads) {
     expect(hd.o, `${hd.text}: opacity`).toBeGreaterThan(0.99);
     expect(lightIn({ x: hd.x, y: hd.y, w: hd.w, h: hd.h }), `${hd.text}: drawn`).toBeGreaterThan(0.02);
@@ -81,10 +81,10 @@ test("the /go paywall panel and every stage of a member's home are visible", asy
   await expect(panel.getByTestId("paywall-price")).toContainText("$1 today");
   expect(await panel.evaluate(e => { let o = 1; for (let x: Element | null = e; x; x = x.parentElement) o *= Number(getComputedStyle(x).opacity); return o; })).toBeGreaterThan(0.99);
   await signIn(context, "insidir");
-  // The member home: every panel visible at rest (no reveal left hidden).
+  // The member home: every stage visible at rest (no reveal left hidden).
   await page.goto("/");
-  await expect(page.locator('[data-home="workspace"]')).toBeVisible();
-  for (const id of ["home-hero", "home-ticket", "home-board", "live-board", "home-watch", "home-briefing", "home-ask", "home-desk"]) {
+  await expect(page.locator('[data-home="stages"]')).toBeVisible();
+  for (const id of ["home-hero", "home-ticket", "desk-search", "home-board", "live-board", "home-desk"]) {
     const el = page.getByTestId(id).first();
     await expect(el, id).toBeVisible();
     // At rest: once its reveal has played (settle/lift take under a second), nothing stays faded.
@@ -133,7 +133,7 @@ test("crawl: every internal link from the home page and every sitemap URL render
 test("header, footer and the phone menu: every link goes where it says", async ({ page, context }, info) => {
   await context.addCookies([closed]);
   await page.goto("/");
-  const nav = page.getByTestId("brand-nav");
+  const nav = page.getByTestId("hero").locator("nav").first();
   const check = async (loc: ReturnType<Page["locator"]>) => {
     const items = await loc.evaluateAll(as => as.map(a => ({ text: (a.textContent ?? "").trim(), href: (a as HTMLAnchorElement).getAttribute("href") ?? "" })).filter(a => a.href.startsWith("/")));
     for (const it of items) {
@@ -188,8 +188,7 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   test.skip(info.project.name !== "desktop-1440", "the timing rules are the same at every width");
   test.setTimeout(90_000);
   await page.clock.install();
-  // The pay prompt lives on the board (the landing keeps to its two Start for $1 buttons).
-  await page.goto("/board");
+  await page.goto("/");
   await page.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true); // hydrated: the pop-up listens
   const sheet = page.getByTestId("pay-sheet");
   // The free check's verdict fires the automatic pop-up 2.5 s later, but not inside the first 15 s on the page.
@@ -224,7 +223,7 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   await context.clearCookies();
   const p2 = await context.newPage();
   await p2.clock.install();
-  await p2.goto("/board");
+  await p2.goto("/");
   await p2.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true);
   await p2.clock.runFor(16_000);
   await p2.evaluate(() => window.dispatchEvent(new Event("insidir:free-used")));
@@ -246,7 +245,7 @@ test("share and install: brackets-mark icons, the manifest, a rendered OG image,
     expect(s.channels[0]!.max, `${f}: has the white mark`).toBe(255);
   }
   const man = await (await request.get("/manifest.webmanifest")).json();
-  expect(man).toMatchObject({ name: "Insidir", background_color: "#030407", theme_color: "#030407" });
+  expect(man).toMatchObject({ name: "Insidir", background_color: "#000000", theme_color: "#000000" });
   const og = await request.get("/opengraph-image");
   expect(og.status()).toBe(200);
   expect(og.headers()["content-type"]).toContain("image/png");

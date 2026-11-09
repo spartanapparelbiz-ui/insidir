@@ -5,16 +5,17 @@ import { captureBodies, q, signIn } from "./helpers";
 
 test("landing: final on first paint, the hero's words and its CTAs, the nav, no stocks, no pop-up on arrival, no visitor bar", async ({ page }) => {
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain("See what the $1M+ wallets bet, before the game.");
+  expect(html).toContain("Bet with the people");
+  expect(html).toContain("who actually win.");
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1 });
-  await expect(h1).toHaveText("See what the $1M+ wallets bet, before the game.");
-  // The top bar: the places, search, Log in; the landing's own two Start for $1 buttons (hero, pricing), the nav's
-  // waiting until the hero's has scrolled away. The menu keeps the places: Markets, Board, Record, Pricing, FAQ.
-  const links = (await page.locator(".b-nav-links a").evaluateAll(as => as.map(a => (a.textContent ?? "").trim())));
-  expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
-  await expect(page.getByTestId("nav-start")).toBeHidden();
-  await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
+  await expect(h1).toHaveText(/Bet with the people\s*who actually win\./);
+  await expect(page.getByTestId("hero-line")).toContainText("Wallets up $1M+ bet");
+  // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
+  const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
+  // Election Day leads the nav on Nov 3–4 ET (lib/brand/pulse.ts electionDay), then drops out.
+  if (page.viewportSize()!.width > 1160) expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
+  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
   // The pitch (the footer's "isn't affiliated with … the SEC" aside).
   const text = await page.evaluate(() => { const m = document.querySelector("main")!.cloneNode(true) as HTMLElement; m.querySelectorAll("footer").forEach(f => f.remove()); return m.innerText; });
@@ -30,7 +31,7 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; the retired stock pages are 301s", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("See what the $1M+ wallets bet, before the game.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Bet with the people\s*who actually win\./);
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
@@ -48,11 +49,10 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
   expect(await (await page.request.get("/sitemaps/pages.xml")).text()).not.toContain("/stocks</loc>");
 });
 
-test("the nav's Start for $1 is recorded and opens /go", async ({ page }, info) => {
-  test.skip(info.project.name === "phone-390", "phones put Start for $1 in the menu and the sticky bar");
+test("home: the nav's Start for $1 is recorded and opens /go", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
-  await page.goto("/board");
+  await page.goto("/");
   await page.getByTestId("nav-start").click();
   await expect(page).toHaveURL(/\/go(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
@@ -96,14 +96,12 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
   await page.goto("/pricing");
-  // One plan block: $1 · 3 DAYS → $39/MO · CANCEL ANYTIME, $39/month, the $1 trial, Start for $1, five features in a
-  // two-column table; no "More coming" line.
+  // One plan card: $39/month, the $1 trial, Start for $1, five checkmarks; no "More coming" line.
   const card = page.getByTestId("plan-card");
-  await expect(card.getByTestId("plan-line")).toHaveText("$1 · 3 DAYS → $39/MO · CANCEL ANYTIME");
   await expect(card).toContainText("$39/month");
   await expect(card).toContainText("$1 for your first 3 days. Cancel anytime.");
   await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
-  await expect(card.getByTestId("plan-features").locator("tbody tr")).toHaveCount(5);
+  await expect(card.locator("li")).toHaveCount(5);
   await expect(page.locator("main")).not.toContainText("More coming");
 });
 

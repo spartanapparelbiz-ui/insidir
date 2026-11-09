@@ -98,25 +98,3 @@ export const MEMBER_GETS = [
   "Every wallet's record, losses included",
   "A copy ticket for any bet: their price, the price now, one tap to the market",
 ] as const;
-
-/** The terminal landing (components/brand/landing/Landing.tsx): five blocks, plain words, two Start for $1 buttons. */
-export const LANDING = {
-  h1: "See what the $1M+ wallets bet, before the game.",
-  sub: "Every Polymarket bet of $5K+ from wallets up $1M+, with what it needs to win.",
-  price: `$${TRIAL.fee} FOR ${TRIAL.days} DAYS · THEN $${PLANS.insidir.price}/MO · CANCEL ANYTIME`,
-  boardNote: "Members see these the minute they land, with the side.",
-  three: [
-    { k: "BEFORE YOU BET", title: "Before you bet", t: "What the bet needs to win, and who's on each side." },
-    { k: "WHILE YOU HOLD", title: "While you hold", t: "An alert when a $1M+ wallet takes the other side or gets out." },
-    { k: "AFTER IT SETTLES", title: "After it settles", t: "What happened, and what following each wallet would have made." },
-  ],
-  access: `$${TRIAL.fee} · ${TRIAL.days} DAYS → $${PLANS.insidir.price}/MO · CANCEL ANYTIME`,
-  /** The price, in words, under each Start for $1. */
-  priceLine: `$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month. Cancel anytime.`,
-  /** Under the Start for $1 label, inside the button. */
-  ctaSub: `${TRIAL.days} days of everything, live`,
-  gets: ["Every $1M+ bet the minute it lands, with its side", "A Bet Briefing on every market: what it needs to win and who's on each side",
-    "Alerts on your own bets when the big money moves against you or gets out", "The 8 AM brief, every wallet's record and Ask Insidir",
-    "Kalshi's price beside Polymarket's, and every bet linked to the chain"],
-  fine: `Then $${PLANS.insidir.price}/month. Cancel in Account, any time. Checkout by Whop.`,
-} as const;

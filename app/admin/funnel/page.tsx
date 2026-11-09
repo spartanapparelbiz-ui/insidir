@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { ADMIN_COOKIE, verifyAdminCookie } from "@/lib/admin";
-import { ctaByWhere, dropOff, FUNNEL, FUNNEL_LABEL, funnelByDay, sinceDays, type CtaRow, type FunnelDay } from "@/lib/analytics";
+import { dropOff, FUNNEL, FUNNEL_LABEL, funnelByDay, sinceDays, type FunnelDay } from "@/lib/analytics";
 import { hasDatabase } from "@/lib/db";
 import { pct } from "@/lib/format";
 import "../../app.css";
@@ -27,8 +27,7 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
   const q = (await searchParams).days;
   const days = q === "90" ? 90 : q === "7" ? 7 : 30;
   let rows: FunnelDay[] = [], error = false;
-  let cta: CtaRow[] = [];
-  if (hasDatabase()) { try { rows = await funnelByDay(sinceDays(days)); cta = await ctaByWhere(sinceDays(days)); } catch { error = true; } }
+  if (hasDatabase()) { try { rows = await funnelByDay(sinceDays(days)); } catch { error = true; } }
   const total = Object.fromEntries(FUNNEL.map(n => [n, rows.reduce((s, r) => s + (r.counts[n] ?? 0), 0)])) as Record<string, number>;
   const rate = (a: number, b: number) => (b > 0 ? pct(a / b) : "—");
   return (
@@ -53,17 +52,6 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
             {rows.length ? rows.map(r => (
               <tr key={r.day}><th scope="row">{r.day}</th>{FUNNEL.map(n => <td key={n} className="r">{(r.counts[n] ?? 0).toLocaleString("en-US")}</td>)}</tr>
             )) : <tr><td colSpan={FUNNEL.length + 1} className="muted">No events in this window yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-      <h2 className="block__h">CTA clicks by button</h2>
-      <p className="muted small">Which Start for $1 people tap (hero, pricing, the phones&apos; sticky bar, the nav…) and board-row taps, each person once per button. Last {days} days.</p>
-      <div className="scroll-x" data-testid="funnel-cta">
-        <table className="table">
-          <thead><tr><th>Button</th><th className="r">People</th><th className="r">Then onboarding done</th></tr></thead>
-          <tbody>
-            {cta.length ? cta.map(c => <tr key={`${c.event}:${c.where}`}><th scope="row">{c.event === "board_row_click" ? "Board row" : "CTA"} · {c.where || "(none)"}</th><td className="r">{c.people.toLocaleString("en-US")}</td><td className="r">{c.done.toLocaleString("en-US")} <span className="muted">{rate(c.done, c.people)}</span></td></tr>)
-              : <tr><td colSpan={3} className="muted">No CTA clicks in this window yet.</td></tr>}
           </tbody>
         </table>
       </div>

@@ -10,8 +10,6 @@ import { BOARD_DELAY_MS, lastResults, midnightET, positions, pulse, recentBets,
   type BoardBet, type CategoryLive, type MarketMoney, type Position, type Pulse, type TopWallet } from "@/lib/millionaires/queries";
 import { leadRule, type Lead } from "@/lib/autopilot/lead";
 import { memo } from "@/lib/memo";
-import { millionaireRecord, type RecordView } from "@/lib/results/record";
-import { sql } from "drizzle-orm";
 import { electionBoard, electionDay, pulseData, type ElectionBoard, type PriceGap, type Race, type Pulse2, type Spotlight, type StakeRecord } from "@/lib/brand/pulse";
 
 const DAY = 86_400_000;
@@ -52,19 +50,6 @@ export interface LandingData {
   lead: BoardBet[];
   stake: StakeRecord | null;
   gaps: PriceGap[];
-  /** The terminal landing's proof: $1M+ wallets' bets settled this month (ET), won and lost; null with none. */
-  month?: { won: number; lost: number } | null;
-  /** "What we told you": every settled $1M+ bet in the last 30 days, losses included (lib/results/record.ts). */
-  record30?: RecordView | null;
-}
-
-/** $1M+ wallets' bets settled since the first of this month (ET): won and lost. Null when none settled. */
-export async function monthRecord(db: Db, now: number): Promise<{ won: number; lost: number } | null> {
-  const r = (await db.execute(sql`select count(*) filter (where result = 'won')::int as won, count(*) filter (where result = 'lost')::int as lost
-    from terminal.millionaire_bets where tier = 'millionaire' and result in ('won', 'lost')
-      and settled_at >= (date_trunc('month', ${new Date(now)}::timestamptz at time zone 'America/New_York') at time zone 'America/New_York')`)).rows[0] as { won?: number; lost?: number } | undefined;
-  const won = Number(r?.won ?? 0), lost = Number(r?.lost ?? 0);
-  return won + lost > 0 ? { won, lost } : null;
 }
 
 
@@ -97,7 +82,6 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
   const b = [...recent].sort((x, y) => y.amount - x.amount)[0];
   const pool = todayTop.length ? todayTop : dayTop;
   const topBet = [...recent].filter(x => x.at >= midnight).sort((x, y) => y.amount - x.amount)[0] ?? null;
-  const [month, record30] = await Promise.all([safe(monthRecord(db, now), null), safe(millionaireRecord(db, now, 30), null)]);
   const [pulse2, election, spotlight, stake, gaps, lead, races] = await Promise.all([
     safe(pulseData(db, now, p.sinceMidnight, pool), { today: p.sinceMidnight, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }),
     electionDay(now) ? safe(electionBoard(db, now, member), null) : Promise.resolve(null),
@@ -109,7 +93,7 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
     electionDay(now) ? Promise.resolve(null) : safe(electionBoard(db, now, false), null),
   ]);
   return {
-    month, record30, pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
+    pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
     now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, record: pr, bestPrice: best,
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
     brief: pool.slice(0, 3),
@@ -128,5 +112,4 @@ export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, topBet: null, race: null, top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, record: null, bestPrice: null,
   pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
-  month: null, record30: null,
 });

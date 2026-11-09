@@ -31,39 +31,33 @@ const V2_UI = [
 ].filter(f => existsSync(join(ROOT, f)));
 
 describe("V2 landing page", () => {
-  it("is one story: the hero with the live board beside it, what you get, the record, access + FAQ; members get their home", () => {
+  it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home (the homepage, unlocked)", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<HomePage d={d}");
-    // The top bar first, then the blocks in order.
-    // The top bar's Start for $1 waits until the hero's button has scrolled away (components/brand/landing/Reveal.tsx).
-    expect(landing).toContain("<TerminalChrome election=");
-    expect(read("app/landing-clean.css")).toContain(".t-landing:not([data-cta-out]) .t-top .t-start { display: none !important; }");
-    const order = ["<Hero d={d} />", "<WhatYouGet v={v} />", "<Record d={d} />", "<Access />", "<Faqs />"];
-    // The live board sits inside the hero, beside the headline.
-    expect(landing).toContain("<LivePanel d={d} />");
+    // The hero, then everything below it in order (components/brand/landing/Landing.tsx Rest).
+    expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
+    const order = ["<ElectionStage d={d} /> : null", "<WhyStage />", "<HowStage />", "<WatchStage />", "<Free d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
-    // Gone from the landing: the globe, photo stages, How it works, the recordings.
-    expect(landing).not.toMatch(/<Stage\b|globe|<HowStage|<WatchStage|<WhyStage|Demo/);
     expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
-  it("the hero's words, exactly two Start for $1 buttons (hero and pricing, plus the phones' sticky bar), and no stocks, crypto or Congress in the pitch", async () => {
+  it("the hero's words, its two CTAs (Start for $1 → /go, the free sample), and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
-    expect(copy.LANDING.h1).toBe("See what the $1M+ wallets bet, before the game.");
-    expect(copy.LANDING.sub).toBe("Every Polymarket bet of $5K+ from wallets up $1M+, with what it needs to win.");
-    expect(copy.LANDING.price).toBe("$1 FOR 3 DAYS · THEN $39/MO · CANCEL ANYTIME");
+    expect(copy.HERO.h1).toEqual(["Bet with the people", "who actually win."]);
+    expect(copy.HERO.sub).toBe("On Kalshi, in seconds, and know when they get out.");
+    expect([...copy.HERO.h1, copy.HERO.sub].join(" ").replace("win. On", "win, on")).toBe(copy.ONE_LINE);
+    expect(copy.STAGES.final).toEqual(["Bet with the people", "who actually win."]);
+    expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing.match(/data-checkout="/g)).toHaveLength(2);
-    expect(landing).toContain('href="/go" data-checkout="hero" data-cta="hero" data-testid="hero-start"');
-    expect(landing).toContain('href="/go" data-checkout="pricing" data-cta="pricing" data-testid="pricing-cta"');
-    expect(read("components/brand/landing/StickyStart.tsx")).toContain('data-checkout="sticky" data-cta="sticky"');
-    // The board's side is locked for visitors: the column never prints a side.
-    expect(landing).toContain('<span className="c-live__side" data-locked="side"><Lock />Members</span>');
-    expect(landing).not.toMatch(/b\.side|b\.outcome/);
-    const pitch = [copy.LANDING.h1, copy.LANDING.sub, ...copy.LANDING.three.map(x => x.t), ...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
+    expect(landing).toContain('<Pill href="/go?step=cats" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
+    // The onboarding's first question on the first screen: each chip opens /go at the next step with it answered.
+    expect(landing).toContain('href={`/go?step=where&cats=${c}`}');
+    expect(copy.HERO.ask).toBe("What do you bet on?");
+    expect(landing).toContain('<Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>');
+    const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);
     expect(GET_CTA).toBe("Try 3 days for $1");
@@ -114,37 +108,32 @@ describe("copy rules on every V2 page", () => {
 
 
 describe("design system", () => {
-  it("the terminal palette lives in app/tokens.css only: Garnished & Tarnished Blue, Perplexed Scrutiny Azure, Scornelius Pampered Yellow, green and red", () => {
+  it("older pages: every colour in app/tokens.css; the brand (app/brand.css): only the hero spec's tokens and the data colours", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#030407", "#0a0c12", "#0f121a", "#1b2030", "#12151e", "#071b53", "#0c1a2c", "#f3f7ff", "#8a94a8", "#6cc4fe", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a"];
+    const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
-    // No yellow, gold or amber anywhere: every other stylesheet uses the tokens, never a literal colour.
-    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
+    const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e", "#1a1a1a", "#f2c35b", "#0b0b0b"];
+    const brand = read("app/brand.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
+    for (const c of new Set(brand.match(/#[0-9a-f]{3,8}\b/g))) expect(spec, c).toContain(c);
+    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css" && f !== "app/brand.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
       expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
-      expect(css.match(/rgba?\(\s*(245|242|200|176|150)\s*,?\s*(196|195|149|124|86)\b/g) ?? [], `${f}: gold`).toEqual([]);
     }
-    // The yellow is only the Start for $1 button.
-    const term = read("app/terminal.css");
-    const ctaUses = [...term.matchAll(/([^{}]+)\{[^}]*var\(--t-cta(?:-hover)?\)[^}]*\}/g)].map(m => m[1]!.trim());
-    for (const sel of ctaUses) expect(sel, sel).toMatch(/data-checkout|b-m-start|t-cta/);
   });
 
-  it("two typefaces, self-hosted: IBM Plex Mono for numbers and labels, IBM Plex Sans Condensed for headlines", () => {
-    const fonts = read("lib/brand/fonts.ts");
-    expect(fonts).toMatch(/ibm-plex-mono-latin-400-normal\.woff2/);
-    expect(fonts).toMatch(/ibm-plex-sans-condensed-latin-600-normal\.woff2/);
-    expect(existsSync(join(ROOT, "app/fonts/OFL-IBM-Plex.txt"))).toBe(true);
-    expect(read("app/tokens.css")).toMatch(/--t-mono: var\(--font-plex-mono\)/);
-    expect(read("app/tokens.css")).toMatch(/--t-sans: var\(--font-plex-cond\)/);
+  it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and no monospace)", () => {
+    const layout = read("app/layout.tsx");
+    expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
+    expect(read("lib/brand/fonts.ts")).toMatch(/plus-jakarta-sans-latin\.woff2/);
+    expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
       const src = read(f);
       expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
     }
   });
 
-  it("the manifest opens the app on its home, Garnished & Tarnished Blue like the terminal, with the brackets-mark icons", async () => {
+  it("the manifest opens the app on its home, black like the brand, with the brackets-mark icons", async () => {
     const { default: manifest } = await import("@/app/manifest");
-    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#030407", theme_color: "#030407" });
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#000000", theme_color: "#000000" });
   });
 });

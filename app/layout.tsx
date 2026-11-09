@@ -22,7 +22,6 @@ import "./light.css";
 import "./polish.css";
 import "./motion.css";
 import "./brand.css";
-import "./terminal.css";
 import { brandFontClasses } from "@/lib/brand/fonts";
 import { THEME_SCRIPT } from "@/lib/brand/theme";
 
@@ -44,7 +43,7 @@ export const metadata: Metadata = {
 // Not preloaded: the brand pages (home, /go, the check) use Plus Jakarta Sans; only the older pages need this one.
 const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap", preload: false });
 
-export const viewport: Viewport = { themeColor: "#030407", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Whether Positioning has earned its place in the nav (cached for 10 minutes).

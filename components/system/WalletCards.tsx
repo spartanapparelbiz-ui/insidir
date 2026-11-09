@@ -1,39 +1,32 @@
-/* Wallets as a terminal table: a short address (never a face or a name), all-time profit (the row's one bold number),
- * the last 10 closed bets (made money – lost), the money bet today (or in the last 24 hours) and how many bets, the
- * biggest market, and Follow (which turns on pings for that wallet). Shared by the member home and /wallets. */
+/* Wallet cards: a short address (never a face or a name), all-time profit, the last 10 closed bets (made money / lost),
+ * the money bet today (or in the last 24 hours), the biggest market, and Follow (which turns on pings for that wallet).
+ * Shared by the member home and /wallets. */
 import { FollowLink } from "@/components/desk/Act";
 import type { WalletCard } from "@/lib/home/data";
 import { dollars } from "@/lib/money";
-import "@/app/pages-terminal.css";
+import { Panel } from "./index";
 
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 
 export function WalletCards({ wallets, today, biggest = false, testid }: { wallets: readonly WalletCard[]; today: boolean; biggest?: boolean; testid?: string }) {
   return (
-    <div className="t-scroll" data-testid={testid}>
-      <table className="t-table">
-        <thead>
-          <tr>
-            <th>Wallet</th><th className="r">All-time</th><th className="r">Last 10 closed</th><th className="r">{today ? "Today" : "Last 24h"}</th><th className="r">Bets</th>
-            {biggest ? <th>Biggest</th> : null}<th className="r"><span className="b-sr">Follow</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {wallets.map(w => (
-            <tr key={w.wallet} data-testid="wallet-card">
-              <td><a className="b-num s-link" href={`/wallet/${w.wallet}`}>{w.short}</a></td>
-              <td className={`r b-num t-strong ${w.pnl === null ? "" : w.pnl >= 0 ? "t-up" : "t-down"}`}>{w.pnl !== null ? signed(w.pnl) : "—"}</td>
-              <td className="r b-num">
-                {w.last10 ? <span className="s-record" aria-label={`Last ${w.last10.made + w.last10.lost} closed: ${w.last10.made} made money, ${w.last10.lost} lost`}>{w.last10.made}–{w.last10.lost}</span> : "—"}
-              </td>
-              <td className="r b-num">{dollars(w.todayDollars)}</td>
-              <td className="r b-num">{w.todayBets}</td>
-              {biggest ? <td className="t-ell t-muted">{w.biggest ? <>{dollars(w.biggest.dollars)} on {w.biggest.title}</> : "—"}</td> : null}
-              <td className="r t-follow"><FollowLink wallet={w.wallet} initial={w.followed} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="s-cards" data-stagger="" data-testid={testid}>
+      {wallets.map(w => (
+        <Panel key={w.wallet} className="s-wcard" testid="wallet-card">
+          <a className="s-wcard__id b-num s-link" href={`/wallet/${w.wallet}`}>{w.short}</a>
+          {w.pnl !== null ? <p className="s-big b-num">{signed(w.pnl)}</p> : null}
+          <p className="b-small">all-time profit</p>
+          {w.last10 ? (
+            <p className="s-record" aria-label={`Last ${w.last10.made + w.last10.lost} closed: ${w.last10.made} made money, ${w.last10.lost} lost`}>
+              {Array.from({ length: w.last10.made }, (_, i) => <i key={`m${i}`} className="s-dot s-dot--on" />)}{Array.from({ length: w.last10.lost }, (_, i) => <i key={`l${i}`} className="s-dot" />)}
+              <span className="b-small">Last {w.last10.made + w.last10.lost} closed: {w.last10.made} made money, {w.last10.lost} lost</span>
+            </p>
+          ) : null}
+          <p className="b-small">{today ? "Today" : "Last 24 hours"}: {dollars(w.todayDollars)} across {w.todayBets} {w.todayBets === 1 ? "bet" : "bets"}</p>
+          {biggest && w.biggest ? <p className="b-small">Biggest: {dollars(w.biggest.dollars)} on {w.biggest.title}</p> : null}
+          <FollowLink wallet={w.wallet} initial={w.followed} />
+        </Panel>
+      ))}
     </div>
   );
 }

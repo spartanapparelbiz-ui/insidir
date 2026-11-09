@@ -3,7 +3,7 @@
  * a pop-up, the checkout or the Whop sign-in left them. Members who are set up go home.
  * ?status= is where the checkout lands (it was /welcome): pay first, then sign in. A buyer who paid signed out goes
  * straight through Whop's sign-in and lands back here signed in; it waits for Whop to say the account has Insidir
- * (components/auth/Welcome.tsx), then goes back to ?next. On the terminal: navy ground, no globe or photo. */
+ * (components/auth/Welcome.tsx), then goes back to ?next. */
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { after } from "next/server";
@@ -11,7 +11,9 @@ import { redirect } from "next/navigation";
 import { Welcome } from "@/components/auth/Welcome";
 import { Funnel, type Step } from "@/components/brand/go/Funnel";
 import { Stage as SystemStage } from "@/components/system";
+import { PHOTOS } from "@/lib/brand/images";
 import { safeNext } from "@/lib/auth/next";
+import { Stage } from "@/components/brand/Stage";
 import { StageMotion } from "@/components/brand/StageMotion";
 import { readUtm, recordEvent, UTM_COOKIE } from "@/lib/analytics";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
@@ -21,7 +23,6 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { goData, paidByVisitor, type GoData } from "@/lib/go/data";
 import { vapidPublicKey } from "@/lib/alerts/vapid";
 import { isPaid } from "@/lib/plans";
-import "../flow-terminal.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Bet with the millionaires", description: "See every bet from Polymarket wallets up $1M+, live, with the side they took. $1 for 3 days, then $39/month.", alternates: { canonical: "/go" } };
@@ -40,7 +41,7 @@ export default async function GoPage({ searchParams }: { searchParams: Promise<R
     if (!failed && !viewer.user) redirect(`/login/start?next=${encodeURIComponent(`/go?${new URLSearchParams({ status, ...(next !== "/" ? { next } : {}) }).toString()}`)}`);
     return (
       <main className="b-root" data-testid="welcome">
-        <SystemStage first testid="welcome-band">
+        <SystemStage bg={{ kind: "photo", photo: PHOTOS.hero, dark: 0.55, priority: true }} first testid="welcome-band">
           <Welcome status={status} next={next} />
           <p className="b-small b-center">Information, not advice. Insidir never places a bet or holds money.</p>
         </SystemStage>
@@ -61,8 +62,7 @@ export default async function GoPage({ searchParams }: { searchParams: Promise<R
   after(() => recordEvent({ name: "go_view", visitorId, userId: viewer.user?.id ?? null, props: { step: asked, ...Object.fromEntries(Object.entries(utm).filter(([, v]) => v)) } as Record<string, string> }).catch(() => undefined));
   let key: string | null = null;
   try { key = vapidPublicKey() || null; } catch { key = null; }
-  // The terminal: Shillingston Navy behind every step, no globe or photo.
-  const bg = null;
+  const bg = <div className="b-fixed-bg" aria-hidden="true"><Stage bg={{ kind: "globe", dark: 0.6 }} inner={false}><span /></Stage></div>;
   return (
     <>
       <Funnel initial={initial} start={asked} now={now} elementsUrl={ELEMENTS_URL} signedIn={Boolean(viewer.user)} ageConfirmed={Boolean(viewer.user?.ageConfirmed)} vapidKey={key} bg={bg} />

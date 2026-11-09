@@ -29,8 +29,6 @@ const DAY = 86_400_000;
 export interface WalletCard extends Leader { last10: { made: number; lost: number } | null }
 export interface Home {
   now: number;
-  /** Whose home it is (the workspace panels read their watched bets, follows and alerts). */
-  userId: string;
   today: { money: number; bets: number; wallets: number } | null;
   top: { bet: BoardBet; edge: Edge | null; art: MarketArt | null } | null;
   disagree: Disagreement[];
@@ -134,7 +132,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
   const g = gaps[0];
   const openCopies = copies?.list.filter(x => x.result === null) ?? [];
   return {
-    now, userId, today, top: top ? { bet: top, edge, art: art && !(logosOff() && SPORTS.has(top.category)) ? art : null } : null,
+    now, today, top: top ? { bet: top, edge, art: art && !(logosOff() && SPORTS.has(top.category)) ? art : null } : null,
     copyNow, day, stream, disagree: dis, election: el ? { day: el, insight: raceInsight(el) } : null, board: flow.slice(0, 24), wallets, gaps: gaps.slice(0, 3), desk, copies,
     insight: {
       hero: today ? `Wallets up $1M+ bet ${dollars(today.money)} today.` : day ? `Wallets up $1M+ bet ${dollars(day.money)} in the last 24 hours.` : null,

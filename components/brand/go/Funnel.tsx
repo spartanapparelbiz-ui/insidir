@@ -1,15 +1,16 @@
 "use client";
-/* /go: the funnel, on the terminal: a terminal top bar (mark, INSIDIR, TERMINAL, the step count, the ET clock), one question per screen, a thin
+/* /go: the funnel. Every step is a full-viewport stage over the globe at 40% brightness, one question per screen, a thin
  * progress bar, one tap per step, the spec's motion on each step (each step is a new stage: StageMotion plays it).
  *   1 hook · 2 what do you bet on (image tiles) · 3 where · 4 size · 5 building (real counts) · 6 the aha (3 markets,
  *   the first whole) · 7 paywall · 8 checkout (Whop, embedded) · 9 the same markets, now whole · sign in with Whop
  *   (one redirect) · 10 answers saved · 11 follow your first millionaire · 12 push · home.
  * The answers live in localStorage until they are saved to the account (POST /api/go/save) after sign-in. */
-import { Clock } from "@/components/terminal/Clock";
+import { BrandPicture } from "@/components/brand/BrandPicture";
+import { PHOTOS } from "@/lib/brand/images";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { beacon } from "@/components/app/beacon";
 import { PingSetup } from "@/components/app/PingSetup";
-import { CATEGORIES, category as categoryInfo, isCategory, type CategorySlug } from "@/lib/brand/categories";
+import { CATEGORIES, category as categoryInfo, categoryPhoto, isCategory, type CategorySlug } from "@/lib/brand/categories";
 import type { AhaCard, GoData } from "@/lib/go/data";
 import { SIZES, WHERE, type Size, type Where } from "@/lib/go/answers";
 import { leadLine } from "@/lib/autopilot/lead-line";
@@ -26,7 +27,7 @@ export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "pa
 const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
  * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
-/** The steps with the live side (the live count and the latest $1M+ bet beside the question, no photo). */
+/** The steps with the picture side (a photo and a live bet beside the question). */
 const ART: Step[] = ["hook", "where", "size", "paywall", "checkout"];
 /** The steps before paying, as the header counts them ("building" plays by itself and isn't a step). */
 const PRE: Step[] = ["hook", "cats", "where", "size", "aha", "paywall", "checkout"];
@@ -76,7 +77,7 @@ function Checkout({ elementsUrl, ageConfirmed }: { elementsUrl: string; ageConfi
       {state === "opening" ? <div className="b-glass b-pad b-skel" aria-busy="true" style={{ minHeight: 320 }}><p className="b-small" role="status">Opening secure checkout…</p><span className="b-skel__line" style={{ height: 44 }} /><span className="b-skel__line" style={{ height: 44 }} /><span className="b-skel__line" style={{ height: 44, width: "60%" }} /></div> : null}
       {state === "error" ? <p className="b-msg" role="alert">The checkout didn&apos;t open. <button type="button" className="b-btn b-panel-pill" onClick={() => void open()}>Try again</button></p> : null}
       {state === "unconfigured" ? <p className="b-msg" role="alert">Checkout isn&apos;t open yet. Come back soon.</p> : null}
-      <div ref={box} className="tg-checkout-frame" style={{ minHeight: state === "ready" ? 320 : 0 }} hidden={state !== "ready"} data-testid="go-checkout-frame" />
+      <div ref={box} className="b-glass" style={{ overflow: "hidden", padding: 8, background: "#fff", color: "#000", minHeight: state === "ready" ? 320 : 0 }} hidden={state !== "ready"} data-testid="go-checkout-frame" />
       <p className="b-small">Apple Pay, Google Pay or card · Secure checkout · Cancel anytime in Account</p>
     </div>
   );
@@ -90,6 +91,7 @@ function AhaCards({ cards, more }: { cards: AhaCard[]; more: number }) {
       <div className="b-cards3" data-testid="aha-cards">
         {cards.map((c, i) => (
           <div key={c.m.marketId}  {...st(0.5 + i * 0.1, { display: "grid", gap: 8 })}>
+            <div className="b-cardimg"><BrandPicture src={categoryPhoto(c.m.category).src} fill sizes="(max-width: 860px) 100vw, 33vw" /></div>
             <MoneyCard m={c.m} positions={c.positions} locked={c.locked} testid={c.locked ? "aha-locked" : "aha-open"} />
           </div>
         ))}
@@ -169,6 +171,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
   const hook = d.hook;
   const cats = a.cats.length ? a.cats : [];
   const firstCat = cats[0] ? categoryInfo(cats[0]).name : "your categories";
+  const artPhoto = cats[0] ? categoryPhoto(cats[0]) : PHOTOS.hero;
   // The record line: the best rule positive over 100+ settled bets on Kalshi, or none (never "every bet": it lost).
   const lead = d.lead ? leadLine(d.lead) : null;
 
@@ -200,7 +203,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               return (
                 <button key={c.slug} type="button" className="b-tile" aria-pressed={on} data-testid="go-tile" data-cat={c.slug} {...st(0.4 + i * 0.03)}
                   onClick={() => put({ cats: on ? a.cats.filter(x => x !== c.slug) : [...a.cats, c.slug] })}>
-                  <span className="tg-key" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="b-tile__img"><BrandPicture src={categoryPhoto(c.slug).src} fill priority={i < 6} sizes="(max-width: 552px) 33vw, (max-width: 1160px) 25vw, 170px" /></span>
                   <span className="b-tile__check" aria-hidden="true"><svg viewBox="0 0 11 9" fill="none"><path d="M1 4.5 4 7.5 10 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                   <span className="b-tile__name">{c.name}</span>
                 </button>
@@ -317,9 +320,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       {/* The header: the mark in the middle, the step count on the right (before paying; after, it's account setup). */}
       <header className="b-go-top" aria-hidden="true">
         <span className="b-go-top__mark"><Mark /></span>
-        <span className="tg-go-word">INSIDIR</span><span className="t-tag">TERMINAL</span>
-        {PRE.includes(step) ? <span className="b-go-top__n">Step {PRE.indexOf(step) + 1} of {PRE.length}</span> : <span className="b-go-top__n">Account setup</span>}
-        <Clock />
+        {PRE.includes(step) ? <span className="b-go-top__n">Step {PRE.indexOf(step) + 1} of {PRE.length}</span> : null}
       </header>
       <div className="b-go-bar" role="progressbar" aria-label="Your progress" aria-valuemin={1} aria-valuemax={ORDER.length} aria-valuenow={ORDER.indexOf(step) + 1}
         aria-valuetext={`Step ${ORDER.indexOf(step) + 1} of ${ORDER.length}`} data-testid="go-progress"><span style={{ transform: `scaleX(${progress})` }} /></div>
@@ -327,22 +328,16 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
         : BACK[step] ? <button type="button" className="b-go-back" aria-label="Back" data-testid="go-back" onClick={() => go(BACK[step]!)}><BackArrow /></button> : null}
       {ART.includes(step) ? (
         <div key={step} className="b-go-split">
-          {/* The live side: the live count and the latest $1M+ bet, as a terminal panel (no photo behind it). */}
+          {/* The picture side: the picked category's photo (the brand's, before a pick), and a live millionaire bet over it. */}
           <aside className="b-go-art" aria-hidden="true">
-            <div className="tg-go-side">
-              <section className="t-panel">
-                <header className="t-panel__head"><h2 className="t-panel__title"><span className="t-panel__n">1)</span>LIVE · $1M+ WALLETS</h2><span className="t-panel__meta">{d.pulse.window === "hour" ? "Last hour" : "Today"}</span></header>
-                <div className="t-panel__body">
-                  <dl className="tg-kpis">
-                    <div className="tg-kpi"><dt className="t-label">Millionaire bets</dt><dd className="tg-kpi__n">{d.pulse.count}</dd><dd className="tg-kpi__s">{d.pulse.window === "hour" ? "in the last hour" : "today"}</dd></div>
-                    {d.pulse.millionaires ? <div className="tg-kpi"><dt className="t-label">Wallets up $1M+</dt><dd className="tg-kpi__n">{d.pulse.millionaires.toLocaleString("en-US")}</dd><dd className="tg-kpi__s">watched</dd></div> : null}
-                  </dl>
-                  {hook && step !== "hook" ? <p className="tg-body" style={{ marginTop: 10 }}>A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : "$1M+ "}wallet just bet <b className="b-num">{dollars(hook.amount)}</b> on {hook.title}.</p>
-                    : <p className="tg-body" style={{ marginTop: 10 }}>Every bet of $5K+ from wallets up $1M+, the second it lands.</p>}
-                  {cats.length ? <p className="tg-note">YOUR FEED: {names(cats).toUpperCase()}</p> : null}
-                </div>
-                <footer className="t-panel__src">SOURCE: POLYMARKET PUBLIC DATA</footer>
-              </section>
+            <div className="b-go-art__frame">
+              <BrandPicture src={artPhoto.src} fill priority sizes="(max-width: 900px) 100vw, 50vw" style={{ objectPosition: artPhoto.pos }} />
+              <div className="b-go-art__card">
+                <span className="b-go-art__live"><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "bet" : "bets"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
+                {hook && step !== "hook" ? <p className="b-go-art__bet">A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : "$1M+ "}wallet just bet <b className="b-num">{dollars(hook.amount)}</b> on {hook.title}.</p>
+                  : <p className="b-go-art__bet">Every bet of $5K+ from wallets up $1M+, the second it lands.</p>}
+                {cats.length ? <span className="b-go-art__picks">Your feed: {names(cats)}</span> : null}
+              </div>
             </div>
           </aside>
           <div className="b-go-main">{body}</div>

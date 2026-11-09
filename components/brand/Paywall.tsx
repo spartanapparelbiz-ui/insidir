@@ -1,12 +1,10 @@
 "use client";
 /* The paywall, said once: a headline from what they care about, three bullets, the pill timeline (Today $1 → Day 2
  * reminder → <date> $39/mo), "Remind me before I'm charged" (on by default), 18+, the full price right above the white
- * Start for $1 pill, Apple Pay listed first, the trust line. Used by /go's paywall step and the pop-up modal. On the
- * terminal: the subscription line ($1 · 3 DAYS → $39/MO · CANCEL ANYTIME) on top; Start for $1 is the one orange button. */
+ * Start for $1 pill, Apple Pay listed first, the trust line. Used by /go's paywall step and the pop-up modal. */
 import { useState } from "react";
 import { PLANS, TRIAL } from "@/lib/plans";
 import { Arrow } from "./Bits";
-import { planLine } from "@/lib/brand/plan-line";
 
 const DAY = 86_400_000;
 const ET = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
@@ -33,7 +31,6 @@ export function Paywall({ headline, bullets = PAY_BULLETS, now, href, testid = "
   const go = `${href}${href.includes("?") ? "&" : "?"}remind=${remind ? 1 : 0}`;
   return (
     <div style={{ display: "grid", gap: 14 }} data-testid={testid}>
-      <p className="t-label t-blue" style={{ margin: 0 }} data-testid="paywall-plan">{planLine()}</p>
       <h2 className="b-modal__h" data-testid="paywall-headline">{headline}</h2>
       <ul className="b-bullets">{bullets.map(b => <li key={b}><Arrow /><span>{b}</span></li>)}</ul>
       {record ? <p className="b-small" data-testid="paywall-record">{record} Past results, not a promise.</p> : null}

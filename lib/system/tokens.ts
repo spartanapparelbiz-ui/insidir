@@ -5,16 +5,15 @@
  * and the circle. */
 
 export const COLOR_VARS = ["--ink", "--ink-muted", "--ink-3", "--ink-4", "--page", "--surface-1", "--surface-2", "--surface-3", "--surface-4", "--panel", "--white-btn", "--btn-ink", "--glass-fill", "--glass-line", "--focus", "--up", "--down", "--dim",
-  "--gold", "--gold-2", "--steel", "--yes", "--no", "--dem", "--rep", "--violet",
-  "--t-page", "--t-panel", "--t-head", "--t-line", "--t-row", "--t-text", "--t-muted", "--t-blue", "--t-blue-text", "--t-blue-tint", "--t-cta", "--t-cta-ink", "--t-cta-hover", "--t-up", "--t-down", "--t-on-blue", "--t-navy"] as const;
+  "--gold", "--gold-2", "--steel", "--yes", "--no", "--dem", "--rep", "--violet"] as const;
 
-/** The literal values behind the tokens (lower case): the terminal palette (app/tokens.css). */
-export const COLORS = ["#030407", "#0a0c12", "#0f121a", "#1b2030", "#12151e", "#071b53", "#0c1a2c", "#f3f7ff", "#8a94a8", "#6cc4fe", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a",
-  "transparent", "currentcolor", "inherit"] as const;
+/** The literal values behind the tokens (lower case). */
+export const COLORS = ["#ffffff", "#fff", "#000", "#000000", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e",
+  "rgba(0, 0, 0, .78)", "rgba(255, 255, 255, .09)", "rgba(237, 237, 237, .62)", "transparent", "currentcolor", "inherit"] as const;
 
 /** UI text in px; headlines are set with <Lines size> in --u (40–89). */
-export const FONT_SIZES_PX = [11, 12, 12.5, 13, 14, 15, 16, 17, 20, 22, 28, 44] as const;
+export const FONT_SIZES_PX = [12, 13, 14, 15, 16, 17, 20, 22, 28] as const;
 export const HEADLINE_SIZES = [40, 44, 48, 52, 56, 60, 64, 72, 89] as const;
 
-/** The terminal is square: 0–2px (--r, --t-r), and the circle for status dots. */
-export const RADII = ["var(--r)", "var(--t-r)", "2px", "50%", "0"] as const;
+/** The pill, the panel (--r), the small corner, the circle. */
+export const RADII = ["999px", "var(--r)", "10px", "50%", "0"] as const;

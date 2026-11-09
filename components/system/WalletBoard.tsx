@@ -1,15 +1,14 @@
 "use client";
-/* The wallets leaderboard (/wallets), as a terminal table: every wallet up $1M+ Insidir watches, filterable and
- * sortable, one row each: rank, short address and whether it passed the proven screen, all-time profit (the row's bold
- * number), its settled record against the price it pays, what it bet this week and where, its last bet, and Follow. A
- * row's address opens the wallet's page. Data: lib/millionaires/leaderboard.ts. */
+/* The wallets leaderboard (/wallets): every wallet up $1M+ Insidir watches, filterable and sortable, one row each:
+ * rank, short address and whether it passed the proven screen, all-time profit, its settled record against the price it
+ * pays, what it bet this week and where, its last bet, and Follow. A row opens the wallet's page. Data:
+ * lib/millionaires/leaderboard.ts. */
 import { useMemo, useState } from "react";
 import { FollowLink } from "@/components/desk/Act";
 import { agoShort } from "@/components/brand/BetRow";
 import { category as categoryInfo, isCategory } from "@/lib/brand/categories";
 import { dollars } from "@/lib/money";
 import type { LeaderRow } from "@/lib/millionaires/leaderboard";
-import "@/app/pages-terminal.css";
 
 type Filter = "all" | "proven" | "active";
 type Sort = "pnl" | "rate" | "week" | "last";
@@ -28,59 +27,58 @@ export function WalletBoard({ rows, now }: { rows: LeaderRow[]; now: number }) {
   }, [rows, filter, sort]);
   const counts = { all: rows.length, proven: rows.filter(r => r.proven === true).length, active: rows.filter(r => r.weekBets > 0).length };
   return (
-    <div className="t-wb" data-testid="wallet-board">
-      <div className="t-toolbar">
-        <div className="t-toolbar__group" role="group" aria-label="Show">
+    <div className="s-wb" data-testid="wallet-board">
+      <div className="s-wb__bar">
+        <div className="s-wb__chips" role="group" aria-label="Show">
           {([["all", "All"], ["proven", "Proven"], ["active", "Bet this week"]] as const).map(([k, l]) => (
-            <button key={k} type="button" className="t-chip" aria-pressed={filter === k} onClick={() => { setFilter(k); setShown(40); }} data-testid="wb-filter">{l} <span className="b-num">{counts[k]}</span></button>
+            <button key={k} type="button" className="s-wb__chip" aria-pressed={filter === k} onClick={() => { setFilter(k); setShown(40); }} data-testid="wb-filter">{l} <span>{counts[k]}</span></button>
           ))}
         </div>
-        <label className="t-toolbar__sort t-label">Sort
+        <label className="s-wb__sort">Sort by
           <select value={sort} onChange={e => setSort(e.target.value as Sort)} data-testid="wb-sort">
             <option value="pnl">All-time profit</option>
-            <option value="rate">Share of bets won</option>
+            <option value="rate">Win rate</option>
             <option value="week">Money this week</option>
             <option value="last">Latest bet</option>
           </select>
         </label>
       </div>
+      <div className="s-wb__head" aria-hidden="true"><span>#</span><span>Wallet</span><span>All-time</span><span>Record</span><span>This week</span><span>Latest bet</span><span /></div>
       {list.length ? (
-        <div className="t-scroll">
-          <table className="t-table">
-            <thead>
-              <tr><th className="r">#</th><th>Wallet</th><th className="r">All-time</th><th className="r">Record</th><th className="r">Won</th><th className="r">Avg price</th><th className="r">This week</th><th className="r">Bets</th><th>Latest bet</th><th className="r">Ago</th><th className="r"><span className="b-sr">Follow</span></th></tr>
-            </thead>
-            <tbody>
-              {list.slice(0, shown).map((r, i) => {
-                const rate = rateOf(r), edge = rate !== null && r.avgPrice !== null ? rate - r.avgPrice : null;
-                const settled = r.won !== null && r.lost !== null && r.won + r.lost > 0;
-                return (
-                  <tr key={r.wallet} data-testid="wb-row">
-                    <td className="r b-num t-muted">{i + 1}</td>
-                    <td>
-                      <a className="s-link b-num" href={`/wallet/${r.wallet}`}>{short(r.wallet)}</a>
-                      {r.proven ? <span className="t-tag2 t-tag2--ok" title="30+ settled bets; not a market maker, high-frequency or arbitrage wallet">PROVEN</span>
-                        : r.exclusion ? <span className="t-tag2" title="Why Insidir doesn't ping on it">{r.exclusion.toUpperCase()}</span> : null}
-                    </td>
-                    <td className="r b-num t-strong t-up">+{dollars(r.pnl)}</td>
-                    <td className="r b-num">{settled ? `${r.won}–${r.lost}` : "—"}</td>
-                    <td className="r b-num" title={edge !== null ? (edge >= 0 ? "Wins more than its price says" : "Wins less than its price says") : rate === null && settled ? "Under 10 settled" : undefined}>
-                      {rate !== null ? `${Math.round(rate * 100)}%` : "—"}
-                    </td>
-                    <td className="r b-num">{r.avgPrice !== null ? `${Math.round(r.avgPrice * 100)}¢` : "—"}</td>
-                    <td className="r b-num">{r.weekBets ? dollars(r.week) : "—"}</td>
-                    <td className="r b-num" title={catName(r.topCategory) ? `Mostly ${catName(r.topCategory)}` : undefined}>{r.weekBets || "—"}</td>
-                    <td className="t-ell t-muted">{r.last ? `${dollars(r.last.amount)} · ${r.last.title}` : "None seen yet"}</td>
-                    <td className="r b-num t-muted">{r.last ? agoShort(r.last.at, now) : "—"}</td>
-                    <td className="r t-follow"><FollowLink wallet={r.wallet} initial={r.followed} short /></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : <p className="t-empty">No wallet matches yet.</p>}
-      {list.length > shown ? <div className="t-more"><button type="button" className="t-btn2" onClick={() => setShown(s => s + 40)} data-testid="wb-more">Show {Math.min(40, list.length - shown)} more</button></div> : null}
+        <ol className="s-wb__rows">
+          {list.slice(0, shown).map((r, i) => {
+            const rate = rateOf(r), edge = rate !== null && r.avgPrice !== null ? rate - r.avgPrice : null;
+            return (
+              <li key={r.wallet} className="s-wb__row" data-testid="wb-row">
+                <span className="s-wb__rank b-num">{i + 1}</span>
+                <a className="s-wb__who" href={`/wallet/${r.wallet}`}>
+                  <b className="b-num">{short(r.wallet)}</b>
+                  {r.proven ? <span className="s-wb__tag s-wb__tag--ok" title="30+ settled bets; not a market maker, high-frequency or arbitrage wallet">Proven</span>
+                    : r.exclusion ? <span className="s-wb__tag" title="Why Insidir doesn't ping on it">{r.exclusion}</span> : null}
+                </a>
+                <span className="s-wb__pnl b-num" data-label="All-time"><b>+{dollars(r.pnl)}</b></span>
+                <span className="s-wb__rec" data-label="Record">
+                  {r.won !== null && r.lost !== null && r.won + r.lost > 0 ? (
+                    <>
+                      <b className="b-num">{r.won}–{r.lost}</b>
+                      {rate !== null ? <span className="b-num">{Math.round(rate * 100)}% won{r.avgPrice !== null ? ` at ${Math.round(r.avgPrice * 100)}¢ avg` : ""}</span> : <span>under 10 settled</span>}
+                      {edge !== null ? <span className={edge >= 0 ? "s-up" : "s-down"}>{edge >= 0 ? "Wins more than its price says" : "Wins less than its price says"}</span> : null}
+                    </>
+                  ) : <span>No settled record yet</span>}
+                </span>
+                <span className="s-wb__week" data-label="This week">
+                  {r.weekBets ? <><b className="b-num">{dollars(r.week)}</b><span>{r.weekBets} {r.weekBets === 1 ? "bet" : "bets"}{catName(r.topCategory) ? ` · mostly ${catName(r.topCategory)}` : ""}</span></> : <span>No $5K+ bet</span>}
+                </span>
+                <span className="s-wb__last" data-label="Latest bet">
+                  {r.last ? <><b>{r.last.title}</b><span className="b-num">{dollars(r.last.amount)} · {agoShort(r.last.at, now)}</span></> : <span>None seen yet</span>}
+                </span>
+                <span className="s-wb__act"><FollowLink wallet={r.wallet} initial={r.followed} short /></span>
+              </li>
+            );
+          })}
+        </ol>
+      ) : <p className="b-empty">No wallet matches yet.</p>}
+      {list.length > shown ? <div className="b-center"><button type="button" className="b-btn b-panel-pill" onClick={() => setShown(s => s + 40)} data-testid="wb-more">Show {Math.min(40, list.length - shown)} more</button></div> : null}
     </div>
   );
 }
