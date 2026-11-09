@@ -174,10 +174,18 @@ export function Landing({ d }: { d: LandingData }) {
     <main className="b-root" data-testid="landing">
       {d.member ? null : <>
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
-        <Intro lines={[
-          d.pulse.today > 0 ? `${usd(d.pulse.today)} bet in the last 24 hours` : "Some wallets have made $1M+ betting",
-          d.pulse.today > 0 ? "by wallets that have made $1M+." : "on Polymarket.",
+        <Intro lines={d.pulse.today >= 100_000 ? [
+          `${usd(d.pulse.today)} bet in the last 24 hours`,
+          "by wallets that have made $1M+.",
           "Now you see every bet, before the game.",
+        ] : d.pulse.millionaires > 0 ? [
+          `${d.pulse.millionaires.toLocaleString("en-US")} wallets have made $1M+ betting.`,
+          "We watch every bet they make.",
+          "Now you see them too, before the game.",
+        ] : [
+          "Some wallets have made $1M+ betting.",
+          "We watch every bet they make.",
+          "Now you see them too, before the game.",
         ]} />
       </>}
       <Hero d={d} />
