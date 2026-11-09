@@ -1,17 +1,74 @@
 /* The member home's AI analyst, second on the page: the 24-hour numbers, today's brief (written by the AI from
  * Insidir's data, every number verified against it), the member's watched bets, Bet Briefing (paste a link), and Ask
- * Insidir. Each block names its source. Information, not advice. */
+ * Insidir. Each block names its source. Information, not advice.
+ * The numbers render at once; the brief and the briefing (a model's wording) stream in when ready (Suspense), so the
+ * page never waits on them. */
 import { category as categoryInfo, isCategory } from "@/lib/brand/categories";
 import { PHOTOS } from "@/lib/brand/images";
 import type { Home } from "@/lib/home/data";
 import { dollars } from "@/lib/money";
 import { Panel, Pill, Stage } from "@/components/system";
 import { DayPicture } from "./DayPicture";
+import { Suspense } from "react";
+import { getDb } from "@/lib/db";
+import { homeBrief, homeBriefing } from "@/lib/home/data";
 
 const ASKS = ["Who's the best NFL wallet this month and what's he on today?", "Is anyone big against my bet?", "Why did the odds move?"];
 
-export function AiDesk({ d }: { d: Home }) {
-  const b = d.ai.brief;
+/** A card's placeholder while its slow part (a model or a venue) streams in: the same box, a quiet line. */
+const Loading = ({ label }: { label: string }) => <p className="b-small ai-loading" aria-live="polite"><span className="ai-loading__dot" aria-hidden="true" />{label}</p>;
+
+/** Today's brief and the member's watched bets in it: one read of the brief (the model, else the template), streamed. */
+async function BriefCards({ userId, now, watching }: { userId: string; now: number; watching: number }) {
+  const b = await homeBrief(getDb(), userId, now).catch(() => null);
+  return (
+    <>
+      <Panel className="ai-card ai-card--wide" testid="ai-brief">
+        <div className="ai-card__top"><p className="b-label">Today&apos;s brief</p><span className="ai-tag">{b?.origin === "model" ? "Written by the AI" : "From the data"}</span></div>
+        {b && b.items.length ? (
+          <ol className="ai-brief">
+            {b.items.slice(0, 4).map(i => (
+              <li key={i.key}><a href={i.href}><b>{i.lines[0]}</b><span>{i.lines[1]}</span></a></li>
+            ))}
+          </ol>
+        ) : <p className="b-small">Nothing big from the $1M+ wallets since 8 PM ET last night yet. The brief fills as they bet.</p>}
+        <p className="ai-src">Source: Polymarket public trades and Polygon transactions, since 8 PM ET.</p>
+        <Pill href="/brief" kind="ghost">The full brief</Pill>
+      </Panel>
+      <Panel className="ai-card" testid="ai-watch">
+        <div className="ai-card__top"><p className="b-label">Watch my bet</p>{watching ? <span className="ai-tag">{watching} watched</span> : null}</div>
+        {b && b.watched.length ? (
+          <ul className="ai-watch">{b.watched.slice(0, 3).map(w => <li key={w.id}><a href={w.href}><b>{w.title}</b><span>{w.lines[0]}</span><span>{w.lines[1]}</span></a></li>)}</ul>
+        ) : <p className="b-small">Add your bet or your public Polymarket address. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you get an alert with what it means for your bet in dollars.</p>}
+        <Pill href="/watch" kind="ghost">{watching ? "Your watched bets" : "Add a bet"}</Pill>
+      </Panel>
+    </>
+  );
+}
+
+function BriefLoading({ watching }: { watching: number }) {
+  return (
+    <>
+      <Panel className="ai-card ai-card--wide" testid="ai-brief"><div className="ai-card__top"><p className="b-label">Today&apos;s brief</p></div><Loading label="Reading the overnight $1M+ money…" /></Panel>
+      <Panel className="ai-card" testid="ai-watch"><div className="ai-card__top"><p className="b-label">Watch my bet</p>{watching ? <span className="ai-tag">{watching} watched</span> : null}</div><Loading label="Reading your watched bets…" /></Panel>
+    </>
+  );
+}
+
+/** The #1 market's Bet Briefing, streamed. */
+async function TopBriefing({ marketId, title, now }: { marketId: string; title: string; now: number }) {
+  const bb = await homeBriefing(getDb(), marketId, now).catch(() => null);
+  if (!bb) return <a className="ai-link" href={`/briefing?m=${encodeURIComponent(marketId)}`}>Today&apos;s #1: {title} →</a>;
+  return (
+    <a className="ai-bb" href={bb.href} data-testid="ai-briefing-sample">
+      <span className="ai-bb__t">Today&apos;s #1 · {bb.title} · {bb.origin === "model" ? "written by the AI" : "from the data"}</span>
+      {bb.lines.map(l => <span key={l.k} className="ai-bb__row"><b>{l.k}</b><span>{l.t}</span></span>)}
+      <span className="ai-bb__more">The full briefing →</span>
+    </a>
+  );
+}
+
+export function AiDesk({ d, userId }: { d: Home; userId: string }) {
   const span = d.today ? "today" : "in 24 hours";
   const money = d.today?.money ?? d.day?.money ?? 0, bets = d.today?.bets ?? d.day?.bets ?? 0;
   const top = d.ai.topCategory && isCategory(d.ai.topCategory) ? categoryInfo(d.ai.topCategory).name : null;
@@ -36,39 +93,15 @@ export function AiDesk({ d }: { d: Home }) {
       ) : null}
       <DayPicture d={d} />
       <div className="ai-grid">
-        <Panel className="ai-card ai-card--wide" testid="ai-brief">
-          <div className="ai-card__top"><p className="b-label">Today&apos;s brief</p><span className="ai-tag">{b?.origin === "model" ? "Written by the AI" : "From the data"}</span></div>
-          {b && b.items.length ? (
-            <ol className="ai-brief">
-              {b.items.slice(0, 4).map(i => (
-                <li key={i.key}><a href={i.href}><b>{i.lines[0]}</b><span>{i.lines[1]}</span></a></li>
-              ))}
-            </ol>
-          ) : <p className="b-small">Nothing big from the $1M+ wallets since 8 PM ET last night yet. The brief fills as they bet.</p>}
-          <p className="ai-src">Source: Polymarket public trades and Polygon transactions, since 8 PM ET.</p>
-          <Pill href="/brief" kind="ghost">The full brief</Pill>
-        </Panel>
-        <Panel className="ai-card" testid="ai-watch">
-          <div className="ai-card__top"><p className="b-label">Watch my bet</p>{d.ai.watching ? <span className="ai-tag">{d.ai.watching} watched</span> : null}</div>
-          {b && b.watched.length ? (
-            <ul className="ai-watch">{b.watched.slice(0, 3).map(w => <li key={w.id}><a href={w.href}><b>{w.title}</b><span>{w.lines[0]}</span><span>{w.lines[1]}</span></a></li>)}</ul>
-          ) : <p className="b-small">Add your bet or your public Polymarket address. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you get an alert with what it means for your bet in dollars.</p>}
-          <Pill href="/watch" kind="ghost">{d.ai.watching ? "Your watched bets" : "Add a bet"}</Pill>
-        </Panel>
+        <Suspense fallback={<BriefLoading watching={d.ai.watching} />}><BriefCards userId={userId} now={d.now} watching={d.ai.watching} /></Suspense>
         <Panel className="ai-card" testid="ai-briefing">
-          <div className="ai-card__top"><p className="b-label">Bet Briefing</p>{d.ai.briefing ? <span className="ai-tag">{d.ai.briefing.origin === "model" ? "Written by the AI" : "From the data"}</span> : null}</div>
-          {d.ai.briefing ? (
-            <a className="ai-bb" href={d.ai.briefing.href} data-testid="ai-briefing-sample">
-              <span className="ai-bb__t">Today&apos;s #1 · {d.ai.briefing.title}</span>
-              {d.ai.briefing.lines.map(l => <span key={l.k} className="ai-bb__row"><b>{l.k}</b><span>{l.t}</span></span>)}
-              <span className="ai-bb__more">The full briefing →</span>
-            </a>
-          ) : <p className="b-small">Paste a Polymarket or Kalshi link: what it needs to win, what it costs and pays, who&apos;s on each side and what the money says.</p>}
+          <div className="ai-card__top"><p className="b-label">Bet Briefing</p></div>
+          <p className="b-small">Paste a Polymarket or Kalshi link: what it needs to win, what it costs and pays, who&apos;s on each side and what the money says.</p>
           <form className="ai-form" method="get" action="/briefing">
             <input name="url" type="url" inputMode="url" placeholder="Paste any market link" aria-label="Market link" required />
             <button type="submit">Brief me</button>
           </form>
-          {!d.ai.briefing && d.top ? <a className="ai-link" href={`/briefing?m=${encodeURIComponent(d.top.bet.marketId)}`}>Or today&apos;s #1: {d.top.bet.title} →</a> : null}
+          {d.top ? <Suspense fallback={<Loading label="Briefing today's #1 market…" />}><TopBriefing marketId={d.top.bet.marketId} title={d.top.bet.title} now={d.now} /></Suspense> : null}
         </Panel>
         <Panel className="ai-card ai-card--ask" testid="ai-ask">
           <p className="b-label">Ask Insidir</p>

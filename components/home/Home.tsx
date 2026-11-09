@@ -25,13 +25,43 @@ import { RaceCards } from "@/components/system/Races";
 import { Ticket } from "@/components/system/Ticket";
 import { WalletCards } from "@/components/system/WalletCards";
 import { AiDesk } from "./AiDesk";
+import { LiveStrip } from "./LiveStrip";
+import { Suspense } from "react";
+import { getDb } from "@/lib/db";
+import { homeGaps } from "@/lib/home/data";
 import { ScrollReveal } from "@/components/brand/ScrollReveal";
 
 const cents = (p: number) => `${Math.round(p * 100)}¢`;
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 const since = (ms: number) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`; };
 
-export function HomePage({ d, search }: { d: Home; search: boolean }) {
+/** Same bet, two prices: the venue reads stream in on their own (lib/home/data.ts homeGaps), so the page never waits. */
+async function GapsStage({ now }: { now: number }) {
+  const gaps = await homeGaps(getDb(), now).catch(() => []);
+  if (!gaps.length) return null;
+  const g = gaps[0]!;
+  return (
+    <Stage bg={{ kind: "photo", photo: PHOTOS.golf, dark: 0.6 }} id="prices" testid="home-gaps" labelledBy="gap-h">
+      <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={`${g.outcome} costs ${cents(g.kalshi)} on Kalshi and ${cents(g.polymarket)} on Polymarket.`} fallback={["Same bet,", "two prices."]} size={52} /><p className="hm-plain"><b>In plain English:</b> the same bet costs different amounts on Kalshi and Polymarket. Buying where it&apos;s cheaper means a bigger payout if you win.</p></div>
+      <div className="s-cards" data-stagger="">
+        {gaps.map(x => {
+          const lo = Math.min(x.kalshi, x.polymarket), hi = Math.max(x.kalshi, x.polymarket), extra = 100 / lo - 100 / hi;
+          return (
+            <Panel key={x.title + x.outcome} className="s-gap" testid="gap-card">
+              <h3 className="s-ticket__mkt">{x.title}</h3>
+              <p className="b-small">{x.outcome}</p>
+              <p className="s-gap__px"><span><span className="b-label">Kalshi</span><b className="s-big b-num">{cents(x.kalshi)}</b></span><span><span className="b-label">Polymarket</span><b className="s-big b-num">{cents(x.polymarket)}</b></span></p>
+              <p className="b-small">Per $100, the cheaper venue pays {dollars(extra)} more if {x.outcome} wins.</p>
+            </Panel>
+          );
+        })}
+      </div>
+      <p className="b-small b-center">Best prices to buy right now. In the US, Insidir links to Kalshi only. Information, not advice.</p>
+    </Stage>
+  );
+}
+
+export function HomePage({ d, search, userId }: { d: Home; search: boolean; userId: string }) {
   const live = d.polledAt !== null && d.now - d.polledAt < 5 * 60_000;
   return (
     <Frame member current="home" testid="member-home">
@@ -46,13 +76,16 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
           {d.top ? <div className="s-col"><Ticket bet={d.top.bet} edge={d.top.edge} art={d.top.art} testid="home-ticket" /></div> : null}
         </Stage>
 
+        <div className="hm-bar">
+        <LiveStrip initial={{ now: d.now, money: d.today?.money ?? d.day?.money ?? 0, bets: d.today?.bets ?? d.day?.bets ?? 0, window: d.today ? "today" : "24h", lastBetAt: d.lastBetAt, polledAt: d.polledAt }} />
         <nav className="hm-nav" aria-label="Sections" data-testid="home-nav">
           {[["overview", "Today"], ["ai", "AI analyst"], ...(d.disagree.length ? [["disagree", "Money vs price"]] : []), ...(d.election && d.election.day.races.length ? [["election", "Election"]] : []),
-            ...(d.board.length ? [["board", "Live board"]] : []), ...(d.wallets.length ? [["wallets", "Wallets"]] : []), ...(d.gaps.length ? [["prices", "Best price"]] : []), ["desk", "Your desk"]]
+            ...(d.board.length ? [["board", "Live board"]] : []), ...(d.wallets.length ? [["wallets", "Wallets"]] : []), ["desk", "Your desk"]]
             .map(([id, t]) => <a key={id} href={`#${id}`}>{t}</a>)}
         </nav>
+        </div>
 
-        <AiDesk d={d} />
+        <AiDesk d={d} userId={userId} />
 
         {d.disagree.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6 }} id="disagree" testid="home-disagree" labelledBy="dis-h" className="s-pinstage">
@@ -96,25 +129,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
           </Stage>
         ) : null}
 
-        {d.gaps.length ? (
-          <Stage bg={{ kind: "photo", photo: PHOTOS.golf, dark: 0.6 }} id="prices" testid="home-gaps" labelledBy="gap-h">
-            <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={d.insight.gaps} fallback={["Same bet,", "two prices."]} size={52} /><p className="hm-plain"><b>In plain English:</b> the same bet costs different amounts on Kalshi and Polymarket. Buying where it's cheaper means a bigger payout if you win.</p></div>
-            <div className="s-cards" data-stagger="">
-              {d.gaps.map(g => {
-                const lo = Math.min(g.kalshi, g.polymarket), hi = Math.max(g.kalshi, g.polymarket), extra = 100 / lo - 100 / hi;
-                return (
-                  <Panel key={g.title + g.outcome} className="s-gap" testid="gap-card">
-                    <h3 className="s-ticket__mkt">{g.title}</h3>
-                    <p className="b-small">{g.outcome}</p>
-                    <p className="s-gap__px"><span><span className="b-label">Kalshi</span><b className="s-big b-num">{cents(g.kalshi)}</b></span><span><span className="b-label">Polymarket</span><b className="s-big b-num">{cents(g.polymarket)}</b></span></p>
-                    <p className="b-small">Per $100, the cheaper venue pays {dollars(extra)} more if {g.outcome} wins.</p>
-                  </Panel>
-                );
-              })}
-            </div>
-            <p className="b-small b-center">Best prices to buy right now. In the US, Insidir links to Kalshi only. Information, not advice.</p>
-          </Stage>
-        ) : null}
+        <Suspense fallback={null}><GapsStage now={d.now} /></Suspense>
 
         <Stage bg={{ kind: "photo", photo: PHOTOS.hero, dark: 0.55 }} id="desk" testid="home-desk" labelledBy="desk-h">
           <div className="b-head"><p className="hm-eyebrow">Your desk</p><Insight id="desk-h" as="h2" text={d.insight.desk} fallback={["Your desk."]} size={52} /><p className="hm-plain"><b>In plain English:</b> your own corner: bets you copied, wallets you follow, and your pings.</p></div>

@@ -38,18 +38,15 @@ export interface Home {
   board: BoardBet[];
   stream: StreamData | null;
   wallets: WalletCard[];
-  gaps: PriceGap[];
   desk: YourDesk; copies: YourCopies | null;
   /** Each open copy's price now (its side), by copy id: the result so far. */
   copyNow: Record<number, number>;
   day: { money: number; bets: number } | null;
-  insight: { hero: string | null; disagree: string | null; board: string | null; wallets: string | null; gaps: string | null; desk: string | null };
+  insight: { hero: string | null; disagree: string | null; board: string | null; wallets: string | null; desk: string | null };
   polledAt: number | null; lastBetAt: number | null;
   /** The AI analyst on the home: today's brief (written by the AI from our data, numbers verified; the template when the
    *  model is slow or off), the member's watched bets, and the 24-hour data strip. */
-  ai: { brief: Brief | null; watching: number; markets: number; topCategory: string | null;
-    /** The Bet Briefing for today's #1 position's market: the first line of its key sections (members see sides). */
-    briefing: { title: string; href: string; origin: string; lines: Array<{ k: string; t: string }> } | null;
+  ai: { watching: number; markets: number; topCategory: string | null;
     /** The last 24 hours of $1M+ money: by hour (oldest first, 24 values) and by category (biggest first). */
     hours: number[]; cats: Array<{ category: string; total: number }> };
 }
@@ -104,7 +101,7 @@ export async function walletCards(db: Db, now: number, userId: string | null, li
 
 export async function homeData(db: Db, userId: string, settings: { alertPush?: boolean }, now: number): Promise<Home> {
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("home", e instanceof Error ? e.message : e); return d; });
-  const [k, flow, pool, ls, el, desk, copies, gaps, polled, last, streamRows] = await Promise.all([
+  const [k, flow, pool, ls, el, desk, copies, polled, last, streamRows] = await Promise.all([
     safe(kpis(db, now), []),
     safe(recentBets(db, { now, limit: 40, member: true, tier: "millionaire", since: now - DAY }), [] as BoardBet[]),
     safe(marketMoney(db, { since: now - DAY, limit: 60, now }), []),
@@ -112,9 +109,8 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     isElectionDay(now) ? safe(electionDay(db, now, true), null) : Promise.resolve(null),
     safe(yourDesk(db, userId, settings), { pushOn: false, devices: 0, following: 0, copies: { open: 0, settled: 0, centsSince: null } }),
     safe(yourCopies(db, userId, 20), null),
-    safe(priceGaps(db, (clients ??= { kalshi: new KalshiClient(), polymarket: new PolymarketClient() }), now), [] as PriceGap[]),
     safe(db.execute(sql`select last_ok_at as at from terminal.worker_heartbeats where job = 'moves:polymarket'`).then(r => (r.rows[0] as { at: string | null } | undefined)?.at ?? null), null),
-    safe(db.execute(sql`select max(at) as at from terminal.millionaire_bets`).then(r => (r.rows[0] as { at: string | null }).at), null),
+    safe(db.execute(sql`select max(at) as at from terminal.millionaire_bets where tier = 'millionaire'`).then(r => (r.rows[0] as { at: string | null }).at), null),
     safe(streamFor(db, now), null),
   ]);
   const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
@@ -127,11 +123,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
   const hours = Array.from({ length: 24 }, () => 0);
   for (const r of hourRows) hours[Math.min(23, Math.max(0, Number(r.h)))]! += Number(r.d);
   const cats = catRows.map(r => ({ category: r.category, total: Number(r.d) })).filter(c => c.total > 0);
-  const [brief, watching] = await Promise.all([
-    within(buildBrief(db, now, { member: true, userId, useModel: true }), 3500, null as Brief | null)
-      .then(b => b ?? within(buildBrief(db, now, { member: true, userId, useModel: false }), 2500, null as Brief | null)),
-    safe(db.execute(sql`select count(*)::int as n from terminal.watched_bets where user_id = ${userId}`).then(r => Number((r.rows[0] as { n?: number } | undefined)?.n ?? 0)), 0),
-  ]);
+  const watching = await safe(db.execute(sql`select count(*)::int as n from terminal.watched_bets where user_id = ${userId}`).then(r => Number((r.rows[0] as { n?: number } | undefined)?.n ?? 0)), 0);
   const v = (key: string) => k.find(x => x.key === key)?.value ?? 0;
   const today = v("money") > 0 ? { money: v("money"), bets: v("bets"), wallets: v("wallets") } : null;
   // Just after midnight ET today can be empty: the last 24 hours, said as such.
@@ -145,34 +137,28 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
   // Today's #1 open position: the biggest live (undecided) millionaire bet, one per market.
   const live = flow.filter(b => !decision(b) && b.priceNow !== null).sort((a, b) => b.amount - a.amount);
   const top = live[0] ?? null;
+  // Venue reads are bounded: the page never waits long on Polymarket (the ticket shows without its chart instead).
   const [edge, art] = top ? await Promise.all([
-    safe(edgeFor(db, (poly ??= new PolymarketClient()), top.id, now), null),
-    safe(artFor([top.marketId]).then(m => m.get(top.marketId) ?? null), null),
+    within(edgeFor(db, (poly ??= new PolymarketClient()), top.id, now), 1500, null),
+    within(artFor([top.marketId]).then(m => m.get(top.marketId) ?? null), 1000, null),
   ]) : [null, null];
-  const KEYS: Record<string, string> = { rules: "Wins if", cost: "Costs and pays", who: "Big money", read: "The read" };
-  const briefing = top ? await within(getBriefing(db, top.marketId, now).then(b => b && !b.result ? {
-    title: b.title, href: `/briefing?m=${encodeURIComponent(b.marketId)}`, origin: b.origin,
-    lines: b.sections.filter(x => KEYS[x.key] && x.lines[0]).map(x => ({ k: KEYS[x.key]!, t: x.lines[0]! })),
-  } : null), 4000, null) : null;
   const dis = disagreements(pool).slice(0, 3);
   const stream = streamRows;
   const rec = await safe(last10(db, ls.map(l => l.wallet)), new Map());
   const wallets = ls.map(l => ({ ...l, last10: rec.get(l.wallet) ?? null }));
-  const g = gaps[0];
   const openCopies = copies?.list.filter(x => x.result === null) ?? [];
   return {
     now, today, top: top ? { bet: top, edge, art: art && !(logosOff() && SPORTS.has(top.category)) ? art : null } : null,
-    copyNow, day, stream, disagree: dis, election: el ? { day: el, insight: raceInsight(el) } : null, board: flow.slice(0, 24), wallets, gaps: gaps.slice(0, 3), desk, copies,
+    copyNow, day, stream, disagree: dis, election: el ? { day: el, insight: raceInsight(el) } : null, board: flow.slice(0, 24), wallets, desk, copies,
     insight: {
       hero: today ? `Wallets up $1M+ bet ${dollars(today.money)} today.` : day ? `Wallets up $1M+ bet ${dollars(day.money)} in the last 24 hours.` : null,
       disagree: dis[0] ? `Millionaires are ${pct(dis[0].share)} on ${dis[0].outcome}. The price says ${c(dis[0].price)}.` : null,
       board: boardInsight(live),
       wallets: walletsInsight(wallets),
-      gaps: g ? `${g.outcome} costs ${c(g.kalshi)} on Kalshi and ${c(g.polymarket)} on Polymarket.` : null,
       desk: openCopies.length ? `You have ${openCopies.length} open ${openCopies.length === 1 ? "copy" : "copies"}.` : null,
     },
     polledAt: polled ? new Date(polled).getTime() : null, lastBetAt: last ? new Date(last).getTime() : null,
-    ai: { hours, cats, brief, briefing: briefing && briefing.lines.length ? briefing : null, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
+    ai: { hours, cats, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
   };
 }
 
@@ -219,4 +205,29 @@ export async function constellation(db: Db, since: number, limit = 40): Promise<
     if (!shared || ws.length > shared.wallets) shared = { title: m.title, wallets: ws.length, same };
   }
   return { stars, links: links.slice(0, 120), shared };
+}
+
+/* ---------- The slow parts, streamed: each its own read, so the page never waits on a model or a venue. ---------- */
+
+const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
+
+/** Today's brief (the AI's wording when it comes back in time, else the template from the same facts) and the member's
+ *  watched bets in it. */
+export async function homeBrief(db: Db, userId: string, now: number): Promise<Brief | null> {
+  return (await within(buildBrief(db, now, { member: true, userId, useModel: true }), 3500, null as Brief | null))
+    ?? within(buildBrief(db, now, { member: true, userId, useModel: false }), 2500, null as Brief | null);
+}
+
+/** The Bet Briefing for one market: the first line of its key sections (members see sides). */
+export async function homeBriefing(db: Db, marketId: string, now: number): Promise<{ title: string; href: string; origin: string; lines: Array<{ k: string; t: string }> } | null> {
+  const KEYS: Record<string, string> = { rules: "Wins if", cost: "Costs and pays", who: "Big money", read: "The read" };
+  const b = await within(getBriefing(db, marketId, now), 4000, null);
+  if (!b || b.result) return null;
+  const lines = b.sections.filter(x => KEYS[x.key] && x.lines[0]).map(x => ({ k: KEYS[x.key]!, t: x.lines[0]! }));
+  return lines.length ? { title: b.title, href: `/briefing?m=${encodeURIComponent(b.marketId)}`, origin: b.origin, lines } : null;
+}
+
+/** The same bet on Kalshi and Polymarket (venue reads, bounded). */
+export async function homeGaps(db: Db, now: number): Promise<PriceGap[]> {
+  return (await within(priceGaps(db, (clients ??= { kalshi: new KalshiClient(), polymarket: new PolymarketClient() }), now), 5000, [] as PriceGap[])).slice(0, 3);
 }
