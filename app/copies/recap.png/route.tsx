@@ -11,7 +11,7 @@ import { getDb, hasDatabase } from "@/lib/db";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-const INK = "#0b0b12", MUTED = "#6b6b73", BG = "#f7f7f8", GREEN = "#0f7a45", RED = "#c4321f";
+const INK = "#e8ecf3", MUTED = "#8e9ab0", BG = "#101a2b", GREEN = "#19d27a", RED = "#ff4d6a";
 const col = (v: number) => (v > 0.5 ? GREEN : v < -0.5 ? RED : INK);
 
 export async function GET(req: NextRequest) {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   );
   return new ImageResponse(
     (
-      <div style={{ width: 1080, height: 1350, display: "flex", flexDirection: "column", background: "#ffffff", color: INK, padding: "104px 88px", fontFamily: "sans-serif" }}>
+      <div style={{ width: 1080, height: 1350, display: "flex", flexDirection: "column", background: "#0b1220", color: INK, padding: "104px 88px", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", fontSize: 40, fontWeight: 600, letterSpacing: -1 }}>insidir</div>
         <div style={{ display: "flex", marginTop: 80, fontSize: 76, fontWeight: 600, lineHeight: 1.05, letterSpacing: -3 }}>Your winner vs. the field</div>
         <div style={{ display: "flex", marginTop: 20, fontSize: 34, color: MUTED }}>This week, ${size} on every move</div>
