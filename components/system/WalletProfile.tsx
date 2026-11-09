@@ -8,12 +8,12 @@
  *   Holding    open positions, entry → now (members)
  *   History    every large position we've seen, newest first, a page at a time (members)
  * Only ever the short address: never a name, a username, a face or who is behind it. The numbers are for members
- * and never reach a visitor's browser. The Polymarket profile is linked outside the US only. */
+ * and never reach a visitor's browser. A wallet is never linked to its Polymarket profile
+ * (house rule: tier + short address only; its Polygonscan address page is the source, for members). */
 import type { Viewer } from "@/lib/auth/viewer";
 import type { Db } from "@/lib/db";
 import { FollowLink } from "@/components/desk/Act";
 import { pct, pts } from "@/components/stats/Stats";
-import { polymarketProfileUrl } from "@/lib/exchanges/polymarket";
 import { openPositions } from "@/lib/moves/pages";
 import { walletLabel } from "@/lib/moves/records";
 import { followList } from "@/lib/moves/store";
@@ -59,7 +59,6 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
   const stats = s && showStats(s) ? s : null;
   const rank = db && stats ? await profitRank(db, stats.profit).catch(() => null) : null;
   const bp = perf(settledAll.filter(m => countsToRecord(m)));
-  const source = viewer.region === "non_us" ? polymarketProfileUrl(wallet) : null;
   const pages = Math.max(1, Math.ceil(hist.total / PAGE_SIZE));
   const sorted = [...markets].sort((a, b) => b.pnl - a.pnl);
   const wins = sorted.filter(m => m.pnl > 0).slice(0, 5), losses = sorted.filter(m => m.pnl < 0).reverse().slice(0, 5);
@@ -80,7 +79,6 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
         sub="One person can use several wallets; these numbers cover this wallet only. Insidir never says who is behind a wallet."
         right={<div className="b-ctas">
           {paid ? <FollowLink wallet={wallet} initial={following} /> : <Pill href="/go" data-checkout="profile">Start for ${TRIAL.fee} to follow</Pill>}
-          {source ? <a className="b-btn t-btn2" href={source} target="_blank" rel="noopener noreferrer">See their Polymarket profile</a> : null}
         </div>} />
       <PanelGrid>
         {!paid ? (
