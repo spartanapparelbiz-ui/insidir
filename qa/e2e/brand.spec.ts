@@ -191,12 +191,19 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
 });
 
-test("a member's home is the homepage, unlocked: stages with computed headlines, today's #1 position as a ticket, the live board with Copy on the selected row only, their desk; search inline", async ({ page, context }) => {
+test("a member's home is the terminal workspace: numbered panels (board, watch my bet, alerts, wallet monitor, market, Bet Briefing, Daily Brief, Ask Insidir, today's #1 position, desk), keyboard on the board, search in the top bar", async ({ page, context }) => {
+  test.setTimeout(90_000);
   await signIn(context, "insidir");
   await page.goto("/");
-  await expect(page.locator('[data-home="stages"]')).toBeVisible();
-  // The hero: a computed headline about today's (or the last 24 hours') millionaire money, on the homepage's stage.
+  await expect(page.locator('[data-home="workspace"]')).toBeVisible();
+  // The first panel: a computed headline about today's (or the last 24 hours') millionaire money.
   await expect(page.getByTestId("home-hero").getByRole("heading", { level: 1 })).toHaveText(/^Wallets up \$1M\+ bet \$[\d.]+[KM] (today|in the last 24 hours)\.$/);
+  // Every panel has a numbered header and a source line.
+  for (const id of ["home-board", "home-watch", "home-alerts", "home-monitor", "home-market", "home-briefing", "home-brief", "home-ask", "home-top", "home-desk"]) {
+    const p = page.getByTestId(id);
+    await expect(p, id).toBeVisible();
+    await expect(p.locator(".t-panel__n").first(), id).toHaveText(/^\d+\)$/);
+  }
   // Today's #1 open position: $85K on the Chiefs (now 51¢); every millionaire entry on that side, $85K + $20K, at an
   // average 47¢; then Copy at the price now and Follow.
   const t = page.getByTestId("home-ticket");
@@ -208,27 +215,44 @@ test("a member's home is the homepage, unlocked: stages with computed headlines,
   await expect(t.getByTestId("desk-follow")).toBeVisible();
   // Never a wallet's face: the ticket names a short address and its profit only.
   await expect(t).toContainText(/0xe2e0…0001 · \+\$3\.1M all-time/);
-  // The live board: written rows, no logos; Copy appears only on the selected row.
+  // The live board, a terminal table: no logos, sides shown, every row explained; Copy only on the selected row.
   const board = page.getByTestId("live-board");
   await board.scrollIntoViewIfNeeded();
   await expect(board.getByTestId("bet-row").first()).toHaveAttribute("data-bet", "e2e:mb4");
   await expect(board.locator("img")).toHaveCount(0);
+  await expect(board.locator('[data-locked="side"]')).toHaveCount(0);
+  expect(await board.getByTestId("bet-explain").count()).toBe(await board.getByTestId("bet-row").count());
   await expect(board.getByTestId("bet-copy")).toHaveCount(0);
   await board.getByTestId("bet-row").first().locator("button").first().click();
   await expect(board.getByTestId("bet-copy")).toHaveCount(1);
   await expect(board.getByTestId("bet-copy")).toHaveAttribute("href", "/copy/e2e%3Amb4");
+  // The Bet Briefing for the Market panel's market: wins if, price and payout, the big money, the read.
+  await expect(page.getByTestId("home-briefing").getByTestId("briefing-section").first()).toBeVisible();
   // Their desk: copies, follows, pings; never a stat that reads 0.
   const desk = page.getByTestId("home-desk");
   await expect(desk.getByTestId("desk-follows")).not.toContainText(/^0$/m);
-  // No monospace anywhere, no sidebar.
-  expect(await page.evaluate(() => [...document.querySelectorAll("main *")].some(e => /mono/i.test(getComputedStyle(e).fontFamily)))).toBe(false);
+  // The terminal's type: numbers in IBM Plex Mono; no sidebar.
+  expect(await page.getByTestId("home-board").locator("td").first().evaluate(e => getComputedStyle(e).fontFamily)).toMatch(/plex.?mono|ui-monospace/i);
   await expect(page.locator(".b-sidebar")).toHaveCount(0);
-  // Search: a market in plain words comes back inline with its millionaire side.
-  // (Tennis match 100 has millionaire money: $74K + $40K on Player A.)
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.getByTestId("desk-search").getByRole("textbox").fill("Tennis match 100");
-  await page.getByTestId("desk-search").getByRole("textbox").press("Enter");
-  await expect(page.getByTestId("desk-search-result").locator('a[href="/market/0xe2etennis100"]')).toBeVisible({ timeout: 10_000 });
+  // Ask Insidir: an example question answered from Insidir's data (or "I don't have that."), never empty.
+  await page.getByTestId("home-ask-example").first().click();
+  await expect(page.getByTestId("home-ask-text")).toHaveText(/\S/, { timeout: 30_000 });
   await page.screenshot({ path: shotName("brand-home", page) });
   await noHorizontalScroll(page);
+  // Keyboard: arrow keys select board rows, Enter opens the bet.
+  await page.getByTestId("board-table").first().focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(board.locator('tr[aria-selected="true"]')).toHaveAttribute("data-bet", "e2e:mb4");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/bet\/e2e%3Amb4$/);
+});
+
+test("the terminal's command line finds a market from the member home (search is in the top bar)", async ({ page, context }, info) => {
+  test.skip(info.project.name === "phone-390", "phones open the command line from the search key; covered on desktop");
+  await signIn(context, "insidir");
+  await page.goto("/");
+  // Search: a market in plain words comes back inline. (Tennis match 100 has millionaire money: $74K + $40K on Player A.)
+  await page.getByTestId("t-cmd").getByRole("textbox").fill("Tennis match 100");
+  await page.getByTestId("t-cmd").getByRole("textbox").press("Enter");
+  await expect(page.getByTestId("desk-search-result").locator('a[href="/market/0xe2etennis100"]')).toBeVisible({ timeout: 10_000 });
 });

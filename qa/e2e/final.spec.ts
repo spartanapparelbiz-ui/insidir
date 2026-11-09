@@ -81,10 +81,10 @@ test("the /go paywall panel and every stage of a member's home are visible", asy
   await expect(panel.getByTestId("paywall-price")).toContainText("$1 today");
   expect(await panel.evaluate(e => { let o = 1; for (let x: Element | null = e; x; x = x.parentElement) o *= Number(getComputedStyle(x).opacity); return o; })).toBeGreaterThan(0.99);
   await signIn(context, "insidir");
-  // The member home: every stage visible at rest (no reveal left hidden).
+  // The member home: every panel visible at rest (no reveal left hidden).
   await page.goto("/");
-  await expect(page.locator('[data-home="stages"]')).toBeVisible();
-  for (const id of ["home-hero", "home-ticket", "desk-search", "home-board", "live-board", "home-desk"]) {
+  await expect(page.locator('[data-home="workspace"]')).toBeVisible();
+  for (const id of ["home-hero", "home-ticket", "home-board", "live-board", "home-watch", "home-briefing", "home-ask", "home-desk"]) {
     const el = page.getByTestId(id).first();
     await expect(el, id).toBeVisible();
     // At rest: once its reveal has played (settle/lift take under a second), nothing stays faded.
