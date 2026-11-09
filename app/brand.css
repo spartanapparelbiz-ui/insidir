@@ -1659,3 +1659,9 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
 .fr-nums div:last-child { border-bottom: 0; padding-bottom: 0; }
 .fr-nums dd { margin: 0; color: var(--ink); font-size: 28px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
 .fr-nums dt { color: var(--dim); font-size: 13px; }
+
+/* The funnel: black and white photos like the rest of the site; before paying, the footer is the small print only. */
+.b-go img { filter: grayscale(1) contrast(1.08); }
+.b-go-foot--min .b-foot nav { display: none; }
+.b-hero-terms { margin: calc(14 * var(--u)) 0 0; color: rgba(255, 255, 255, .78); text-shadow: 0 1px 12px rgba(0, 0, 0, .9); font-size: calc(13 * var(--u)); letter-spacing: -0.1px; text-align: center; }
+@media (max-width: 760px) { .b-hero-terms { font-size: 12.5px; padding: 0 20px; } }

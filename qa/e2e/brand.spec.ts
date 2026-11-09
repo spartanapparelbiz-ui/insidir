@@ -136,8 +136,6 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await page.getByTestId("go-next").click();
   await expect(go).toHaveAttribute("data-step", "where");
   await page.locator('[data-testid=go-answer][data-value=kalshi]').click();
-  await expect(go).toHaveAttribute("data-step", "size");
-  await page.locator('[data-testid=go-answer][data-value="25-100"]').click();
   await expect(go).toHaveAttribute("data-step", "building");
   await expect(page.getByTestId("go-ticks")).toContainText("Reading 6 millionaire wallets");
   await expect(page.getByTestId("go-ticks")).toContainText("bets in Football and Politics today");
@@ -179,7 +177,7 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await page.getByTestId("ping-next").click();
   await expect(go).toHaveAttribute("data-step", "follow");
   const saved = (await q<{ settings: { go: { categories: string[]; where: string; size: string }; betOn: string[]; remindBeforeCharge: boolean }; utm: Record<string, string> | null }>("select settings, utm from terminal.users where email = $1", [email]))[0]!;
-  expect(saved.settings.go).toEqual({ categories: ["football", "politics"], where: "kalshi", size: "25-100" });
+  expect(saved.settings.go).toEqual({ categories: ["football", "politics"], where: "kalshi", size: null });
   expect(saved.settings.betOn).toEqual(["nfl", "cfb", "other"]);
   expect(saved.settings.remindBeforeCharge).toBe(true);
   expect(saved.utm).toMatchObject({ utm_source: "e2e", utm_campaign: "brand" });

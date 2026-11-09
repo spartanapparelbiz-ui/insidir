@@ -30,8 +30,9 @@ const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "payw
 /** The steps with the picture side (a photo and a live bet beside the question). */
 const ART: Step[] = ["hook", "where", "size", "paywall", "checkout"];
 /** The steps before paying, as the header counts them ("building" plays by itself and isn't a step). */
-const PRE: Step[] = ["hook", "cats", "where", "size", "aha", "paywall", "checkout"];
-export const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "size", paywall: "aha", checkout: "paywall" };
+// The steps before paying, as the visitor sees them (the bet-size question is retired: its answer was never used).
+const PRE: Step[] = ["hook", "cats", "where", "aha", "paywall", "checkout"];
+export const BACK: Partial<Record<Step, Step>> = { cats: "hook", where: "cats", size: "where", aha: "where", paywall: "aha", checkout: "paywall" };
 const KEY = "insidir_go";
 
 interface Answers { cats: CategorySlug[]; where: Where | null; size: Size | null; remind: boolean; /** Where to land at the end (a check they paid from). */ next?: string | null }
@@ -107,6 +108,8 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
   bg: ReactNode;
 }) {
   const [step, setStep] = useState<Step>(start);
+  // Count only the steps this visitor will see: from where they came in (a Start button lands on the first question).
+  const shown = start === "hook" || !PRE.includes(start) ? PRE : PRE.slice(PRE.indexOf(start));
   const [a, setA] = useState<Answers>({ cats: [], where: null, size: null, remind: true });
   const [d, setD] = useState<GoData>(initial);
   const [ticks, setTicks] = useState(0);
@@ -223,7 +226,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
           <div className="b-answers">
             {list.map(([k, l], i) => (
               <button key={k} type="button" className="b-btn b-btn-lg b-ghost" data-testid="go-answer" data-value={k} {...st(0.5 + i * 0.07)}
-                onClick={() => { if (step === "where") { put({ where: k as Where }); go("size"); } else { put({ size: k as Size }); go("building"); } }}>{l}<Arrow /></button>
+                onClick={() => { if (step === "where") { put({ where: k as Where }); go("building"); } else { put({ size: k as Size }); go("building"); } }}>{l}<Arrow /></button>
             ))}
           </div>
         </GoStage>
@@ -320,7 +323,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       {/* The header: the mark in the middle, the step count on the right (before paying; after, it's account setup). */}
       <header className="b-go-top" aria-hidden="true">
         <span className="b-go-top__mark"><Mark /></span>
-        {PRE.includes(step) ? <span className="b-go-top__n">Step {PRE.indexOf(step) + 1} of {PRE.length}</span> : null}
+        {shown.includes(step) ? <span className="b-go-top__n">Step {shown.indexOf(step) + 1} of {shown.length}</span> : null}
       </header>
       <div className="b-go-bar" role="progressbar" aria-label="Your progress" aria-valuemin={1} aria-valuemax={ORDER.length} aria-valuenow={ORDER.indexOf(step) + 1}
         aria-valuetext={`Step ${ORDER.indexOf(step) + 1} of ${ORDER.length}`} data-testid="go-progress"><span style={{ transform: `scaleX(${progress})` }} /></div>
@@ -343,7 +346,8 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
           <div className="b-go-main">{body}</div>
         </div>
       ) : <div key={step} style={{ position: "relative", zIndex: 2 }}>{body}</div>}
-      <div style={{ position: "relative", zIndex: 2 }}><BrandFoot inline /></div>
+      {/* Before paying, only the small print: no menu of ways out mid-funnel. */}
+      <div style={{ position: "relative", zIndex: 2 }} className={PRE.includes(step) ? "b-go-foot--min" : undefined}><BrandFoot inline /></div>
     </main>
   );
 }

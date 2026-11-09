@@ -1,6 +1,7 @@
 "use client";
 /* More scroll motion, on top of the stages' own entrances (StageMotion, ScrollFx), progressive enhancement only:
- *   - panels, rows, tiles, questions and section headings below the fold rise in one after another as they enter
+ *   - panels, rows, tiles and questions below the fold rise in one after another as they enter (headings never hide:
+ *     the page reads in full at rest, qa/e2e/final.spec.ts)
  *     (elements already on screen at load are never hidden, so nothing flashes);
  *   - the first stage's words drift up and fade as you scroll past them, its photo slowly zooms;
  *   - every other stage photo drifts a little slower than the page (parallax);
@@ -11,7 +12,6 @@ import { useEffect } from "react";
 const TARGETS = [
   ".b-stage:not([data-first]) .b-glass",
   ".b-stage:not([data-first]) .b-rows > li",
-  ".b-stage:not([data-first]) .b-head",
   ".b-stage:not([data-first]) details",
   ".b-stage:not([data-first]) .b-ctas",
   ".s-cards > *",
