@@ -9,6 +9,7 @@ import { isReady } from "@/lib/features";
 import { parseFollow } from "@/lib/follows";
 import { canFollow } from "@/lib/moves/gate";
 import { recordEvent } from "@/lib/analytics";
+import { checkFollowActivation } from "@/lib/metrics/events";
 import { VISITOR_COOKIE } from "@/lib/auth/session";
 import { follow, followList, unfollow } from "@/lib/moves/store";
 import { queueHistory } from "@/lib/stocks/history";
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
   if (f.kind === "insider" || f.kind === "company") await queueHistory(db, [{ kind: f.kind === "insider" ? "owner" : "issuer", cik: f.target, name: null }]).catch(() => undefined);
   // The funnel's "first follow" (lib/analytics.ts FUNNEL): the member's first follow of any kind.
   if (!mine.length) await recordEvent({ name: "first_follow", visitorId: req.cookies.get(VISITOR_COOKIE)?.value ?? null, userId: viewer.user.id, props: { kind: f.kind } }).catch(() => undefined);
+  if (f.kind === "trader") await checkFollowActivation(db, viewer.user.id).catch(() => undefined);
   return NextResponse.json({ ok: true, message: "Following." });
 }
 

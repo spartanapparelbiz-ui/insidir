@@ -6,6 +6,7 @@
  * "Wallets up $1M+" means $1M+: Pro wallets ($100K–$1M) only under the Pro filter. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Verify } from "@/components/brand/Verify";
+import { betExplain } from "@/lib/brief/explain";
 import { CATEGORIES, category as categoryInfo, type CategorySlug } from "@/lib/brand/categories";
 import { decidedText, decision } from "@/lib/millionaires/decided";
 import { groupBets } from "@/lib/millionaires/group";
@@ -68,6 +69,7 @@ export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: server
                 <span className="s-row__amt b-num">{b.n > 1 ? `${dollars(b.amount)} total` : dollars(b.amount)}</span>
                 <span className="s-row__ago b-small">{ago(b.at, now)}</span>
                 <span className="b-small s-row__meta">{b.n > 1 ? `${b.n} bets · ` : ""}on <b>{b.outcome}</b> at {b.n > 1 ? "avg " : ""}{cents(b.priceThen)} · now {cents(b.priceNow)}{d ? <span className={d > 0 ? "s-up" : "s-down"}> {d > 0 ? "up" : "down"} {Math.abs(d)}¢</span> : null} · {b.short}{b.pnl !== null ? ` (${b.pnl >= 0 ? "+" : "−"}${dollars(Math.abs(b.pnl))} all-time)` : ""}</span>
+                {betExplain(b) ? <span className="b-small" style={{ gridColumn: "1 / -1" }} data-testid="bet-explain">{betExplain(b)}</span> : null}
               </button>
               {b.verify ? <span className="s-row__verify"><Verify v={b.verify} marketId={b.marketId} polymarket={polymarket} compact /></span> : null}
               {on ? <span className="s-row__act">{dec ? <span className="b-small">{decidedText(dec, b.outcome)}</span> : copy ? <a className="b-btn b-btn-lg b-primary" href={`/copy/${encodeURIComponent(b.id)}`} data-testid="bet-copy">Copy at {cents(b.priceNow)}</a> : null}</span> : null}

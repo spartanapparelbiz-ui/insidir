@@ -26,7 +26,7 @@ export const MAX_MOVE_RULES = 10;
 export const MAX_SIZE_USD = 10_000_000;
 
 const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
-  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize",
+  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize", "morningBriefEmail",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
@@ -91,6 +91,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     ...(current.alertSplits === false ? { alertSplits: false } : {}),
     ...(current.copySize ? { copySize: current.copySize } : {}),
     ...(current.betOn ? { betOn: [...current.betOn] } : {}),
+    ...(current.morningBriefEmail ? { morningBriefEmail: true } : {}),
   };
   const has = (k: string): boolean => input[k] !== undefined;
 
@@ -163,6 +164,11 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
       const b = bool(input[k]);
       if (b === null) errors.push(`${k} must be on or off.`); else s[k] = b;
     } else if (complete) s[k] = false;
+  }
+  // The 8 AM brief by email (lib/brief/email.ts): its own form, so a save elsewhere never turns it off.
+  if (has("morningBriefEmail")) {
+    const b = bool(input.morningBriefEmail);
+    if (b === null) errors.push("morningBriefEmail must be on or off."); else s.morningBriefEmail = b;
   }
   if (has("alertSplits")) {
     const b = bool(input.alertSplits);

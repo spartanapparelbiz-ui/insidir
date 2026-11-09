@@ -10,6 +10,8 @@ import { createSession, setSessionCookie } from "@/lib/auth/session";
 import { readUtm, UTM_COOKIE } from "@/lib/analytics";
 import { finishLogin, LOGIN_COOKIE, LoginFailed, logLine, rateLimited, redirectUri, signInAs } from "@/lib/auth/whop-login";
 import { getDb, hasDatabase } from "@/lib/db";
+import { FIRST_TOUCH_COOKIE, LAST_TOUCH_COOKIE } from "@/lib/attribution";
+import { attributeUser } from "@/lib/metrics/events";
 import { clientIp } from "@/lib/http";
 
 /** Pages a signed-in non-member asked for that they can still use; anywhere else (the home page included) they go to
@@ -37,6 +39,8 @@ export async function handleLoginCallback(req: NextRequest) {
     if (!r.userId) { logLine("signed in without Insidir: paywall"); return done(to(PAYWALL)); }
     const { token, expires } = await createSession(r.userId);
     void recordEvent({ name: r.created ? "account_created" : "login", userId: r.userId }).catch(() => undefined);
+    // Where they came from (lib/attribution.ts): saved once, never overwritten (a pay-first account gets it here too).
+    await attributeUser(db, r.userId, { first: req.cookies.get(FIRST_TOUCH_COOKIE)?.value, last: req.cookies.get(LAST_TOUCH_COOKIE)?.value, visitorId: req.cookies.get("insidir_vid")?.value ?? null }).catch(() => undefined);
     logLine(`signed in (${r.member ? "member" : "no membership"}${r.created ? ", new account" : ""})`);
     const next = safeNext(saved.next);
     const res = done(to(r.member || OPEN_TO_ALL.test(next) ? next : PAYWALL));

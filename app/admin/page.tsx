@@ -225,7 +225,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <h1 className="page__h">Admin</h1>
         <form method="post" action="/api/admin/logout"><button className="btn btn--ghost">Sign out</button></form>
       </div>
-      <nav className="adm__nav small" aria-label="Sections"><a href="#posts">Posts</a><a href="#retention">Retention</a><a href="#cancels">Cancel reasons</a><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#pictures">Pictures</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
+      <nav className="adm__nav small" aria-label="Sections"><a href="#posts">Posts</a><a href="#retention">Retention</a><a href="#cancels">Cancel reasons</a><a href="#accuracy">Accuracy</a><a href="/admin/funnel">Funnel by day</a><a href="/admin/metrics">Metrics by source</a><a href="#quarantine">Quarantine</a><a href="#matches">Matches</a><a href="#pictures">Pictures</a><a href="#funnel">Funnel</a><a href="#ab">A/B</a><a href="#utm">UTM</a><a href="#free">Free access</a></nav>
       {!hasDatabase() ? <p className="banner banner--err">No database. Set DATABASE_URL, then restart.</p> : null}
       {anyError ? <p className="banner banner--err">Some numbers couldn&apos;t be read from the database. Reload to try again.</p> : null}
       {q.saved ? <p className="banner" role="status">Saved. The matcher applies it on its next run.</p> : null}

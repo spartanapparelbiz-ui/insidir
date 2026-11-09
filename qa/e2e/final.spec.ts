@@ -140,7 +140,7 @@ test("header, footer and the phone menu: every link goes where it says", async (
       const r = await page.request.get(it.href.split("#")[0]!, { maxRedirects: 0 });
       expect(r.status(), `${it.text} → ${it.href}`).toBeLessThan(400);
       // The link's words name its destination (Start for $1 opens the funnel).
-      const want: Record<string, RegExp> = { Markets: /^\/markets/, Board: /^\/board/, Record: /^\/results/, FAQ: /faq/, Pricing: /pricing/, "Log in": /^\/login/, "Start for $1": /^\/go/, Terms: /^\/terms/, Privacy: /^\/privacy/, Status: /^\/status/ };
+      const want: Record<string, RegExp> = { Markets: /^\/markets/, Board: /^\/board/, Record: /^\/record/, Results: /^\/results/, FAQ: /faq/, Pricing: /pricing/, "Log in": /^\/login/, "Start for $1": /^\/go/, Terms: /^\/terms/, Privacy: /^\/privacy/, Status: /^\/status/ };
       if (want[it.text]) expect(it.href, it.text).toMatch(want[it.text]!);
     }
     return items.length;

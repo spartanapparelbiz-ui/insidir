@@ -84,9 +84,14 @@ export function utmFromSearch(params: URLSearchParams): Record<string, string> |
 
 export const heroVariant = (ab: string | undefined): HeroVariant => (/(^|,)hero:b(,|$)/.test(ab ?? "") ? "b" : "a");
 
-export async function recordEvent(e: { name: string; visitorId?: string | null; userId?: string | null; variant?: string | null; props?: Record<string, string | number | boolean> }): Promise<void> {
-  if (!hasDatabase()) return;
-  await getDb().insert(events).values({ name: e.name, visitorId: e.visitorId ?? "server", userId: e.userId ?? null, variant: e.variant ?? null, props: e.props ?? null });
+/** `dedupeKey`: an event that happens once (a trial starting, a refund): a second one with the same key is dropped.
+ *  Returns whether it was recorded. */
+export async function recordEvent(e: { name: string; visitorId?: string | null; userId?: string | null; variant?: string | null; props?: Record<string, string | number | boolean>; dedupeKey?: string | null; at?: Date }): Promise<boolean> {
+  if (!hasDatabase()) return false;
+  const row = { name: e.name, visitorId: e.visitorId ?? "server", userId: e.userId ?? null, variant: e.variant ?? null, props: e.props ?? null, dedupeKey: e.dedupeKey ?? null, ...(e.at ? { at: e.at } : {}) };
+  if (!e.dedupeKey) { await getDb().insert(events).values(row); return true; }
+  const r = await getDb().insert(events).values(row).onConflictDoNothing({ target: events.dedupeKey, where: sql`dedupe_key is not null` }).returning({ id: events.id });
+  return r.length > 0;
 }
 
 export interface FunnelRow { name: string; visitors: number }

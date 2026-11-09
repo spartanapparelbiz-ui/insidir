@@ -11,6 +11,7 @@ import { verifyWebhook, webhookRef } from "@/lib/billing/whop";
 import { whopRuntime } from "@/lib/billing/config";
 import { getDb } from "@/lib/db";
 import { webhookEvents } from "@/lib/db/schema";
+import { attributeUser, recordBillingFunnel } from "@/lib/metrics/events";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest) {
   try {
     const r = await applyBillingEvent(db, type, webhookRef(type, payload));
     if (type === "payment.succeeded" && r.userId && r.plan && r.plan !== "free") await recordEvent({ name: "paid", userId: r.userId, props: { plan: r.plan } }).catch(() => undefined);
+    // Attribution and the paying-user funnel (lib/metrics/events.ts): a pay-first account gets its source from the
+    // visitor that checked out; then trial start, conversion, renewal, cancel or refund, each logged once.
+    if (r.created && r.userId) {
+      await attributeUser(db, r.userId).catch(() => undefined);
+      await recordEvent({ name: "account_created", userId: r.userId, props: { via: "checkout" }, dedupeKey: `account_created:${r.userId}` }).catch(() => undefined);
+    }
+    await recordBillingFunnel(db, type, payload, r.userId).catch(e => console.error("billing funnel", e instanceof Error ? e.message : e));
     return NextResponse.json({ ok: true, user: r.userId, plan: r.plan, created: r.created });
   } catch (e) {
     // Let Whop retry: forget we saw it.
