@@ -11,7 +11,7 @@ test("a wallet's page: every stat from its resolved positions, for members; neve
   await page.goto(`/wallet/${TOP}`);
   const tile = (label: string) => page.locator(".s-stat").filter({ has: page.locator("dt", { hasText: new RegExp(`^${label}$`) }) }).locator("dd");
   await expect(tile("Record")).toHaveText("41–22");
-  await expect(tile("Win rate")).toHaveText("65%");
+  await expect(tile("Share won")).toHaveText("65%");
   await expect(tile("All-time net P&L")).toHaveText("+$1.2M");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("0xe2…aa");
   await expect(page.locator("main")).not.toContainText("E2E-Top");
