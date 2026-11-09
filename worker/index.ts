@@ -43,6 +43,8 @@ import { tagOnce } from "@/lib/trackers-tag";
 import { nightlyDue, RECORD_MS, recordOnce } from "@/lib/record/job";
 /** The day (ET) the record's nightly full pass last ran. */
 let recordNightlyDay: string | null = null;
+import { snapshotDaily, snapshotDue } from "@/lib/metrics/report";
+let metricsDay: string | null = null;
 import { marketInfoOnce } from "@/lib/markets/info";
 import { seenOnce, seenProgress } from "@/lib/follow/seen";
 import { followableCsv } from "@/lib/follow/report";
@@ -378,6 +380,14 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       const r = await recordOnce(getDb(), clients.polymarket instanceof PolymarketClient ? clients.polymarket : null, Date.now(), { full: true });
       recordNightlyDay = n.day;
       log(`record nightly: ${r.logged} logged, ${r.unusual} unusual, ${r.sourced} sourced, ${r.sold} sold, ${r.priced} priced, ${r.settled} settled`);
+    }),
+    // The daily metrics snapshot (/admin/metrics): yesterday's numbers per source, once a day after midnight ET.
+    every("metrics:daily", 30 * 60_000, async () => {
+      const d = snapshotDue(Date.now(), metricsDay);
+      if (!d.due) return;
+      const n = await snapshotDaily(getDb(), Date.now(), d.day);
+      metricsDay = d.day;
+      log(`metrics daily ${d.day}: ${n} rows`);
     }),
     // Proven wallets only: market makers, high-frequency accounts and arbitrage screened out daily.
     ...(clients.polymarket instanceof PolymarketClient ? [every("millionaires:screen", 5 * 60_000, async () => {

@@ -95,6 +95,11 @@ export const users = terminal.table("users", {
   ageConfirmedAt: timestamp("age_confirmed_at", { withTimezone: true }),
   /** First-touch UTM tags carried from the visit that led to signup. */
   utm: jsonb("utm").$type<Record<string, string>>(),
+  /** Attribution (lib/attribution.ts): the first touch (90-day cookie) and the latest one before signup, and the source
+   *  the account is counted under (ref, else utm_source, else the referrer's host, else "direct"). */
+  firstTouch: jsonb("first_touch").$type<Record<string, string | number>>(),
+  lastTouch: jsonb("last_touch").$type<Record<string, string | number>>(),
+  source: text("source"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [uniqueIndex("users_email_idx").on(t.email), uniqueIndex("users_whop_user_idx").on(t.whopUserId)]);
 
@@ -265,7 +270,32 @@ export const events = terminal.table("events", {
   variant: text("variant"),
   props: jsonb("props").$type<Record<string, string | number | boolean>>(),
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  /** Set on events that happen once (a trial starting, a refund, an activation): a second insert is a no-op. */
+  dedupeKey: text("dedupe_key"),
 }, t => [index("events_name_at_idx").on(t.name, t.at), index("events_visitor_idx").on(t.visitorId)]);
+
+/** One row per account per day it used Insidir signed in (D1/D7/D30 retention, lib/metrics). */
+export const userActivity = terminal.table("user_activity", {
+  userId: text("user_id").notNull(),
+  day: text("day").notNull(),
+}, t => [primaryKey({ columns: [t.userId, t.day] })]);
+
+/** The daily metrics snapshot (lib/metrics, worker metrics:daily): one row per day and source, plus source "__all__". */
+export const metricsDaily = terminal.table("metrics_daily", {
+  day: text("day").notNull(),
+  source: text("source").notNull(),
+  visits: integer("visits").notNull().default(0),
+  signups: integer("signups").notNull().default(0),
+  trials: integer("trials").notNull().default(0),
+  paid: integer("paid").notNull().default(0),
+  paying: integer("paying").notNull().default(0),
+  trialToPaid: doublePrecision("trial_to_paid"),
+  mrr: doublePrecision("mrr").notNull().default(0),
+  churn30: doublePrecision("churn30"),
+  activation: doublePrecision("activation"),
+  retention: jsonb("retention").$type<Record<string, number | null>>(),
+  computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.day, t.source] })]);
 
 /** One line per thing the hourly accuracy check re-read from its source (lib/accuracy/check.ts). */
 export const accuracyChecks = terminal.table("accuracy_checks", {

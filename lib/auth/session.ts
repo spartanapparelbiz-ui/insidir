@@ -1,5 +1,6 @@
 /* Our own sessions: a random token in an httpOnly cookie (30 days), its SHA-256 in terminal.sessions. Server-only. */
 import { createHash, randomBytes } from "node:crypto";
+import { markActive } from "@/lib/metrics/events";
 import { and, eq, gt } from "drizzle-orm";
 import { getDb, hasDatabase } from "@/lib/db";
 import { DEFAULT_SETTINGS, sessions, users, type UserSettings } from "@/lib/db/schema";
@@ -63,6 +64,7 @@ export async function userForToken(token: string | undefined): Promise<SessionUs
   const row = rows[0];
   if (!row) return null;
   let u = row.u;
+  void markActive(db, u.id).catch(() => undefined);
   if (u.whopUserId && (!u.planCheckedAt || Date.now() - u.planCheckedAt.getTime() > PLAN_REFRESH_MS)) {
     await refreshPlan(db, u.id);
     u = (await db.select().from(users).where(eq(users.id, u.id)).limit(1))[0] ?? u;

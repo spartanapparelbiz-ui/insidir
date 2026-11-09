@@ -5,6 +5,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { recordEvent } from "@/lib/analytics";
+import { checkFollowActivation } from "@/lib/metrics/events";
 import { appUrl } from "@/lib/app-url";
 import { safeNext } from "@/lib/auth/next";
 import { SESSION_COOKIE, userForToken, VISITOR_COOKIE } from "@/lib/auth/session";
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
   }
   if (onboarding) await db.update(users).set({ onboardedAt: new Date() }).where(eq(users.id, user.id));
   const visitorId = req.cookies.get(VISITOR_COOKIE)?.value ?? null;
+  if (picked === "trader") await checkFollowActivation(db, user.id, now).catch(() => undefined);
   if (picked) void recordEvent({ name: "copy_started", visitorId, userId: user.id, props: { kind: picked, onboarding } }).catch(() => undefined);
   if (onboarding) void recordEvent({ name: picked ? "onboarding_done" : "onboarding_skip", visitorId, userId: user.id, props: { copies: picked ? 1 : 0 } }).catch(() => undefined);
   return NextResponse.redirect(new URL(safeNext(String(form?.get("next") ?? "/copies")), appUrl()), 303);
