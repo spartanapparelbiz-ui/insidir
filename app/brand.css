@@ -1453,9 +1453,9 @@ html.bm .b-stage.is-in:not(.is-done) .s-grow-y { animation: s-grow-y 1.1s var(--
 .ai-strip > div:first-child { border-left: 0; }
 .ai-strip dd { margin: 0; color: var(--ink); font-size: calc(30 * var(--u)); font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
 .ai-strip dt { color: var(--dim); font-size: calc(12.5 * var(--u)); font-weight: 500; }
-.ai-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.4fr 1fr; grid-template-areas: "brief watch" "brief briefing" "ask ask"; gap: calc(16 * var(--u)); width: 100%; }
+.ai-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "brief watch" "ask briefing"; align-items: start; gap: calc(16 * var(--u)); width: 100%; }
 [data-testid="ai-brief"] { grid-area: brief; } [data-testid="ai-watch"] { grid-area: watch; } [data-testid="ai-briefing"] { grid-area: briefing; } [data-testid="ai-ask"] { grid-area: ask; }
-.ai-card--ask .ai-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
 .ai-card { display: grid; align-content: start; gap: calc(12 * var(--u)); min-width: 0; }
 .ai-card__top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .ai-tag { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--glass-line); color: var(--ink); font-size: calc(11.5 * var(--u)); font-weight: 500; white-space: nowrap; }
@@ -1510,3 +1510,23 @@ html.sr-on .sr.sr-in { opacity: 1; transform: none; transition: opacity .8s cubi
 .sr-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 60; transform-origin: 0 50%; transform: scaleX(0); background: var(--ink); opacity: .85; pointer-events: none; }
 .b-stage[data-first] .b-stage__bg { will-change: scale; transform-origin: 50% 40%; }
 @media (prefers-reduced-motion: reduce) { html.sr-on .sr { opacity: 1; transform: none; } }
+/* The AI analyst's Bet Briefing sample, and phones: the strip in one row, wallet cards two across. */
+.ai-bb { display: grid; border: 1px solid var(--glass-line); border-radius: 14px; overflow: hidden; color: var(--ink); text-decoration: none; }
+.ai-bb__t { padding: 10px 14px; font-size: calc(13 * var(--u)); font-weight: 600; border-bottom: 1px solid var(--glass-line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-bb__row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--glass-line); font-size: calc(13 * var(--u)); line-height: 1.45; }
+.ai-bb__row b { color: var(--dim); font-weight: 500; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; padding-top: 2px; }
+.ai-bb__more { padding: 10px 14px; font-size: calc(13 * var(--u)); font-weight: 500; }
+.ai-bb:hover { border-color: var(--ink); }
+@media (max-width: 900px) {
+  .ai-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ai-strip > div { border-top: 0; border-left: 1px solid var(--glass-line); padding: 14px 12px; }
+  .ai-strip > div:first-child { border-left: 0; }
+  .ai-strip > div:nth-child(n+4) { display: none; }
+  .ai-strip dd { font-size: 20px; }
+  .ai-strip dt { font-size: 11.5px; }
+  .ai-bb__row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  [data-testid="home-wallets"] .s-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  [data-testid="home-wallets"] .s-wcard { padding: 14px !important; }
+  [data-testid="home-wallets"] .s-wcard .s-big { font-size: 24px !important; }
+  [data-testid="home-wallets"] .s-wcard .b-small { font-size: 12px; }
+}

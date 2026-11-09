@@ -11,6 +11,7 @@
  * Server only. */
 import { humanLine } from "@/lib/markets/title";
 import { buildBrief, type Brief } from "@/lib/brief/build";
+import { getBriefing } from "@/lib/briefing/store";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { disagreements, electionDay as isElectionDay, priceGaps, type Disagreement, type PriceGap } from "@/lib/brand/pulse";
@@ -46,7 +47,9 @@ export interface Home {
   polledAt: number | null; lastBetAt: number | null;
   /** The AI analyst on the home: today's brief (written by the AI from our data, numbers verified; the template when the
    *  model is slow or off), the member's watched bets, and the 24-hour data strip. */
-  ai: { brief: Brief | null; watching: number; markets: number; topCategory: string | null };
+  ai: { brief: Brief | null; watching: number; markets: number; topCategory: string | null;
+    /** The Bet Briefing for today's #1 position's market: the first line of its key sections (members see sides). */
+    briefing: { title: string; href: string; origin: string; lines: Array<{ k: string; t: string }> } | null };
 }
 
 let poly: PolymarketClient | null = null, clients: { kalshi: KalshiClient; polymarket: PolymarketClient } | null = null;
@@ -135,6 +138,11 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     safe(edgeFor(db, (poly ??= new PolymarketClient()), top.id, now), null),
     safe(artFor([top.marketId]).then(m => m.get(top.marketId) ?? null), null),
   ]) : [null, null];
+  const KEYS: Record<string, string> = { rules: "Wins if", cost: "Costs and pays", who: "Big money", read: "The read" };
+  const briefing = top ? await within(getBriefing(db, top.marketId, now).then(b => b && !b.result ? {
+    title: b.title, href: `/briefing?m=${encodeURIComponent(b.marketId)}`, origin: b.origin,
+    lines: b.sections.filter(x => KEYS[x.key] && x.lines[0]).map(x => ({ k: KEYS[x.key]!, t: x.lines[0]! })),
+  } : null), 4000, null) : null;
   const dis = disagreements(pool).slice(0, 3);
   const stream = streamRows;
   const rec = await safe(last10(db, ls.map(l => l.wallet)), new Map());
@@ -153,7 +161,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
       desk: openCopies.length ? `You have ${openCopies.length} open ${openCopies.length === 1 ? "copy" : "copies"}.` : null,
     },
     polledAt: polled ? new Date(polled).getTime() : null, lastBetAt: last ? new Date(last).getTime() : null,
-    ai: { brief, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
+    ai: { brief, briefing: briefing && briefing.lines.length ? briefing : null, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
   };
 }
 

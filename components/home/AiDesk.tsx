@@ -54,13 +54,19 @@ export function AiDesk({ d }: { d: Home }) {
           <Pill href="/watch" kind="ghost">{d.ai.watching ? "Your watched bets" : "Add a bet"}</Pill>
         </Panel>
         <Panel className="ai-card" testid="ai-briefing">
-          <p className="b-label">Bet Briefing</p>
-          <p className="b-small">Paste a Polymarket or Kalshi link: what it needs to win, what it costs and pays, who&apos;s on each side and what the money says.</p>
+          <div className="ai-card__top"><p className="b-label">Bet Briefing</p>{d.ai.briefing ? <span className="ai-tag">{d.ai.briefing.origin === "model" ? "Written by the AI" : "From the data"}</span> : null}</div>
+          {d.ai.briefing ? (
+            <a className="ai-bb" href={d.ai.briefing.href} data-testid="ai-briefing-sample">
+              <span className="ai-bb__t">Today&apos;s #1 · {d.ai.briefing.title}</span>
+              {d.ai.briefing.lines.map(l => <span key={l.k} className="ai-bb__row"><b>{l.k}</b><span>{l.t}</span></span>)}
+              <span className="ai-bb__more">The full briefing →</span>
+            </a>
+          ) : <p className="b-small">Paste a Polymarket or Kalshi link: what it needs to win, what it costs and pays, who&apos;s on each side and what the money says.</p>}
           <form className="ai-form" method="get" action="/briefing">
-            <input name="url" type="url" inputMode="url" placeholder="Paste a market link" aria-label="Market link" required />
+            <input name="url" type="url" inputMode="url" placeholder="Paste any market link" aria-label="Market link" required />
             <button type="submit">Brief me</button>
           </form>
-          {d.top ? <a className="ai-link" href={`/briefing?m=${encodeURIComponent(d.top.bet.marketId)}`}>Or today&apos;s #1: {d.top.bet.title} →</a> : null}
+          {!d.ai.briefing && d.top ? <a className="ai-link" href={`/briefing?m=${encodeURIComponent(d.top.bet.marketId)}`}>Or today&apos;s #1: {d.top.bet.title} →</a> : null}
         </Panel>
         <Panel className="ai-card ai-card--ask" testid="ai-ask">
           <p className="b-label">Ask Insidir</p>
