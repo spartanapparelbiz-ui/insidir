@@ -8,7 +8,7 @@ import { RETIRED } from "../next.config";
 import { PAGES } from "@/lib/seo/sitemaps";
 
 const KEEP_MAIN = ["/", "/election", "/board", "/markets", "/markets/[category]", "/market/[slug]", "/race/[slug]", "/wallet/[address]", "/bet/[id]",
-  "/wallets", "/copies", "/copies/yours", "/copy/[id]", "/go", "/login", "/settings", "/record", "/results", "/autopilot", "/t/[id]", "/book",
+  "/wallets", "/copies", "/copies/yours", "/copy/[id]", "/go", "/login", "/settings", "/record", "/results", "/brief", "/briefing", "/ask", "/watch", "/told", "/autopilot", "/t/[id]", "/book",
   // docs/INSIDIR-V3.md §3: the Form 4 database and insider activity.
   "/filings", "/insiders", "/company/[ticker]", "/people/[cik]", "/watchlists", "/journal", "/sec"];
 const KEEP_TEXT = ["/faq", "/pricing", "/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog", "/about", "/help"];

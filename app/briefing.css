@@ -1,0 +1,15 @@
+/* The Bet Briefing (components/brand/BetBriefing.tsx): eight short sections in order, plain type, the site's tokens
+ * only (no colours of its own). */
+.bb { display: grid; gap: 20px; }
+.bb__sec { display: grid; gap: 6px; padding-top: 16px; border-top: 1px solid var(--glass-line); }
+.bb__sec:first-child { border-top: 0; padding-top: 0; }
+.bb__n { color: var(--dim); font-variant-numeric: tabular-nums; margin-right: 8px; }
+.bb__h { margin: 0; font-size: 13px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
+.bb__line { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+.bb__line + .bb__line { margin-top: 4px; }
+.bb__lock { display: grid; gap: 12px; justify-items: start; padding-top: 16px; border-top: 1px solid var(--glass-line); }
+.bb__foot { margin: 0; }
+.bb-paste { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bb-paste input { flex: 1 1 260px; min-width: 0; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--glass-line); background: var(--panel); color: var(--ink); font: inherit; font-size: 16px; }
+.bb-paste button { height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--white-btn); color: var(--btn-ink); font: inherit; font-weight: 600; cursor: pointer; }
+@media (max-width: 552px) { .bb__line { font-size: 15.5px; } .bb-paste button { width: 100%; } }

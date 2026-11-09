@@ -7,6 +7,7 @@
  * wallet is its tier and profit, never a name. */
 import { inQuietHours } from "@/lib/alerts/quiet";
 import { dollars } from "@/lib/money";
+import { pingExplain } from "@/lib/brief/explain";
 
 export const PING_MIN = 25_000;
 export const PING_DAILY_MAX = 8;
@@ -21,7 +22,9 @@ export interface PingBet { id: string; marketId?: string; side?: "yes" | "no"; t
   /** A trim: the share of the position it sold, 0..1. */
   sold?: number;
   /** Where a sell's ping opens (the market's page; a buy opens its bet). */
-  path?: string }
+  path?: string;
+  /** The wallet's usual (median) bet, for the "what it means" sentence. */
+  usual?: number | null }
 /** The market's approved Kalshi twin (lib/twins) and Kalshi's YES price now, when it has one. */
 export interface PingTwin { yes: number | null }
 
@@ -54,6 +57,14 @@ export function pingJobs(users: readonly PingUser[], bets: readonly PingBet[], n
 const c = (p: number) => `${Math.round(p * 100)}¢`;
 
 /** The ping's words. A Yes/No question names the market in quotes; a named outcome reads "on Republicans in …". */
+/** The ping with its "what it means" sentence after the existing words (lib/brief/explain.ts pingExplain): the
+ *  existing message, unchanged, then one plain sentence from the same numbers. */
+export function pingMessageExplained(b: PingBet, priceNow: number | null, appUrl: string, twin: PingTwin | null = null): { title: string; body: string; url: string } {
+  const m = pingMessage(b, priceNow, appUrl, twin);
+  const why = pingExplain(b, priceNow);
+  return why ? { ...m, body: `${m.body} ${why}` } : m;
+}
+
 export function pingMessage(b: PingBet, priceNow: number | null, appUrl: string, twin: PingTwin | null = null): { title: string; body: string; url: string } {
   const who = b.pnl !== null && b.pnl > 0 ? `A +${dollars(b.pnl)} wallet` : "A $1M+ wallet";
   const yn = /^(yes|no)$/i.test(b.outcome.trim());

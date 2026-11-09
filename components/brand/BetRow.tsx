@@ -8,6 +8,7 @@ import { dollars } from "@/lib/money";
 import { PriceMove, Side, signedDollars, TierBadge } from "./Bits";
 import { TeamPair } from "@/components/system/Team";
 import { Verify } from "./Verify";
+import { betExplain } from "@/lib/brief/explain";
 
 export function agoShort(ms: number, now: number): string {
   const s = Math.max(0, Math.round((now - ms) / 1000));
@@ -43,6 +44,8 @@ export function BetRow({ bet, now, href, className = "", settle, copyHref, polym
           <Side outcome={bet.outcome} side={bet.side} pnl={bet.pnl} />
           <PriceMove then={bet.priceThen} now={bet.priceNow} />
         </span>
+        {/* What this means for me (lib/brief/explain.ts): computed from the row; a visitor's says nothing about the side. */}
+        {betExplain(bet) ? <span className="b-small" data-testid="bet-explain">{betExplain(bet)}</span> : null}
       </span>
       <span className="b-row__money">
         <span className={`b-row__size b-num${gold ? " b-gold" : ""}`}>{dollars(bet.amount)}{n > 1 ? " total" : ""}</span>

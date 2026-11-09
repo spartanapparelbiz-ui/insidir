@@ -44,6 +44,8 @@ import { nightlyDue, RECORD_MS, recordOnce } from "@/lib/record/job";
 /** The day (ET) the record's nightly full pass last ran. */
 let recordNightlyDay: string | null = null;
 import { snapshotDaily, snapshotDue } from "@/lib/metrics/report";
+import { watchOnce, WATCH_MS } from "@/lib/watch/job";
+import { briefEmailOnce } from "@/lib/brief/email";
 let metricsDay: string | null = null;
 import { marketInfoOnce } from "@/lib/markets/info";
 import { seenOnce, seenProgress } from "@/lib/follow/seen";
@@ -72,7 +74,7 @@ import { bigTrades } from "@/lib/engines/whales";
 import { alertText, dueAlerts } from "@/lib/alerts/fanout";
 import { ALERT_MAX_AGE_MS, alertJobs, alertMessage } from "@/lib/moves/alerts";
 import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
-import { pingJobs, pingMessage } from "@/lib/millionaires/pings";
+import { pingJobs, pingMessageExplained } from "@/lib/millionaires/pings";
 import { twinsDailyOnce } from "@/lib/twins/daily";
 import { twinsFromBets } from "@/lib/twins/direct";
 import { screenWallets } from "@/lib/millionaires/proven";
@@ -195,7 +197,8 @@ async function millionairePingsOnce(): Promise<void> {
   for (const j of jobs) {
     const b = byId.get(j.betId);
     if (!b || !(await claimAlert(db, j.userId, `mil:${b.id}`, "push"))) continue;
-    const msg = pingMessage(b, prices.get(b.id) ?? null, appUrl(), b.marketId ? twins.get(b.marketId) ?? null : null);
+    // The ping plus one "what it means" sentence (lib/brief/explain.ts): the existing text unchanged, then the explanation.
+    const msg = pingMessageExplained(b, prices.get(b.id) ?? null, appUrl(), b.marketId ? twins.get(b.marketId) ?? null : null);
     for (const t of await pushTargets(db, j.userId)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
   }
 }
@@ -381,6 +384,17 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       recordNightlyDay = n.day;
       log(`record nightly: ${r.logged} logged, ${r.unusual} unusual, ${r.sourced} sourced, ${r.sold} sold, ${r.priced} priced, ${r.settled} settled`);
     }),
+    // "Watch my bet" (lib/watch/job.ts): explained alerts on members' watched positions, and their results when markets settle.
+    every("watch:run", WATCH_MS, async () => {
+      const db = getDb();
+      const r = await watchOnce(db, Date.now(), {
+        poly: clients.polymarket instanceof PolymarketClient ? clients.polymarket : null,
+        send: async (userId, msg) => { for (const t of await pushTargets(db, userId)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint); },
+      });
+      void r;
+    }),
+    // The 8 AM ET brief by email, for members who opted in (lib/brief/email.ts); idle until an email sender exists.
+    every("brief:email", 10 * 60_000, async () => { await briefEmailOnce(getDb(), Date.now(), { appUrl: appUrl(), sendEmail: null }); }),
     // The daily metrics snapshot (/admin/metrics): yesterday's numbers per source, once a day after midnight ET.
     every("metrics:daily", 30 * 60_000, async () => {
       const d = snapshotDue(Date.now(), metricsDay);

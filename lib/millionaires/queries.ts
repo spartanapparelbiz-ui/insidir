@@ -65,6 +65,9 @@ export interface BoardBet {
    *  wallet's address while the side is hidden (a Polygonscan transaction shows which outcome was bought, and the
    *  address page lists it): redact() drops both until the market settles. */
   verify: BetVerify;
+  /** The wallet's usual bet (the median of its bets Insidir has, 3 or more), for the row's explanation line
+   *  (lib/brief/explain.ts); null or absent when not known. Safe for visitors: it says nothing about the side. */
+  usual?: number | null;
 }
 
 type Row = Record<string, unknown>;
@@ -89,6 +92,7 @@ function toBet(r: Row, member: boolean): BoardBet {
       kalshi: r.twin_kalshi_url ? String(r.twin_kalshi_url) : r.kalshi_url ? String(r.kalshi_url) : null, polymarket: Boolean(r.url),
       fetchedAt: r.price_at ? t(r.price_at) : r.fetched_at ? t(r.fetched_at) : null, locked: false,
     },
+    usual: r.usual === null || r.usual === undefined ? null : n(r.usual),
   };
 }
 
@@ -121,7 +125,9 @@ export async function recentBets(db: Db, f: BetFilter): Promise<BoardBet[]> {
   if (f.tier) w.push(sql`b.tier = ${f.tier}`);
   if (f.marketId) w.push(sql`b.market_id = ${f.marketId}`);
   if (f.open) w.push(sql`b.result is null and (i.closed is null or not i.closed)`);
-  const r = await db.execute(sql`select b.*, i.yes_price, i.updated_at as price_at, coalesce(i.closed, false) as closed, w.pnl, tw.kalshi_url as twin_kalshi_url from terminal.millionaire_bets b
+  const r = await db.execute(sql`select b.*, i.yes_price, i.updated_at as price_at, coalesce(i.closed, false) as closed, w.pnl, tw.kalshi_url as twin_kalshi_url,
+      (select case when count(*) >= 3 then percentile_cont(0.5) within group (order by u.amount) end from terminal.millionaire_bets u where u.wallet = b.wallet) as usual
+    from terminal.millionaire_bets b
     left join terminal.market_info i on i.source = b.source and i.market_id = b.market_id
     left join terminal.market_twins tw on tw.polymarket_id = b.market_id and tw.status = 'approved'
     left join terminal.watchlist w on w.wallet = b.wallet

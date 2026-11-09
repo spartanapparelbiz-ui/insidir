@@ -1,0 +1,28 @@
+/* The Daily Brief (/brief) and Ask Insidir (/ask). Tokens only: no literal colours (the design test). */
+.bf-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.bf-item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; padding: 18px 20px; border: 1px solid var(--glass-line); border-radius: 16px; }
+.bf-n { grid-row: span 3; font-size: 22px; font-weight: 600; color: var(--dim); min-width: 22px; }
+.bf-head { font-size: 16px; font-weight: 600; line-height: 1.35; color: var(--ink); }
+.bf-head a { color: inherit; text-decoration: none; }
+.bf-head a:hover { text-decoration: underline; }
+.bf-why { font-size: 15px; line-height: 1.45; color: var(--dim); }
+.bf-meta { font-size: 13px; color: var(--dim); }
+.bf-foot { margin-top: 20px; font-size: 13px; color: var(--dim); }
+.bf-foot a { color: var(--ink); }
+.bf-cta { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.ask-form { display: flex; gap: 10px; flex-wrap: wrap; }
+.ask-form .s-input { flex: 1 1 260px; min-width: 0; }
+.ask-try { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.ask-try button { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 1px solid var(--glass-line); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.ask-answer { margin-top: 20px; display: grid; gap: 14px; }
+.ask-text { font-size: 17px; line-height: 1.45; color: var(--ink); }
+.ask-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ask-table th, .ask-table td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--glass-line); vertical-align: top; }
+.ask-table th { font-weight: 500; color: var(--dim); font-size: 13px; }
+.ask-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ask-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 640px) {
+  .bf-item { padding: 14px 16px; gap: 4px 10px; }
+  .bf-head { font-size: 15px; }
+  .bf-why { font-size: 14px; }
+}

@@ -25,6 +25,9 @@ import { isPaid } from "@/lib/plans";
 import { ExplainMarket } from "@/components/system/ExplainMarket";
 import { explainOn } from "@/lib/analyst/market";
 import { EntityLd } from "@/lib/seo/jsonld";
+import { BetBriefing } from "@/components/brand/BetBriefing";
+import { gateBriefing } from "@/lib/briefing/gate";
+import { getBriefing, logTold } from "@/lib/briefing/store";
 
 export const dynamic = "force-dynamic";
 const walletsText = (n: number) => n.toLocaleString("en-US") + (n === 1 ? " wallet" : " wallets");
@@ -68,6 +71,10 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   // No exact Kalshi twin for a spread or total: the nearest Kalshi lines for the game, labelled as alternatives.
   const near = m.twin ? null : await nearestKalshi(m.url, m.title).catch(() => null);
   const trail = [["Markets", "/markets"], [cat.name, `/markets/${m.category}`], [m.title, canonical]] as const;
+  // The Bet Briefing (lib/briefing): gated on the server; left out if it can't be built in a few seconds.
+  const briefing = await Promise.race([getBriefing(db, ref.id, now).catch(() => null), new Promise<null>(r => setTimeout(() => r(null), 6000))]);
+  if (briefing && member && viewer.user) await logTold(db, viewer.user.id, briefing, now).catch(() => undefined);
+  const gated = briefing ? gateBriefing(briefing, member) : null;
   return (
     <Frame member={member} current="markets" testid="market-page">
       {/* Logos never sit on a photo: a game's hero is the plain stage, its two logos the only images. */}
@@ -101,6 +108,13 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
           )}
         </Panel>
       </Stage>
+
+      {gated ? (
+        <Stage bg={{ kind: "globe", dark: 0.65 }} testid="market-briefing" labelledBy="briefing-h">
+          <div className="b-head"><Lines as="h2" id="briefing-h" lines={["Bet Briefing."]} size={48} /><p className="b-sub">Before you bet: what it takes to win, who&apos;s on each side, and what the money says.</p></div>
+          <Panel className="s-col"><BetBriefing b={gated} /></Panel>
+        </Stage>
+      ) : null}
 
       {m.chart.length >= 2 ? (
         <Stage bg={{ kind: "globe", dark: 0.6 }} testid="market-chart" labelledBy="chart-h">

@@ -21,6 +21,7 @@ import { isPaid, PLANS, TRIAL } from "@/lib/plans";
 import { eq } from "drizzle-orm";
 import { COPY_SIZES, copySizeOf } from "@/lib/copies/size";
 import { CANCEL_REASONS } from "@/lib/billing/cancel-reasons";
+import { briefEmailAvailable } from "@/lib/brief/email";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Account", robots: { index: false } };
@@ -99,6 +100,14 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   </div>
                   <div><button type="submit" className={BTN}>Save pings</button></div>
                 </form>
+                {briefEmailAvailable() ? (
+                  <form method="post" action="/api/settings" className="s-form" data-testid="brief-settings">
+                    <label className="s-form b-small">Email me the 8 AM brief
+                      <select name="morningBriefEmail" defaultValue={s.morningBriefEmail ? "on" : "off"} className="s-input"><option value="on">On</option><option value="off">Off</option></select>
+                    </label>
+                    <div><button type="submit" className={BTN}>Save brief</button></div>
+                  </form>
+                ) : null}
               </>
             ) : <p className="b-small">Pings come with Insidir: within a minute of a $25K+ millionaire bet, or a new bet from a wallet you follow.</p>}
           </Panel>

@@ -27,12 +27,14 @@ export async function pingUsers(db: Db, now: number): Promise<PingUser[]> {
 /** Millionaire-tier bets of PING_MIN+ first seen in the last `windowMs`, newest first, with the wallet's profit. */
 export async function freshBigBets(db: Db, now: number, windowMs = 10 * 60_000): Promise<PingBet[]> {
   const r = await db.execute(sql`select b.id, b.market_id, b.tier, b.amount::float as amount, b.category, b.market_title, b.outcome, b.outcome_side, b.yes_label, b.no_label,
-      b.price::float as price, w.pnl::float as pnl, pe.kind
+      b.price::float as price, w.pnl::float as pnl, pe.kind,
+      (select case when count(*) >= 3 then percentile_cont(0.5) within group (order by u.amount) end from terminal.millionaire_bets u where u.wallet = b.wallet)::float as usual
     from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet
       left join terminal.position_events pe on pe.id = b.id
     where b.tier = 'millionaire' and b.amount >= ${PING_MIN} and b.at > ${new Date(now - windowMs)} and b.result is null order by b.at desc limit 50`);
   return (r.rows as Array<Record<string, unknown>>).map(x => ({ id: String(x.id), marketId: String(x.market_id), side: x.outcome_side === "no" ? "no" as const : "yes" as const, tier: String(x.tier), amount: Number(x.amount), category: String(x.category), title: String(x.market_title),
-    outcome: String(x.outcome), price: Number(x.price), pnl: x.pnl === null ? null : Number(x.pnl), kind: x.kind === "add" ? "add" as const : "open" as const }));
+    outcome: String(x.outcome), price: Number(x.price), pnl: x.pnl === null ? null : Number(x.pnl), kind: x.kind === "add" ? "add" as const : "open" as const,
+    usual: x.usual === null || x.usual === undefined ? null : Number(x.usual) }));
 }
 
 /** The side's price now (market_info), by bet. */
