@@ -250,3 +250,71 @@
 }
 @media (prefers-reduced-motion: reduce) { .c-waves__flow, .c-waves__ring, .c-waves__core { animation: none !important; } }
 @media (max-width: 899px) { .c-hero { min-height: 0; place-items: start center; padding: 44px 18px 240px; } }
+
+/* ==========================================================================================================
+ * Darker and informational: the deep ground, a faint ember of light at the very bottom, and the hero's right side
+ * is information: the latest bets from $1M+ wallets and today's numbers, in a dark glass panel.
+ * ========================================================================================================== */
+.c-landing { background: radial-gradient(90% 50% at 50% -10%, rgb(var(--t-blue-rgb) / .08), transparent 60%), var(--t-page); }
+.c-hero { min-height: 0; place-items: center; padding: 72px 32px 120px; text-align: left; }
+.c-hero__in { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); justify-items: stretch; align-items: center; gap: 56px; max-width: 1240px; width: 100%; }
+.c-hero__copy { justify-items: start; gap: 20px; }
+.b-root .c-hero__h { text-align: left; margin: 0; max-width: 13ch; font-size: clamp(40px, 5vw, 72px); line-height: 1; background: linear-gradient(180deg, var(--t-text) 55%, rgb(var(--t-blue-rgb) / .8) 100%); -webkit-background-clip: text; background-clip: text; }
+.c-hero__sub { text-align: left; margin: 0; font-size: 18px; max-width: 42ch; }
+.c-hero__act { justify-items: start; }
+.b-root .c-cta { box-shadow: 0 10px 40px -16px rgb(var(--t-lime-rgb) / .35) !important; }
+.c-waves { opacity: .9; }
+
+/* The live panel */
+.b-root .c-live { position: relative; z-index: 1; display: grid; border-radius: 22px; overflow: hidden;
+  background: linear-gradient(180deg, rgb(var(--t-text-rgb) / .045), rgb(var(--t-text-rgb) / .01)), rgb(var(--t-page-rgb) / .78);
+  border: 1px solid rgb(var(--t-text-rgb) / .09); -webkit-backdrop-filter: blur(18px) !important; backdrop-filter: blur(18px) !important;
+  box-shadow: inset 0 1px 0 rgb(var(--t-text-rgb) / .06), 0 40px 100px -40px rgb(var(--t-page-rgb) / 1) !important; }
+.c-live__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgb(var(--t-text-rgb) / .07); }
+.c-live__t { display: inline-flex; align-items: center; gap: 8px; color: var(--t-text); font: 600 15px/1 var(--t-sans); letter-spacing: .01em; }
+.c-live__delay { color: var(--t-muted); font: 400 12px/1 var(--t-body-font); }
+.c-live__stats { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid rgb(var(--t-text-rgb) / .07); }
+.c-live__stats > div { display: grid; gap: 4px; padding: 16px 20px; border-left: 1px solid rgb(var(--t-text-rgb) / .07); }
+.c-live__stats > div:first-child { border-left: 0; }
+.c-live__stats dd { margin: 0; color: var(--t-text); font: 600 26px/1 var(--t-sans); }
+.c-live__stats dt { color: var(--t-muted); font: 400 12px/1.3 var(--t-body-font); }
+.c-live__rows { display: grid; padding: 4px 8px; }
+.b-root a.c-live__row { display: grid; grid-template-columns: 60px 168px minmax(0, 1fr) auto 64px; align-items: center; gap: 12px; padding: 12px 12px; border-radius: 12px; color: var(--t-text); font: 400 14px/1.3 var(--t-body-font); }
+.c-live__row + .c-live__row { box-shadow: inset 0 1px 0 rgb(var(--t-text-rgb) / .05) !important; }
+.b-root a.c-live__row:hover { background: rgb(var(--t-text-rgb) / .04); }
+.c-live__time { color: var(--t-muted); font-size: 12px; }
+.c-live__who { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.c-live__m { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-live__amt { display: grid; justify-items: end; gap: 3px; font-weight: 600; white-space: nowrap; }
+.c-live__amt small { color: var(--t-muted); font-weight: 400; font-size: 11px; }
+.c-live__side { justify-self: end; display: inline-flex; align-items: center; gap: 5px; color: var(--t-muted); font-size: 12px; }
+.c-live__empty { margin: 0; padding: 18px 12px; color: var(--t-muted); font: 400 14px/1.5 var(--t-body-font); }
+.c-live__src { padding: 12px 20px 14px; border-top: 1px solid rgb(var(--t-text-rgb) / .06); color: var(--t-muted); font: 400 12px/1.3 var(--t-body-font); }
+
+/* Darker glass below the hero; the price card's ember dimmer. */
+.b-root .c-card, .b-root .c-tile, .b-root .c-price { background: linear-gradient(180deg, rgb(var(--t-text-rgb) / .035), rgb(var(--t-text-rgb) / .01)), rgb(var(--t-panel-rgb, 7 27 83) / .45); border-color: rgb(var(--t-text-rgb) / .08); }
+.c-glow::before { background: radial-gradient(60% 50% at 50% 105%, rgb(var(--t-lime-rgb) / .08) 0%, rgb(var(--t-blue-rgb) / .22) 25%, rgb(var(--t-tint-rgb) / .25) 52%, transparent 80%); }
+.c-glow--price::before { background: radial-gradient(70% 55% at 50% 118%, rgb(var(--t-lime-rgb) / .08) 0%, rgb(var(--t-blue-rgb) / .2) 28%, rgb(var(--t-tint-rgb) / .2) 58%, transparent 82%); }
+.c-glow__ring--1 { border-color: rgb(var(--t-text-rgb) / .1); } .c-glow__ring--2 { border-color: rgb(var(--t-text-rgb) / .06); } .c-glow__ring--3 { border-color: rgb(var(--t-text-rgb) / .04); }
+.c-tile__arc span { border-color: rgb(var(--t-blue-rgb) / .25); }
+.c-tile__arc span:nth-child(3) { background: radial-gradient(circle, rgb(var(--t-blue-rgb) / .14), transparent 70%); }
+.c-sec { padding-top: 88px; }
+
+@media (max-width: 1099px) {
+  .c-hero__in { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .b-root a.c-live__row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "who amt" "m side"; gap: 6px 12px; }
+  .c-live__time { display: none; }
+  .c-live__who { grid-area: who; } .c-live__m { grid-area: m; } .c-live__amt { grid-area: amt; } .c-live__side { grid-area: side; }
+}
+@media (max-width: 899px) {
+  .c-hero { padding: 32px 16px 72px; place-items: start stretch; }
+  .b-root .c-hero__h { font-size: 40px; }
+  .c-hero__sub { font-size: 16px; }
+  .c-hero__act { justify-items: stretch; width: 100%; }
+  .c-live__stats dd { font-size: 20px; }
+  .c-live__stats > div { padding: 12px 14px; }
+}
+/* The live panel's tier pills read on the dark glass; the hero's light fades out instead of ending at an edge. */
+.c-live .c-tier--millionaire { background: rgb(var(--t-blue-rgb) / .16); color: var(--t-blue-text); }
+.c-live .c-tier--pro { background: rgb(var(--t-text-rgb) / .08); color: var(--t-muted); }
+.c-waves { -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 62%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 62%, transparent 100%); }

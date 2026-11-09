@@ -31,15 +31,17 @@ const V2_UI = [
 ].filter(f => existsSync(join(ROOT, f)));
 
 describe("V2 landing page", () => {
-  it("is the terminal in five blocks: hero, board, what you get, record, access + FAQ; members get their home", () => {
+  it("is one story: the hero with the live board beside it, what you get, the record, access + FAQ; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<HomePage d={d}");
-    // The terminal chrome first (no nav Start button on the landing), then the five blocks in order.
+    // The top bar first, then the blocks in order.
     // The top bar's Start for $1 waits until the hero's button has scrolled away (components/brand/landing/Reveal.tsx).
     expect(landing).toContain("<TerminalChrome election=");
     expect(read("app/landing-clean.css")).toContain(".t-landing:not([data-cta-out]) .t-top .t-start { display: none !important; }");
-    const order = ["<Hero d={d} />", "<Board d={d} />", "<WhatYouGet />", "<Record d={d} />", "<Access />", "<Faqs />"];
+    const order = ["<Hero d={d} />", "<WhatYouGet />", "<Record d={d} />", "<Access />", "<Faqs />"];
+    // The live board sits inside the hero, beside the headline.
+    expect(landing).toContain("<LivePanel d={d} />");
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
@@ -59,7 +61,7 @@ describe("V2 landing page", () => {
     expect(landing).toContain('href="/go" data-checkout="pricing" data-cta="pricing" data-testid="pricing-cta"');
     expect(read("components/brand/landing/StickyStart.tsx")).toContain('data-checkout="sticky" data-cta="sticky"');
     // The board's side is locked for visitors: the column never prints a side.
-    expect(landing).toContain('<span className="c-row__side" data-locked="side"><Lock />Members</span>');
+    expect(landing).toContain('<span className="c-live__side" data-locked="side"><Lock />Members</span>');
     expect(landing).not.toMatch(/b\.side|b\.outcome/);
     const pitch = [copy.LANDING.h1, copy.LANDING.sub, ...copy.LANDING.three.map(x => x.t), ...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
@@ -114,7 +116,7 @@ describe("copy rules on every V2 page", () => {
 describe("design system", () => {
   it("the terminal palette lives in app/tokens.css only: Garnished & Tarnished Blue, Perplexed Scrutiny Azure, Scornelius Pampered Yellow, green and red", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#071b53", "#0a2463", "#0e2d75", "#1e3f8c", "#13306f", "#f3f7ff", "#93aad8", "#6cc4fe", "#0f3a86", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a"];
+    const palette = ["#040d2b", "#071b53", "#0a2463", "#13306f", "#f3f7ff", "#93aad8", "#6cc4fe", "#0f3a86", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     // No yellow, gold or amber anywhere: every other stylesheet uses the tokens, never a literal colour.
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
@@ -143,6 +145,6 @@ describe("design system", () => {
 
   it("the manifest opens the app on its home, Garnished & Tarnished Blue like the terminal, with the brackets-mark icons", async () => {
     const { default: manifest } = await import("@/app/manifest");
-    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#071b53", theme_color: "#071b53" });
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#040d2b", theme_color: "#040d2b" });
   });
 });

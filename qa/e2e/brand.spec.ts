@@ -49,8 +49,8 @@ test("landing: the terminal in five blocks; the board 60 minutes late with sides
   }
   await expect(page.getByTestId("landing-board")).toContainText("Members see these the minute they land, with the side.");
   await expect(page.getByTestId("what-you-get")).toContainText("Before you bet");
-  await expect(page.getByTestId("what-you-get")).toContainText("WHILE YOU HOLD");
-  await expect(page.getByTestId("what-you-get")).toContainText("AFTER IT SETTLES");
+  await expect(page.getByTestId("what-you-get")).toContainText("While you hold");
+  await expect(page.getByTestId("what-you-get")).toContainText("After it settles");
   await expect(page.getByTestId("landing-record").getByRole("link", { name: /Every settled bet, losses included/ }).or(page.getByTestId("landing-record").getByTestId("t-empty"))).toHaveCount(1);
   await expect(page.getByTestId("price-line")).toHaveText("$1 · 3 DAYS → $39/MO · CANCEL ANYTIME");
   expect(await page.getByTestId("faq-item").count()).toBeLessThanOrEqual(5);
@@ -226,7 +226,10 @@ test("a member's home is the workspace: panels (board, watch my bet, alerts, wal
   await noHorizontalScroll(page);
   // Keyboard: arrow keys select board rows, Enter opens the bet.
   await page.getByTestId("board-table").first().focus();
+  // The first row is selected (its Copy was opened above): down moves to the next, up comes back, Enter opens it.
   await page.keyboard.press("ArrowDown");
+  await expect(board.locator('tr[aria-selected="true"]')).toHaveAttribute("data-bet", "e2e:mb7");
+  await page.keyboard.press("ArrowUp");
   await expect(board.locator('tr[aria-selected="true"]')).toHaveAttribute("data-bet", "e2e:mb4");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/bet\/e2e%3Amb4$/);

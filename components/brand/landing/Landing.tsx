@@ -2,8 +2,8 @@
  * Scornelius Pampered Yellow). One story, top to bottom:
  *   1. Hero      full height, centred: a live line, the headline, one line, the Start for $1 (the one Yellow fill),
  *                the price; behind it the brand board's cover: concentric arcs of light and slow waves (./Waves.tsx)
- *   2. Proof     three live numbers (hidden when there's no real value)
- *   3. Board     the latest 8 bets, 60 minutes late, sides locked (the lock is the reason to pay)
+ *   2. Live      beside the headline: today's numbers and the latest 6 bets from $1M+ wallets, 60 minutes late, sides
+ *                locked (the lock is the reason to pay); a board row opens the bet
  *   4. What you get   three glass cards with the arc motif: before you bet · while you hold · after it settles
  *   5. Record    what we told you: settled bets in 30 days, losses included, and $100 on each
  *   6. Access    the price on the glow, with the second and last Start for $1; then five questions (faqLd kept)
@@ -47,55 +47,50 @@ function Hero({ d }: { d: LandingData }) {
     <section className="c-hero" data-testid="hero" aria-labelledby="hero-h">
       <Waves />
       <div className="c-hero__in">
-        {live ? <p className="c-eyebrow" data-testid="hero-live"><span className="c-dot" aria-hidden="true" />{live}</p> : null}
-        <h1 id="hero-h" className="c-hero__h">{LANDING.h1}</h1>
-        <p className="c-hero__sub" data-testid="hero-sub">{LANDING.sub}</p>
-        <div className="c-hero__act">
-          <a className="t-cta t-cta--lg c-cta" href="/go" data-checkout="hero" data-cta="hero" data-testid="hero-start">{START}<span aria-hidden="true">→</span></a>
-          <p className="c-hero__price" data-testid="hero-price">{LANDING.priceLine}</p>
+        <div className="c-hero__copy">
+          {live ? <p className="c-eyebrow" data-testid="hero-live"><span className="c-dot" aria-hidden="true" />{live}</p> : null}
+          <h1 id="hero-h" className="c-hero__h">{LANDING.h1}</h1>
+          <p className="c-hero__sub" data-testid="hero-sub">{LANDING.sub}</p>
+          <div className="c-hero__act">
+            <a className="t-cta t-cta--lg c-cta" href="/go" data-checkout="hero" data-cta="hero" data-testid="hero-start">{START}<span aria-hidden="true">→</span></a>
+            <p className="c-hero__price" data-testid="hero-price">{LANDING.priceLine}</p>
+          </div>
         </div>
+        <LivePanel d={d} />
       </div>
     </section>
   );
 }
 
-function Proof({ d }: { d: LandingData }) {
+/** The hero's information: the latest bets from $1M+ wallets (60 minutes late, sides locked) and today's numbers. */
+function LivePanel({ d }: { d: LandingData }) {
+  const rows = d.lead.slice(0, 6);
   const stats = [
     d.pulse.sinceMidnight > 0 ? { v: dollars(d.pulse.sinceMidnight), k: "bet by $1M+ wallets today", id: "today" } : null,
-    d.pulse.millionaires > 0 ? { v: d.pulse.millionaires.toLocaleString("en-US"), k: "wallets up $1M+, watched", id: "wallets" } : null,
-    d.month ? { v: `${d.month.won}–${d.month.lost}`, k: "won–lost, settled this month", id: "month" } : null,
+    d.pulse.millionaires > 0 ? { v: d.pulse.millionaires.toLocaleString("en-US"), k: "wallets up $1M+ watched", id: "wallets" } : null,
+    d.month ? { v: `${d.month.won}–${d.month.lost}`, k: "won–lost this month", id: "month" } : null,
   ].filter((x): x is { v: string; k: string; id: string } => x !== null);
-  if (!stats.length) return null;
   return (
-    <dl className="c-proof" data-testid="hero-proof">
-      {stats.map((s, n) => <div key={s.id} className="c-proof__s" data-stat={s.id} data-reveal="" style={i(n)}><dd className="c-proof__v" data-count={s.v}>{s.v}</dd><dt className="c-proof__k">{s.k}</dt></div>)}
-    </dl>
-  );
-}
-
-function Board({ d }: { d: LandingData }) {
-  const rows = d.lead.slice(0, 8);
-  return (
-    <section className="c-sec" data-testid="landing-board" aria-labelledby="board-h">
-      <div className="c-sec__head">
-        <h2 id="board-h" className="c-h2">The latest bets from $1M+ wallets.</h2>
-        <p className="c-sec__sub">Every Polymarket bet of $5K+, here 60 minutes late. Members see each one the minute it lands, with the side.</p>
+    <aside className="c-live" aria-label="Live from $1M+ wallets" data-testid="landing-board">
+      <header className="c-live__head"><span className="c-live__t"><span className="c-dot" aria-hidden="true" />Live from $1M+ wallets</span><span className="c-live__delay">60 min delay for visitors</span></header>
+      {stats.length ? (
+        <dl className="c-live__stats" data-testid="hero-proof">
+          {stats.map(s => <div key={s.id} data-stat={s.id}><dd data-count={s.v}>{s.v}</dd><dt>{s.k}</dt></div>)}
+        </dl>
+      ) : null}
+      <div className="c-live__rows">
+        {rows.length ? rows.map(b => (
+          <a key={b.id} className="c-live__row" href={betPath(b.id)} data-board-row="" data-href={betPath(b.id)} data-testid="landing-row">
+            <span className="c-live__time">{ET_TIME.format(new Date(b.at))}</span>
+            <span className="c-live__who"><span className={`c-tier c-tier--${b.tier}`}>{TIER_NAME[b.tier]}</span><span className="c-addr">{b.short}</span></span>
+            <span className="c-live__m" title={b.title}>{b.title}</span>
+            <span className="c-live__amt">{dollars(b.amount)}{usual(b) ? <small>{usual(b)} usual</small> : null}</span>
+            <span className="c-live__side" data-locked="side"><Lock />Members</span>
+          </a>
+        )) : <p className="c-live__empty">The next bet from a $1M+ wallet shows here as it lands.</p>}
       </div>
-      {rows.length ? (
-        <div className="c-card c-list" data-reveal="">
-          {rows.map((b, n) => (
-            <div key={b.id} className="c-row" data-board-row="" data-href={betPath(b.id)} tabIndex={0} role="link" data-testid="landing-row" data-reveal="" style={i(n)}>
-              <span className="c-row__time">{ET_TIME.format(new Date(b.at))}</span>
-              <span className="c-row__who"><span className={`c-tier c-tier--${b.tier}`}>{TIER_NAME[b.tier]}</span><span className="c-addr">{b.short}</span></span>
-              <span className="c-row__t" title={b.title}>{b.title}</span>
-              <span className="c-row__amt">{dollars(b.amount)}{usual(b) ? <small> · {usual(b)} usual</small> : null}</span>
-              <span className="c-row__side" data-locked="side"><Lock />Members</span>
-            </div>
-          ))}
-        </div>
-      ) : <div className="c-card c-empty">No bets from wallets up $1M+ in the last day yet. They show here as they land, 60 minutes late.</div>}
-      <p className="c-note">Source: Polymarket public data. {LANDING.boardNote}</p>
-    </section>
+      <footer className="c-live__src">Source: Polymarket public data · updated {ET_TIME.format(new Date(d.now))} ET. {LANDING.boardNote}</footer>
+    </aside>
   );
 }
 
@@ -177,8 +172,6 @@ export function Landing({ d }: { d: LandingData }) {
       <TerminalChrome election={electionDay(d.now)} />
       <Hero d={d} />
       <div className="c-wrap">
-        <Proof d={d} />
-        <Board d={d} />
         <WhatYouGet />
         <Record d={d} />
         <Access />

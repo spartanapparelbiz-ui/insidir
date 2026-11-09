@@ -246,7 +246,7 @@ test("share and install: brackets-mark icons, the manifest, a rendered OG image,
     expect(s.channels[0]!.max, `${f}: has the white mark`).toBe(255);
   }
   const man = await (await request.get("/manifest.webmanifest")).json();
-  expect(man).toMatchObject({ name: "Insidir", background_color: "#071b53", theme_color: "#071b53" });
+  expect(man).toMatchObject({ name: "Insidir", background_color: "#040d2b", theme_color: "#040d2b" });
   const og = await request.get("/opengraph-image");
   expect(og.status()).toBe(200);
   expect(og.headers()["content-type"]).toContain("image/png");

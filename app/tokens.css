@@ -10,10 +10,10 @@
 :root {
   /* the palette */
   --ink: #f3f7ff;
-  --paper: #071b53;
-  --grey-1: #0a2463;
-  --grey-1b: #0e2d75;
-  --grey-2: #1e3f8c;
+  --paper: #040d2b;
+  --grey-1: #071b53;
+  --grey-1b: #0a2463;
+  --grey-2: #13306f;
   --grey-3: #93aad8;
   --grey-4: #93aad8; /* a missing figure: the grey "—" */
   /* gains and wins (#1a9e5c) for lines, dots and big numbers; the same green, darker, for small text so it stays
@@ -70,7 +70,8 @@
 /* ---------- The terminal (Bloomberg-style), on the brand palette: Garnished & Tarnished Blue (the ground), Perplexed
  * Scrutiny Azure (everything active), Scornelius Pampered Yellow (the Start for $1 button only), green and red for
  * money. Nothing else.
- *   blue      #071b53 page · #0a2463 panel · #0e2d75 panel header · #1e3f8c line · #13306f row line
+ *   blue      #040d2b page (the deep ground) · #071b53 card (Garnished & Tarnished Blue) · #0a2463 header and row line ·
+ *             #13306f line
  *   text      #f3f7ff · muted #93aad8 (6.9:1 on the page)
  *   azure     #6cc4fe accent, active, fills (with #071b53 text on it), links · #0f3a86 hover and selected tint
  *   yellow    #e3fb99 the Start for $1 button only (#071b53 text), hover #eefdc0
@@ -79,11 +80,11 @@
  * headlines. Scale 11 · 12.5 · 13 · 15 · 20 · 28 · 44. Radius 0–2px, 1px hairlines; no shadows or glass. The brand
  * glow (Azure into Yellow, the landing's hero only) is the one gradient: never behind data. */
 :root {
-  --t-page: #071b53;
-  --t-panel: #0a2463;
-  --t-head: #0e2d75;
-  --t-line: #1e3f8c;
-  --t-row: #13306f;
+  --t-page: #040d2b;
+  --t-panel: #071b53;
+  --t-head: #0a2463;
+  --t-line: #13306f;
+  --t-row: #0a2463;
   --t-text: #f3f7ff;
   --t-muted: #93aad8;
   --t-blue: #6cc4fe;
@@ -98,7 +99,7 @@
   --t-on-blue: #071b53;
   /* channels, for hairlines and tints at any opacity */
   --t-text-rgb: 243 247 255;
-  --t-page-rgb: 7 27 83;
+  --t-page-rgb: 4 13 43;
   --t-blue-rgb: 108 196 254;
   --t-tint-rgb: 15 58 134;
   --t-lime-rgb: 227 251 153;
@@ -118,23 +119,23 @@
 .b-root, :root[data-theme] .b-root {
   --ink: #f3f7ff;
   --ink-muted: #f3f7ff;
-  --panel: #0a2463;
+  --panel: #071b53;
   --white-btn: #6cc4fe;
   --btn-ink: #071b53;
   --fg-rgb: 243 247 255;
-  --bg-rgb: 7 27 83;
-  --bar-rgb: 10 36 99;
-  --page: #071b53;
-  --surface-1: #0a2463;
-  --surface-2: #0a2463;
-  --surface-3: #0e2d75;
-  --surface-4: #1e3f8c;
+  --bg-rgb: 4 13 43;
+  --bar-rgb: 7 27 83;
+  --page: #040d2b;
+  --surface-1: #071b53;
+  --surface-2: #071b53;
+  --surface-3: #0a2463;
+  --surface-4: #13306f;
   --ink-3: #93aad8;
   --ink-4: #93aad8;
   --white-btn-hover: #6cc4fe;
   --white-btn-active: #6cc4fe;
-  --glass-fill: #0a2463;
-  --glass-line: #1e3f8c;
+  --glass-fill: #071b53;
+  --glass-line: #13306f;
   --focus: #6cc4fe;
   --up: #19d27a;
   --down: #ff4d6a;

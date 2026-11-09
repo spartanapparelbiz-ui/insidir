@@ -44,7 +44,7 @@ export const metadata: Metadata = {
 // Not preloaded: the brand pages (home, /go, the check) use Plus Jakarta Sans; only the older pages need this one.
 const schibsted = localFont({ src: "./fonts/schibsted-grotesk-latin.woff2", weight: "400 900", variable: "--font-schibsted", display: "swap", preload: false });
 
-export const viewport: Viewport = { themeColor: "#071b53", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#040d2b", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Whether Positioning has earned its place in the nav (cached for 10 minutes).
