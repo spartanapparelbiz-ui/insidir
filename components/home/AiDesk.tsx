@@ -22,8 +22,9 @@ export function AiDesk({ d }: { d: Home }) {
     top ? { v: top, k: "where the most money went" } : null,
   ].filter((x): x is { v: string; k: string } => x !== null);
   return (
-    <Stage bg={{ kind: "photo", photo: PHOTOS.street, dark: 0.72 }} testid="home-ai" labelledBy="ai-h">
+    <Stage bg={{ kind: "photo", photo: PHOTOS.street, dark: 0.72 }} id="ai" testid="home-ai" labelledBy="ai-h">
       <div className="b-head">
+        <p className="hm-eyebrow">AI analyst</p>
         <h2 id="ai-h" className="ai-h">Your AI analyst.</h2>
         <p className="b-sub">Follows every bet from wallets up $1M+ and tells you what it means for yours. Written from Insidir&apos;s data only, every number verified against it.</p>
       </div>

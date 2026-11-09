@@ -21,6 +21,7 @@ import { Stage } from "../Stage";
 import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
+import { ScrollReveal } from "../ScrollReveal";
 import { StickyStart } from "./StickyStart";
 import { RaceRow } from "./ElectionLive";
 import { HowStage, WatchStage, WhyStage } from "./Why";
@@ -173,6 +174,7 @@ export function Landing({ d }: { d: LandingData }) {
       <Rest d={d} />
       <StageMotion />
       <ScrollFx />
+      <ScrollReveal />
     </main>
     </>
   );
