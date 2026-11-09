@@ -9,6 +9,8 @@ import { SERVER_ENV } from "./env";
 import { q, shotName } from "./helpers";
 
 const BASE = "http://localhost:3100";
+// A real browser's user agent: headless Chrome is skipped as a bot when visits are counted (middleware.ts).
+test.use({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36" });
 
 test("a bio link: /tt1 → /?ref=tt1 with the post tag; first and last touch kept; the visit logged under tt1", async ({ page, context }) => {
   await page.goto("/tt1?utm_content=reel9");

@@ -54,7 +54,9 @@ export function middleware(req: NextRequest, ev: NextFetchEvent) {
     set.push({ name: "insidir_utm", value: JSON.stringify(utm), maxAge: 90 * 86_400, httpOnly: true });
   }
   // First and last touch (page loads only: not prefetches or RSC requests, which carry no new touch).
-  const isPage = req.method === "GET" && !req.headers.get("rsc") && req.headers.get("purpose") !== "prefetch" && !req.headers.get("next-router-prefetch");
+  const isPage = req.method === "GET" && !req.headers.get("rsc") && req.headers.get("purpose") !== "prefetch" && !req.headers.get("next-router-prefetch")
+    // A page view: a browser asking for HTML, never robots.txt, a sitemap or a share image.
+    && (req.headers.get("accept") ?? "").includes("text/html") && !/\.[a-z0-9]+$|(opengraph|twitter)-image|^\/sitemap/i.test(req.nextUrl.pathname);
   if (isPage) {
     const now = Date.now();
     const touch = touchFrom(req.nextUrl, req.headers.get("referer"), now);

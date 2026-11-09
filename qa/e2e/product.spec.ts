@@ -218,7 +218,8 @@ test("pings: the worker pushes a $1M+ wallet's $25K+ bet in the member's categor
     const payloads = mine.map(m => JSON.parse(ece.decrypt(Buffer.from(m.body, "base64"), { version: "aes128gcm", privateKey: ecdh, authSecret: auth }).toString("utf8")) as { title: string; body: string; url: string });
     const ravens = payloads.filter(p => p.url.endsWith(encodeURIComponent(id)));
     expect(ravens.length, log).toBe(1);
-    expect(ravens[0]!.body).toBe("A +$3.1M wallet just put $120K on Ravens in Ravens vs. Steelers at 60¢ (now 61¢). Copy?");
+    // The ping's text is unchanged; one "what it means" sentence follows it (lib/brief/explain.ts).
+    expect(ravens[0]!.body).toBe("A +$3.1M wallet just put $120K on Ravens in Ravens vs. Steelers at 60¢ (now 61¢). Copy? What it means: at 61¢, $100 pays $163 if Ravens win; 12× this wallet's usual bet.");
     expect(ravens[0]!.url).toBe(`${APP_URL}/copy/${encodeURIComponent(id)}`);
     expect(payloads.some(p => p.url.endsWith(encodeURIComponent(small)))).toBe(false); // under $25K: no ping
     expect((await q("select 1 from terminal.alerts_sent where user_id = $1 and opp_id = $2", [ins.id, `mil:${id}`])).length).toBe(1);
