@@ -50,6 +50,7 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
           <Pill href="/go?step=cats" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
           <Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>
         </div>
+        <p className="b-hero-terms" data-m="quiet" style={{ "--d": "1.05s" } as CSSProperties} data-testid="hero-terms">{STAGES.pricingSub} Apple Pay, Google Pay or card.</p>
       </div>
     </Stage>
   );
