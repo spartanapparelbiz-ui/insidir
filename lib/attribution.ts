@@ -105,3 +105,7 @@ export function shortLinkTarget(url: URL, extra: ReadonlySet<string> = new Set()
   for (const [k, v] of url.searchParams) if (k !== "ref") q.set(k, v);
   return `/?${q.toString()}`;
 }
+
+/** The secret middleware.ts sends with each touch to /api/touch over loopback (http://127.0.0.1, never off the
+ *  machine): TOUCH_SECRET, else ADMIN_TOKEN, else the database URL (always set where touches can be stored). */
+export const touchSecret = (env: Record<string, string | undefined> = process.env): string => env.TOUCH_SECRET || env.ADMIN_TOKEN || env.DATABASE_URL || "";

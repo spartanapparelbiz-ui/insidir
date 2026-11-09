@@ -6,7 +6,7 @@
  * "touch" event through /api/touch (server to server, after the response). */
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { appUrl } from "@/lib/app-url";
-import { directTouch, extraShortLinks, FIRST_TOUCH_COOKIE, LAST_TOUCH_COOKIE, readTouch, shortLinkTarget, TOUCH_MAX_AGE, touchFrom, writeTouch, type Touch } from "@/lib/attribution";
+import { touchSecret, directTouch, extraShortLinks, FIRST_TOUCH_COOKIE, LAST_TOUCH_COOKIE, readTouch, shortLinkTarget, TOUCH_MAX_AGE, touchFrom, writeTouch, type Touch } from "@/lib/attribution";
 
 const YEAR = 365 * 86_400;
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
@@ -15,7 +15,7 @@ const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|embedly|quora|wh
 
 /** Logs a touch (the visitor's first, or a new latest) as an event, after the response: /api/touch on this server. */
 function logTouch(ev: NextFetchEvent, req: NextRequest, visitorId: string, t: Touch, kind: "first" | "last") {
-  const secret = process.env.TOUCH_SECRET || process.env.ADMIN_TOKEN;
+  const secret = touchSecret();
   if (!secret || BOT.test(req.headers.get("user-agent") ?? "")) return;
   const port = process.env.PORT || req.nextUrl.port || "3000";
   ev.waitUntil(fetch(`http://127.0.0.1:${port}/api/touch`, {

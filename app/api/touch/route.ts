@@ -1,17 +1,17 @@
 /* A touch (lib/attribution.ts), logged by middleware.ts after it set the first-touch or last-touch cookie: one "touch"
  * event per visitor per touch, with its source, so visits count per account and per post (/admin/metrics). Server to
- * server only: the header must carry TOUCH_SECRET (else ADMIN_TOKEN). */
+ * server only: the header must carry the touch secret (lib/attribution.ts touchSecret). */
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { recordEvent } from "@/lib/analytics";
-import { readTouch, TOUCH_KEYS } from "@/lib/attribution";
+import { readTouch, TOUCH_KEYS, touchSecret } from "@/lib/attribution";
 
 export const dynamic = "force-dynamic";
 
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.TOUCH_SECRET || process.env.ADMIN_TOKEN || "";
+  const secret = touchSecret();
   if (!secret || !same(req.headers.get("x-insidir-touch") ?? "", secret)) return NextResponse.json({ error: "no" }, { status: 401 });
   let body: { visitorId?: unknown; kind?: unknown; touch?: unknown } = {};
   try { body = await req.json(); } catch { return NextResponse.json({ error: "bad json" }, { status: 400 }); }
