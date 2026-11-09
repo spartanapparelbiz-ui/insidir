@@ -10,12 +10,12 @@
 :root {
   /* the palette */
   --ink: #f3f7ff;
-  --paper: #040d2b;
-  --grey-1: #071b53;
-  --grey-1b: #0a2463;
-  --grey-2: #13306f;
-  --grey-3: #93aad8;
-  --grey-4: #93aad8; /* a missing figure: the grey "—" */
+  --paper: #030407;
+  --grey-1: #0a0c12;
+  --grey-1b: #0f121a;
+  --grey-2: #1b2030;
+  --grey-3: #8a94a8;
+  --grey-4: #8a94a8; /* a missing figure: the grey "—" */
   /* gains and wins (#1a9e5c) for lines, dots and big numbers; the same green, darker, for small text so it stays
    * readable (4.5:1 on white and on the cards). Losses likewise. */
   --money: #19d27a;
@@ -70,9 +70,9 @@
 /* ---------- The terminal (Bloomberg-style), on the brand palette: Garnished & Tarnished Blue (the ground), Perplexed
  * Scrutiny Azure (everything active), Scornelius Pampered Yellow (the Start for $1 button only), green and red for
  * money. Nothing else.
- *   blue      #040d2b page (the deep ground) · #071b53 card (Garnished & Tarnished Blue) · #0a2463 header and row line ·
- *             #13306f line
- *   text      #f3f7ff · muted #93aad8 (6.9:1 on the page)
+ *   black     #030407 page · #0a0c12 card · #0f121a header · #1b2030 line · #12151e row line (most of every screen)
+ *   navy      #071b53 Garnished & Tarnished Blue: depth only (glows, highlighted surfaces, the 3D scenes)
+ *   text      #f3f7ff · muted #8a94a8 (6.6:1 on the page)
  *   azure     #6cc4fe accent, active, fills (with #071b53 text on it), links · #0f3a86 hover and selected tint
  *   yellow    #e3fb99 the Start for $1 button only (#071b53 text), hover #eefdc0
  *   money     #19d27a up / profit / win · #ff4d6a down / loss
@@ -80,16 +80,16 @@
  * headlines. Scale 11 · 12.5 · 13 · 15 · 20 · 28 · 44. Radius 0–2px, 1px hairlines; no shadows or glass. The brand
  * glow (Azure into Yellow, the landing's hero only) is the one gradient: never behind data. */
 :root {
-  --t-page: #040d2b;
-  --t-panel: #071b53;
-  --t-head: #0a2463;
-  --t-line: #13306f;
-  --t-row: #0a2463;
+  --t-page: #030407;
+  --t-panel: #0a0c12;
+  --t-head: #0f121a;
+  --t-line: #1b2030;
+  --t-row: #12151e;
   --t-text: #f3f7ff;
-  --t-muted: #93aad8;
+  --t-muted: #8a94a8;
   --t-blue: #6cc4fe;
   --t-blue-text: #6cc4fe;
-  --t-blue-tint: #0f3a86;
+  --t-blue-tint: #0c1a2c;
   --t-cta: #e3fb99;
   --t-cta-ink: #071b53;
   --t-cta-hover: #eefdc0;
@@ -97,12 +97,14 @@
   --t-down: #ff4d6a;
   /* text on an Azure fill (the active key, <GO>, tags, selected chips) */
   --t-on-blue: #071b53;
+  /* Garnished & Tarnished Blue: depth (glows, highlighted surfaces, the 3D scenes' fog), never the ground */
+  --t-navy: #071b53;
   /* channels, for hairlines and tints at any opacity */
   --t-text-rgb: 243 247 255;
-  --t-page-rgb: 4 13 43;
-  --t-panel-rgb: 7 27 83;
+  --t-page-rgb: 3 4 7;
+  --t-panel-rgb: 10 12 18;
   --t-blue-rgb: 108 196 254;
-  --t-tint-rgb: 15 58 134;
+  --t-tint-rgb: 7 27 83;
   --t-lime-rgb: 227 251 153;
   --t-up-rgb: 25 210 122;
   --t-down-rgb: 255 77 106;
@@ -120,30 +122,30 @@
 .b-root, :root[data-theme] .b-root {
   --ink: #f3f7ff;
   --ink-muted: #f3f7ff;
-  --panel: #071b53;
+  --panel: #0a0c12;
   --white-btn: #6cc4fe;
   --btn-ink: #071b53;
   --fg-rgb: 243 247 255;
-  --bg-rgb: 4 13 43;
-  --bar-rgb: 7 27 83;
-  --page: #040d2b;
-  --surface-1: #071b53;
-  --surface-2: #071b53;
-  --surface-3: #0a2463;
-  --surface-4: #13306f;
-  --ink-3: #93aad8;
-  --ink-4: #93aad8;
+  --bg-rgb: 3 4 7;
+  --bar-rgb: 10 12 18;
+  --page: #030407;
+  --surface-1: #0a0c12;
+  --surface-2: #0a0c12;
+  --surface-3: #0f121a;
+  --surface-4: #1b2030;
+  --ink-3: #8a94a8;
+  --ink-4: #8a94a8;
   --white-btn-hover: #6cc4fe;
   --white-btn-active: #6cc4fe;
-  --glass-fill: #071b53;
-  --glass-line: #13306f;
+  --glass-fill: #0a0c12;
+  --glass-line: #1b2030;
   --focus: #6cc4fe;
   --up: #19d27a;
   --down: #ff4d6a;
-  --dim: #93aad8;
+  --dim: #8a94a8;
   /* Millionaire ($1M+): Azure, never gold. Pro: grey. */
   --gold: #6cc4fe; --gold-2: #6cc4fe;
-  --steel: #93aad8;
+  --steel: #8a94a8;
   --yes: #19d27a; --no: #ff4d6a;
   --dem: #6cc4fe; --rep: #ff4d6a;
   --violet: #6cc4fe;

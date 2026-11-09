@@ -6,10 +6,10 @@
 
 export const COLOR_VARS = ["--ink", "--ink-muted", "--ink-3", "--ink-4", "--page", "--surface-1", "--surface-2", "--surface-3", "--surface-4", "--panel", "--white-btn", "--btn-ink", "--glass-fill", "--glass-line", "--focus", "--up", "--down", "--dim",
   "--gold", "--gold-2", "--steel", "--yes", "--no", "--dem", "--rep", "--violet",
-  "--t-page", "--t-panel", "--t-head", "--t-line", "--t-row", "--t-text", "--t-muted", "--t-blue", "--t-blue-text", "--t-blue-tint", "--t-cta", "--t-cta-ink", "--t-cta-hover", "--t-up", "--t-down", "--t-on-blue"] as const;
+  "--t-page", "--t-panel", "--t-head", "--t-line", "--t-row", "--t-text", "--t-muted", "--t-blue", "--t-blue-text", "--t-blue-tint", "--t-cta", "--t-cta-ink", "--t-cta-hover", "--t-up", "--t-down", "--t-on-blue", "--t-navy"] as const;
 
 /** The literal values behind the tokens (lower case): the terminal palette (app/tokens.css). */
-export const COLORS = ["#040d2b", "#071b53", "#0a2463", "#13306f", "#f3f7ff", "#93aad8", "#6cc4fe", "#0f3a86", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a",
+export const COLORS = ["#030407", "#0a0c12", "#0f121a", "#1b2030", "#12151e", "#071b53", "#0c1a2c", "#f3f7ff", "#8a94a8", "#6cc4fe", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a",
   "transparent", "currentcolor", "inherit"] as const;
 
 /** UI text in px; headlines are set with <Lines size> in --u (40–89). */

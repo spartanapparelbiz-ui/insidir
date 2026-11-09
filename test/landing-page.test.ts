@@ -116,7 +116,7 @@ describe("copy rules on every V2 page", () => {
 describe("design system", () => {
   it("the terminal palette lives in app/tokens.css only: Garnished & Tarnished Blue, Perplexed Scrutiny Azure, Scornelius Pampered Yellow, green and red", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#040d2b", "#071b53", "#0a2463", "#13306f", "#f3f7ff", "#93aad8", "#6cc4fe", "#0f3a86", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a"];
+    const palette = ["#030407", "#0a0c12", "#0f121a", "#1b2030", "#12151e", "#071b53", "#0c1a2c", "#f3f7ff", "#8a94a8", "#6cc4fe", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     // No yellow, gold or amber anywhere: every other stylesheet uses the tokens, never a literal colour.
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
@@ -145,6 +145,6 @@ describe("design system", () => {
 
   it("the manifest opens the app on its home, Garnished & Tarnished Blue like the terminal, with the brackets-mark icons", async () => {
     const { default: manifest } = await import("@/app/manifest");
-    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#040d2b", theme_color: "#040d2b" });
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#030407", theme_color: "#030407" });
   });
 });
