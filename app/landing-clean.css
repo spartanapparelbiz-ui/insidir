@@ -15,7 +15,7 @@
 
 /* 1. Hero */
 .c-hero { position: relative; overflow: hidden; padding: 72px 32px 96px; }
-.c-glow--hero { left: 0; right: 0; bottom: 0; height: 78%; }
+.c-glow--hero { left: 0; right: 0; bottom: -18%; height: 96%; }
 .c-hero__in { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 56px; align-items: center; }
 .c-hero__copy { display: grid; gap: 22px; justify-items: start; min-width: 0; }
 .c-eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 7px 14px; border-radius: 999px; background: rgb(var(--t-text-rgb) / .08); border: 1px solid rgb(var(--t-text-rgb) / .12);

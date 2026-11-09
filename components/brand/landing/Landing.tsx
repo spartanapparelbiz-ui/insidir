@@ -35,8 +35,8 @@ const i = (n: number) => ({ "--i": n }) as CSSProperties;
 const Lock = () => <svg className="c-lock" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" /></svg>;
 
 /** The glow: concentric arcs over a soft wash of Azure into Yellow (the brand board's covers). Decorative. */
-const Glow = ({ className = "" }: { className?: string }) => (
-  <div className={`c-glow ${className}`} aria-hidden="true" data-drift="">
+const Glow = ({ className = "", drift = false }: { className?: string; drift?: boolean }) => (
+  <div className={`c-glow ${className}`} aria-hidden="true" data-drift={drift ? "" : undefined}>
     <span className="c-glow__ring c-glow__ring--1" /><span className="c-glow__ring c-glow__ring--2" /><span className="c-glow__ring c-glow__ring--3" />
   </div>
 );
@@ -63,7 +63,7 @@ function Hero({ d }: { d: LandingData }) {
   const live = d.pulse.count > 0 ? `${d.pulse.count.toLocaleString("en-US")} ${d.pulse.count === 1 ? "bet" : "bets"} from $1M+ wallets ${d.pulse.window === "hour" ? "in the last hour" : "today"}` : null;
   return (
     <section className="c-hero" data-testid="hero" aria-labelledby="hero-h">
-      <Glow className="c-glow--hero" />
+      <Glow className="c-glow--hero" drift />
       <div className="c-hero__in">
         <div className="c-hero__copy">
           {live ? <p className="c-eyebrow" data-testid="hero-live"><span className="c-dot" aria-hidden="true" />{live}</p> : null}
