@@ -10,6 +10,7 @@
  *   desk       their open copies with the result so far, the wallets they follow, pings
  * Server only. */
 import { humanLine } from "@/lib/markets/title";
+import { buildBrief, type Brief } from "@/lib/brief/build";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import { disagreements, electionDay as isElectionDay, priceGaps, type Disagreement, type PriceGap } from "@/lib/brand/pulse";
@@ -43,6 +44,9 @@ export interface Home {
   day: { money: number; bets: number } | null;
   insight: { hero: string | null; disagree: string | null; board: string | null; wallets: string | null; gaps: string | null; desk: string | null };
   polledAt: number | null; lastBetAt: number | null;
+  /** The AI analyst on the home: today's brief (written by the AI from our data, numbers verified; the template when the
+   *  model is slow or off), the member's watched bets, and the 24-hour data strip. */
+  ai: { brief: Brief | null; watching: number; markets: number; topCategory: string | null };
 }
 
 let poly: PolymarketClient | null = null, clients: { kalshi: KalshiClient; polymarket: PolymarketClient } | null = null;
@@ -108,6 +112,12 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     safe(db.execute(sql`select max(at) as at from terminal.millionaire_bets`).then(r => (r.rows[0] as { at: string | null }).at), null),
     safe(streamFor(db, now), null),
   ]);
+  const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
+  const [brief, watching] = await Promise.all([
+    within(buildBrief(db, now, { member: true, userId, useModel: true }), 3500, null as Brief | null)
+      .then(b => b ?? within(buildBrief(db, now, { member: true, userId, useModel: false }), 2500, null as Brief | null)),
+    safe(db.execute(sql`select count(*)::int as n from terminal.watched_bets where user_id = ${userId}`).then(r => Number((r.rows[0] as { n?: number } | undefined)?.n ?? 0)), 0),
+  ]);
   const v = (key: string) => k.find(x => x.key === key)?.value ?? 0;
   const today = v("money") > 0 ? { money: v("money"), bets: v("bets"), wallets: v("wallets") } : null;
   // Just after midnight ET today can be empty: the last 24 hours, said as such.
@@ -143,6 +153,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
       desk: openCopies.length ? `You have ${openCopies.length} open ${openCopies.length === 1 ? "copy" : "copies"}.` : null,
     },
     polledAt: polled ? new Date(polled).getTime() : null, lastBetAt: last ? new Date(last).getTime() : null,
+    ai: { brief, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
   };
 }
 
