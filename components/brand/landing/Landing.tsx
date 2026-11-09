@@ -16,7 +16,6 @@ import { TIER_NAME } from "@/lib/millionaires/watchlist";
 import { betPath } from "@/lib/entities/slug";
 import { dollars } from "@/lib/money";
 import { BrandFoot } from "../Nav";
-import { PayMoments } from "../PayMoments";
 import { ViewAs } from "@/components/ViewAs";
 import { TerminalChrome } from "@/components/terminal/Chrome";
 import { Panel } from "@/components/terminal/Panel";
@@ -156,7 +155,8 @@ export function Landing({ d }: { d: LandingData }) {
       </div>
       <BrandFoot inline />
       {d.member ? null : <StickyStart />}
-      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
+      {/* The timed pay prompt (PayMoments) stays on every other page; the landing keeps to its two Start for $1 buttons
+          and the phones' sticky bar. */}
       <LandingBeacons />
     </main>
     </>

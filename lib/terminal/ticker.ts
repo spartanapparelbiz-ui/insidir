@@ -35,7 +35,8 @@ export async function readTicker(db: Db, now: number): Promise<Ticker> {
   const items: TickerItem[] = [];
   if (total > 0) items.push({ kind: "total", text: `${usd(total)} BET BY $1M+ WALLETS TODAY` });
   for (const m of markets) {
-    if (m.closed) continue;
+    // A market without a price now isn't shown (the tape never prints a dash where a price should be).
+    if (m.closed || m.yes_price === null) continue;
     const p = m.yes_price === null ? null : Number(m.yes_price), f = m.first_yes === null ? null : Number(m.first_yes);
     const dir = p === null || f === null || Math.round(p * 100) === Math.round(f * 100) ? "flat" : p > f ? "up" : "down";
     items.push({ kind: "market", text: short(m.title), price: p, dir, href: null });
