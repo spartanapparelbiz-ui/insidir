@@ -4,17 +4,16 @@
  * square corners (2px), 1px hairlines, no shadows, gradients, glass or photos behind data, Plex Mono numbers. */
 
 /* ---------- base ---------- */
-.b-root { font-family: var(--t-mono); font-size: var(--t-body); letter-spacing: 0; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+.b-root { font-family: var(--t-body-font); font-size: var(--t-15); letter-spacing: 0; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
 .b-root *, .b-root *::before, .b-root *::after { box-shadow: none !important; text-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-.b-root *:not(img):not(video):not(svg):not(svg *) { background-image: none !important; }
-.b-root *:not(.t-dot) { border-radius: var(--t-r) !important; }
 .b-root :is(h1, h2, h3, .b-h1, .b-h2) { font-family: var(--t-sans); font-weight: 600; letter-spacing: 0; }
 .b-root .b-h1 { font-size: clamp(28px, 3.1vw, 44px) !important; line-height: 1.05 !important; }
 .b-root .b-h2 { font-size: clamp(20px, 2vw, 28px) !important; line-height: 1.1 !important; }
-.b-root .b-sub { font-family: var(--t-mono); font-weight: 400; font-size: var(--t-body); line-height: 1.5; letter-spacing: 0; color: var(--t-muted); }
+.b-root .b-sub { font-family: var(--t-body-font); font-weight: 400; font-size: var(--t-15); line-height: 1.55; letter-spacing: 0; color: var(--t-muted); }
 .b-root a.s-link, .b-root .t-link { color: var(--t-blue-text); }
 .b-root :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 1px solid var(--t-blue-text); outline-offset: 1px; }
-.b-root .num, .b-root [data-num], .b-root td, .b-root .mono { font-family: var(--t-mono); font-variant-numeric: tabular-nums; }
+.b-root .num, .b-root [data-num], .b-root td { font-variant-numeric: tabular-nums; }
+.b-root .mono { font-family: var(--t-mono); }
 
 /* No photo behind data: the ground is Shillingston Navy. */
 .b-root .b-stage__bg, .b-root .b-fixed-bg, .b-root .b-globe { display: none !important; }
@@ -63,7 +62,7 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .b-root .t-cmd svg { width: 14px; height: 14px; flex: none; color: var(--t-blue-text); }
 .b-root .t-cmd input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; outline: 0; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-mono); }
 .b-root .t-cmd input::placeholder { color: var(--t-muted); }
-.b-root .t-go { height: 100%; padding: 0 10px; background: var(--t-blue); color: var(--t-text); border: 0; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .08em; cursor: pointer; }
+.b-root .t-go { height: 100%; padding: 0 10px; background: var(--t-blue); color: var(--t-on-blue); border: 0; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .08em; cursor: pointer; }
 .b-root .t-cmdwrap { position: relative; }
 .b-root .t-cmdwrap .s-cmd__pop { position: absolute; left: 0; right: 0; top: 34px; z-index: 50; background: var(--t-panel); border: 1px solid var(--t-line); padding: 6px; }
 
@@ -92,8 +91,8 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
   font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; white-space: nowrap; }
 .t-fkey__k { color: var(--t-blue-text); font-weight: 600; }
 .b-root .t-fkey:hover { background: var(--t-blue-tint); color: var(--t-text); }
-.b-root .t-fkey[aria-current="page"] { background: var(--t-blue); color: var(--t-text); }
-.b-root .t-fkey[aria-current="page"] .t-fkey__k { color: var(--t-text); }
+.b-root .t-fkey[aria-current="page"] { background: var(--t-blue); color: var(--t-on-blue); }
+.b-root .t-fkey[aria-current="page"] .t-fkey__k { color: var(--t-on-blue); }
 
 /* The status bar, along the bottom on desktop. */
 .t-statusbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 12px;
@@ -156,7 +155,7 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .t-bid { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--t-line); background: var(--t-page); }
 
 /* ---------- Millionaire tags: Custodious Blue, never gold ---------- */
-.b-root .s-tier--millionaire, .b-root [data-tier="millionaire"] .s-tier, .b-root .b-tier--millionaire { background: var(--t-blue) !important; color: var(--t-text) !important; border-color: var(--t-blue) !important; }
+.b-root .s-tier--millionaire, .b-root [data-tier="millionaire"] .s-tier, .b-root .b-tier--millionaire { background: var(--t-blue) !important; color: var(--t-on-blue) !important; border-color: var(--t-blue) !important; }
 
 /* ---------- phones ---------- */
 @media (max-width: 899px) {
@@ -180,3 +179,83 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .b-root.b-app .b-main, .b-root.b-app .b-main:has(> div > .b-stage), .b-root.b-app .b-main:has(> div > div > .b-stage) { max-width: none; margin: 0; padding: 0 0 40px; }
 .b-root .b-stage[data-first] { padding-top: 24px; }
 @media (max-width: 899px) { .b-root.b-app .b-main { padding-bottom: 24px; } }
+
+
+/* ==========================================================================================================
+ * Clean visuals (the brand board: Garnished & Tarnished Blue, Perplexed Scrutiny Azure, Scornelius Pampered
+ * Yellow). Not a trading screen: rounded cards, calm type, soft glow arcs for the brand, no flashing, no ticker.
+ * Everything below settles the rules above.
+ * ========================================================================================================== */
+.b-root { --r: 16px; --t-r: 12px; }
+.b-root .b-pill, .b-root .b-btn, .b-root .t-btn2 { font-family: var(--t-body-font); letter-spacing: 0; text-transform: none; }
+.b-root a[data-checkout]:not(.s-link), .b-root button[data-checkout], .b-root .b-m-start, .b-root .t-cta { border-radius: 999px !important; font-family: var(--t-body-font); letter-spacing: 0; }
+.b-root .t-cta { min-height: 48px; padding: 0 26px; font-size: var(--t-15); font-weight: 600; }
+.b-root .t-cta--lg { min-height: 56px; padding: 0 32px; font-size: 17px; }
+.b-root .b-primary, .b-root .b-panel-pill, .b-root .t-btn2 { border-radius: 999px; }
+
+/* The top bar: the mark, the places, search, Log in, Start for $1. */
+.t-chrome.c-chrome { position: sticky; top: 0; z-index: 40; background: rgb(var(--t-page-rgb) / .92); border-bottom: 1px solid rgb(var(--t-text-rgb) / .08); }
+@supports (backdrop-filter: blur(1px)) { .t-chrome.c-chrome { -webkit-backdrop-filter: saturate(140%) blur(14px) !important; backdrop-filter: saturate(140%) blur(14px) !important; } }
+.b-root .t-top.b-nav, .b-root .t-top.b-nav--fixed { height: 64px; padding: 0 24px; gap: 20px; background: transparent; border-bottom: 0; }
+.b-root .c-wordmark { font: 600 19px/1 var(--t-sans); letter-spacing: .01em; color: var(--t-text); }
+.b-root .t-brand .b-logo, .b-root .t-brand .b-logo svg { width: 26px; height: 26px; }
+.b-root .t-links.c-links { display: flex !important; position: static; transform: none; gap: 22px; margin-left: 8px; }
+.b-root .c-links a { color: var(--t-muted); font: 500 14px/1 var(--t-body-font); letter-spacing: 0; }
+.b-root .c-links a:hover { color: var(--t-text); }
+.t-top__cmd { order: 3; flex: 0 1 300px; max-width: 300px; margin-left: auto; }
+.b-root .t-top__right { margin-left: 0; order: 4; gap: 10px; }
+.b-root .t-cmd { height: 38px; padding: 0 12px; gap: 8px; border: 1px solid rgb(var(--t-text-rgb) / .12); border-radius: 999px; background: rgb(var(--t-text-rgb) / .05); }
+.b-root .t-cmd:focus-within { border-color: var(--t-blue); background: var(--t-panel); }
+.b-root .t-cmd input { font: 400 14px/1 var(--t-body-font); }
+.c-kbd { flex: none; padding: 3px 6px; border: 1px solid rgb(var(--t-text-rgb) / .14); border-radius: 6px; color: var(--t-muted); font: 500 11px/1 var(--t-body-font); }
+.b-root .t-cmdwrap .s-cmd__pop { top: 44px; border-radius: 14px; padding: 8px; }
+.b-root .t-btn { height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid rgb(var(--t-text-rgb) / .16); font: 500 14px/1 var(--t-body-font); letter-spacing: 0; }
+.b-root .t-start { height: 38px; padding: 0 18px; font-size: 14px; }
+.b-root .t-top .b-burger { width: 38px; height: 38px; border-radius: 999px; border: 1px solid rgb(var(--t-text-rgb) / .16); }
+@media (min-width: 1200px) { .b-root .t-top .b-burger { display: none; } }
+@media (max-width: 1199px) { .b-root .t-links.c-links { display: none !important; } }
+.b-root .b-menu { border-radius: 16px; }
+.b-root .b-menu a { font-family: var(--t-body-font); font-size: 15px; }
+
+/* Cards (the panel): rounded, a soft line, the title in sentence case; quiet meta and source lines. */
+.t-wrap { padding: 24px; }
+.t-grid { gap: 16px; background: transparent; border: 0; }
+.t-panel { border: 1px solid rgb(var(--t-text-rgb) / .08); border-radius: 18px; background: var(--t-panel); overflow: hidden; }
+.t-panel__head { min-height: 52px; padding: 14px 18px 0; background: transparent; border-bottom: 0; }
+.b-root .t-panel__title { font: 600 17px/1.25 var(--t-sans); letter-spacing: .005em; color: var(--t-text); }
+.t-panel__meta { font: 500 12px/1.3 var(--t-body-font); letter-spacing: .02em; color: var(--t-muted); text-transform: none; }
+.t-panel__body { padding: 12px 18px 16px; }
+.t-panel--compact .t-panel__body { padding: 6px 0 4px; }
+.t-panel__src { padding: 10px 18px 14px; border-top: 1px solid rgb(var(--t-text-rgb) / .06); font: 400 12px/1.4 var(--t-body-font); letter-spacing: 0; color: var(--t-muted); }
+.t-empty { font: 400 14px/1.55 var(--t-body-font); }
+.t-label { font: 500 12px/1.3 var(--t-body-font); letter-spacing: .06em; }
+.t-kpi { font: 600 24px/1.1 var(--t-sans); letter-spacing: .01em; }
+
+/* Tables: calm rows, sans figures, the side and the P&L in colour only where they carry meaning. */
+.t-table { font: 400 14px/1.3 var(--t-body-font); }
+.b-root .t-table th { height: 38px; padding: 0 14px; background: var(--t-panel); border-bottom: 1px solid rgb(var(--t-text-rgb) / .08); font: 500 11.5px/1 var(--t-body-font); letter-spacing: .06em; }
+.b-root .t-table td { height: 48px; padding: 0 14px; border-bottom: 1px solid rgb(var(--t-text-rgb) / .06); }
+.t-table--compact td { height: 40px !important; }
+.t-table tbody tr:hover { background: rgb(var(--t-text-rgb) / .03); }
+.t-table tbody tr[aria-selected="true"], .t-table tbody tr:focus-visible { outline: 0; background: rgb(var(--t-blue-rgb) / .1); }
+.b-root .t-table tr:last-child td { border-bottom: 0; }
+.t-lock { font: 500 12px/1 var(--t-body-font); letter-spacing: .02em; }
+
+/* Calm: no flashing rows or prices, no blinking dots. */
+.t-new, .b-root [data-new="true"], .t-flash-up, .t-flash-down { animation: none !important; }
+
+/* Tiers: an Azure pill for $1M+, a quiet outline for Pro. */
+.b-root .s-tier--millionaire, .b-root [data-tier="millionaire"] .s-tier, .b-root .b-tier--millionaire, .t-tier--millionaire, .b-root .t-tagtier--millionaire {
+  border-radius: 999px !important; background: rgb(var(--t-blue-rgb) / .16) !important; color: var(--t-blue-text) !important; border: 0 !important; }
+
+@media (max-width: 899px) {
+  .b-root .t-top.b-nav { height: 58px; padding: 0 14px; gap: 10px; }
+  .t-top__cmd { position: absolute; top: 58px; left: 0; right: 0; max-width: none; margin: 0; padding: 10px 14px; background: var(--t-page); border-bottom: 1px solid rgb(var(--t-text-rgb) / .08); }
+  .b-root .t-searchbtn { width: 40px; height: 40px; border-radius: 999px; }
+  .b-root .t-top .b-burger { width: 40px; height: 40px; }
+  .b-root .t-top .t-btn { display: none !important; }
+  .t-wrap { padding: 0 14px; }
+  .t-grid { gap: 12px; }
+  .t-panel { border-radius: 16px; }
+  .b-root .t-panel__title { font-size: 16px; }
+}

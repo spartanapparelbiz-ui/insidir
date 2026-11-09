@@ -36,7 +36,9 @@ describe("V2 landing page", () => {
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<HomePage d={d}");
     // The terminal chrome first (no nav Start button on the landing), then the five blocks in order.
-    expect(landing).toContain("<TerminalChrome start={false}");
+    // The top bar's Start for $1 waits until the hero's button has scrolled away (components/brand/landing/Reveal.tsx).
+    expect(landing).toContain("<TerminalChrome election=");
+    expect(read("app/landing-clean.css")).toContain(".t-landing:not([data-cta-out]) .t-top .t-start { visibility: hidden; }");
     const order = ["<Hero d={d} />", "<Board d={d} />", "<WhatYouGet />", "<Record d={d} />", "<Access />", "<Faqs />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
@@ -57,7 +59,7 @@ describe("V2 landing page", () => {
     expect(landing).toContain('href="/go" data-checkout="pricing" data-cta="pricing" data-testid="pricing-cta"');
     expect(read("components/brand/landing/StickyStart.tsx")).toContain('data-checkout="sticky" data-cta="sticky"');
     // The board's side is locked for visitors: the column never prints a side.
-    expect(landing).toContain('<span className="t-lock" data-locked="side">MEMBERS</span>');
+    expect(landing).toContain('<span className="c-row__side" data-locked="side"><Lock />Members</span>');
     expect(landing).not.toMatch(/b\.side|b\.outcome/);
     const pitch = [copy.LANDING.h1, copy.LANDING.sub, ...copy.LANDING.three.map(x => x.t), ...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
@@ -110,9 +112,9 @@ describe("copy rules on every V2 page", () => {
 
 
 describe("design system", () => {
-  it("the terminal palette lives in app/tokens.css only: Shillingston Navy, Custodious Blue, a touch of Slime Orange, green and red", () => {
+  it("the terminal palette lives in app/tokens.css only: Garnished & Tarnished Blue, Perplexed Scrutiny Azure, Scornelius Pampered Yellow, green and red", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#0b1220", "#101a2b", "#15233a", "#22324b", "#182539", "#e8ecf3", "#8e9ab0", "#1f5bff", "#6e96ff", "#132b5c", "#ff6b1a", "#ff7f38", "#19d27a", "#ff4d6a"];
+    const palette = ["#071b53", "#0a2463", "#0e2d75", "#1e3f8c", "#13306f", "#f3f7ff", "#93aad8", "#6cc4fe", "#0f3a86", "#e3fb99", "#eefdc0", "#19d27a", "#ff4d6a"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
     // No yellow, gold or amber anywhere: every other stylesheet uses the tokens, never a literal colour.
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
@@ -120,7 +122,7 @@ describe("design system", () => {
       expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
       expect(css.match(/rgba?\(\s*(245|242|200|176|150)\s*,?\s*(196|195|149|124|86)\b/g) ?? [], `${f}: gold`).toEqual([]);
     }
-    // Orange is only the Start for $1 button.
+    // The yellow is only the Start for $1 button.
     const term = read("app/terminal.css");
     const ctaUses = [...term.matchAll(/([^{}]+)\{[^}]*var\(--t-cta(?:-hover)?\)[^}]*\}/g)].map(m => m[1]!.trim());
     for (const sel of ctaUses) expect(sel, sel).toMatch(/data-checkout|b-m-start|t-cta/);
@@ -139,8 +141,8 @@ describe("design system", () => {
     }
   });
 
-  it("the manifest opens the app on its home, Shillingston Navy like the terminal, with the brackets-mark icons", async () => {
+  it("the manifest opens the app on its home, Garnished & Tarnished Blue like the terminal, with the brackets-mark icons", async () => {
     const { default: manifest } = await import("@/app/manifest");
-    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#0b1220", theme_color: "#0b1220" });
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#071b53", theme_color: "#071b53" });
   });
 });

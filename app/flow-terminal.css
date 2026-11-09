@@ -48,7 +48,7 @@
   width: 100%; min-width: 0; height: 36px; padding: 0 10px; background: var(--t-page); color: var(--t-text); border: 1px solid var(--t-line);
   font: 400 var(--t-12-5)/1 var(--t-mono); font-variant-numeric: tabular-nums; }
 .b-root .tg-field input:focus, .b-root .tg-field select:focus, .b-root .tg-form input:focus, .b-root .tg-input:focus { outline: 0; border-color: var(--t-blue); }
-.b-root .tg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 14px; background: var(--t-blue); color: var(--t-text);
+.b-root .tg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 14px; background: var(--t-blue); color: var(--t-on-blue);
   border: 0; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; text-decoration: none; }
 .b-root .tg-btn:hover { background: var(--t-blue-text); color: var(--t-page); }
 .b-root .tg-btn:disabled { opacity: .5; cursor: default; }
@@ -103,7 +103,7 @@
 .b-root.b-go .b-answers { max-width: 460px; gap: 1px; background: var(--t-line); border: 1px solid var(--t-line); }
 .b-root.b-go .b-answers .b-btn-lg { height: 52px; padding: 0 14px; background: var(--t-panel); color: var(--t-text); border: 0; font: 500 var(--t-12-5)/1 var(--t-mono); letter-spacing: .06em; text-transform: uppercase; }
 .b-root.b-go .b-answers .b-btn-lg:hover { background: var(--t-blue-tint); }
-.b-root.b-go .b-primary { height: 44px; padding: 0 18px; background: var(--t-blue); color: var(--t-text); font: 600 var(--t-12-5)/1 var(--t-mono); letter-spacing: .06em; text-transform: uppercase; }
+.b-root.b-go .b-primary { height: 44px; padding: 0 18px; background: var(--t-blue); color: var(--t-on-blue); font: 600 var(--t-12-5)/1 var(--t-mono); letter-spacing: .06em; text-transform: uppercase; }
 .b-root.b-go .b-primary:hover { background: var(--t-blue-text); color: var(--t-page); }
 .b-root.b-go .b-ticks { font: 400 var(--t-body)/1.5 var(--t-mono); max-width: 520px; }
 .b-root.b-go .b-glass { background: var(--t-panel); border: 1px solid var(--t-line); }
@@ -155,4 +155,10 @@
   .b-root.b-go .b-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .b-root.b-go .b-tile { min-height: 48px; }
   .b-root.b-go .b-stage { padding-left: 12px; padding-right: 12px; }
+}
+
+/* Phones: the live card and the button fit the column (they were sized wider than it). */
+@media (max-width: 899px) {
+  .b-root.b-go .b-glass, .b-root.b-go .b-ctas, .b-root.b-go .b-ctas > .b-btn { width: auto !important; max-width: 100%; min-width: 0; }
+  .b-root.b-go .b-ctas > .b-btn { width: 100% !important; }
 }

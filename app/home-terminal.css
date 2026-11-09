@@ -4,7 +4,7 @@
 
 /* ---------- tier tags: $1M+ in Custodious Blue, Pro in grey ---------- */
 .b-root .t-tagtier { display: inline-flex; align-items: center; height: 18px; padding: 0 5px; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .06em; white-space: nowrap; vertical-align: 1px; }
-.b-root .t-tagtier--millionaire { background: var(--t-blue); color: var(--t-text); border: 1px solid var(--t-blue); }
+.b-root .t-tagtier--millionaire { background: var(--t-blue); color: var(--t-on-blue); border: 1px solid var(--t-blue); }
 .b-root .t-tagtier--pro, .b-root .t-tagtier--null, .b-root .t-tagtier--new { background: transparent; color: var(--t-muted); border: 1px solid var(--t-line); }
 .b-root .b-side { font-weight: 600; }
 .b-root .b-side--yes { color: var(--t-up); }

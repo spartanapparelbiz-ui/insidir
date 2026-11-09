@@ -13,7 +13,7 @@
 .bb-paste { display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; border: 1px solid var(--t-blue); background: var(--t-page); }
 .b-root .bb-paste input { flex: 1 1 260px; min-width: 0; height: 40px; padding: 0 12px; border: 0; outline: 0; background: transparent; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-mono); }
 .b-root .bb-paste input::placeholder { color: var(--t-muted); }
-.b-root .bb-paste button { height: 40px; padding: 0 16px; border: 0; background: var(--t-blue); color: var(--t-text); font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; cursor: pointer; }
+.b-root .bb-paste button { height: 40px; padding: 0 16px; border: 0; background: var(--t-blue); color: var(--t-on-blue); font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; cursor: pointer; }
 @media (max-width: 699px) {
   .bb__sec { grid-template-columns: minmax(0, 1fr); }
   .bb__sec > :not(.bb__h) { grid-column: 1; }

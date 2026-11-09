@@ -7,7 +7,7 @@
 .ask-form { display: flex; gap: 0; flex-wrap: wrap; border: 1px solid var(--t-blue); background: var(--t-page); }
 .b-root .ask-form .ask-input { flex: 1 1 260px; min-width: 0; height: 40px; padding: 0 12px; background: transparent; border: 0; outline: 0; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-mono); }
 .b-root .ask-form .ask-input::placeholder { color: var(--t-muted); }
-.b-root .ask-form .ask-go { min-width: 84px; height: 40px; padding: 0 14px; background: var(--t-blue); color: var(--t-text); border: 0; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; cursor: pointer; }
+.b-root .ask-form .ask-go { min-width: 84px; height: 40px; padding: 0 14px; background: var(--t-blue); color: var(--t-on-blue); border: 0; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; cursor: pointer; }
 .b-root .ask-form .ask-go:disabled { opacity: .6; cursor: default; }
 .ask-try { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .b-root .ask-try button { font: 400 var(--t-11)/1.3 var(--t-mono); letter-spacing: .04em; color: var(--t-text); background: var(--t-page); border: 1px solid var(--t-line); padding: 7px 10px; cursor: pointer; text-align: left; }

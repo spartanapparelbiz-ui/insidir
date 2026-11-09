@@ -1,33 +1,16 @@
-/* The terminal's chrome, on every brand page (Frame, Shell, the landing, /login): the top bar (components/brand/Nav.tsx
- * BrandNav: mark, command line, ET clock, status light), the ticker tape (real data, lib/terminal/ticker.ts), the
- * function-key bar, and the status bar along the bottom (desktop; on phones its words close the footer). Server. */
+/* The site's top bar on every brand page (Frame, Shell, the landing, /login): the clean nav (components/brand/Nav.tsx
+ * BrandNav: the mark, the places, search with ⌘K, Log in / Account, Start for $1), sticky at the top. Server. The
+ * earlier terminal chrome's ticker, function keys and status bar are retired (clean visuals, not a trading screen);
+ * their components stay in components/terminal for reference. */
 import type { ComponentProps } from "react";
 import { BrandNav } from "@/components/brand/Nav";
-import { tickerNow } from "@/lib/terminal/ticker";
-import { FKeys } from "./FKeys";
-import { fetchedText } from "./Panel";
-import { TickerTape } from "./Ticker";
 
 export async function TerminalChrome(props: ComponentProps<typeof BrandNav>) {
-  const ticker = await tickerNow();
-  return (
-    <>
-      <div className="t-chrome" data-testid="t-chrome">
-        <BrandNav {...props} />
-        <TickerTape ticker={ticker} />
-        <FKeys />
-      </div>
-      <StatusBar asOf={ticker.fetchedAt} />
-    </>
-  );
+  return <div className="t-chrome c-chrome" data-testid="t-chrome"><BrandNav {...props} /></div>;
 }
 
-/** "INSIDIR TERMINAL · POLYMARKET + KALSHI · ALL TIMES ET · DATA AS OF …" left, "INFORMATION, NOT ADVICE · 18+" right. */
-export function StatusBar({ asOf }: { asOf: number }) {
-  return (
-    <div className="t-statusbar" data-testid="t-statusbar" role="contentinfo" aria-label="Status">
-      <span>INSIDIR TERMINAL · POLYMARKET + KALSHI · ALL TIMES ET · DATA AS OF {fetchedText(asOf).replace("FETCHED ", "")}</span>
-      <span>INFORMATION, NOT ADVICE · 18+</span>
-    </div>
-  );
+/** Kept for callers; renders nothing (the status bar is retired with the terminal chrome). */
+export function StatusBar(_: { asOf: number }) {
+  void _;
+  return null;
 }

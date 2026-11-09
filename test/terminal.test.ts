@@ -23,6 +23,6 @@ describe("the terminal chrome", () => {
   });
   it("the clock and fetched stamps are Eastern time", () => {
     expect(etClockText(Date.UTC(2026, 10, 9, 4, 52, 14))).toBe("SUN 08 NOV 2026 · 23:52:14 ET");
-    expect(fetchedText(Date.UTC(2026, 10, 9, 3, 31))).toBe("FETCHED 10:31 PM ET");
+    expect(fetchedText(Date.UTC(2026, 10, 9, 3, 31))).toBe("updated 10:31 PM ET");
   });
 });

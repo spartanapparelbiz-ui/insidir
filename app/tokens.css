@@ -9,13 +9,13 @@
  * are the tracker's photo, edge to edge (components/trackers/TrackerCover.tsx). */
 :root {
   /* the palette */
-  --ink: #e8ecf3;
-  --paper: #0b1220;
-  --grey-1: #101a2b;
-  --grey-1b: #15233a;
-  --grey-2: #22324b;
-  --grey-3: #8e9ab0;
-  --grey-4: #8e9ab0; /* a missing figure: the grey "—" */
+  --ink: #f3f7ff;
+  --paper: #071b53;
+  --grey-1: #0a2463;
+  --grey-1b: #0e2d75;
+  --grey-2: #1e3f8c;
+  --grey-3: #93aad8;
+  --grey-4: #93aad8; /* a missing figure: the grey "—" */
   /* gains and wins (#1a9e5c) for lines, dots and big numbers; the same green, darker, for small text so it stays
    * readable (4.5:1 on white and on the cards). Losses likewise. */
   --money: #19d27a;
@@ -39,7 +39,7 @@
   --border: var(--grey-2);
   --text: var(--ink);
   --muted: var(--grey-3);
-  --press: #1f5bff;
+  --press: #6cc4fe;
 
   /* one font */
   --sans: var(--t-sans), var(--font-schibsted), -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
@@ -67,41 +67,47 @@
 }
 @media (min-width: 900px) { :root { --sec: 120px; } }
 
-/* ---------- The terminal (Bloomberg-style): Dry Shillingston Navy, Unhinged Custodious Blue, a very slight touch of
- * Slitherine Slime Orange (the Start for $1 button only), green and red for money. Nothing else. ----------
- *   navy      #0b1220 page · #101a2b panel · #15233a panel header · #22324b line · #182539 row line
- *   text      #e8ecf3 · muted #8e9ab0 (7:1 on the page)
- *   blue      #1f5bff accent / active / fills · #6e96ff links and blue text on navy · #132b5c hover and selected tint
- *   orange    #ff6b1a the Start for $1 button only (#0b1220 text), hover #ff7f38
- *   money     #19d27a up / profit / win · #ff4d6a down / loss (a pink-red, never mistaken for the orange)
+/* ---------- The terminal (Bloomberg-style), on the brand palette: Garnished & Tarnished Blue (the ground), Perplexed
+ * Scrutiny Azure (everything active), Scornelius Pampered Yellow (the Start for $1 button only), green and red for
+ * money. Nothing else.
+ *   blue      #071b53 page · #0a2463 panel · #0e2d75 panel header · #1e3f8c line · #13306f row line
+ *   text      #f3f7ff · muted #93aad8 (6.9:1 on the page)
+ *   azure     #6cc4fe accent, active, fills (with #071b53 text on it), links · #0f3a86 hover and selected tint
+ *   yellow    #e3fb99 the Start for $1 button only (#071b53 text), hover #eefdc0
+ *   money     #19d27a up / profit / win · #ff4d6a down / loss
  * Type: IBM Plex Mono for every number, table, label, ticker and command line; IBM Plex Sans Condensed (600) for
- * headlines. Scale 11 · 12.5 · 13 · 15 · 20 · 28 · 44. Radius 0–2px, 1px hairlines, no shadows, gradients or glass. */
+ * headlines. Scale 11 · 12.5 · 13 · 15 · 20 · 28 · 44. Radius 0–2px, 1px hairlines; no shadows or glass. The brand
+ * glow (Azure into Yellow, the landing's hero only) is the one gradient: never behind data. */
 :root {
-  --t-page: #0b1220;
-  --t-panel: #101a2b;
-  --t-head: #15233a;
-  --t-line: #22324b;
-  --t-row: #182539;
-  --t-text: #e8ecf3;
-  --t-muted: #8e9ab0;
-  --t-blue: #1f5bff;
-  --t-blue-text: #6e96ff;
-  --t-blue-tint: #132b5c;
-  --t-cta: #ff6b1a;
-  --t-cta-ink: #0b1220;
-  --t-cta-hover: #ff7f38;
+  --t-page: #071b53;
+  --t-panel: #0a2463;
+  --t-head: #0e2d75;
+  --t-line: #1e3f8c;
+  --t-row: #13306f;
+  --t-text: #f3f7ff;
+  --t-muted: #93aad8;
+  --t-blue: #6cc4fe;
+  --t-blue-text: #6cc4fe;
+  --t-blue-tint: #0f3a86;
+  --t-cta: #e3fb99;
+  --t-cta-ink: #071b53;
+  --t-cta-hover: #eefdc0;
   --t-up: #19d27a;
   --t-down: #ff4d6a;
+  /* text on an Azure fill (the active key, <GO>, tags, selected chips) */
+  --t-on-blue: #071b53;
   /* channels, for hairlines and tints at any opacity */
-  --t-text-rgb: 232 236 243;
-  --t-page-rgb: 11 18 32;
-  --t-blue-rgb: 31 91 255;
-  --t-tint-rgb: 19 43 92;
+  --t-text-rgb: 243 247 255;
+  --t-page-rgb: 7 27 83;
+  --t-blue-rgb: 108 196 254;
+  --t-tint-rgb: 15 58 134;
+  --t-lime-rgb: 227 251 153;
   --t-up-rgb: 25 210 122;
   --t-down-rgb: 255 77 106;
   /* type */
   --t-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --t-sans: var(--font-plex-cond), "Arial Narrow", -apple-system, BlinkMacSystemFont, sans-serif;
+  --t-body-font: var(--font-plex-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --t-11: 11px; --t-12-5: 12.5px; --t-body: 13px; --t-15: 15px; --t-kpi: 20px; --t-28: 28px; --t-44: 44px;
   --t-r: 2px;
   --t-row-h: 30px; --t-row-h-compact: 26px;
@@ -110,35 +116,35 @@
 
 /* The brand's names (components/brand/*, app/brand.css), on the terminal palette. */
 .b-root, :root[data-theme] .b-root {
-  --ink: #e8ecf3;
-  --ink-muted: #e8ecf3;
-  --panel: #101a2b;
-  --white-btn: #1f5bff;
-  --btn-ink: #e8ecf3;
-  --fg-rgb: 232 236 243;
-  --bg-rgb: 11 18 32;
-  --bar-rgb: 16 26 43;
-  --page: #0b1220;
-  --surface-1: #101a2b;
-  --surface-2: #101a2b;
-  --surface-3: #15233a;
-  --surface-4: #22324b;
-  --ink-3: #8e9ab0;
-  --ink-4: #8e9ab0;
-  --white-btn-hover: #6e96ff;
-  --white-btn-active: #1f5bff;
-  --glass-fill: #101a2b;
-  --glass-line: #22324b;
-  --focus: #6e96ff;
+  --ink: #f3f7ff;
+  --ink-muted: #f3f7ff;
+  --panel: #0a2463;
+  --white-btn: #6cc4fe;
+  --btn-ink: #071b53;
+  --fg-rgb: 243 247 255;
+  --bg-rgb: 7 27 83;
+  --bar-rgb: 10 36 99;
+  --page: #071b53;
+  --surface-1: #0a2463;
+  --surface-2: #0a2463;
+  --surface-3: #0e2d75;
+  --surface-4: #1e3f8c;
+  --ink-3: #93aad8;
+  --ink-4: #93aad8;
+  --white-btn-hover: #6cc4fe;
+  --white-btn-active: #6cc4fe;
+  --glass-fill: #0a2463;
+  --glass-line: #1e3f8c;
+  --focus: #6cc4fe;
   --up: #19d27a;
   --down: #ff4d6a;
-  --dim: #8e9ab0;
-  /* Millionaire ($1M+): Custodious Blue, never gold. Pro: grey. */
-  --gold: #6e96ff; --gold-2: #1f5bff;
-  --steel: #8e9ab0;
+  --dim: #93aad8;
+  /* Millionaire ($1M+): Azure, never gold. Pro: grey. */
+  --gold: #6cc4fe; --gold-2: #6cc4fe;
+  --steel: #93aad8;
   --yes: #19d27a; --no: #ff4d6a;
-  --dem: #6e96ff; --rep: #ff4d6a;
-  --violet: #6e96ff;
+  --dem: #6cc4fe; --rep: #ff4d6a;
+  --violet: #6cc4fe;
   --r: 2px;
   --b-head: var(--t-sans);
   --b-font: var(--t-mono);

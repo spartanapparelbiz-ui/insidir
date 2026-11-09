@@ -73,7 +73,7 @@
 .b-root .t-panel .s-chips .b-panel-pill, .b-root .t-chip { min-height: 30px; height: auto; padding: 0 10px; background: transparent; color: var(--t-muted); border: 1px solid var(--t-line);
   font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .b-root .t-panel .s-chips .b-panel-pill:hover, .b-root .t-chip:hover { border-color: var(--t-blue); color: var(--t-text); }
-.b-root .t-panel .s-chips .b-panel-pill[aria-pressed="true"], .b-root .t-chip[aria-pressed="true"] { background: var(--t-blue); border-color: var(--t-blue); color: var(--t-text); }
+.b-root .t-panel .s-chips .b-panel-pill[aria-pressed="true"], .b-root .t-chip[aria-pressed="true"] { background: var(--t-blue); border-color: var(--t-blue); color: var(--t-on-blue); }
 .b-root .t-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid var(--t-row); }
 .b-root .t-toolbar__group { display: flex; gap: 4px; flex-wrap: wrap; }
 .b-root .t-toolbar__sort { display: inline-flex; align-items: center; gap: 8px; }

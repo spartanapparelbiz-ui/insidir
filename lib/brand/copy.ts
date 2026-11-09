@@ -106,9 +106,15 @@ export const LANDING = {
   price: `$${TRIAL.fee} FOR ${TRIAL.days} DAYS · THEN $${PLANS.insidir.price}/MO · CANCEL ANYTIME`,
   boardNote: "Members see these the minute they land, with the side.",
   three: [
-    { k: "BEFORE YOU BET", t: "What the bet needs to win and who's on each side." },
-    { k: "WHILE YOU HOLD", t: "An alert when a $1M+ wallet takes the other side or gets out." },
-    { k: "AFTER IT SETTLES", t: "What happened and what following each wallet would have made." },
+    { k: "BEFORE YOU BET", title: "Before you bet", t: "What the bet needs to win, and who's on each side." },
+    { k: "WHILE YOU HOLD", title: "While you hold", t: "An alert when a $1M+ wallet takes the other side or gets out." },
+    { k: "AFTER IT SETTLES", title: "After it settles", t: "What happened, and what following each wallet would have made." },
   ],
   access: `$${TRIAL.fee} · ${TRIAL.days} DAYS → $${PLANS.insidir.price}/MO · CANCEL ANYTIME`,
+  /** The price, in words, under each Start for $1. */
+  priceLine: `$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month. Cancel anytime.`,
+  /** Under the Start for $1 label, inside the button. */
+  ctaSub: `${TRIAL.days} days of everything, live`,
+  gets: ["Every $1M+ bet the minute it lands, with its side", "Bet Briefings, alerts on your bets, the 8 AM brief", "Ask Insidir: answers from the data, never guesses"],
+  fine: `Then $${PLANS.insidir.price}/month. Cancel in Account, any time. Checkout by Whop.`,
 } as const;

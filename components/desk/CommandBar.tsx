@@ -54,9 +54,9 @@ export function CommandBar({ open: open0 = false, bar = false, inputId = "desk-q
       <form className={`s-cmd${bar ? " t-cmd" : ""}`} role="search" onSubmit={e => { e.preventDefault(); if (q.trim()) void find(q.trim()); }} data-testid={bar ? "t-cmd" : "desk-search"}>
         <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="9" cy="9" r="5" /><path d="m13 13 3.5 3.5" /></svg>
         <label className="b-sr" htmlFor={inputId}>Search markets, races and wallets, or paste a link</label>
-        <input id={inputId} ref={input} value={q} onChange={e => setQ(e.target.value)} onFocus={() => setOpen(true)} placeholder={bar ? "Search a market or wallet, or paste a Polymarket/Kalshi link" : "Search markets, races, wallets, or paste a link"} autoComplete="off" enterKeyHint="search" />
+        <input id={inputId} ref={input} value={q} onChange={e => setQ(e.target.value)} onFocus={() => setOpen(true)} placeholder={bar ? "Search markets and wallets, or ask a question" : "Search markets, races, wallets, or paste a link"} autoComplete="off" enterKeyHint="search" />
         {busy ? <span className="s-cmd__spin" aria-label="Searching" /> : null}
-        {bar ? <button type="submit" className="t-go" aria-label="Go">&lt;GO&gt;</button> : null}
+        {bar ? <kbd className="c-kbd" aria-hidden="true">⌘K</kbd> : null}
       </form>
       {open && (hits || msg) ? (
         <div className="s-cmd__pop" role="dialog" aria-label="Search results" data-testid="desk-search-result">
