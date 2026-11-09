@@ -16,7 +16,7 @@ import { gateBriefing } from "@/lib/briefing/gate";
 import { buildBrief } from "@/lib/brief/build";
 import { walletSpotlight, type Spotlight } from "@/lib/brand/pulse";
 import { shortWallet } from "@/lib/millionaires/watchlist";
-import type { BoardBet } from "@/lib/millionaires/queries";
+import { marketMoney, type BoardBet } from "@/lib/millionaires/queries";
 
 export interface Value {
   briefing: { title: string; href: string; lines: Array<{ k: string; t: string }> } | null;
@@ -36,14 +36,26 @@ export function landingValue(db: Db, now: number, lead: readonly BoardBet[]): Pr
   return memo("brand:value", 5 * 60_000, async () => {
     // The biggest open bet: a market still to play, so the briefing reads before the game.
     const open = lead.filter(b => b.result === null && !b.closed);
-    const top = [...(open.length ? open : lead)].sort((a, b) => b.amount - a.amount)[0] ?? null;
     const [briefing, brief, wallet, proof, twins] = await Promise.all([
-      top ? within(getBriefing(db, top.marketId, now).then(b => {
-        if (!b) return null;
-        const g = gateBriefing(b, false);
-        const lines = g.sections.filter(s => LABEL[s.key] && s.lines[0]).map(s => ({ k: LABEL[s.key]!, t: s.lines[0]! }));
-        return lines.length ? { title: b.title, href: `/briefing?m=${encodeURIComponent(b.marketId)}`, lines } : null;
-      }), 4000, null) : Promise.resolve(null),
+      within((async () => {
+        // The first of the three biggest bets whose market is still to settle.
+        // Candidates: the open markets with the most $1M+ money in 3 days, then the latest bets' markets.
+        const money = await marketMoney(db, { since: now - 3 * 86_400_000, limit: 6, now }).catch(() => []);
+        const ids = [...money.sort((a, b) => (b.millionaire.yes.dollars + b.millionaire.no.dollars) - (a.millionaire.yes.dollars + a.millionaire.no.dollars)).map(m => m.marketId),
+          ...[...(open.length ? open : lead)].sort((a, b) => b.amount - a.amount).map(b => b.marketId)];
+        const seen = new Set<string>();
+        for (const id of ids) {
+          if (seen.has(id) || seen.size >= 4) continue;
+          seen.add(id);
+          const c = { marketId: id };
+          const b = await getBriefing(db, c.marketId, now).catch(() => null);
+          if (!b || b.result) continue;
+          const g = gateBriefing(b, false);
+          const lines = g.sections.filter(x => LABEL[x.key] && x.lines[0]).map(x => ({ k: LABEL[x.key]!, t: x.lines[0]! }));
+          if (lines.length) return { title: b.title, href: `/briefing?m=${encodeURIComponent(b.marketId)}`, lines };
+        }
+        return null;
+      })(), 6000, null),
       within(buildBrief(db, now, { member: false, useModel: false }).then(b => b.items.slice(0, 2).map(i => [...i.lines])), 3000, [] as string[][]),
       within(walletSpotlight(db), 3000, null),
       within(db.execute(sql`select market_title, transaction_hash, result, amount from terminal.millionaire_bets
