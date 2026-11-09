@@ -174,3 +174,9 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
   .t-wrap { padding: 0; }
   .t-grid { border-left: 0; border-right: 0; }
 }
+
+/* The member shell's main was padded for the old fixed nav (app/brand.css .b-app .b-main); the terminal's chrome sits in
+ * the flow, so every page starts right under the function keys, full width. */
+.b-root.b-app .b-main, .b-root.b-app .b-main:has(> div > .b-stage), .b-root.b-app .b-main:has(> div > div > .b-stage) { max-width: none; margin: 0; padding: 0 0 40px; }
+.b-root .b-stage[data-first] { padding-top: 24px; }
+@media (max-width: 899px) { .b-root.b-app .b-main { padding-bottom: 24px; } }
