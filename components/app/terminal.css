@@ -4,11 +4,11 @@
  * 1px blue inset. Motion: a new row flashes Custodious Blue once (600ms) and its profit cell flashes; a closed row
  * greys for 5 seconds, then collapses. Reduced motion: none of it. */
 .dt-wrap { position: relative; }
-.dt { width: 100%; border-collapse: separate; border-spacing: 0; font: 400 var(--t-12-5)/16px var(--t-mono); font-variant-numeric: tabular-nums; table-layout: fixed; }
+.dt { width: 100%; border-collapse: separate; border-spacing: 0; font: 400 var(--t-12-5)/16px var(--t-body-font); font-variant-numeric: tabular-nums; table-layout: fixed; }
 .dt th, .dt td { padding: 0 8px; height: var(--t-row-h); text-align: left; vertical-align: middle; border-bottom: 1px solid var(--t-row); font-weight: 400; }
-.dt thead th { position: sticky; top: 60px; z-index: 2; height: 26px; background: var(--t-panel); color: var(--t-muted); font: 500 var(--t-11)/16px var(--t-mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; border-bottom-color: var(--t-line); }
+.dt thead th { position: sticky; top: 60px; z-index: 2; height: 26px; background: var(--t-panel); color: var(--t-muted); font: 500 var(--t-11)/16px var(--t-body-font); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; border-bottom-color: var(--t-line); }
 .dt-r { text-align: right !important; }
-.dt-num { font-family: var(--t-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
+.dt-num { font-family: var(--t-body-font); font-variant-numeric: tabular-nums; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
 .dt-time { color: var(--muted); }
 .dt-muted { color: var(--muted); }
 .dt-c-rules { width: 112px; }
@@ -23,8 +23,8 @@
 .dt-play { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .dt-viz { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--text); }
 .dt-bar { width: 72px; flex: none; }
-.dt-chip { flex: none; font: 400 var(--t-11)/16px var(--t-mono); color: var(--muted); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); white-space: nowrap; }
-.dt-profit { font: 600 var(--t-12-5)/16px var(--t-mono); font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; }
+.dt-chip { flex: none; font: 400 var(--t-11)/16px var(--t-body-font); color: var(--muted); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); white-space: nowrap; }
+.dt-profit { font: 600 var(--t-12-5)/16px var(--t-body-font); font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; }
 .dt-sub { display: none; }
 .dt .light { font-size: var(--t13); }
 /* rows */

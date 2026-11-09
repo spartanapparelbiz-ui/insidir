@@ -5,20 +5,20 @@
 
 /* Ask Insidir: the box, the examples, the answer panel. */
 .ask-form { display: flex; gap: 0; flex-wrap: wrap; border: 1px solid var(--t-blue); background: var(--t-page); }
-.b-root .ask-form .ask-input { flex: 1 1 260px; min-width: 0; height: 40px; padding: 0 12px; background: transparent; border: 0; outline: 0; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-mono); }
+.b-root .ask-form .ask-input { flex: 1 1 260px; min-width: 0; height: 40px; padding: 0 12px; background: transparent; border: 0; outline: 0; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-body-font); }
 .b-root .ask-form .ask-input::placeholder { color: var(--t-muted); }
-.b-root .ask-form .ask-go { min-width: 84px; height: 40px; padding: 0 14px; background: var(--t-blue); color: var(--t-on-blue); border: 0; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; cursor: pointer; }
+.b-root .ask-form .ask-go { min-width: 84px; height: 40px; padding: 0 14px; background: var(--t-blue); color: var(--t-on-blue); border: 0; font: 600 var(--t-11)/1 var(--t-body-font); letter-spacing: .1em; cursor: pointer; }
 .b-root .ask-form .ask-go:disabled { opacity: .6; cursor: default; }
 .ask-try { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-.b-root .ask-try button { font: 400 var(--t-11)/1.3 var(--t-mono); letter-spacing: .04em; color: var(--t-text); background: var(--t-page); border: 1px solid var(--t-line); padding: 7px 10px; cursor: pointer; text-align: left; }
+.b-root .ask-try button { font: 400 var(--t-11)/1.3 var(--t-body-font); letter-spacing: .04em; color: var(--t-text); background: var(--t-page); border: 1px solid var(--t-line); padding: 7px 10px; cursor: pointer; text-align: left; }
 .b-root .ask-try button:hover { border-color: var(--t-blue); background: var(--t-blue-tint); }
 .ask-answer { margin-top: 12px; display: grid; gap: 0; border: 1px solid var(--t-line); background: var(--t-panel); }
 .ask-answer__head { display: flex; justify-content: space-between; gap: 12px; align-items: center; min-height: 30px; padding: 0 10px; background: var(--t-head); border-bottom: 1px solid var(--t-line); }
-.ask-answer__title { margin: 0; font: 600 12px/1.2 var(--t-mono); letter-spacing: .06em; color: var(--t-text); }
-.ask-answer__q { font: 400 var(--t-11)/1.2 var(--t-mono); color: var(--t-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+.ask-answer__title { margin: 0; font: 600 12px/1.2 var(--t-body-font); letter-spacing: .06em; color: var(--t-text); }
+.ask-answer__q { font: 400 var(--t-11)/1.2 var(--t-body-font); color: var(--t-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
 .ask-answer__body { padding: 10px; display: grid; gap: 12px; min-width: 0; }
-.ask-text { margin: 0; font: 400 var(--t-15)/1.5 var(--t-mono); color: var(--t-text); }
+.ask-text { margin: 0; font: 400 var(--t-15)/1.5 var(--t-body-font); color: var(--t-text); }
 .ask-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
 .ask-table-title { margin: 0 0 6px; }
-.ask-src { padding: 6px 10px; border-top: 1px solid var(--t-row); color: var(--t-muted); font: 400 var(--t-11)/1.3 var(--t-mono); letter-spacing: .06em; }
-.ask-busy { padding: 10px; color: var(--t-muted); font: 400 var(--t-12-5)/1.4 var(--t-mono); }
+.ask-src { padding: 6px 10px; border-top: 1px solid var(--t-row); color: var(--t-muted); font: 400 var(--t-11)/1.3 var(--t-body-font); letter-spacing: .06em; }
+.ask-busy { padding: 10px; color: var(--t-muted); font: 400 var(--t-12-5)/1.4 var(--t-body-font); }

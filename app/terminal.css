@@ -21,14 +21,14 @@
 html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 
 /* Buttons: blue for actions, a line for secondary; Start for $1 alone is orange. */
-.b-root .b-pill, .b-root .b-btn { font-family: var(--t-mono); font-weight: 500; letter-spacing: .02em; }
+.b-root .b-pill, .b-root .b-btn { font-family: var(--t-body-font); font-weight: 500; letter-spacing: .02em; }
 .b-root a[data-checkout]:not(.s-link), .b-root button[data-checkout], .b-root .b-m-start, .b-root .t-cta {
-  background: var(--t-cta) !important; color: var(--t-cta-ink) !important; border: 0 !important; font-family: var(--t-mono); font-weight: 600; }
+  background: var(--t-cta) !important; color: var(--t-cta-ink) !important; border: 0 !important; font-family: var(--t-body-font); font-weight: 600; }
 .b-root a[data-checkout]:not(.s-link):hover, .b-root button[data-checkout]:hover, .b-root .b-m-start:hover, .b-root .t-cta:hover { background: var(--t-cta-hover) !important; }
 .b-root .t-cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 0 22px; font-size: var(--t-body); text-decoration: none; }
 .b-root .t-cta--lg { min-height: 52px; padding: 0 28px; font-size: var(--t-15); }
 .b-root .t-btn2 { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 12px; background: transparent; color: var(--t-text);
-  border: 1px solid var(--t-line); font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; text-transform: uppercase; }
+  border: 1px solid var(--t-line); font: 500 var(--t-11)/1 var(--t-body-font); letter-spacing: .1em; text-transform: uppercase; }
 .b-root .t-btn2:hover { border-color: var(--t-blue); background: var(--t-blue-tint); }
 
 /* ---------- chrome ---------- */
@@ -39,35 +39,35 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .b-root .t-brand .b-logo { display: inline-flex; width: 22px; height: 22px; color: var(--t-text); }
 .b-root .t-brand .b-logo svg { width: 22px; height: 22px; }
 .b-root .t-wordmark { font: 600 var(--t-15)/1 var(--t-sans); letter-spacing: .12em; color: var(--t-text); }
-.t-tag { font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .14em; color: var(--t-blue-text); border: 1px solid var(--t-line); padding: 3px 5px; }
+.t-tag { font: 500 var(--t-11)/1 var(--t-body-font); letter-spacing: .14em; color: var(--t-blue-text); border: 1px solid var(--t-line); padding: 3px 5px; }
 .t-top__cmd { flex: 1 1 auto; min-width: 0; max-width: 720px; }
 .b-root .t-links { display: none !important; }
 .b-root .t-top__right { margin-left: auto; display: flex; align-items: center; gap: 12px; flex: none; }
-.t-clock { font: 400 var(--t-11)/1 var(--t-mono); letter-spacing: .06em; color: var(--t-muted); white-space: nowrap; min-width: 30ch; text-align: right; }
-.t-status { display: inline-flex; align-items: center; gap: 6px; font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; color: var(--t-muted); white-space: nowrap; }
+.t-clock { font: 400 var(--t-11)/1 var(--t-body-font); letter-spacing: .06em; color: var(--t-muted); white-space: nowrap; min-width: 30ch; text-align: right; }
+.t-status { display: inline-flex; align-items: center; gap: 6px; font: 500 var(--t-11)/1 var(--t-body-font); letter-spacing: .1em; color: var(--t-muted); white-space: nowrap; }
 .t-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--t-muted); }
 .t-status--live { color: var(--t-up); }
 .t-status--live .t-dot { background: var(--t-up); }
-.b-root .t-btn { height: 28px; padding: 0 10px; background: transparent; color: var(--t-text); border: 1px solid var(--t-line); font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; }
+.b-root .t-btn { height: 28px; padding: 0 10px; background: transparent; color: var(--t-text); border: 1px solid var(--t-line); font: 500 var(--t-11)/1 var(--t-body-font); letter-spacing: .1em; }
 .b-root .t-btn:hover { border-color: var(--t-blue); }
 .b-root .t-start { height: 28px; padding: 0 12px; gap: 8px; font-size: var(--t-11); letter-spacing: .04em; }
 .b-root .t-top .b-burger { display: inline-flex; width: 32px; height: 28px; border: 1px solid var(--t-line); background: transparent; }
 .b-root .t-searchbtn { display: none; width: 32px; height: 28px; align-items: center; justify-content: center; background: transparent; color: var(--t-text); border: 1px solid var(--t-line); cursor: pointer; }
 .b-root .t-searchbtn svg { width: 16px; height: 16px; }
 .b-root .b-menu { background: var(--t-panel); border: 1px solid var(--t-line); }
-.b-root .b-menu a { font-family: var(--t-mono); font-size: var(--t-body); }
+.b-root .b-menu a { font-family: var(--t-body-font); font-size: var(--t-body); }
 
 /* The command line: a Custodious Blue border, mono, <GO>. */
 .b-root .t-cmd { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 0 0 10px; background: var(--t-panel); border: 1px solid var(--t-blue); color: var(--t-text); }
 .b-root .t-cmd svg { width: 14px; height: 14px; flex: none; color: var(--t-blue-text); }
-.b-root .t-cmd input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; outline: 0; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-mono); }
+.b-root .t-cmd input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; outline: 0; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-body-font); }
 .b-root .t-cmd input::placeholder { color: var(--t-muted); }
-.b-root .t-go { height: 100%; padding: 0 10px; background: var(--t-blue); color: var(--t-on-blue); border: 0; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .08em; cursor: pointer; }
+.b-root .t-go { height: 100%; padding: 0 10px; background: var(--t-blue); color: var(--t-on-blue); border: 0; font: 600 var(--t-11)/1 var(--t-body-font); letter-spacing: .08em; cursor: pointer; }
 .b-root .t-cmdwrap { position: relative; }
 .b-root .t-cmdwrap .s-cmd__pop { position: absolute; left: 0; right: 0; top: 34px; z-index: 50; background: var(--t-panel); border: 1px solid var(--t-line); padding: 6px; }
 
 /* The ticker tape. */
-.t-tape { height: 26px; display: flex; align-items: center; overflow: hidden; background: var(--t-panel); border-bottom: 1px solid var(--t-line); font: 400 var(--t-11)/1 var(--t-mono); letter-spacing: .04em; }
+.t-tape { height: 26px; display: flex; align-items: center; overflow: hidden; background: var(--t-panel); border-bottom: 1px solid var(--t-line); font: 400 var(--t-11)/1 var(--t-body-font); letter-spacing: .04em; }
 .t-tape__track { display: flex; width: max-content; animation: t-tape 120s linear infinite; }
 .t-tape:hover .t-tape__track { animation-play-state: paused; }
 .t-tape__run { display: flex; gap: 28px; padding-right: 28px; white-space: nowrap; }
@@ -88,7 +88,7 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .t-fkeys { display: flex; height: 30px; overflow-x: auto; scrollbar-width: none; background: var(--t-page); border-bottom: 1px solid var(--t-line); }
 .t-fkeys::-webkit-scrollbar { display: none; }
 .b-root .t-fkey { display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; flex: none; border-right: 1px solid var(--t-line); color: var(--t-muted);
-  font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; white-space: nowrap; }
+  font: 500 var(--t-11)/1 var(--t-body-font); letter-spacing: .1em; white-space: nowrap; }
 .t-fkey__k { color: var(--t-blue-text); font-weight: 600; }
 .b-root .t-fkey:hover { background: var(--t-blue-tint); color: var(--t-text); }
 .b-root .t-fkey[aria-current="page"] { background: var(--t-blue); color: var(--t-on-blue); }
@@ -96,7 +96,7 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 
 /* The status bar, along the bottom on desktop. */
 .t-statusbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 12px;
-  background: var(--t-head); border-top: 1px solid var(--t-line); color: var(--t-muted); font: 400 var(--t-11)/1 var(--t-mono); letter-spacing: .08em; white-space: nowrap; overflow: hidden; }
+  background: var(--t-head); border-top: 1px solid var(--t-line); color: var(--t-muted); font: 400 var(--t-11)/1 var(--t-body-font); letter-spacing: .08em; white-space: nowrap; overflow: hidden; }
 .b-root:has(~ .t-statusbar), body:has(.t-statusbar) .b-root { padding-bottom: 22px; }
 .t-foot-status { display: none; }
 
@@ -109,15 +109,15 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 @media (max-width: 700px) { .t-grid { grid-template-columns: minmax(0, 1fr); } .t-span-2, .t-span-3 { grid-column: auto; } }
 .t-panel { display: flex; flex-direction: column; min-width: 0; background: var(--t-panel); }
 .t-panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; padding: 0 10px; background: var(--t-head); border-bottom: 1px solid var(--t-line); }
-.b-root .t-panel__title { margin: 0; font: 600 12px/1.2 var(--t-mono); letter-spacing: .06em; color: var(--t-text); }
+.b-root .t-panel__title { margin: 0; font: 600 12px/1.2 var(--t-body-font); letter-spacing: .06em; color: var(--t-text); }
 .t-panel__n { color: var(--t-blue-text); margin-right: 6px; }
-.t-panel__meta { font: 400 var(--t-11)/1.2 var(--t-mono); letter-spacing: .06em; color: var(--t-muted); white-space: nowrap; text-transform: uppercase; }
+.t-panel__meta { font: 400 var(--t-11)/1.2 var(--t-body-font); letter-spacing: .06em; color: var(--t-muted); white-space: nowrap; text-transform: uppercase; }
 .t-panel__body { flex: 1; min-width: 0; padding: 10px; overflow-x: auto; }
 .t-panel--compact .t-panel__body { padding: 0; }
-.t-panel__src { padding: 6px 10px; border-top: 1px solid var(--t-row); color: var(--t-muted); font: 400 var(--t-11)/1.3 var(--t-mono); letter-spacing: .06em; }
-.t-empty { margin: 6px 0; color: var(--t-muted); font: 400 var(--t-12-5)/1.5 var(--t-mono); }
-.t-label { font: 500 var(--t-11)/1.2 var(--t-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--t-muted); }
-.t-kpi { font: 600 var(--t-kpi)/1.1 var(--t-mono); color: var(--t-text); font-variant-numeric: tabular-nums; }
+.t-panel__src { padding: 6px 10px; border-top: 1px solid var(--t-row); color: var(--t-muted); font: 400 var(--t-11)/1.3 var(--t-body-font); letter-spacing: .06em; }
+.t-empty { margin: 6px 0; color: var(--t-muted); font: 400 var(--t-12-5)/1.5 var(--t-body-font); }
+.t-label { font: 500 var(--t-11)/1.2 var(--t-body-font); letter-spacing: .1em; text-transform: uppercase; color: var(--t-muted); }
+.t-kpi { font: 600 var(--t-kpi)/1.1 var(--t-body-font); color: var(--t-text); font-variant-numeric: tabular-nums; }
 .t-muted { color: var(--t-muted); }
 .t-blue { color: var(--t-blue-text); }
 .t-up { color: var(--t-up); }
@@ -125,9 +125,9 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .t-flat { color: var(--t-muted); }
 
 /* ---------- tables ---------- */
-.t-table { width: 100%; border-collapse: collapse; font: 400 var(--t-12-5)/1 var(--t-mono); font-variant-numeric: tabular-nums; color: var(--t-text); }
+.t-table { width: 100%; border-collapse: collapse; font: 400 var(--t-12-5)/1 var(--t-body-font); font-variant-numeric: tabular-nums; color: var(--t-text); }
 .b-root .t-table th { position: sticky; top: 0; z-index: 1; height: 26px; padding: 0 8px; background: var(--t-panel); border-bottom: 1px solid var(--t-line); text-align: left;
-  color: var(--t-muted); font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+  color: var(--t-muted); font: 500 var(--t-11)/1 var(--t-body-font); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
 .b-root .t-table td { height: var(--t-row-h); padding: 0 8px; border-bottom: 1px solid var(--t-row); white-space: nowrap; }
 .b-root .t-table :is(th, td).r { text-align: right; }
 .t-table--compact td { height: var(--t-row-h-compact) !important; }
@@ -259,3 +259,9 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
   .t-panel { border-radius: 16px; }
   .b-root .t-panel__title { font-size: 16px; }
 }
+
+/* Clean text everywhere: Plex Sans (wallet addresses keep the mono, .mono / .c-addr); chips in sentence case. */
+.b-root .t-cmd input, .b-root .t-label, .b-root .t-lock, .b-root .t-panel__title, .b-root .t-panel__meta { font-family: var(--t-body-font); }
+.b-root .t-panel__meta { text-transform: none; letter-spacing: .02em; }
+.b-root .s-chips .b-panel-pill, .b-root .t-chip, .b-root .t-panel .s-chips .b-panel-pill { text-transform: none !important; letter-spacing: 0 !important; font: 500 13px/1 var(--t-body-font) !important; min-height: 36px; padding: 0 14px; border-radius: 999px !important; }
+.b-root .t-kpis > *, .b-root .t-stat, .b-root .s-stat { border-radius: 14px; }

@@ -6,9 +6,9 @@
 /* 1. Hero */
 .t-hero { display: grid; justify-items: start; gap: 12px; padding: 36px 12px 28px; border-bottom: 1px solid var(--t-line); }
 .b-root .t-hero__h { margin: 0; max-width: 22ch; font: 600 var(--t-44)/1.04 var(--t-sans); letter-spacing: 0; color: var(--t-text); }
-.t-hero__sub { margin: 0; max-width: 72ch; color: var(--t-muted); font: 400 var(--t-15)/1.4 var(--t-mono); }
+.t-hero__sub { margin: 0; max-width: 72ch; color: var(--t-muted); font: 400 var(--t-15)/1.4 var(--t-body-font); }
 .b-root .t-hero__go { margin-top: 8px; min-width: 260px; }
-.t-hero__price { margin: 0; color: var(--t-muted); font: 400 var(--t-11)/1.3 var(--t-mono); letter-spacing: .1em; }
+.t-hero__price { margin: 0; color: var(--t-muted); font: 400 var(--t-11)/1.3 var(--t-body-font); letter-spacing: .1em; }
 .t-proof { display: flex; flex-wrap: wrap; gap: 1px; margin: 14px 0 0; background: var(--t-line); border: 1px solid var(--t-line); }
 .t-proof__s { display: grid; gap: 6px; min-width: 220px; padding: 10px 14px; background: var(--t-panel); }
 .t-proof__s dd, .t-rec dd { margin: 0; }
@@ -18,15 +18,15 @@
 /* 2. Board */
 .t-landing .t-table td.t-ell { max-width: 420px; width: auto; }
 .t-landing .t-table tbody tr[data-board-row] { cursor: pointer; }
-.t-tier { display: inline-block; padding: 2px 5px; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .08em; border: 1px solid var(--t-line); color: var(--t-muted); }
+.t-tier { display: inline-block; padding: 2px 5px; font: 600 var(--t-11)/1 var(--t-body-font); letter-spacing: .08em; border: 1px solid var(--t-line); color: var(--t-muted); }
 .t-tier--millionaire { background: var(--t-blue); border-color: var(--t-blue); color: var(--t-on-blue); }
-.t-note { margin: 0; padding: 8px 10px; color: var(--t-muted); font: 400 var(--t-12-5)/1.4 var(--t-mono); }
+.t-note { margin: 0; padding: 8px 10px; color: var(--t-muted); font: 400 var(--t-12-5)/1.4 var(--t-body-font); }
 
 /* 3. What you get */
 .t-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--t-line); border: 1px solid var(--t-line); }
 .t-three__c { display: grid; gap: 8px; align-content: start; padding: 14px; background: var(--t-panel); }
 .b-root .t-three__k { margin: 0; color: var(--t-blue-text); }
-.t-three__t { margin: 0; color: var(--t-text); font: 400 var(--t-body)/1.5 var(--t-mono); }
+.t-three__t { margin: 0; color: var(--t-text); font: 400 var(--t-body)/1.5 var(--t-body-font); }
 
 /* 4. Record */
 .t-rec { display: flex; flex-wrap: wrap; gap: 28px; margin: 4px 0 8px; padding: 0 0 4px; }
@@ -36,13 +36,13 @@
 .t-access { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 14px; background: var(--t-panel); border: 1px solid var(--t-line); }
 .t-access__l { display: grid; gap: 6px; }
 .b-root .t-access .t-label { margin: 0; }
-.t-access__p { margin: 0; color: var(--t-text); font: 600 var(--t-kpi)/1.2 var(--t-mono); letter-spacing: .02em; }
+.t-access__p { margin: 0; color: var(--t-text); font: 600 var(--t-kpi)/1.2 var(--t-body-font); letter-spacing: .02em; }
 .t-faq { display: grid; gap: 8px; padding: 14px; background: var(--t-panel); border: 1px solid var(--t-line); }
 .b-root .t-faq h2 { margin: 0; }
 .t-faq dl { margin: 0; display: grid; }
 .t-faq__i { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; padding: 10px 0; border-top: 1px solid var(--t-row); }
-.t-faq__i dt { color: var(--t-text); font: 600 var(--t-body)/1.45 var(--t-mono); }
-.t-faq__i dd { margin: 0; color: var(--t-muted); font: 400 var(--t-12-5)/1.5 var(--t-mono); }
+.t-faq__i dt { color: var(--t-text); font: 600 var(--t-body)/1.45 var(--t-body-font); }
+.t-faq__i dd { margin: 0; color: var(--t-muted); font: 400 var(--t-12-5)/1.5 var(--t-body-font); }
 
 /* The phones' sticky bar: thin, navy, holding the orange button. */
 .t-sticky { display: none; }
@@ -51,7 +51,7 @@
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); background: var(--t-page); border-top: 1px solid var(--t-line);
     transform: translateY(110%); transition: transform .2s ease-out; pointer-events: none; }
   .t-sticky[data-on] { transform: none; pointer-events: auto; }
-  .t-sticky__t { color: var(--t-muted); font: 400 var(--t-11)/1.2 var(--t-mono); letter-spacing: .06em; }
+  .t-sticky__t { color: var(--t-muted); font: 400 var(--t-11)/1.2 var(--t-body-font); letter-spacing: .06em; }
   .b-root .t-sticky .t-cta { min-height: 44px; padding: 0 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .t-sticky { transition: none; } }
@@ -78,7 +78,7 @@
 .t-hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); align-items: center; gap: 24px; padding: 44px 12px 36px; }
 .t-hero__copy { display: grid; justify-items: start; gap: 14px; min-width: 0; }
 .t-eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 6px 10px; border: 1px solid var(--t-line); background: var(--t-panel);
-  color: var(--t-blue-text); font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .12em; }
+  color: var(--t-blue-text); font: 500 var(--t-11)/1 var(--t-body-font); letter-spacing: .12em; }
 .t-dot--live { background: var(--t-up); animation: t-live 1.6s ease-in-out infinite; }
 @keyframes t-live { 50% { opacity: .35; } }
 .b-root .t-hero__h { font-size: clamp(var(--t-28), 4.4vw, 60px); line-height: 1.02; max-width: 16ch; }
@@ -86,8 +86,8 @@
 
 /* The stronger call to action: big, Yellow, two lines (what you get inside the button), a slow pulse ring. */
 .b-root .t-cta--hero { position: relative; display: inline-grid; justify-items: start; gap: 4px; min-height: 64px; padding: 12px 28px 12px 22px; min-width: 300px; isolation: isolate; }
-.t-cta__main { font: 600 var(--t-kpi)/1 var(--t-mono); letter-spacing: .01em; }
-.t-cta__sub { font: 500 var(--t-11)/1.2 var(--t-mono); letter-spacing: .1em; text-transform: uppercase; opacity: .78; }
+.t-cta__main { font: 600 var(--t-kpi)/1 var(--t-body-font); letter-spacing: .01em; }
+.t-cta__sub { font: 500 var(--t-11)/1.2 var(--t-body-font); letter-spacing: .1em; text-transform: uppercase; opacity: .78; }
 .b-root .t-cta--hero::after { content: ""; position: absolute; inset: -1px; z-index: -1; border: 1px solid var(--t-cta); animation: t-ring 2.8s ease-out infinite; pointer-events: none; }
 @keyframes t-ring { 0% { opacity: .9; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.08, 1.35); } }
 .b-root .t-cta--hero:hover { transform: translateY(-1px); }
@@ -105,7 +105,7 @@
 .t-glow__mark { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: grid; place-items: center; width: 92px; height: 92px; color: var(--t-text);
   background: var(--t-page); border: 1px solid rgb(var(--t-blue-rgb) / .5); }
 .t-glow__mark svg { width: 48px; height: 48px; }
-.t-chip { position: absolute; display: grid; gap: 3px; padding: 8px 10px; background: var(--t-page); border: 1px solid var(--t-line); font: 400 var(--t-11)/1.25 var(--t-mono); letter-spacing: .06em; white-space: nowrap;
+.t-chip { position: absolute; display: grid; gap: 3px; padding: 8px 10px; background: var(--t-page); border: 1px solid var(--t-line); font: 400 var(--t-11)/1.25 var(--t-body-font); letter-spacing: .06em; white-space: nowrap;
   animation: t-float 6s ease-in-out infinite; }
 .t-chip__k { color: var(--t-blue-text); }
 .t-chip__v { color: var(--t-text); font-weight: 600; }
@@ -116,7 +116,7 @@
 @keyframes t-float { 50% { transform: translateY(-6px); } }
 
 /* The three: numbered. */
-.t-three__n { color: var(--t-cta); font: 600 var(--t-kpi)/1 var(--t-mono); }
+.t-three__n { color: var(--t-cta); font: 600 var(--t-kpi)/1 var(--t-body-font); }
 .t-three__c { padding: 18px 16px; }
 
 /* Access: the price, big, on the glow. */
@@ -127,9 +127,9 @@
 .t-access__big { margin: 4px 0 0; color: var(--t-text); font: 600 var(--t-28)/1 var(--t-sans); }
 .t-access__big span { font-size: 60px; line-height: .9; margin-right: 6px; }
 .t-access__list { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
-.t-access__list li { color: var(--t-text); font: 400 var(--t-body)/1.4 var(--t-mono); }
+.t-access__list li { color: var(--t-text); font: 400 var(--t-body)/1.4 var(--t-body-font); }
 .t-access__list li::before { content: "■ "; color: var(--t-blue-text); }
-.t-access__fine { margin: 0; color: var(--t-muted); font: 400 var(--t-11)/1.4 var(--t-mono); letter-spacing: .06em; }
+.t-access__fine { margin: 0; color: var(--t-muted); font: 400 var(--t-11)/1.4 var(--t-body-font); letter-spacing: .06em; }
 
 /* ---------- Scroll motion (components/brand/landing/Reveal.tsx; only once JS runs, never under reduced motion) ---------- */
 .t-hero__copy > * { animation: t-rise .7s cubic-bezier(.2, .8, .2, 1) both; }

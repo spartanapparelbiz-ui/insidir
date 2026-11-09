@@ -5,15 +5,15 @@
 .bb__sec:first-child { border-top: 0; padding-top: 2px; }
 .bb__sec > :not(.bb__h) { grid-column: 2; }
 .bb__n { color: var(--t-blue-text); font-variant-numeric: tabular-nums; margin-right: 6px; }
-.b-root .bb__h { margin: 0; grid-column: 1; grid-row: 1 / span 9; font: 500 var(--t-11)/1.4 var(--t-mono); color: var(--t-muted); text-transform: uppercase; letter-spacing: .1em; }
-.bb__line { margin: 0; font: 400 var(--t-body)/1.55 var(--t-mono); color: var(--t-text); overflow-wrap: anywhere; }
+.b-root .bb__h { margin: 0; grid-column: 1; grid-row: 1 / span 9; font: 500 var(--t-11)/1.4 var(--t-body-font); color: var(--t-muted); text-transform: uppercase; letter-spacing: .1em; }
+.bb__line { margin: 0; font: 400 var(--t-body)/1.55 var(--t-body-font); color: var(--t-text); overflow-wrap: anywhere; }
 .bb__line + .bb__line { margin-top: 3px; }
 .bb__lock { display: grid; gap: 10px; justify-items: start; padding: 12px 2px 2px; border-top: 1px solid var(--t-row); }
-.bb__foot { margin: 0; padding-top: 10px; border-top: 1px solid var(--t-row); color: var(--t-muted); font: 400 var(--t-11)/1.4 var(--t-mono); letter-spacing: .06em; text-transform: uppercase; }
+.bb__foot { margin: 0; padding-top: 10px; border-top: 1px solid var(--t-row); color: var(--t-muted); font: 400 var(--t-11)/1.4 var(--t-body-font); letter-spacing: .06em; text-transform: uppercase; }
 .bb-paste { display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; border: 1px solid var(--t-blue); background: var(--t-page); }
-.b-root .bb-paste input { flex: 1 1 260px; min-width: 0; height: 40px; padding: 0 12px; border: 0; outline: 0; background: transparent; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-mono); }
+.b-root .bb-paste input { flex: 1 1 260px; min-width: 0; height: 40px; padding: 0 12px; border: 0; outline: 0; background: transparent; color: var(--t-text); font: 400 var(--t-12-5)/1 var(--t-body-font); }
 .b-root .bb-paste input::placeholder { color: var(--t-muted); }
-.b-root .bb-paste button { height: 40px; padding: 0 16px; border: 0; background: var(--t-blue); color: var(--t-on-blue); font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; cursor: pointer; }
+.b-root .bb-paste button { height: 40px; padding: 0 16px; border: 0; background: var(--t-blue); color: var(--t-on-blue); font: 600 var(--t-11)/1 var(--t-body-font); letter-spacing: .1em; cursor: pointer; }
 @media (max-width: 699px) {
   .bb__sec { grid-template-columns: minmax(0, 1fr); }
   .bb__sec > :not(.bb__h) { grid-column: 1; }
