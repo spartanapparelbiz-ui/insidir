@@ -37,7 +37,7 @@ describe("V2 landing page", () => {
     expect(src).toContain("<HomePage d={d}");
     // The hero, then everything below it in order (components/brand/landing/Landing.tsx Rest).
     expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
-    const order = ["<ElectionStage d={d} /> : null", "<WhyStage />", "<HowStage />", "<WatchStage />", "<Free d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
+    const order = ["<ElectionStage d={d} /> : null", "<InsideStage d={d} />", "<Pricing />", "<WhyStage />", "<HowStage />", "<WatchStage />", "<Free d={d} />", "<Proof d={d} />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);

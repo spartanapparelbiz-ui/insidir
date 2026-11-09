@@ -7,8 +7,9 @@ import { getBriefing } from "@/lib/briefing/store";
 import { gateBriefing } from "@/lib/briefing/gate";
 import { buildBrief } from "@/lib/brief/build";
 import type { LandingData } from "@/lib/brand/landing";
-import { Lines, m } from "../Bits";
+import { Lines, m, Pill } from "../Bits";
 import { Stage } from "../Stage";
+import { PLANS, TRIAL } from "@/lib/plans";
 
 const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
 const KEYS: Record<string, string> = { rules: "Wins if", cost: "Costs and pays", read: "The read" };
@@ -38,8 +39,9 @@ export async function InsideStage({ d }: { d: LandingData }) {
   return (
     <Stage testid="inside" labelledBy="inside-h" className="b-stage--inside">
       <div className="b-head">
-        <Lines id="inside-h" lines={["What's inside."]} size={64} />
-        <p className="b-sub" {...m("lift", 0.4)}>Four tools that read the $1M+ money for you, written from our data only, with every number verified against it.</p>
+        <p className="in-k in-k--lead" {...m("lift", 0.2)}>Not just data</p>
+        <Lines id="inside-h" lines={["Your AI analyst."]} size={64} />
+        <p className="b-sub" {...m("lift", 0.4)}>It reads every $1M+ bet for you and tells you, in plain words, what it means for yours: before you bet, while you hold, and when it settles. Written from our data only, every number verified against it.</p>
       </div>
       <div className="in-grid" data-testid="inside-tools">
         <article className="b-glass in-card in-card--wide" data-m="settle" style={card(0)}>
@@ -70,6 +72,10 @@ export async function InsideStage({ d }: { d: LandingData }) {
           <p className="in-t">Answers come only from our data, with the rows behind them. If we don&apos;t have it, it says so.</p>
           <ul className="in-asks">{ASKS.map(q => <li key={q}>{q}</li>)}</ul>
         </article>
+      </div>
+      <div className="in-cta" data-m="settle" style={card(4)}>
+        <div className="b-ctas"><Pill href="/go?step=cats" data-checkout="inside" data-testid="inside-start">Start for $1</Pill></div>
+        <p className="b-small">{`$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price} a month. Cancel anytime. The AI analyst is included.`}</p>
       </div>
     </Stage>
   );

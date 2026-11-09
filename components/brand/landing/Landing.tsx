@@ -6,6 +6,7 @@
  *   Pricing · FAQ · Final (the globe again, the footer inside). Stages: ./Why.tsx, ./Value.tsx; scroll motion: ./ScrollFx.tsx.
  * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
 import { electionDay } from "@/lib/brand/pulse";
+import { TRIAL } from "@/lib/plans";
 import type { CSSProperties } from "react";
 import { category as categoryInfo } from "@/lib/brand/categories";
 import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
@@ -35,6 +36,7 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
     <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
       <BrandNav motion election={electionDay(Date.now())} />
       <div className="b-hero-inner">
+        <a className="b-offer" href="/go?step=cats" data-checkout="hero-offer" data-testid="hero-offer" data-m="settle" style={{ "--d": ".1s" } as CSSProperties}><b>{`$${TRIAL.fee} for ${TRIAL.days} days`}</b><span>Your AI analyst included</span></a>
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
         <HeroLine initial={d.pulse} />
@@ -160,13 +162,14 @@ function Rest({ d }: { d: LandingData }) {
     <>
       {/* Election Day (Nov 3–4 ET only) leads; otherwise the story: why, how, see it, try it free, the record. */}
       {d.election ? <ElectionStage d={d} /> : null}
+      {/* Lead with what members pay for: the AI analyst, then the offer; the proof follows. */}
+      <InsideStage d={d} />
+      <Pricing />
       <WhyStage />
       <HowStage />
-      <InsideStage d={d} />
       <WatchStage />
       <Free d={d} />
       <Proof d={d} />
-      <Pricing />
       <FaqStage />
       <Final />
       {d.member ? null : <StickyStart />}

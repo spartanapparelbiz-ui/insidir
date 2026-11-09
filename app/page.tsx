@@ -25,7 +25,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
     const db = hasDatabase() ? getDb() : null, u = viewer.user;
     if (!db || !u) return <Landing d={emptyLanding(now)} />;
     const d = await homeData(db, u.id, u.settings, now);
-    return <HomePage d={d} search={sp.search === "1"} />;
+    return <HomePage d={d} search={sp.search === "1"} userId={u.id} />;
   }
   const ref = cleanRef(typeof sp.ref === "string" ? sp.ref : null) ?? cleanRef(jar.get(REF_COOKIE)?.value);
   const visitorId = jar.get(VISITOR_COOKIE)?.value ?? null;

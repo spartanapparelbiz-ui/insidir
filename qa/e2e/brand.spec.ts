@@ -21,7 +21,7 @@ test("landing: the story (why, how, the demo), then value (free tiles); sides lo
   await context.addCookies([closed]);
   await page.goto("/");
   // Election Day (Nov 3–4 ET only) leads when it's on; the rest is one story, in order.
-  const order = ["hero", "why", "how", "watch", "free", "proof", "pricing", "faq", "final-cta"];
+  const order = ["hero", "inside", "pricing", "why", "how", "watch", "free", "proof", "faq", "final-cta"];
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);

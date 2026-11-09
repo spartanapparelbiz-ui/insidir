@@ -39,7 +39,7 @@ export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: server
       const fr = new Set(j.bets.filter(b => !seen.current.has(b.id)).map(b => b.id));
       for (const b of j.bets) seen.current.add(b.id);
       setBets(j.bets.filter(b => b.tier === tier)); setNow(j.now); setFresh(fr);
-    }, 30_000);
+    }, 10_000); // every 10 seconds: a new $1M+ bet is on the board within seconds of the poller saving it
     return () => { stop = true; clearInterval(id); };
   }, [n, serverCat, tier]);
   const cats = useMemo(() => [...new Set(bets.map(b => b.category))], [bets]);
