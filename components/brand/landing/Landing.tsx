@@ -131,7 +131,7 @@ function WhatYouGet({ v }: { v: Value }) {
             <article className="c-feat">
               <h3 className="c-feat__h">The better price</h3>
               <p className="c-feat__t">The same market on Kalshi beside Polymarket&apos;s price, so you never pay more than you have to.</p>
-              <p className="c-stat"><b>{v.twins > 0 ? v.twins.toLocaleString("en-US") : "Every"}</b> {v.twins > 0 ? "markets matched to Kalshi" : "market compared with Kalshi"}</p>
+              {v.twins > 0 ? <p className="c-stat"><b>{v.twins.toLocaleString("en-US")}</b> markets matched to Kalshi right now</p> : null}
             </article>
           </div>
         </div>
@@ -219,9 +219,9 @@ function Record({ d }: { d: LandingData }) {
           <div className="c-rec__s"><span className="c-rec__v" data-testid="record-wl" data-count={`${t.won}–${t.lost}`}>{t.won}–{t.lost}</span><span className="c-rec__k">won–lost</span></div>
           <div className="c-rec__s"><span className={`c-rec__v ${net === null ? "" : net >= 0 ? "t-up" : "t-down"}`} data-testid="record-net">{net === null ? "—" : `${net >= 0 ? "+" : "−"}$${Math.abs(Math.round(net)).toLocaleString("en-US")}`}</span><span className="c-rec__k">$100 on each</span></div>
           <div className="c-rec__s"><span className="c-rec__v">{t.void}</span><span className="c-rec__k">voided</span></div>
-          <p className="c-rec__note">{net === null ? `The $100 line shows from 30 settled bets; ${settled} so far.` : `$100 on every settled bet at the price the wallet paid. ${PAST}`} <a className="c-link" href="/results">Every settled bet →</a></p>
+          <p className="c-rec__note">{net === null ? `The $100 line shows from 30 settled bets; ${settled} so far.` : `$100 on every settled bet at the price the wallet paid. ${PAST}`} <a className="c-link" href="/results">Every settled bet, losses included →</a></p>
         </div>
-      ) : <div className="c-card c-empty" data-reveal="">No settled bets from wallets up $1M+ in the last 30 days yet. <a className="c-link" href="/results">The full record →</a></div>}
+      ) : <div className="c-card c-empty" data-reveal="">No settled bets from wallets up $1M+ in the last 30 days yet. <a className="c-link" href="/results">Every settled bet, losses included →</a></div>}
     </section>
   );
 }

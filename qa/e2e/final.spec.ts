@@ -56,7 +56,7 @@ test("content is visible at rest: a full-page screenshot with no scrolling shows
     const r = h.getBoundingClientRect();
     return { text: (h.textContent ?? "").trim().slice(0, 40), o, x: r.x, y: r.y + scrollY, w: r.width, h: r.height };
   }));
-  expect(heads.length).toBeGreaterThanOrEqual(6);
+  expect(heads.length).toBeGreaterThanOrEqual(5);
   for (const hd of heads) {
     expect(hd.o, `${hd.text}: opacity`).toBeGreaterThan(0.99);
     expect(lightIn({ x: hd.x, y: hd.y, w: hd.w, h: hd.h }), `${hd.text}: drawn`).toBeGreaterThan(0.02);

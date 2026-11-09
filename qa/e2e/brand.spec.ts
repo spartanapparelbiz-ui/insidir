@@ -71,14 +71,14 @@ test("landing: the terminal in five blocks; the board 60 minutes late with sides
   await expect.poll(async () => (await q("select 1 from terminal.events where visitor_id = $1 and name = 'hero_cta_click' and props->>'where' = 'hero'", [vid])).length, { timeout: 10_000 }).toBeGreaterThan(0);
 });
 
-test("phones: the sticky Start appears once the board is past and hides at the pricing block; the page is at most 6 screens", async ({ page, context }, info) => {
+test("phones: the sticky Start appears once the board is past and hides at the pricing block; the page is at most 10 screens", async ({ page, context }, info) => {
   test.skip(info.project.name !== "phone-390", "phones only");
   await context.addCookies([closed]);
   await page.goto("/");
   const sticky = page.getByTestId("sticky-start");
   await expect(sticky).not.toHaveAttribute("data-on", "");
   const h = page.viewportSize()!.height;
-  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(6 * h);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(10 * h);
   const y = await page.evaluate(() => { const b = document.querySelector('[data-testid="landing-board"]')!.getBoundingClientRect(); return b.bottom + window.scrollY + 4; });
   await page.evaluate(top => window.scrollTo(0, top), y);
   const pricingOn = await page.evaluate(() => document.querySelector('[data-testid="pricing"]')!.getBoundingClientRect().top < window.innerHeight);

@@ -34,7 +34,9 @@ const LABEL: Record<string, string> = { rules: "Wins if", cost: "Price and pays"
 
 export function landingValue(db: Db, now: number, lead: readonly BoardBet[]): Promise<Value> {
   return memo("brand:value", 5 * 60_000, async () => {
-    const top = [...lead].sort((a, b) => b.amount - a.amount)[0] ?? null;
+    // The biggest open bet: a market still to play, so the briefing reads before the game.
+    const open = lead.filter(b => b.result === null && !b.closed);
+    const top = [...(open.length ? open : lead)].sort((a, b) => b.amount - a.amount)[0] ?? null;
     const [briefing, brief, wallet, proof, twins] = await Promise.all([
       top ? within(getBriefing(db, top.marketId, now).then(b => {
         if (!b) return null;
