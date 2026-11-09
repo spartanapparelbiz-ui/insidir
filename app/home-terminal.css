@@ -1,0 +1,118 @@
+/* The member home workspace (components/home/Home.tsx), the live board table (components/system/LiveBoard.tsx) and
+ * the bet row (components/brand/BetRow.tsx), on the terminal (app/terminal.css). Tokens only (app/tokens.css): no
+ * literal colour here. */
+
+/* ---------- tier tags: $1M+ in Custodious Blue, Pro in grey ---------- */
+.b-root .t-tagtier { display: inline-flex; align-items: center; height: 18px; padding: 0 5px; font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .06em; white-space: nowrap; vertical-align: 1px; }
+.b-root .t-tagtier--millionaire { background: var(--t-blue); color: var(--t-text); border: 1px solid var(--t-blue); }
+.b-root .t-tagtier--pro, .b-root .t-tagtier--null, .b-root .t-tagtier--new { background: transparent; color: var(--t-muted); border: 1px solid var(--t-line); }
+.b-root .b-side { font-weight: 600; }
+.b-root .b-side--yes { color: var(--t-up); }
+.b-root .b-side--no { color: var(--t-down); }
+.b-root .t-small { font-size: var(--t-11); line-height: 1.45; letter-spacing: .02em; }
+
+/* ---------- the live board table ---------- */
+.b-root .t-liveboard { display: grid; gap: 0; }
+.b-root .t-liveboard > .s-chips, .b-root .t-liveboard > [class*="chip"] { padding: 8px 10px; border-bottom: 1px solid var(--t-line); }
+.b-root .t-board { min-width: 1080px; }
+.b-root .t-board:focus-visible { outline: 1px solid var(--t-blue-text); outline-offset: -1px; }
+.b-root .t-board td.t-mkt { width: 34%; min-width: 240px; max-width: 360px; }
+.b-root .t-board td.t-explain { width: 24%; max-width: 0; }
+/* Verify on one line: Trade · Wallet · Market · fetched 9:41 PM ET. */
+.b-root .t-table .b-verify, .b-root .t-table .b-verify * { white-space: nowrap; }
+.b-root .t-table .b-verify { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
+.b-root .t-table .b-verify > * { display: inline; margin: 0; }
+.b-root .t-rowbtn { display: block; width: 100%; padding: 0; background: none; border: 0; color: var(--t-text); font: inherit; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.b-root .t-rowbtn:hover { color: var(--t-blue-text); }
+.b-root .t-act { text-align: right; }
+.b-root .t-act .t-btn2 { min-height: 24px; padding: 0 8px; }
+.b-root .t-table .b-verify { display: inline-flex; gap: 8px; font-size: var(--t-11); white-space: nowrap; }
+.b-root .t-table tbody tr[aria-selected="true"] td { background: rgb(var(--t-tint-rgb) / .6); }
+.b-root .t-big { color: var(--t-blue-text); }
+
+/* ---------- the bet row (lists on market, results, race and wallet pages) ---------- */
+.b-root .b-rows { gap: 0; border-top: 1px solid var(--t-line); overflow-x: auto; }
+.b-root .b-rows > li { min-width: 0; }
+.b-root .b-row.t-trow { display: grid; grid-template-columns: 64px 190px minmax(200px, 1.4fr) 110px 150px 90px minmax(180px, 1fr) auto; gap: 10px; align-items: center;
+  min-width: 1080px; min-height: var(--t-row-h); padding: 4px 8px; background: transparent; border: 0; border-bottom: 1px solid var(--t-row); font: 400 var(--t-12-5)/1.3 var(--t-mono); }
+.b-root .b-row.t-trow:hover { background: rgb(var(--t-tint-rgb) / .6); border-color: var(--t-row); }
+.b-root .t-trow .b-row__main { display: flex; align-items: center; gap: 0; min-width: 0; }
+.b-root .t-trow .b-row__title { font-size: var(--t-12-5); font-weight: 400; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: unset; display: block; }
+.b-root .t-trow .b-row__money { display: block; text-align: right; }
+.b-root .t-trow .b-row__size { font-size: var(--t-12-5); letter-spacing: 0; }
+.b-root .t-trow__who, .b-root .t-trow__time, .b-root .t-trow__px { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-root .t-trow__ex { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-11); }
+.b-root .t-trow__act { display: inline-flex; align-items: center; gap: 8px; justify-content: flex-end; white-space: nowrap; }
+.b-root .t-trow .b-copy { min-height: 24px; height: 24px; }
+.b-root .t-trow .s-lockside { min-height: 0; height: auto; padding: 0; background: none; border: 0; color: var(--t-muted); font: 500 var(--t-11)/1 var(--t-mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.b-root .t-trow .b-small { font-size: var(--t-12-5); color: inherit; }
+
+/* ---------- the workspace ---------- */
+/* Edge to edge under the chrome (the shell's old padding cleared a floating nav). */
+.b-root.b-app .b-main:has(.t-home) { max-width: none; margin: 0; padding: 0 0 24px; }
+.b-root.b-app .b-main:has(.t-home) .b-foot { padding: 24px 12px 32px; }
+.b-root .t-home { padding: 8px 8px 16px; }
+.b-root .t-stack { display: flex; flex-direction: column; gap: 1px; background: var(--t-line); min-width: 0; }
+.b-root .t-stack > .t-panel:last-child { flex: 1 1 auto; }
+.b-root .t-stack > .t-inpanel { margin: 0; }
+.b-root .t-h1 { margin: 0 0 10px; font: 600 var(--t-28)/1.1 var(--t-sans); letter-spacing: 0; color: var(--t-text); }
+.b-root .t-today { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.b-root .t-kpis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(96px, auto); gap: 1px; margin: 0; background: var(--t-line); border: 1px solid var(--t-line); }
+.b-root .t-kpis > div { padding: 8px 12px; background: var(--t-page); }
+.b-root .t-kpis dt { margin-bottom: 6px; }
+.b-root .t-kpis dd { margin: 0; }
+.b-root .t-kpis--4 { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 8px 0 10px; }
+.b-root .t-kpis--4 .t-kpi { font-size: var(--t-15); }
+.b-root .t-panel__links { margin: 0; padding: 8px 10px; font: 400 var(--t-11)/1.4 var(--t-mono); letter-spacing: .04em; }
+.b-root .t-panel:not(.t-panel--compact) .t-panel__links { padding: 8px 0 0; }
+.b-root .t-inpanel { background: var(--t-panel); }
+.b-root .t-log, .b-root .t-lines { list-style: none; margin: 0; padding: 0; display: grid; }
+.b-root .t-log > li { display: grid; gap: 3px; padding: 7px 0; border-bottom: 1px solid var(--t-row); font: 400 var(--t-12-5)/1.45 var(--t-mono); }
+.b-root .t-log > li:last-child { border-bottom: 0; }
+.b-root .t-log > li > .t-muted:first-child { font-size: var(--t-11); letter-spacing: .06em; }
+.b-root .t-lines > li { padding: 5px 10px; border-top: 1px solid var(--t-row); font: 400 var(--t-12-5)/1.45 var(--t-mono); }
+.b-root .t-panel--compact .t-lines > li { padding: 5px 10px; }
+.b-root .t-monitor__who { margin: 0; font: 600 var(--t-15)/1.2 var(--t-mono); }
+.b-root .t-market__t { margin: 0 0 8px; font: 600 var(--t-15)/1.3 var(--t-sans); }
+.b-root .t-bids { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 1px; background: var(--t-line); border: 1px solid var(--t-line); margin-bottom: 8px; }
+.b-root .t-bids .t-bid { border: 0; background: var(--t-page); }
+.b-root .t-sides { display: grid; gap: 8px; margin-top: 4px; }
+.b-root .t-sideline { display: grid; grid-template-columns: minmax(0, 1fr) 90px auto; gap: 10px; align-items: center; font: 400 var(--t-12-5)/1.2 var(--t-mono); }
+.b-root .t-sideline .t-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-root .t-brief { display: grid; gap: 0; margin: 0; }
+.b-root .t-brief__row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--t-row); }
+.b-root .t-brief__row:last-child { border-bottom: 0; }
+.b-root .t-brief__row dt { padding-top: 2px; color: var(--t-blue-text); }
+.b-root .t-brief__row dd { margin: 0; display: grid; gap: 4px; }
+.b-root .t-brief__row p { margin: 0; font: 400 var(--t-12-5)/1.45 var(--t-mono); }
+.b-root .t-desk { display: grid; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--t-row); }
+.b-root .t-desk:last-child { border-bottom: 0; }
+.b-root .t-desk p { margin: 0; }
+.b-root .t-desk .t-lines > li { padding: 4px 0; border-top: 0; }
+
+/* Ask Insidir */
+.b-root .t-ask { display: grid; gap: 8px; }
+.b-root .t-ask__form { height: 36px; }
+.b-root .t-ask__prompt { color: var(--t-blue-text); font: 600 var(--t-11)/1 var(--t-mono); letter-spacing: .08em; }
+.b-root .t-ask__try { display: flex; flex-wrap: wrap; gap: 6px; }
+.b-root .t-ask__try .t-btn2 { text-transform: none; letter-spacing: 0; font-size: var(--t-11); text-align: left; min-height: 32px; height: auto; padding: 6px 10px; line-height: 1.3; }
+.b-root .t-ask__answer { display: grid; gap: 8px; padding-top: 6px; border-top: 1px solid var(--t-row); }
+.b-root .t-ask__q, .b-root .t-ask__text { margin: 0; font: 400 var(--t-12-5)/1.5 var(--t-mono); }
+.b-root .t-ask__text { color: var(--t-text); }
+
+/* The home's legacy pieces inside panels: flat, square, on the panel. */
+.b-root .t-home .s-ticket, .b-root .t-home .s-cards > *, .b-root .t-home .s-meterbox, .b-root .t-home .b-glass { background: var(--t-page); border: 1px solid var(--t-line); }
+.b-root .t-home .s-cards { gap: 1px; }
+
+/* ---------- phones ---------- */
+@media (max-width: 899px) {
+  .b-root .t-today { display: grid; gap: 10px; }
+  .b-root .t-kpis { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .b-root .t-kpis--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .b-root .t-h1 { font-size: var(--t-kpi); }
+  .b-root .t-rowbtn { min-height: 44px; }
+  .b-root .t-board td { height: 44px; }
+  .b-root .t-ask__try .t-btn2 { min-height: 44px; }
+  .b-root .t-ask__form { height: 44px; }
+  .b-root .t-panel__links a, .b-root .t-log a, .b-root .t-lines a { display: inline-block; min-height: 44px; line-height: 44px; }
+}

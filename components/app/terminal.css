@@ -1,13 +1,14 @@
-/* The Terminal table (components/app/DealTable.tsx) and its toolbar. A real table: sticky header, thin Line dividers,
- * 44px rows (36px compact), no cards. Numbers mono, tabular, right-aligned; one bold number per row (profit after
- * fees); everything else Steel. Strict 8px grid. Motion: a new row slides in and its profit cell flashes white; a
- * closed row greys for 5 seconds, then collapses. Reduced motion: none of it. */
+/* The Terminal table (components/app/DealTable.tsx) and its toolbar, on the terminal (app/tokens.css): a real table,
+ * sticky uppercase 11px header, 1px row lines, 30px rows (26px compact), IBM Plex Mono 12.5px, tabular right-aligned
+ * numbers; one bold number per row (profit after fees). Row hover is the Custodious Blue tint; the focused row gets a
+ * 1px blue inset. Motion: a new row flashes Custodious Blue once (600ms) and its profit cell flashes; a closed row
+ * greys for 5 seconds, then collapses. Reduced motion: none of it. */
 .dt-wrap { position: relative; }
-.dt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--t15); line-height: 20px; table-layout: fixed; }
-.dt th, .dt td { padding: 0 8px; height: 44px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--border); font-weight: 400; }
-.dt thead th { position: sticky; top: 60px; z-index: 2; height: 40px; background: var(--bg); color: var(--muted); font-size: var(--t13); line-height: 16px; white-space: nowrap; }
+.dt { width: 100%; border-collapse: separate; border-spacing: 0; font: 400 var(--t-12-5)/16px var(--t-mono); font-variant-numeric: tabular-nums; table-layout: fixed; }
+.dt th, .dt td { padding: 0 8px; height: var(--t-row-h); text-align: left; vertical-align: middle; border-bottom: 1px solid var(--t-row); font-weight: 400; }
+.dt thead th { position: sticky; top: 60px; z-index: 2; height: 26px; background: var(--t-panel); color: var(--t-muted); font: 500 var(--t-11)/16px var(--t-mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; border-bottom-color: var(--t-line); }
 .dt-r { text-align: right !important; }
-.dt-num { font-family: var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--muted); white-space: nowrap; }
+.dt-num { font-family: var(--t-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
 .dt-time { color: var(--muted); }
 .dt-muted { color: var(--muted); }
 .dt-c-rules { width: 112px; }
@@ -22,20 +23,20 @@
 .dt-play { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .dt-viz { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--text); }
 .dt-bar { width: 72px; flex: none; }
-.dt-chip { flex: none; font: 400 var(--t13)/16px var(--sans); color: var(--muted); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); white-space: nowrap; }
-.dt-profit { font: 600 var(--t17)/20px var(--sans); font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: -0.02em; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; }
+.dt-chip { flex: none; font: 400 var(--t-11)/16px var(--t-mono); color: var(--muted); padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--border); white-space: nowrap; }
+.dt-profit { font: 600 var(--t-12-5)/16px var(--t-mono); font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; }
 .dt-sub { display: none; }
 .dt .light { font-size: var(--t13); }
 /* rows */
 .dt-row { cursor: pointer; transition: background-color .12s; }
-.dt-row:hover td, .dt-row:hover th { background: var(--bg-alt); }
+.dt-row:hover td, .dt-row:hover th { background: rgb(var(--t-tint-rgb) / .6); }
 .dt-row:focus-visible { outline: none; }
-.dt-row:focus-visible td, .dt-row:focus-visible th { background: var(--bg-alt); box-shadow: inset 0 2px 0 var(--text), inset 0 -2px 0 var(--text); }
-.dt-row:focus-visible td:first-child { box-shadow: inset 2px 2px 0 var(--text), inset 0 -2px 0 var(--text); }
+.dt-row:focus-visible td, .dt-row:focus-visible th { background: rgb(var(--t-tint-rgb) / .6); outline: 1px solid var(--t-blue); outline-offset: -1px; }
+.dt-row:focus-visible td:first-child { outline: 1px solid var(--t-blue); }
 .dt-row--stale th, .dt-row--stale .dt-profit, .dt-row--stale .dt-num, .dt-row--stale .dt-play, .dt-row--stale .dt-viz { color: var(--muted); }
 .dt-row--stale .dbar__gap { background: var(--muted); }
 .dt-row--locked th { color: var(--text); }
-.dt--compact th, .dt--compact td { height: 36px; }
+.dt--compact th, .dt--compact td { height: var(--t-row-h-compact); }
 .dt--compact .dt-viz { display: none; }
 .lockbar { display: inline-flex; align-items: center; justify-content: center; height: 18px; border-radius: 4px; background: var(--border); color: var(--muted); vertical-align: middle; }
 .lockbar svg { width: 12px; height: 12px; }
@@ -43,15 +44,15 @@
 
 /* motion */
 @media (prefers-reduced-motion: no-preference) {
-  .dt-row--new td, .dt-row--new th { animation: dt-in .3s ease-out both; }
-  .dt-row--new .dt-profit, .dt-row--tick .dt-profit { animation: dt-flash .9s ease-out both; }
+  .dt-row--new td, .dt-row--new th { animation: t-flash var(--t-flash) ease-out 1; }
+  .dt-row--new .dt-profit, .dt-row--tick .dt-profit { animation: dt-flash var(--t-flash) ease-out both; }
   .dt-row--closing td, .dt-row--closing th { transition: color .4s, opacity .4s; opacity: .55; }
   .dt-row--gone td, .dt-row--gone th { transition: height .3s ease-in, opacity .3s; height: 0 !important; opacity: 0; border-bottom-width: 0; font-size: 0; line-height: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .dt-row--closing td, .dt-row--closing th { opacity: .55; } }
 @keyframes dt-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 /* a live tick: the number glows violet for a moment, then settles back to Paper */
-@keyframes dt-flash { 0%, 25% { color: var(--text); text-shadow: 0 0 8px color-mix(in srgb, var(--text) 60%, transparent); } 100% { color: var(--text); text-shadow: none; } }
+@keyframes dt-flash { from { background: rgb(var(--t-blue-rgb) / .45); } to { background: transparent; } }
 
 /* phones: Rules (icon), Event with the play and bar under it, Profit with ROI under it */
 @media (max-width: 899px) {
@@ -65,7 +66,7 @@
   .dt th, .dt td { height: auto; padding-top: 10px; padding-bottom: 10px; }
   .dt tbody th { white-space: normal; }
   .dt-link { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .dt-sub { display: block; color: var(--muted); font-weight: 400; font-size: var(--t13); line-height: 16px; margin-top: 2px; }
+  .dt-sub { display: block; color: var(--muted); font-weight: 400; font-size: var(--t-11); line-height: 16px; margin-top: 2px; }
   .dt-c-event .dt-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 
