@@ -1,13 +1,11 @@
-/* Pricing (/pricing): one plan, on the homepage's system. What members get (pings with the Kalshi twin, every
- * millionaire bet live, every race, wallet records, copy tickets), $1 for 3 days then $39/month, visitor vs. member,
- * this week's live numbers (read from the database, none typed in), and billing questions. Billing is Whop's. */
+/* Pricing (/pricing): one plan, on the terminal. The subscription block ($1 · 3 DAYS → $39/MO · CANCEL ANYTIME, what
+ * members get as a two-column table, one Start for $1), visitor vs. member, this week's live numbers (read from the
+ * database, none typed in), and billing questions. Billing is Whop's. */
 import type { Metadata } from "next";
 import { sql } from "drizzle-orm";
 import { Frame } from "@/components/brand/app/Frame";
-import { Faq } from "@/components/brand/Faq";
-import { Lines, Panel, Pill, Stage } from "@/components/system";
+import { Panel, PanelGrid } from "@/components/terminal/Panel";
 import { getViewer } from "@/lib/auth/viewer";
-import { PHOTOS, slotPhoto } from "@/lib/brand/images";
 import { PAST, TRIAL_LINE } from "@/lib/copy";
 import { MEMBER_GETS } from "@/lib/brand/copy";
 import { getDb, hasDatabase } from "@/lib/db";
@@ -15,6 +13,8 @@ import { proofStrip } from "@/lib/home/proof";
 import { memo } from "@/lib/memo";
 import { pulse } from "@/lib/millionaires/queries";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
+import { planLine } from "@/lib/brand/plan-line";
+import "../flow-terminal.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pricing", description: `See who's betting on Kalshi. Kalshi won't show you. Every millionaire bet live, pings with the Kalshi price, every race, wallet records and copy tickets: $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month.` };
@@ -36,7 +36,7 @@ const BILLING = [
   { id: "refunds", q: "Can I get a refund?", a: "Write to hello@aethric.llc and we'll sort it out." },
 ];
 
-interface Week { today: number; wallets: number; twins: number; audit: { ok: number; checked: number } | null }
+interface Week { today: number; wallets: number; twins: number; audit: { ok: number; checked: number } | null; at: number }
 
 async function thisWeek(now: number): Promise<Week | null> {
   if (!hasDatabase()) return null;
@@ -48,7 +48,7 @@ async function thisWeek(now: number): Promise<Week | null> {
       db.execute(sql`select count(*)::int as n from terminal.market_twins where status = 'approved'`).then(r => Number((r.rows[0] as { n: number }).n)).catch(() => 0),
       proofStrip(db, now).catch(() => null),
     ]);
-    return { today: p?.countToday ?? 0, wallets: w, twins: t, audit: proof?.accuracy ? { ok: proof.accuracy.ok, checked: proof.accuracy.checked } : null };
+    return { today: p?.countToday ?? 0, wallets: w, twins: t, audit: proof?.accuracy ? { ok: proof.accuracy.ok, checked: proof.accuracy.checked } : null, at: now };
   });
 }
 
@@ -64,45 +64,45 @@ export default async function PricingPage() {
   ].filter(<T,>(x: T | null): x is T => x !== null) : [];
   return (
     <Frame member={member} current="account" testid="pricing-page">
-      <Stage bg={{ kind: "photo", photo: slotPhoto("world"), dark: 0.55, priority: true }} first testid="pricing-hero" labelledBy="p-h">
-        <div className="b-head">
-          <Lines as="h1" id="p-h" lines={["See who's betting on Kalshi.", "Kalshi won't show you."]} size={56} />
-          <p className="b-sub" data-m="lift">Polymarket&apos;s bets are public. We watch its most profitable wallets and put the same market on Kalshi next to every bet.</p>
-        </div>
-        <Panel className="s-col s-plan" testid="plan-card">
-          <p className="b-label">Insidir</p>
-          <p className="s-big b-num">${PLANS.insidir.price}<span className="b-small">/month</span></p>
-          <p className="b-small">{TRIAL_LINE}. Cancel anytime.</p>
-          <ul className="s-lockrows">{MEMBER_GETS.map(t => <li key={t}><span>✓ {t}</span></li>)}</ul>
-          <div className="b-ctas">{member ? <Pill href="/">Open Insidir</Pill> : <Pill href="/go" data-checkout="pricing">Start for ${TRIAL.fee}</Pill>}</div>
-          <p className="b-small">Secure checkout. Apple Pay and Google Pay where your device has them.</p>
-        </Panel>
-      </Stage>
-
-      <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.7 }} testid="pricing-compare" labelledBy="cmp-h">
-        <div className="b-head"><Lines as="h2" id="cmp-h" lines={["Visitor vs. member."]} size={48} /></div>
-        <Panel className="s-col s-prose">
-          <table data-testid="compare">
-            <thead><tr><th scope="col"><span className="b-sr">What you get</span></th><th scope="col">Visitor</th><th scope="col">Member</th></tr></thead>
-            <tbody>{COMPARE.map(([k, v, m]) => <tr key={k}><th scope="row">{k}</th><td>{v}</td><td><b>{m}</b></td></tr>)}</tbody>
-          </table>
-        </Panel>
-      </Stage>
-
-      {items.length ? (
-        <Stage bg={{ kind: "globe", dark: 0.6 }} testid="pricing-week" labelledBy="week-h">
-          <div className="b-head"><Lines as="h2" id="week-h" lines={["This week on Insidir."]} size={48} /></div>
-          <dl className="s-stats s-col">
-            {items.map(i => <div key={i.testid} className="s-stat" data-testid={i.testid}><dt className="b-small">{i.label}</dt><dd className="b-num">{i.value}</dd></div>)}
-          </dl>
-          <p className="b-small b-center">{PAST}</p>
-        </Stage>
-      ) : null}
-
-      <Stage bg={{ kind: "globe", dark: 0.7 }} testid="pricing-billing" labelledBy="bill-h">
-        <div className="b-head"><Lines as="h2" id="bill-h" lines={["Billing."]} size={48} /></div>
-        <Faq items={BILLING} />
-      </Stage>
+      <div className="t-wrap tg-page">
+        <header className="tg-head">
+          <h1 className="tg-h1" id="p-h">See who&apos;s betting on Kalshi. Kalshi won&apos;t show you.</h1>
+          <p className="tg-sub">Polymarket&apos;s bets are public. We watch its most profitable wallets and put the same market on Kalshi next to every bet.</p>
+        </header>
+        <PanelGrid>
+          <Panel n={1} title="Subscription · Insidir" meta="One plan" span={2} testid="pricing-hero" source="Billing by Whop">
+            <div className="tg-plan" data-testid="plan-card">
+              <p className="tg-plan__line" data-testid="plan-line">{planLine()}</p>
+              <p className="tg-plan__price">${PLANS.insidir.price}/month <span>after the trial</span></p>
+              <p className="tg-body tg-muted">{TRIAL_LINE}. Cancel anytime.</p>
+              <table className="t-table" data-testid="plan-features">
+                <thead><tr><th scope="col">What members get</th><th scope="col" className="r">Included</th></tr></thead>
+                <tbody>{MEMBER_GETS.map(t => <tr key={t}><td className="tg-wrapcell">{t}</td><td className="r t-blue">YES</td></tr>)}</tbody>
+              </table>
+              <div className="tg-row">
+                {member ? <a className="tg-btn" href="/">Open Insidir</a> : <a className="t-cta t-cta--lg" href="/go" data-checkout="pricing">Start for ${TRIAL.fee}</a>}
+                <span className="tg-note">Secure checkout. Apple Pay and Google Pay where your device has them.</span>
+              </div>
+            </div>
+          </Panel>
+          <Panel n={2} title="Visitor vs. member" testid="pricing-compare" source="Insidir plans">
+            <table className="t-table" data-testid="compare">
+              <thead><tr><th scope="col"><span className="b-sr">What you get</span></th><th scope="col">Visitor</th><th scope="col">Member</th></tr></thead>
+              <tbody>{COMPARE.map(([k, v, m]) => <tr key={k}><th scope="row" className="tg-rowh">{k}</th><td className="t-muted">{v}</td><td><b>{m}</b></td></tr>)}</tbody>
+            </table>
+          </Panel>
+          <Panel n={3} title="This week on Insidir" span={3} testid="pricing-week" source="Insidir database" fetchedAt={w?.at ?? null}
+            empty={items.length ? null : "No live numbers right now."}>
+            <dl className="tg-kpis">
+              {items.map(i => <div key={i.testid} className="tg-kpi" data-testid={i.testid}><dt className="t-label">{i.label}</dt><dd className="tg-kpi__n">{i.value}</dd></div>)}
+            </dl>
+            <p className="tg-note">{PAST}</p>
+          </Panel>
+          <Panel n={4} title="Billing" span={3} testid="pricing-billing" source="Billing by Whop">
+            <dl className="tg-qa">{BILLING.map(b => <div key={b.id} data-testid="faq-item"><dt>{b.q}</dt><dd>{b.a}</dd></div>)}</dl>
+          </Panel>
+        </PanelGrid>
+      </div>
     </Frame>
   );
 }

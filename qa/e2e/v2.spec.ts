@@ -96,12 +96,14 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
   const text = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   expect(text).not.toMatch(/Big moves 0 |Total in \$0|\b0 won · 0 lost/);
   await page.goto("/pricing");
-  // One plan card: $39/month, the $1 trial, Start for $1, five checkmarks; no "More coming" line.
+  // One plan block: $1 · 3 DAYS → $39/MO · CANCEL ANYTIME, $39/month, the $1 trial, Start for $1, five features in a
+  // two-column table; no "More coming" line.
   const card = page.getByTestId("plan-card");
+  await expect(card.getByTestId("plan-line")).toHaveText("$1 · 3 DAYS → $39/MO · CANCEL ANYTIME");
   await expect(card).toContainText("$39/month");
   await expect(card).toContainText("$1 for your first 3 days. Cancel anytime.");
   await expect(card.getByRole("link", { name: "Start for $1" })).toBeVisible();
-  await expect(card.locator("li")).toHaveCount(5);
+  await expect(card.getByTestId("plan-features").locator("tbody tr")).toHaveCount(5);
   await expect(page.locator("main")).not.toContainText("More coming");
 });
 
