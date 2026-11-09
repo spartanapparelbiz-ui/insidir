@@ -91,7 +91,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         </div>
       </Stage>
 
-      <Stage bg={{ kind: "photo", photo: categoryPhoto(m.category), dark: 0.7 }} testid="market-money" labelledBy="money-h">
+      <Stage bg={{ kind: "globe", dark: 0.7 }} testid="market-money" labelledBy="money-h">
         <div className="b-head"><Lines as="h2" id="money-h" lines={["Money per side."]} size={48} /></div>
         <Panel className="s-col">
           {member ? (
