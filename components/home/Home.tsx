@@ -57,7 +57,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
         {d.disagree.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6 }} id="disagree" testid="home-disagree" labelledBy="dis-h" className="s-pinstage">
             <div className="s-pin">
-              <div className="s-pin__head b-head"><p className="hm-eyebrow">Money vs the price</p><Insight id="dis-h" as="h2" text={d.insight.disagree} fallback={["Where they disagree", "with the price."]} size={52} /><p className="b-sub">The markets where millionaire money and the price disagree most.</p></div>
+              <div className="s-pin__head b-head"><p className="hm-eyebrow">Money vs the price</p><Insight id="dis-h" as="h2" text={d.insight.disagree} fallback={["Where they disagree", "with the price."]} size={52} /><p className="b-sub">The markets where millionaire money and the price disagree most.</p><p className="hm-plain"><b>In plain English:</b> the price is what the market thinks will happen. Here, the wallets that have made $1M+ are betting the other way. Either they know something, or they're wrong.</p></div>
               <div className="s-pin__list">
                 {d.disagree.map(x => (
                   <Panel key={x.marketId} className="s-pin__card" testid="disagree-card">
@@ -81,7 +81,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
 
         {d.board.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.baseball, dark: 0.7 }} id="board" testid="home-board" labelledBy="board-h">
-            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest bets of $5K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p></div>
+            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest bets of $5K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p><p className="hm-plain"><b>In plain English:</b> each row is one real bet: who placed it, what they bet on, the price they paid and the price now. Copy places the same bet; Verify shows it on the blockchain.</p></div>
             {d.stream ? <div className="s-col s-col--wide"><Stream data={d.stream} /></div> : null}
             <LiveBoard initial={d.board.slice(0, 10)} now={d.now} />
             <div className="b-center"><div className="b-ctas"><Pill href="/board" kind="ghost">The full board</Pill></div>
@@ -91,14 +91,14 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
 
         {d.wallets.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55 }} id="wallets" testid="home-wallets" labelledBy="wal-h">
-            <div className="b-head"><p className="hm-eyebrow">Wallets</p><Insight id="wal-h" as="h2" text={d.insight.wallets} fallback={["Wallets worth following."]} size={52} /></div>
+            <div className="b-head"><p className="hm-eyebrow">Wallets</p><Insight id="wal-h" as="h2" text={d.insight.wallets} fallback={["Wallets worth following."]} size={52} /><p className="hm-plain"><b>In plain English:</b> these wallets have made the most money betting. Follow one and we ping you the moment it bets again.</p></div>
             <WalletCards wallets={d.wallets} today={Boolean(d.today)} />
           </Stage>
         ) : null}
 
         {d.gaps.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.golf, dark: 0.6 }} id="prices" testid="home-gaps" labelledBy="gap-h">
-            <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={d.insight.gaps} fallback={["Same bet,", "two prices."]} size={52} /></div>
+            <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={d.insight.gaps} fallback={["Same bet,", "two prices."]} size={52} /><p className="hm-plain"><b>In plain English:</b> the same bet costs different amounts on Kalshi and Polymarket. Buying where it's cheaper means a bigger payout if you win.</p></div>
             <div className="s-cards" data-stagger="">
               {d.gaps.map(g => {
                 const lo = Math.min(g.kalshi, g.polymarket), hi = Math.max(g.kalshi, g.polymarket), extra = 100 / lo - 100 / hi;
@@ -117,7 +117,7 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
         ) : null}
 
         <Stage bg={{ kind: "photo", photo: PHOTOS.hero, dark: 0.55 }} id="desk" testid="home-desk" labelledBy="desk-h">
-          <div className="b-head"><p className="hm-eyebrow">Your desk</p><Insight id="desk-h" as="h2" text={d.insight.desk} fallback={["Your desk."]} size={52} /></div>
+          <div className="b-head"><p className="hm-eyebrow">Your desk</p><Insight id="desk-h" as="h2" text={d.insight.desk} fallback={["Your desk."]} size={52} /><p className="hm-plain"><b>In plain English:</b> your own corner: bets you copied, wallets you follow, and your pings.</p></div>
           <div className="s-cards">
             <Panel className="s-desk" testid="desk-copies">
               <p className="b-label">Your copies</p>

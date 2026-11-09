@@ -22,6 +22,8 @@ import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
 import { ScrollReveal } from "../ScrollReveal";
+import { Intro, INTRO_SCRIPT } from "./Intro";
+import { dollars as usd } from "@/lib/money";
 import { StickyStart } from "./StickyStart";
 import { RaceRow } from "./ElectionLive";
 import { HowStage, WatchStage, WhyStage } from "./Why";
@@ -170,6 +172,14 @@ export function Landing({ d }: { d: LandingData }) {
     <>
     <ViewAs />
     <main className="b-root" data-testid="landing">
+      {d.member ? null : <>
+        <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
+        <Intro lines={[
+          d.pulse.today > 0 ? `${usd(d.pulse.today)} bet in the last 24 hours` : "Some wallets have made $1M+ betting",
+          d.pulse.today > 0 ? "by wallets that have made $1M+." : "on Polymarket.",
+          "Now you see every bet, before the game.",
+        ]} />
+      </>}
       <Hero d={d} />
       <Rest d={d} />
       <StageMotion />

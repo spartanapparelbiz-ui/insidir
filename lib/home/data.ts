@@ -49,7 +49,9 @@ export interface Home {
    *  model is slow or off), the member's watched bets, and the 24-hour data strip. */
   ai: { brief: Brief | null; watching: number; markets: number; topCategory: string | null;
     /** The Bet Briefing for today's #1 position's market: the first line of its key sections (members see sides). */
-    briefing: { title: string; href: string; origin: string; lines: Array<{ k: string; t: string }> } | null };
+    briefing: { title: string; href: string; origin: string; lines: Array<{ k: string; t: string }> } | null;
+    /** The last 24 hours of $1M+ money: by hour (oldest first, 24 values) and by category (biggest first). */
+    hours: number[]; cats: Array<{ category: string; total: number }> };
 }
 
 let poly: PolymarketClient | null = null, clients: { kalshi: KalshiClient; polymarket: PolymarketClient } | null = null;
@@ -116,6 +118,15 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     safe(streamFor(db, now), null),
   ]);
   const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
+  const [hourRows, catRows] = await Promise.all([
+    safe(db.execute(sql`select floor(extract(epoch from (at - ${new Date(now - DAY)})) / 3600)::int as h, sum(amount)::float8 as d
+        from terminal.millionaire_bets where tier = 'millionaire' and at > ${new Date(now - DAY)} group by 1`).then(r => r.rows as Array<{ h: number; d: number }>), []),
+    safe(db.execute(sql`select category, sum(amount)::float8 as d from terminal.millionaire_bets
+        where tier = 'millionaire' and at > ${new Date(now - DAY)} group by 1 order by 2 desc limit 6`).then(r => r.rows as Array<{ category: string; d: number }>), []),
+  ]);
+  const hours = Array.from({ length: 24 }, () => 0);
+  for (const r of hourRows) hours[Math.min(23, Math.max(0, Number(r.h)))]! += Number(r.d);
+  const cats = catRows.map(r => ({ category: r.category, total: Number(r.d) })).filter(c => c.total > 0);
   const [brief, watching] = await Promise.all([
     within(buildBrief(db, now, { member: true, userId, useModel: true }), 3500, null as Brief | null)
       .then(b => b ?? within(buildBrief(db, now, { member: true, userId, useModel: false }), 2500, null as Brief | null)),
@@ -161,7 +172,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
       desk: openCopies.length ? `You have ${openCopies.length} open ${openCopies.length === 1 ? "copy" : "copies"}.` : null,
     },
     polledAt: polled ? new Date(polled).getTime() : null, lastBetAt: last ? new Date(last).getTime() : null,
-    ai: { brief, briefing: briefing && briefing.lines.length ? briefing : null, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
+    ai: { hours, cats, brief, briefing: briefing && briefing.lines.length ? briefing : null, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
   };
 }
 
