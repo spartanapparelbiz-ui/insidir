@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
 import { ThemeToggle } from "./ThemeToggle";
+import { CommandBar } from "@/components/desk/CommandBar";
+import { Clock } from "@/components/terminal/Clock";
 import { COMPANY, DATA_COMPANY, GAMBLER, FOOTER } from "@/lib/copy";
 
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
@@ -15,7 +17,9 @@ const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/boa
 /** Members: the same bar, their places. No sidebar anywhere. */
 const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Brief", "/brief"], ["Watch", "/watch"], ["Ask", "/ask"], ["Autopilot", "/autopilot"], ["Book", "/book"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Record", "/record"], ["SEC", "/sec"]];
 
-export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true, autopilot = false }: { autopilot?: boolean; fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
+export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true, autopilot = false }: { autopilot?: boolean; fixed?: boolean; startHref?: string; member?: boolean;
+  /** Kept for callers; the terminal's top bar has no entrance animation. */
+  motion?: boolean;
   /** The Start for $1 pill (off on /login, which has its own way in). */
   start?: boolean;
   /** Election Day leads the links until the board closes (decided on the server: lib/brand/pulse.ts electionDay). */
@@ -43,23 +47,35 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
     document.addEventListener("click", out); document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("click", out); document.removeEventListener("keydown", esc); };
   }, [open]);
+  void motion; void q;
+  const [search, setSearch] = useState(false);
   return (
     <>
-      <header className={`b-nav${fixed ? " b-nav--fixed" : ""}${solid ? " is-solid" : ""}`} data-testid="brand-nav">
-        <span {...q(motion, "quiet", 0.46)}><Logo /></span>
-        <nav className="b-nav-links" aria-label="Primary">{links.map(([t, h], i) => <a key={t} href={h} {...q(motion, "quiet", 0.54 + 0.045 * i)}>{t}</a>)}</nav>
-        <div className="b-nav-actions">
-          <span {...q(motion, "settle", 0.66)}><ThemeToggle /></span>
-          {member ? <a className="b-btn b-panel-pill" href="/settings" data-testid="nav-account" {...q(motion, "settle", 0.68)}>Account</a> : <a className="b-btn b-panel-pill" href="/login" {...q(motion, "settle", 0.68)}>Log in</a>}
-          {member || !start ? null : <a className="b-btn b-nav-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav" {...q(motion, "settle", 0.73)}>Start for $1<Arrow /></a>}
-          <button ref={burger} {...q(motion, "settle", 0.68)} className="b-burger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="b-menu" onClick={e => { e.stopPropagation(); setOpen(!open); }}><span /></button>
+      {/* The terminal's top bar: the mark, INSIDIR and TERMINAL; the command line (search, ⌘K); the ET clock and the
+          status light (LIVE · MEMBER, or DELAYED 60 MIN for visitors); Log in / Account; Start for $1 for visitors. */}
+      <header className={`b-nav t-top${fixed ? " b-nav--fixed" : ""}${solid ? " is-solid" : ""}${search ? " is-searching" : ""}`} data-testid="brand-nav">
+        <span className="t-brand"><Logo /><a href="/" className="t-wordmark" aria-label="Insidir home">INSIDIR</a><span className="t-tag">TERMINAL</span></span>
+        <div className="t-top__cmd"><CommandBar bar inputId="t-cmd-q" /></div>
+        <nav className="b-nav-links t-links" aria-label="Primary">{links.map(([t, h]) => <a key={t} href={h}>{t}</a>)}</nav>
+        <div className="b-nav-actions t-top__right">
+          <span className="b-sr"><ThemeToggle /></span>
+          <Clock />
+          {member
+            ? <span className="t-status t-status--live" data-testid="t-status"><span className="t-dot" aria-hidden="true" />LIVE · MEMBER</span>
+            : <span className="t-status" data-testid="t-status"><span className="t-dot" aria-hidden="true" />DELAYED 60 MIN</span>}
+          <button type="button" className="t-searchbtn" aria-label={search ? "Close search" : "Search"} aria-expanded={search} onClick={() => { setSearch(!search); setTimeout(() => document.getElementById("t-cmd-q")?.focus(), 0); }}>
+            <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square"><circle cx="9" cy="9" r="5" /><path d="m13 13 3.5 3.5" /></svg>
+          </button>
+          {member ? <a className="b-btn b-panel-pill t-btn" href="/settings" data-testid="nav-account">ACCOUNT</a> : <a className="b-btn b-panel-pill t-btn" href="/login">LOG IN</a>}
+          {member || !start ? null : <a className="b-btn b-nav-start t-start" href={startHref} data-testid="nav-start" data-checkout="nav" data-unlock="nav">Start for $1<Arrow /></a>}
+          <button ref={burger} className="b-burger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="b-menu" onClick={e => { e.stopPropagation(); setOpen(!open); }}><span /></button>
         </div>
       </header>
       <nav ref={menu} id="b-menu" className={`b-menu${open ? " open" : ""}`} aria-label="Mobile" onClick={e => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
         {links.map(([t, h]) => <a key={t} href={h}>{t}</a>)}
         <div className="b-divider" />
         {member ? <a href="/settings">Account</a> : <a href="/login">Log in</a>}
-        {member ? null : <a className="b-m-start" href={startHref}>Start for $1<Arrow /></a>}
+        {member || !start ? null : <a className="b-m-start" href={startHref} data-checkout="menu">Start for $1<Arrow /></a>}
       </nav>
     </>
   );
@@ -75,6 +91,7 @@ export function BrandFoot({ inline = false }: { inline?: boolean }) {
         {[["Markets", "/markets"], ["Board", "/board"], ["Record", "/record"], ["Results", "/results"], ["Daily Brief", "/brief"], ["Bet Briefing", "/briefing"], ["Ask Insidir", "/ask"], ["FAQ", "/faq"], ["Methodology", "/methodology"], ["Our data", "/data"], ["Status", "/status"], ["Security", "/security"],
           ["Disclosures", "/disclosures"], ["Terms", "/terms"], ["Privacy", "/privacy"], ["Credits", "/credits"], ["Changelog", "/changelog"]].map(([t, h]) => <a key={t} href={h}>{t}</a>)}
       </nav>
+      <p className="t-foot-status">INSIDIR TERMINAL · POLYMARKET + KALSHI · ALL TIMES ET · INFORMATION, NOT ADVICE · 18+</p>
       <div className="b-foot__legal">
         <span>{COMPANY.name} · {COMPANY.place} · <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span>
         <span>{DATA_COMPANY}</span>

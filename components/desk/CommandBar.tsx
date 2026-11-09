@@ -6,7 +6,9 @@ import type { Hit } from "@/lib/search/search";
 
 const KIND: Record<Hit["kind"], string> = { market: "Market", race: "Race", wallet: "Wallet" };
 
-export function CommandBar({ open: open0 = false }: { open?: boolean }) {
+/** `bar`: the terminal's command line in the top bar (components/brand/Nav.tsx): its own input id, the terminal
+ *  placeholder and the <GO> key. */
+export function CommandBar({ open: open0 = false, bar = false, inputId = "desk-q" }: { open?: boolean; bar?: boolean; inputId?: string }) {
   const [open, setOpen] = useState(open0);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,12 +39,13 @@ export function CommandBar({ open: open0 = false }: { open?: boolean }) {
   }
 
   return (
-    <div className="s-cmdwrap">
-      <form className="s-cmd" role="search" onSubmit={e => { e.preventDefault(); if (q.trim()) void find(q.trim()); }} data-testid="desk-search">
+    <div className={`s-cmdwrap${bar ? " t-cmdwrap" : ""}`}>
+      <form className={`s-cmd${bar ? " t-cmd" : ""}`} role="search" onSubmit={e => { e.preventDefault(); if (q.trim()) void find(q.trim()); }} data-testid={bar ? "t-cmd" : "desk-search"}>
         <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="9" cy="9" r="5" /><path d="m13 13 3.5 3.5" /></svg>
-        <label className="b-sr" htmlFor="desk-q">Search markets, races and wallets, or paste a link</label>
-        <input id="desk-q" ref={input} value={q} onChange={e => setQ(e.target.value)} onFocus={() => setOpen(true)} placeholder="Search markets, races, wallets, or paste a link" autoComplete="off" enterKeyHint="search" />
+        <label className="b-sr" htmlFor={inputId}>Search markets, races and wallets, or paste a link</label>
+        <input id={inputId} ref={input} value={q} onChange={e => setQ(e.target.value)} onFocus={() => setOpen(true)} placeholder={bar ? "Search a market or wallet, or paste a Polymarket/Kalshi link" : "Search markets, races, wallets, or paste a link"} autoComplete="off" enterKeyHint="search" />
         {busy ? <span className="s-cmd__spin" aria-label="Searching" /> : null}
+        {bar ? <button type="submit" className="t-go" aria-label="Go">&lt;GO&gt;</button> : null}
       </form>
       {open && (hits || msg) ? (
         <div className="s-cmd__pop" role="dialog" aria-label="Search results" data-testid="desk-search-result">

@@ -108,32 +108,37 @@ describe("copy rules on every V2 page", () => {
 
 
 describe("design system", () => {
-  it("older pages: every colour in app/tokens.css; the brand (app/brand.css): only the hero spec's tokens and the data colours", () => {
+  it("the terminal palette lives in app/tokens.css only: Shillingston Navy, Custodious Blue, a touch of Slime Orange, green and red", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f"];
+    const palette = ["#0b1220", "#101a2b", "#15233a", "#22324b", "#182539", "#e8ecf3", "#8e9ab0", "#1f5bff", "#6e96ff", "#132b5c", "#ff6b1a", "#ff7f38", "#19d27a", "#ff4d6a"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
-    const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e", "#1a1a1a", "#f2c35b", "#0b0b0b"];
-    const brand = read("app/brand.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
-    for (const c of new Set(brand.match(/#[0-9a-f]{3,8}\b/g))) expect(spec, c).toContain(c);
-    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css" && f !== "app/brand.css")) {
+    // No yellow, gold or amber anywhere: every other stylesheet uses the tokens, never a literal colour.
+    for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css")) {
       const css = read(f).replace(/\/\*[\s\S]*?\*\//g, " ");
       expect(css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [], f).toEqual([]);
+      expect(css.match(/rgba?\(\s*(245|242|200|176|150)\s*,?\s*(196|195|149|124|86)\b/g) ?? [], `${f}: gold`).toEqual([]);
     }
+    // Orange is only the Start for $1 button.
+    const term = read("app/terminal.css");
+    const ctaUses = [...term.matchAll(/([^{}]+)\{[^}]*var\(--t-cta(?:-hover)?\)[^}]*\}/g)].map(m => m[1]!.trim());
+    for (const sel of ctaUses) expect(sel, sel).toMatch(/data-checkout|b-m-start|t-cta/);
   });
 
-  it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and no monospace)", () => {
-    const layout = read("app/layout.tsx");
-    expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
-    expect(read("lib/brand/fonts.ts")).toMatch(/plus-jakarta-sans-latin\.woff2/);
-    expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
+  it("two typefaces, self-hosted: IBM Plex Mono for numbers and labels, IBM Plex Sans Condensed for headlines", () => {
+    const fonts = read("lib/brand/fonts.ts");
+    expect(fonts).toMatch(/ibm-plex-mono-latin-400-normal\.woff2/);
+    expect(fonts).toMatch(/ibm-plex-sans-condensed-latin-600-normal\.woff2/);
+    expect(existsSync(join(ROOT, "app/fonts/OFL-IBM-Plex.txt"))).toBe(true);
+    expect(read("app/tokens.css")).toMatch(/--t-mono: var\(--font-plex-mono\)/);
+    expect(read("app/tokens.css")).toMatch(/--t-sans: var\(--font-plex-cond\)/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
       const src = read(f);
       expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
     }
   });
 
-  it("the manifest opens the app on its home, black like the brand, with the brackets-mark icons", async () => {
+  it("the manifest opens the app on its home, Shillingston Navy like the terminal, with the brackets-mark icons", async () => {
     const { default: manifest } = await import("@/app/manifest");
-    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#000000", theme_color: "#000000" });
+    expect(manifest()).toMatchObject({ name: "Insidir", start_url: "/", background_color: "#0b1220", theme_color: "#0b1220" });
   });
 });
