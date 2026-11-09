@@ -100,6 +100,7 @@
   /* channels, for hairlines and tints at any opacity */
   --t-text-rgb: 243 247 255;
   --t-page-rgb: 4 13 43;
+  --t-panel-rgb: 7 27 83;
   --t-blue-rgb: 108 196 254;
   --t-tint-rgb: 15 58 134;
   --t-lime-rgb: 227 251 153;

@@ -115,6 +115,8 @@ export const LANDING = {
   priceLine: `$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month. Cancel anytime.`,
   /** Under the Start for $1 label, inside the button. */
   ctaSub: `${TRIAL.days} days of everything, live`,
-  gets: ["Every $1M+ bet the minute it lands, with its side", "Bet Briefings, alerts on your bets, the 8 AM brief", "Ask Insidir: answers from the data, never guesses"],
+  gets: ["Every $1M+ bet the minute it lands, with its side", "A Bet Briefing on every market: what it needs to win and who's on each side",
+    "Alerts on your own bets when the big money moves against you or gets out", "The 8 AM brief, every wallet's record and Ask Insidir",
+    "Kalshi's price beside Polymarket's, and every bet linked to the chain"],
   fine: `Then $${PLANS.insidir.price}/month. Cancel in Account, any time. Checkout by Whop.`,
 } as const;

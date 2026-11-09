@@ -26,6 +26,10 @@ import { TerminalChrome } from "@/components/terminal/Chrome";
 import { LandingBeacons } from "./LandingBeacons";
 import { StickyStart } from "./StickyStart";
 import { Reveal } from "./Reveal";
+import { getDb, hasDatabase } from "@/lib/db";
+import { landingValue, type Value } from "@/lib/brand/value";
+
+const EMPTY_VALUE: Value = { briefing: null, alert: null, wallet: null, brief: [], proof: null, twins: 0 };
 import { Waves } from "./Waves";
 
 const ET_TIME = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true });
@@ -94,21 +98,110 @@ function LivePanel({ d }: { d: LandingData }) {
   );
 }
 
-function WhatYouGet() {
+/** What Insidir does, by moment, each card with Insidir's own real output (lib/brand/value.ts). */
+function WhatYouGet({ v }: { v: Value }) {
+  const q = (t: string) => `/ask?q=${encodeURIComponent(t)}`;
+  const asks = ["Who's the best NFL wallet this month and what's he on today?", "Is anyone big against my bet?", "Why did the odds move?"];
   return (
     <section className="c-sec" aria-labelledby="get-h">
-      <div className="c-sec__head"><h2 id="get-h" className="c-h2">Before, during and after every bet.</h2></div>
-      <div className="c-tiles" data-testid="what-you-get">
-        {LANDING.three.map((x, n) => (
-          <div key={x.k} className={`c-tile c-tile--${n + 1}`} data-reveal="" style={i(n)}>
-            <span className="c-tile__arc" aria-hidden="true"><span /><span /><span /></span>
-            <span className="c-tile__n">0{n + 1}</span>
-            <h3 className="c-tile__k">{x.title}</h3>
-            <p className="c-tile__t">{x.t}</p>
-          </div>
-        ))}
+      <div className="c-sec__head">
+        <h2 id="get-h" className="c-h2">Everything the big money knows, before you bet.</h2>
+        <p className="c-sec__sub">People bet against traders who know more than they do, and can&apos;t see them. Insidir shows you who they are, what they bet, and what it means for yours: before, during and after.</p>
       </div>
+      <div className="c-value" data-testid="what-you-get">
+        <div className="c-moment" data-reveal="">
+          <p className="c-moment__k"><span>01</span>Before you bet</p>
+          <div className="c-bento">
+            <article className="c-feat c-feat--wide">
+              <h3 className="c-feat__h">Bet Briefing</h3>
+              <p className="c-feat__t">What the bet actually needs to win, what it pays, how the price got here, who&apos;s on each side and how they&apos;re playing it. Written by the AI from the data, every number verified against it.</p>
+              {v.briefing ? (
+                <a className="c-sample" href={v.briefing.href}>
+                  <span className="c-sample__top">Today&apos;s most-bet market · {v.briefing.title}</span>
+                  {v.briefing.lines.map(l => <span key={l.k} className="c-sample__row"><b>{l.k}</b><span>{l.t}</span></span>)}
+                  <span className="c-sample__more">Members get every section →</span>
+                </a>
+              ) : null}
+            </article>
+            <article className="c-feat">
+              <h3 className="c-feat__h">Ask Insidir</h3>
+              <p className="c-feat__t">Ask anything about the wallets, a market or your own bet. Answers come only from our data, with the rows behind them.</p>
+              <div className="c-asks">{asks.map(t => <a key={t} className="c-ask" href={q(t)}>{t}</a>)}</div>
+            </article>
+            <article className="c-feat">
+              <h3 className="c-feat__h">The better price</h3>
+              <p className="c-feat__t">The same market on Kalshi beside Polymarket&apos;s price, so you never pay more than you have to.</p>
+              <p className="c-stat"><b>{v.twins > 0 ? v.twins.toLocaleString("en-US") : "Every"}</b> {v.twins > 0 ? "markets matched to Kalshi" : "market compared with Kalshi"}</p>
+            </article>
+          </div>
+        </div>
+        <div className="c-moment" data-reveal="">
+          <p className="c-moment__k"><span>02</span>While you hold</p>
+          <div className="c-bento">
+            <article className="c-feat c-feat--wide">
+              <h3 className="c-feat__h">Watch my bet</h3>
+              <p className="c-feat__t">Add your position or your public Polymarket address. When a $1M+ wallet takes the other side, a wallet on your side gets out, or the price moves 5¢, you get an alert that says what it means for your bet, in dollars.</p>
+              {v.alert ? (
+                <div className="c-alert">
+                  <span className="c-alert__k"><span className="c-dot" aria-hidden="true" />Alert</span>
+                  <span className="c-alert__h">{v.alert.who} just put {dollars(v.alert.amount)} on “{v.alert.title}”{v.alert.usual ? `, ${(v.alert.amount / v.alert.usual).toFixed(1)}× their usual bet` : ""}.</span>
+                  <span className="c-alert__m">What it means for your bet: whether that money is with you or against you, and your profit or loss at the price now.</span>
+                </div>
+              ) : null}
+            </article>
+            <article className="c-feat">
+              <h3 className="c-feat__h">The 8 AM brief</h3>
+              <p className="c-feat__t">The five biggest things the $1M+ money did overnight, two lines each, plus what changed on your bets.</p>
+              {v.brief.length ? <div className="c-brieflines">{v.brief.map((l, n) => <p key={n}>{l[0]}<span>{l[1]}</span></p>)}</div> : null}
+            </article>
+            <article className="c-feat">
+              <h3 className="c-feat__h">Wallets worth following</h3>
+              <p className="c-feat__t">Every wallet&apos;s record, losses included, and how big each bet is for them.</p>
+              {v.wallet ? <p className="c-stat"><b>{v.wallet.pnl >= 0 ? "+" : "−"}{dollars(Math.abs(v.wallet.pnl))}</b> all-time · Millionaire {v.wallet.short} · {v.wallet.won}–{v.wallet.rows.length - v.wallet.won} last {v.wallet.rows.length}</p> : null}
+            </article>
+          </div>
+        </div>
+        <div className="c-moment" data-reveal="">
+          <p className="c-moment__k"><span>03</span>After it settles</p>
+          <div className="c-bento">
+            <article className="c-feat c-feat--wide">
+              <h3 className="c-feat__h">What happened, and what we told you</h3>
+              <p className="c-feat__t">Who was right, what following each wallet would have made, your own record by category, and every briefing and alert we showed you with how it turned out. Losses included.</p>
+            </article>
+            <article className="c-feat">
+              <h3 className="c-feat__h">Proof on the chain</h3>
+              <p className="c-feat__t">Every bet links to its Polygon transaction, so you can see size, price and side for yourself.</p>
+              {v.proof ? <a className="c-proofline" href={`https://polygonscan.com/tx/${v.proof.tx}`} target="_blank" rel="noopener noreferrer">{dollars(v.proof.amount)} · {v.proof.result === "won" ? "Won" : "Lost"} · {v.proof.tx.slice(0, 10)}… on Polygonscan ↗</a> : null}
+            </article>
+            <article className="c-feat">
+              <h3 className="c-feat__h">The full record</h3>
+              <p className="c-feat__t">Every position we&apos;ve flagged, with won, lost and sold, on one public page.</p>
+              <a className="c-link" href="/record">See the record →</a>
+            </article>
+          </div>
+        </div>
+      </div>
+      <Compare />
     </section>
+  );
+}
+
+const COMPARE: Array<[string, string, string]> = [
+  ["Who you're betting against", "Anonymous usernames", "Proven $1M+ wallets, with their record"],
+  ["Which side they took", "Hidden in a feed", "Every side, the minute it lands"],
+  ["Is it big for them", "No idea", "Size against their usual bet"],
+  ["What the bet needs to win", "Pages of rules", "Wins if, in plain words, with the gotchas"],
+  ["When they get out", "After you've lost", "An alert, with what it means for you"],
+  ["The best price", "Two apps, two tabs", "Kalshi beside Polymarket"],
+  ["Proof", "A screenshot", "The transaction on Polygonscan"],
+];
+
+function Compare() {
+  return (
+    <div className="c-card c-compare" data-reveal="">
+      <div className="c-compare__row c-compare__head"><span /><span>On your own</span><span>With Insidir</span></div>
+      {COMPARE.map(([k, a, b]) => <div key={k} className="c-compare__row"><span className="c-compare__k">{k}</span><span className="c-compare__a">{a}</span><span className="c-compare__b">{b}</span></div>)}
+    </div>
   );
 }
 
@@ -164,7 +257,8 @@ function Faqs() {
 }
 
 /** The landing, in one response. */
-export function Landing({ d }: { d: LandingData }) {
+export async function Landing({ d }: { d: LandingData }) {
+  const v: Value = hasDatabase() ? await landingValue(getDb(), d.now, d.lead).catch(() => EMPTY_VALUE) : EMPTY_VALUE;
   return (
     <>
     <ViewAs />
@@ -172,7 +266,7 @@ export function Landing({ d }: { d: LandingData }) {
       <TerminalChrome election={electionDay(d.now)} />
       <Hero d={d} />
       <div className="c-wrap">
-        <WhatYouGet />
+        <WhatYouGet v={v} />
         <Record d={d} />
         <Access />
         <Faqs />

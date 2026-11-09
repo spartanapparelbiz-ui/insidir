@@ -39,7 +39,7 @@ describe("V2 landing page", () => {
     // The top bar's Start for $1 waits until the hero's button has scrolled away (components/brand/landing/Reveal.tsx).
     expect(landing).toContain("<TerminalChrome election=");
     expect(read("app/landing-clean.css")).toContain(".t-landing:not([data-cta-out]) .t-top .t-start { display: none !important; }");
-    const order = ["<Hero d={d} />", "<WhatYouGet />", "<Record d={d} />", "<Access />", "<Faqs />"];
+    const order = ["<Hero d={d} />", "<WhatYouGet v={v} />", "<Record d={d} />", "<Access />", "<Faqs />"];
     // The live board sits inside the hero, beside the headline.
     expect(landing).toContain("<LivePanel d={d} />");
     const at = order.map(m => landing.indexOf(m));
