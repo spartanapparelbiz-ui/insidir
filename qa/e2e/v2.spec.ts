@@ -5,17 +5,17 @@ import { captureBodies, q, signIn } from "./helpers";
 
 test("landing: final on first paint, the hero's words and its CTAs, the nav, no stocks, no pop-up on arrival, no visitor bar", async ({ page }) => {
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain("Bet with the people");
-  expect(html).toContain("who actually win.");
+  expect(html).toContain("See what the $1M+ wallets bet, before the game.");
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1 });
-  await expect(h1).toHaveText(/Bet with the people\s*who actually win\./);
-  await expect(page.getByTestId("hero-line")).toContainText("Wallets up $1M+ bet");
-  // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
-  const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
-  // Election Day leads the nav on Nov 3–4 ET (lib/brand/pulse.ts electionDay), then drops out.
-  if (page.viewportSize()!.width > 1160) expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
-  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
+  await expect(h1).toHaveText("See what the $1M+ wallets bet, before the game.");
+  // The terminal's top bar: the command line, the ET clock, DELAYED 60 MIN for visitors, Log in; the landing's own two
+  // Start for $1 buttons (hero, pricing) instead of the nav's. The menu keeps the places: Markets, Board, Record, Pricing, FAQ.
+  await expect(page.getByTestId("t-status")).toHaveText("DELAYED 60 MIN");
+  const links = (await page.locator(".b-nav-links a").evaluateAll(as => as.map(a => (a.textContent ?? "").trim())));
+  expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
+  await expect(page.getByTestId("nav-start")).toHaveCount(0);
+  await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
   // The pitch (the footer's "isn't affiliated with … the SEC" aside).
   const text = await page.evaluate(() => { const m = document.querySelector("main")!.cloneNode(true) as HTMLElement; m.querySelectorAll("footer").forEach(f => f.remove()); return m.innerText; });
@@ -31,7 +31,7 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; the retired stock pages are 301s", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Bet with the people\s*who actually win\./);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("See what the $1M+ wallets bet, before the game.");
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });

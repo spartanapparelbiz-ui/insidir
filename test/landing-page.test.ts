@@ -31,33 +31,35 @@ const V2_UI = [
 ].filter(f => existsSync(join(ROOT, f)));
 
 describe("V2 landing page", () => {
-  it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home (the homepage, unlocked)", () => {
+  it("is the terminal in five blocks: hero, board, what you get, record, access + FAQ; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<HomePage d={d}");
-    // The hero, then everything below it in order (components/brand/landing/Landing.tsx Rest).
-    expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
-    const order = ["<ElectionStage d={d} /> : null", "<WhyStage />", "<HowStage />", "<WatchStage />", "<Free d={d} />", "<Proof d={d} />", "<Pricing />", "<FaqStage />", "<Final />"];
+    // The terminal chrome first (no nav Start button on the landing), then the five blocks in order.
+    expect(landing).toContain("<TerminalChrome start={false}");
+    const order = ["<Hero d={d} />", "<Board d={d} />", "<WhatYouGet />", "<Record d={d} />", "<Access />", "<Faqs />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
+    // Gone from the landing: the globe, photo stages, How it works, the recordings.
+    expect(landing).not.toMatch(/<Stage\b|globe|<HowStage|<WatchStage|<WhyStage|Demo/);
     expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
-  it("the hero's words, its two CTAs (Start for $1 → /go, the free sample), and no stocks, crypto or Congress in the pitch", async () => {
+  it("the hero's words, exactly two Start for $1 buttons (hero and pricing, plus the phones' sticky bar), and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
-    expect(copy.HERO.h1).toEqual(["Bet with the people", "who actually win."]);
-    expect(copy.HERO.sub).toBe("On Kalshi, in seconds, and know when they get out.");
-    expect([...copy.HERO.h1, copy.HERO.sub].join(" ").replace("win. On", "win, on")).toBe(copy.ONE_LINE);
-    expect(copy.STAGES.final).toEqual(["Bet with the people", "who actually win."]);
-    expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
+    expect(copy.LANDING.h1).toBe("See what the $1M+ wallets bet, before the game.");
+    expect(copy.LANDING.sub).toBe("Every Polymarket bet of $5K+ from wallets up $1M+, with what it needs to win.");
+    expect(copy.LANDING.price).toBe("$1 FOR 3 DAYS · THEN $39/MO · CANCEL ANYTIME");
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing).toContain('<Pill href="/go?step=cats" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
-    // The onboarding's first question on the first screen: each chip opens /go at the next step with it answered.
-    expect(landing).toContain('href={`/go?step=where&cats=${c}`}');
-    expect(copy.HERO.ask).toBe("What do you bet on?");
-    expect(landing).toContain('<Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>');
-    const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
+    expect(landing.match(/data-checkout="/g)).toHaveLength(2);
+    expect(landing).toContain('href="/go" data-checkout="hero" data-cta="hero" data-testid="hero-start"');
+    expect(landing).toContain('href="/go" data-checkout="pricing" data-cta="pricing" data-testid="pricing-cta"');
+    expect(read("components/brand/landing/StickyStart.tsx")).toContain('data-checkout="sticky" data-cta="sticky"');
+    // The board's side is locked for visitors: the column never prints a side.
+    expect(landing).toContain('<span className="t-lock" data-locked="side">MEMBERS</span>');
+    expect(landing).not.toMatch(/b\.side|b\.outcome/);
+    const pitch = [copy.LANDING.h1, copy.LANDING.sub, ...copy.LANDING.three.map(x => x.t), ...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);
     expect(GET_CTA).toBe("Try 3 days for $1");

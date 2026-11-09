@@ -50,7 +50,9 @@ export const CLIENT_EVENTS: ReadonlySet<string> = new Set(["go_step", "unlock_cl
   // The home hero: its button, a tap on the ticker strip, and the feed preview scrolled into view.
   "hero_cta_click", "ticker_click", "feed_preview_view", "offer_view",
   // A lock opened (its sheet: what you get, the price, one button); where says which (live, record, follow, alerts).
-  "lock_view"]);
+  "lock_view",
+  // The terminal landing: a tap on a board row (where: "landing").
+  "board_row_click"]);
 
 export const UTM_COOKIE = "insidir_utm";
 export const AB_COOKIE = "insidir_ab";
@@ -122,6 +124,22 @@ export async function funnelByDay(since: Date): Promise<FunnelDay[]> {
     days.set(r.day, d);
   }
   return [...days].map(([day, counts]) => ({ day, counts }));
+}
+
+export interface CtaRow { event: string; where: string; people: number; done: number }
+
+/** CTA taps by button (hero, pricing, sticky, nav…: the `where` prop) and board-row taps since `since`: distinct people
+ *  per button, and how many of them finished onboarding afterwards (/admin/funnel). */
+export async function ctaByWhere(since: Date): Promise<CtaRow[]> {
+  const res = await getDb().execute(sql`
+    with taps as (select distinct on (name, coalesce(props->>'where', ''), coalesce(user_id, visitor_id)) name, coalesce(props->>'where', '') as w,
+        coalesce(user_id, visitor_id) as who, visitor_id, at
+      from terminal.events where at >= ${since} and name in ('hero_cta_click', 'unlock_click', 'board_row_click') and ${notFreeAccess()}
+      order by name, coalesce(props->>'where', ''), coalesce(user_id, visitor_id), at)
+    select name, w, count(*)::int as people,
+      count(*) filter (where exists (select 1 from terminal.events d where d.visitor_id = taps.visitor_id and d.name in ('onboarding_done', 'paid') and d.at >= taps.at))::int as done
+    from taps group by name, w order by people desc limit 40`);
+  return (res.rows as Array<Record<string, unknown>>).map(r => ({ event: String(r.name), where: String(r.w), people: Number(r.people), done: Number(r.done) }));
 }
 
 /** Conversion per hero variant: visitors who saw the landing page with that variant, and how far they got. */
