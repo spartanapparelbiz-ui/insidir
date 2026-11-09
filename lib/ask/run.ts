@@ -55,11 +55,16 @@ export function askAnswerOk(text: string, tables: readonly Table[]): boolean {
   return numbersIn(text).every(n => ok.has(n) || ok.has(n.replace(/^-/, "")) || ok.has(n.replace(/^\$/, "")));
 }
 
-/** A plain summary of the rows, or the refusal when there are none. Pure. */
+/** A plain answer built from the rows themselves (no model needed): the table's title, its first row read out
+ *  ("1 day ago: 52% → 49% now"), and how many more rows follow; the refusal when there are none. Every number is the
+ *  rows' own. Pure. */
 export function askSummary(tables: readonly Table[]): string {
   const t = tables.find(x => x.rows.length);
   if (!t) return NOT_HAVE;
-  return `${t.title}: ${t.rows.length} ${t.rows.length === 1 ? "row" : "rows"}.`;
+  const first = t.rows[0]!.map(c => c.text.trim()).filter(Boolean);
+  const lead = first.length >= 2 && t.columns.length >= 2 ? `${first[0]}: ${first.slice(1).join(" · ")}` : first.join(" · ");
+  const more = t.rows.length - 1;
+  return `${t.title.replace(/[.:]+$/, "")}. ${lead}${more ? `, and ${more} more ${more === 1 ? "row" : "rows"} below` : ""}.`;
 }
 
 /** Research's tables can name an open position's side; a visitor gets Ask's own tools only, which never do. */
