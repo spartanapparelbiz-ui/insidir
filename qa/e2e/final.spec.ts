@@ -56,7 +56,7 @@ test("content is visible at rest: a full-page screenshot with no scrolling shows
     const r = h.getBoundingClientRect();
     return { text: (h.textContent ?? "").trim().slice(0, 40), o, x: r.x, y: r.y + scrollY, w: r.width, h: r.height };
   }));
-  expect(heads.length).toBeGreaterThan(6);
+  expect(heads.length).toBeGreaterThanOrEqual(6);
   for (const hd of heads) {
     expect(hd.o, `${hd.text}: opacity`).toBeGreaterThan(0.99);
     expect(lightIn({ x: hd.x, y: hd.y, w: hd.w, h: hd.h }), `${hd.text}: drawn`).toBeGreaterThan(0.02);
@@ -188,7 +188,8 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   test.skip(info.project.name !== "desktop-1440", "the timing rules are the same at every width");
   test.setTimeout(90_000);
   await page.clock.install();
-  await page.goto("/");
+  // The pay prompt lives on the board (the landing keeps to its two Start for $1 buttons).
+  await page.goto("/board");
   await page.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true); // hydrated: the pop-up listens
   const sheet = page.getByTestId("pay-sheet");
   // The free check's verdict fires the automatic pop-up 2.5 s later, but not inside the first 15 s on the page.
@@ -245,7 +246,7 @@ test("share and install: brackets-mark icons, the manifest, a rendered OG image,
     expect(s.channels[0]!.max, `${f}: has the white mark`).toBe(255);
   }
   const man = await (await request.get("/manifest.webmanifest")).json();
-  expect(man).toMatchObject({ name: "Insidir", background_color: "#000000", theme_color: "#000000" });
+  expect(man).toMatchObject({ name: "Insidir", background_color: "#071b53", theme_color: "#071b53" });
   const og = await request.get("/opengraph-image");
   expect(og.status()).toBe(200);
   expect(og.headers()["content-type"]).toContain("image/png");

@@ -9,12 +9,11 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1 });
   await expect(h1).toHaveText("See what the $1M+ wallets bet, before the game.");
-  // The terminal's top bar: the command line, the ET clock, DELAYED 60 MIN for visitors, Log in; the landing's own two
-  // Start for $1 buttons (hero, pricing) instead of the nav's. The menu keeps the places: Markets, Board, Record, Pricing, FAQ.
-  await expect(page.getByTestId("t-status")).toHaveText("DELAYED 60 MIN");
+  // The top bar: the places, search, Log in; the landing's own two Start for $1 buttons (hero, pricing), the nav's
+  // waiting until the hero's has scrolled away. The menu keeps the places: Markets, Board, Record, Pricing, FAQ.
   const links = (await page.locator(".b-nav-links a").evaluateAll(as => as.map(a => (a.textContent ?? "").trim())));
   expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
-  await expect(page.getByTestId("nav-start")).toHaveCount(0);
+  await expect(page.getByTestId("nav-start")).toBeHidden();
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go");
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
   // The pitch (the footer's "isn't affiliated with … the SEC" aside).
@@ -49,10 +48,11 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
   expect(await (await page.request.get("/sitemaps/pages.xml")).text()).not.toContain("/stocks</loc>");
 });
 
-test("home: the nav's Start for $1 is recorded and opens /go", async ({ page }) => {
+test("the nav's Start for $1 is recorded and opens /go", async ({ page }, info) => {
+  test.skip(info.project.name === "phone-390", "phones put Start for $1 in the menu and the sticky bar");
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
-  await page.goto("/");
+  await page.goto("/board");
   await page.getByTestId("nav-start").click();
   await expect(page).toHaveURL(/\/go(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);

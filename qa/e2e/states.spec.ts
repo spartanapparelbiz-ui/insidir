@@ -21,7 +21,7 @@ test("404: on-brand, says what happened, links back home", async ({ page }) => {
 
 test("one primary action: pricing and legal pages show exactly one; the landing's white pills are only Start for $1", async ({ page }) => {
   await page.goto("/");
-  const home = await page.locator("main .b-primary").evaluateAll(els => els.map(e => (e as HTMLElement).innerText.trim()));
+  const home = await page.locator("main [data-checkout]").evaluateAll(els => els.map(e => (e as HTMLElement).textContent!.replace(/→/g, "").trim()));
   expect(home.length).toBeGreaterThan(1);
   for (const t of home) expect(["Start for $1"]).toContain(t);
   for (const path of ["/pricing", "/terms", "/privacy"]) {

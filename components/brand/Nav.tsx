@@ -58,7 +58,7 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
         <nav className="b-nav-links t-links c-links" aria-label="Primary">{links.slice(0, 7).map(([t, h]) => <a key={t} href={h}>{t}</a>)}</nav>
         <div className="b-nav-actions t-top__right">
           <span className="b-sr"><ThemeToggle /></span>
-          <button type="button" className="t-searchbtn" aria-label={search ? "Close search" : "Search"} aria-expanded={search} onClick={() => { setSearch(!search); setTimeout(() => document.getElementById("t-cmd-q")?.focus(), 0); }}>
+          <button type="button" className="t-searchbtn" aria-label={search ? "Close search" : "Open search"} aria-expanded={search} onClick={() => { setSearch(!search); setTimeout(() => document.getElementById("t-cmd-q")?.focus(), 0); }}>
             <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square"><circle cx="9" cy="9" r="5" /><path d="m13 13 3.5 3.5" /></svg>
           </button>
           {member ? <a className="b-btn b-panel-pill t-btn" href="/settings" data-testid="nav-account">Account</a> : <a className="b-btn b-panel-pill t-btn" href="/login">Log in</a>}

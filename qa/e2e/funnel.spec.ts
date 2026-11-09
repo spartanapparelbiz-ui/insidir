@@ -98,7 +98,8 @@ test("Start for $1 in the nav on public pages, home included (the brand nav's pi
     await expect(page.getByTestId("sticky-cta"), path).toHaveCount(0);
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
-  await page.goto("/");
+  // The landing has its own two buttons (the nav's waits until the hero's scrolls away); the board shows the nav's.
+  await page.goto("/board");
   await expect(page.getByTestId("nav-start")).toHaveText("Start for $1");
   await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
   expect(Math.round((await page.getByTestId("nav-start").boundingBox())!.height)).toBeGreaterThanOrEqual(28);
@@ -113,7 +114,7 @@ test("/admin/funnel: the eight steps with the drop-off between each", async ({ p
   await adminIn(page);
   await page.goto("/admin/funnel");
   for (const h of ["Landing view", "CTA click", "/start view", "Account created", "Payment started", "Paid", "Onboarding done", "First follow"]) {
-    await expect(page.getByRole("columnheader", { name: h })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: h, exact: true }).first()).toBeVisible();
   }
   await expect(page.getByTestId("funnel-drop")).toContainText("Drop-off");
 });

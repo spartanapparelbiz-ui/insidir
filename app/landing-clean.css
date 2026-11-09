@@ -186,3 +186,66 @@
 }
 .c-phone__foot { margin: 14px 2px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 500 12px/1.3 var(--t-body-font); }
 .c-phone__foot span:last-child { padding: 6px 10px; border-radius: 999px; background: var(--t-page); color: var(--t-text); }
+
+/* ==========================================================================================================
+ * The cover (the brand board's Seltra screens): a full-height hero of light. Concentric arcs rise from the bottom,
+ * slow waves of light drift across, an Azure glow with the slightest Yellow at its core. Centred, huge, quiet.
+ * Glass cards below. Yellow is a slight touch: the Start for $1 fill and the very core of the glow, nothing else.
+ * ========================================================================================================== */
+.c-landing { background: radial-gradient(120% 60% at 50% -20%, rgb(var(--t-tint-rgb) / .6), transparent 62%), var(--t-page); }
+.c-hero { min-height: calc(100svh - 64px); display: grid; place-items: center; padding: 88px 24px 240px; text-align: center; background: none; }
+.c-waves { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.c-hero__in { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 24px; max-width: 1000px; }
+.b-root .c-hero__h { max-width: 15ch; margin: 0 auto; text-align: center; font-size: clamp(46px, 7.2vw, 100px); line-height: .97; letter-spacing: -.015em;
+  background: linear-gradient(180deg, var(--t-text) 35%, rgb(var(--t-blue-rgb) / .95) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.c-hero__sub { max-width: 50ch; margin: 0 auto; text-align: center; font-size: 20px; }
+.c-hero__act { justify-items: center; margin-top: 10px; }
+.b-root .c-eyebrow { background: rgb(var(--t-text-rgb) / .06); border-color: rgb(var(--t-text-rgb) / .14); -webkit-backdrop-filter: blur(14px) !important; backdrop-filter: blur(14px) !important; }
+.b-root .c-cta { min-height: 60px; padding: 0 38px; box-shadow: 0 0 0 1px rgb(var(--t-lime-rgb) / .35), 0 18px 60px -18px rgb(var(--t-lime-rgb) / .45) !important; }
+
+/* The motion: waves drift, arcs breathe, the core glows. */
+.c-waves__flow { animation: c-flow 48s linear infinite; }
+@keyframes c-flow { to { transform: translateX(-1440px); } }
+.c-waves__ring { transform-box: fill-box; transform-origin: center; animation: c-breathe 11s ease-in-out infinite; }
+@keyframes c-breathe { 50% { opacity: .5; transform: scale(1.018); } }
+.c-waves__core { animation: c-glowpulse 14s ease-in-out infinite; }
+@keyframes c-glowpulse { 50% { opacity: .78; } }
+
+/* Glass: every card below the cover. */
+.b-root .c-card, .b-root .c-proof, .b-root .c-tile, .b-root .c-price {
+  background: linear-gradient(180deg, rgb(var(--t-text-rgb) / .065), rgb(var(--t-text-rgb) / .015)), rgb(var(--t-page-rgb) / .6);
+  border: 1px solid rgb(var(--t-text-rgb) / .1);
+  -webkit-backdrop-filter: blur(18px) !important; backdrop-filter: blur(18px) !important;
+  box-shadow: inset 0 1px 0 rgb(var(--t-text-rgb) / .08), 0 40px 90px -50px rgb(var(--t-page-rgb) / .9) !important; }
+.c-proof { margin-top: -120px; }
+
+/* Tiles: navy glass, the arc motif in a corner; no Yellow. */
+.c-tile--1, .c-tile--2, .c-tile--3 { color: var(--t-text); }
+.c-tile { min-height: 300px; }
+.c-tile__n { color: var(--t-blue-text); opacity: 1; }
+.c-tile__arc { position: absolute; right: -70px; top: -70px; width: 240px; height: 240px; pointer-events: none; }
+.c-tile__arc span { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgb(var(--t-blue-rgb) / .45); }
+.c-tile__arc span:nth-child(2) { inset: 34px; border-color: rgb(var(--t-blue-rgb) / .3); }
+.c-tile__arc span:nth-child(3) { inset: 68px; border-color: rgb(var(--t-blue-rgb) / .2); background: radial-gradient(circle, rgb(var(--t-blue-rgb) / .35), transparent 70%); }
+.c-tile--2 .c-tile__arc { right: auto; left: 50%; top: auto; bottom: -150px; transform: translateX(-50%); }
+.c-tile--3 .c-tile__arc { right: auto; left: -70px; }
+.c-tile__t { color: var(--t-muted); opacity: 1; }
+
+/* The price: white figures on the glow; the glow's core only slightly Yellow. */
+.c-glow::before { background: radial-gradient(60% 55% at 50% 100%, rgb(var(--t-lime-rgb) / .28) 0%, rgb(var(--t-blue-rgb) / .55) 22%, rgb(var(--t-tint-rgb) / .45) 52%, transparent 80%); }
+.c-glow--price::before { background: radial-gradient(70% 60% at 50% 115%, rgb(var(--t-lime-rgb) / .22) 0%, rgb(var(--t-blue-rgb) / .5) 26%, rgb(var(--t-tint-rgb) / .35) 58%, transparent 82%); }
+.c-price__big { background: linear-gradient(180deg, var(--t-text) 30%, rgb(var(--t-blue-rgb) / .9)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.c-price__list li::before { color: var(--t-blue-text); }
+.b-root .c-tier--millionaire { background: rgb(var(--t-blue-rgb) / .16); color: var(--t-blue-text); }
+
+/* The phones' sticky bar: glass. */
+@media (max-width: 899px) {
+  .b-root .t-sticky { background: rgb(var(--t-page-rgb) / .72); -webkit-backdrop-filter: blur(16px) !important; backdrop-filter: blur(16px) !important; }
+  .c-hero { min-height: calc(100svh - 58px); padding: 56px 18px 200px; }
+  .b-root .c-hero__h { font-size: 46px; }
+  .c-hero__sub { font-size: 17px; }
+  .c-hero__act { width: 100%; justify-items: stretch; }
+  .c-proof { margin-top: -110px; }
+  .c-tile { min-height: 220px; }
+}
+@media (prefers-reduced-motion: reduce) { .c-waves__flow, .c-waves__ring, .c-waves__core { animation: none !important; } }

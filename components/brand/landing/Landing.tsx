@@ -1,10 +1,10 @@
 /* The landing for visitors: clean, on the brand board (Garnished & Tarnished Blue, Perplexed Scrutiny Azure,
  * Scornelius Pampered Yellow). One story, top to bottom:
- *   1. Hero      a live line, the headline, one line, the Yellow Start for $1, the price; the brand glow arcs, and the
- *                product itself in a phone: the latest bets from $1M+ wallets, 60 minutes late, sides locked
+ *   1. Hero      full height, centred: a live line, the headline, one line, the Start for $1 (the one Yellow fill),
+ *                the price; behind it the brand board's cover: concentric arcs of light and slow waves (./Waves.tsx)
  *   2. Proof     three live numbers (hidden when there's no real value)
  *   3. Board     the latest 8 bets, 60 minutes late, sides locked (the lock is the reason to pay)
- *   4. What you get   three soft-gradient tiles: before you bet · while you hold · after it settles
+ *   4. What you get   three glass cards with the arc motif: before you bet · while you hold · after it settles
  *   5. Record    what we told you: settled bets in 30 days, losses included, and $100 on each
  *   6. Access    the price on the glow, with the second and last Start for $1; then five questions (faqLd kept)
  * Plus the phones' sticky bar (./StickyStart.tsx) after the board until the price, and the top bar's Start for $1 once
@@ -21,12 +21,12 @@ import { TIER_NAME } from "@/lib/millionaires/watchlist";
 import { betPath } from "@/lib/entities/slug";
 import { dollars } from "@/lib/money";
 import { BrandFoot } from "../Nav";
-import { Mark } from "../Bits";
 import { ViewAs } from "@/components/ViewAs";
 import { TerminalChrome } from "@/components/terminal/Chrome";
 import { LandingBeacons } from "./LandingBeacons";
 import { StickyStart } from "./StickyStart";
 import { Reveal } from "./Reveal";
+import { Waves } from "./Waves";
 
 const ET_TIME = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true });
 const usual = (b: BoardBet): string | null => (b.usual && b.usual > 0 ? `${(b.amount / b.usual).toFixed(1)}×` : null);
@@ -41,40 +41,19 @@ const Glow = ({ className = "", drift = false }: { className?: string; drift?: b
   </div>
 );
 
-function Phone({ d }: { d: LandingData }) {
-  const rows = d.lead.slice(0, 5);
-  return (
-    <div className="c-phone" aria-label="Insidir on a phone: the latest bets from $1M+ wallets">
-      <div className="c-phone__notch" aria-hidden="true" />
-      <div className="c-phone__top"><span className="c-phone__mark"><Mark /></span><span>Insidir</span><span className="c-phone__delay">60 min delay</span></div>
-      <p className="c-phone__h">Latest from $1M+ wallets</p>
-      {rows.length ? rows.map(b => (
-        <div key={b.id} className="c-phone__row">
-          <div className="c-phone__l"><span className={`c-tier c-tier--${b.tier}`}>{TIER_NAME[b.tier]}</span><span className="c-phone__t">{b.title}</span></div>
-          <div className="c-phone__r"><b>{dollars(b.amount)}</b><span className="c-phone__side"><Lock />Side</span></div>
-        </div>
-      )) : <p className="c-phone__empty">The next bet shows here the moment it lands.</p>}
-      <p className="c-phone__foot"><span>Members see every side, live.</span><span>Bet Briefing →</span></p>
-    </div>
-  );
-}
-
 function Hero({ d }: { d: LandingData }) {
   const live = d.pulse.count > 0 ? `${d.pulse.count.toLocaleString("en-US")} ${d.pulse.count === 1 ? "bet" : "bets"} from $1M+ wallets ${d.pulse.window === "hour" ? "in the last hour" : "today"}` : null;
   return (
     <section className="c-hero" data-testid="hero" aria-labelledby="hero-h">
-      <Glow className="c-glow--hero" drift />
+      <Waves />
       <div className="c-hero__in">
-        <div className="c-hero__copy">
-          {live ? <p className="c-eyebrow" data-testid="hero-live"><span className="c-dot" aria-hidden="true" />{live}</p> : null}
-          <h1 id="hero-h" className="c-hero__h">{LANDING.h1}</h1>
-          <p className="c-hero__sub" data-testid="hero-sub">{LANDING.sub}</p>
-          <div className="c-hero__act">
-            <a className="t-cta t-cta--lg c-cta" href="/go" data-checkout="hero" data-cta="hero" data-testid="hero-start">{START}<span aria-hidden="true">→</span></a>
-            <p className="c-hero__price" data-testid="hero-price">{LANDING.priceLine}</p>
-          </div>
+        {live ? <p className="c-eyebrow" data-testid="hero-live"><span className="c-dot" aria-hidden="true" />{live}</p> : null}
+        <h1 id="hero-h" className="c-hero__h">{LANDING.h1}</h1>
+        <p className="c-hero__sub" data-testid="hero-sub">{LANDING.sub}</p>
+        <div className="c-hero__act">
+          <a className="t-cta t-cta--lg c-cta" href="/go" data-checkout="hero" data-cta="hero" data-testid="hero-start">{START}<span aria-hidden="true">→</span></a>
+          <p className="c-hero__price" data-testid="hero-price">{LANDING.priceLine}</p>
         </div>
-        <div className="c-hero__art"><Phone d={d} /></div>
       </div>
     </section>
   );
@@ -98,7 +77,7 @@ function Board({ d }: { d: LandingData }) {
   const rows = d.lead.slice(0, 8);
   return (
     <section className="c-sec" data-testid="landing-board" aria-labelledby="board-h">
-      <div className="c-sec__head" data-reveal="">
+      <div className="c-sec__head">
         <h2 id="board-h" className="c-h2">The latest bets from $1M+ wallets.</h2>
         <p className="c-sec__sub">Every Polymarket bet of $5K+, here 60 minutes late. Members see each one the minute it lands, with the side.</p>
       </div>
@@ -123,10 +102,11 @@ function Board({ d }: { d: LandingData }) {
 function WhatYouGet() {
   return (
     <section className="c-sec" aria-labelledby="get-h">
-      <div className="c-sec__head" data-reveal=""><h2 id="get-h" className="c-h2">Before, during and after every bet.</h2></div>
+      <div className="c-sec__head"><h2 id="get-h" className="c-h2">Before, during and after every bet.</h2></div>
       <div className="c-tiles" data-testid="what-you-get">
         {LANDING.three.map((x, n) => (
           <div key={x.k} className={`c-tile c-tile--${n + 1}`} data-reveal="" style={i(n)}>
+            <span className="c-tile__arc" aria-hidden="true"><span /><span /><span /></span>
             <span className="c-tile__n">0{n + 1}</span>
             <h3 className="c-tile__k">{x.title}</h3>
             <p className="c-tile__t">{x.t}</p>
@@ -142,7 +122,7 @@ function Record({ d }: { d: LandingData }) {
   const net = r && r.net !== null ? r.net : null;
   return (
     <section className="c-sec" data-testid="landing-record" aria-labelledby="rec-h">
-      <div className="c-sec__head" data-reveal="">
+      <div className="c-sec__head">
         <h2 id="rec-h" className="c-h2">What we told you, losses included.</h2>
         <p className="c-sec__sub">Every bet from $1M+ wallets that settled in the last 30 days.</p>
       </div>
@@ -160,13 +140,13 @@ function Record({ d }: { d: LandingData }) {
 
 function Access() {
   return (
-    <section id="pricing" className="c-price" data-testid="pricing" aria-labelledby="price-h" data-reveal="">
+    <section id="pricing" className="c-price" data-testid="pricing" aria-labelledby="price-h">
       <Glow className="c-glow--price" />
       <div className="c-price__in">
         <p className="c-eyebrow c-eyebrow--quiet">One plan</p>
         <h2 id="price-h" className="c-price__h"><span className="c-price__big">$1</span> for your first 3 days.</h2>
         <p className="c-price__line" data-testid="price-line">{LANDING.priceLine}</p>
-        <ul className="c-price__list">{LANDING.gets.map(g => <li key={g}>{g}</li>)}</ul>
+        <ul className="c-price__list" data-reveal="">{LANDING.gets.map(g => <li key={g}>{g}</li>)}</ul>
         <a className="t-cta t-cta--lg c-cta" href="/go" data-checkout="pricing" data-cta="pricing" data-testid="pricing-cta">{START}<span aria-hidden="true">→</span></a>
         <p className="c-price__fine">{LANDING.fine}</p>
       </div>
@@ -177,7 +157,7 @@ function Access() {
 function Faqs() {
   return (
     <section id="faq" className="c-sec c-faq" data-testid="faq" aria-labelledby="faq-h">
-      <div className="c-sec__head" data-reveal=""><h2 id="faq-h" className="c-h2">Questions.</h2></div>
+      <div className="c-sec__head"><h2 id="faq-h" className="c-h2">Questions.</h2></div>
       <div className="c-card c-faq__list" data-reveal="">
         {FAQ.slice(0, 5).map(f => (
           <details key={f.id} className="c-faq__i" data-testid="faq-item"><summary>{f.q}</summary><p>{f.a}</p></details>

@@ -265,3 +265,9 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .b-root .t-panel__meta { text-transform: none; letter-spacing: .02em; }
 .b-root .s-chips .b-panel-pill, .b-root .t-chip, .b-root .t-panel .s-chips .b-panel-pill { text-transform: none !important; letter-spacing: 0 !important; font: 500 13px/1 var(--t-body-font) !important; min-height: 36px; padding: 0 14px; border-radius: 999px !important; }
 .b-root .t-kpis > *, .b-root .t-stat, .b-root .s-stat { border-radius: 14px; }
+
+/* Premium throughout the product: a soft arc of light at the top of every page, glass cards. */
+.b-root.b-app, .b-root.b-root--page { background: radial-gradient(1200px 460px at 50% -180px, rgb(var(--t-blue-rgb) / .2), transparent 70%), radial-gradient(900px 300px at 50% -120px, rgb(var(--t-lime-rgb) / .05), transparent 70%), var(--t-page); }
+.b-root .t-panel { background: linear-gradient(180deg, rgb(var(--t-text-rgb) / .06), rgb(var(--t-text-rgb) / .015)), rgb(var(--t-page-rgb) / .55); border: 1px solid rgb(var(--t-text-rgb) / .1);
+  box-shadow: inset 0 1px 0 rgb(var(--t-text-rgb) / .07), 0 30px 80px -50px rgb(var(--t-page-rgb) / .9) !important; }
+.b-root .t-table th { background: transparent; }

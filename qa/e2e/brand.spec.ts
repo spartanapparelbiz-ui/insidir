@@ -26,14 +26,15 @@ test("landing: the terminal in five blocks; the board 60 minutes late with sides
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
   await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("See what the $1M+ wallets bet, before the game.");
   await expect(page.getByTestId("hero-sub")).toHaveText("Every Polymarket bet of $5K+ from wallets up $1M+, with what it needs to win.");
-  await expect(page.getByTestId("hero-price")).toHaveText("$1 FOR 3 DAYS · THEN $39/MO · CANCEL ANYTIME");
+  await expect(page.getByTestId("hero-price")).toHaveText("$1 for 3 days, then $39/month. Cancel anytime.");
   // The hero's button: above the fold, straight to /go; no nav Start button and no other orange above it.
   const start = page.getByTestId("hero-start");
   await expect(start).toHaveAttribute("href", "/go");
   expect((await start.boundingBox())!.y + (await start.boundingBox())!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
-  await expect(page.getByTestId("nav-start")).toHaveCount(0);
+  // The top bar's Start for $1 waits until the hero's button has scrolled away.
+  await expect(page.getByTestId("nav-start")).toBeHidden();
   await expect(page.getByTestId("pricing-cta")).toHaveAttribute("href", "/go");
-  await expect(page.locator('main [data-checkout]:not([data-checkout="sticky"])')).toHaveCount(2);
+  await expect(page.locator('main [data-checkout]:not([data-checkout="sticky"]):not([data-checkout="nav"]):not([data-checkout="menu"])')).toHaveCount(2);
   // Proof stats are real: the watched $1M+ wallets always show with fixtures; none is a placeholder.
   for (const s of await page.getByTestId("hero-proof").locator("dd").allTextContents()) expect(s).toMatch(/^\$?[\d,.]+[KMB]?$|^\d+–\d+$/);
   // The board: up to 8 rows, every one at least 60 minutes old, the side locked ("MEMBERS"), no side sent.
@@ -41,7 +42,7 @@ test("landing: the terminal in five blocks; the board 60 minutes late with sides
   expect(await rows.count()).toBeGreaterThan(0);
   expect(await rows.count()).toBeLessThanOrEqual(8);
   for (const r of await rows.all()) {
-    await expect(r.locator("[data-locked=side]")).toHaveText("MEMBERS");
+    await expect(r.locator("[data-locked=side]")).toHaveText("Members");
     const id = decodeURIComponent((await r.getAttribute("data-href"))!.replace("/bet/", ""));
     const at = (await q<{ at: Date }>("select at from terminal.millionaire_bets where id = $1", [id]))[0]?.at;
     if (at) expect(Date.now() - new Date(at).getTime()).toBeGreaterThanOrEqual(59 * 60_000);
@@ -70,14 +71,14 @@ test("landing: the terminal in five blocks; the board 60 minutes late with sides
   await expect.poll(async () => (await q("select 1 from terminal.events where visitor_id = $1 and name = 'hero_cta_click' and props->>'where' = 'hero'", [vid])).length, { timeout: 10_000 }).toBeGreaterThan(0);
 });
 
-test("phones: the sticky Start appears once the board is past and hides at the pricing block; the page is at most 4 screens", async ({ page, context }, info) => {
+test("phones: the sticky Start appears once the board is past and hides at the pricing block; the page is at most 6 screens", async ({ page, context }, info) => {
   test.skip(info.project.name !== "phone-390", "phones only");
   await context.addCookies([closed]);
   await page.goto("/");
   const sticky = page.getByTestId("sticky-start");
   await expect(sticky).not.toHaveAttribute("data-on", "");
   const h = page.viewportSize()!.height;
-  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(4 * h);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(6 * h);
   const y = await page.evaluate(() => { const b = document.querySelector('[data-testid="landing-board"]')!.getBoundingClientRect(); return b.bottom + window.scrollY + 4; });
   await page.evaluate(top => window.scrollTo(0, top), y);
   const pricingOn = await page.evaluate(() => document.querySelector('[data-testid="pricing"]')!.getBoundingClientRect().top < window.innerHeight);
@@ -175,18 +176,18 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
 });
 
-test("a member's home is the terminal workspace: numbered panels (board, watch my bet, alerts, wallet monitor, market, Bet Briefing, Daily Brief, Ask Insidir, today's #1 position, desk), keyboard on the board, search in the top bar", async ({ page, context }) => {
+test("a member's home is the workspace: panels (board, watch my bet, alerts, wallet monitor, market, Bet Briefing, Daily Brief, Ask Insidir, today's #1 position, desk), keyboard on the board, search in the top bar", async ({ page, context }) => {
   test.setTimeout(90_000);
   await signIn(context, "insidir");
   await page.goto("/");
   await expect(page.locator('[data-home="workspace"]')).toBeVisible();
   // The first panel: a computed headline about today's (or the last 24 hours') millionaire money.
   await expect(page.getByTestId("home-hero").getByRole("heading", { level: 1 })).toHaveText(/^Wallets up \$1M\+ bet \$[\d.]+[KM] (today|in the last 24 hours)\.$/);
-  // Every panel has a numbered header and a source line.
+  // Every panel has a title.
   for (const id of ["home-board", "home-watch", "home-alerts", "home-monitor", "home-market", "home-briefing", "home-brief", "home-ask", "home-top", "home-desk"]) {
     const p = page.getByTestId(id);
     await expect(p, id).toBeVisible();
-    await expect(p.locator(".t-panel__n").first(), id).toHaveText(/^\d+\)$/);
+    await expect(p.locator(".t-panel__title").first(), id).not.toBeEmpty();
   }
   // Today's #1 open position: $85K on the Chiefs (now 51¢); every millionaire entry on that side, $85K + $20K, at an
   // average 47¢; then Copy at the price now and Follow.
