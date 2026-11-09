@@ -1,15 +1,17 @@
-/* Figures for the deeper pages, in the homepage's language (no tables, no colour but on price changes):
+/* Figures for the deeper pages, in the terminal (app/pages-terminal.css): KPI tiles, a blue line chart, blue bars and
+ * dense one-line rows; green and red only on P&L and price direction.
  *   StatTiles   big numbers with their labels (a <dl>, each tile a .s-stat with dt/dd)
  *   SeriesChart a cumulative line (profit over time): draws with scroll, "now" lands last
  *   Bars        labelled bars that grow from 0 (by category, made money / lost)
  *   Rows        written rows: a title, a line under it, an optional figure at the right */
 import type { CSSProperties, ReactNode } from "react";
 import { dollars } from "@/lib/money";
+import "@/app/pages-terminal.css";
 
 export function StatTiles({ tiles, label }: { tiles: Array<{ label: string; value: string }>; label: string }) {
   return (
     <dl className="s-stats" aria-label={label} data-stagger="">
-      {tiles.map(t => <div key={t.label} className="s-stat b-glass"><dt className="b-label">{t.label}</dt><dd className="s-big b-num">{t.value}</dd></div>)}
+      {tiles.map(t => <div key={t.label} className="s-stat"><dt className="t-label">{t.label}</dt><dd className="t-kpi b-num">{t.value}</dd></div>)}
     </dl>
   );
 }
@@ -17,7 +19,7 @@ export function StatTiles({ tiles, label }: { tiles: Array<{ label: string; valu
 const DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 const money = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 
-/** fmt "money": cumulative dollars from 0; "cents": a price 0..1. dots: positions on the line (a gold dot per position,
+/** fmt "money": cumulative dollars from 0; "cents": a price 0..1. dots: positions on the line (a Custodious Blue dot per position,
  *  sized by its money), popping in at their time. */
 export function SeriesChart({ points, label, testid, fmt = "money", dots = [] }: { points: Array<{ t: number; v: number }>; label: string; testid?: string; fmt?: "money" | "cents"; dots?: Array<{ t: number; v: number; r: number; title: string }> }) {
   if (points.length < 2) return null;
