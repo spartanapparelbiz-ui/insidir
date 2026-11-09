@@ -27,6 +27,7 @@ import { dollars as usd } from "@/lib/money";
 import { StickyStart } from "./StickyStart";
 import { RaceRow } from "./ElectionLive";
 import { HowStage, WatchStage, WhyStage } from "./Why";
+import { InsideStage } from "./Inside";
 import { ElectionStage } from "./Value";
 
 function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
@@ -67,7 +68,7 @@ function Free({ d }: { d: LandingData }) {
               <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
               <p className="b-small">The biggest single bet since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
             </div>
-          ) : <p className="b-empty">No millionaire bet since midnight ET yet.</p>}
+          ) : <p className="b-empty">Today&apos;s biggest bet shows here once a $1M+ wallet bets after midnight ET. Until then, the board beside it has the latest.</p>}
         </section>
         <section className="b-glass b-pad b-tile3" data-testid="free-late" data-m="settle" style={{ "--d": ".72s" } as CSSProperties}>
           <h3 className="b-panel-h">The board, 60 minutes late</h3>
@@ -80,13 +81,19 @@ function Free({ d }: { d: LandingData }) {
           <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/board">The board</a>
         </section>
         <section className="b-glass b-pad b-tile3" data-testid="free-race" data-m="settle" style={{ "--d": ".84s" } as CSSProperties}>
-          <h3 className="b-panel-h">One race in full</h3>
+          <h3 className="b-panel-h">{d.race ? "One race in full" : "Today in numbers"}</h3>
           {d.race ? (
             <>
               <ul className="b-rows"><RaceRow r={d.race} /></ul>
               <p className="b-small" style={{ marginTop: 12 }}>The race with the most watchlist money this week, whole: every side and the price now.</p>
             </>
-          ) : <p className="b-empty">No race has watchlist money this week.</p>}
+          ) : (
+            <dl className="fr-nums" data-testid="free-numbers">
+              {d.pulse.today > 0 ? <div><dd className="b-num">{usd(d.pulse.today)}</dd><dt>bet by wallets up $1M+ in 24 hours</dt></div> : null}
+              {d.pulse.countToday > 0 ? <div><dd className="b-num">{d.pulse.countToday.toLocaleString("en-US")}</dd><dt>millionaire bets since midnight ET</dt></div> : null}
+              {d.pulse.millionaires > 0 ? <div><dd className="b-num">{d.pulse.millionaires.toLocaleString("en-US")}</dd><dt>wallets up $1M+ watched</dt></div> : null}
+            </dl>
+          )}
           <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/election">Every race</a>
         </section>
       </div>
@@ -154,6 +161,7 @@ function Rest({ d }: { d: LandingData }) {
       {d.election ? <ElectionStage d={d} /> : null}
       <WhyStage />
       <HowStage />
+      <InsideStage d={d} />
       <WatchStage />
       <Free d={d} />
       <Proof d={d} />

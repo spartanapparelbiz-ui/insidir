@@ -1582,3 +1582,80 @@ html.intro-out .intro__bar--top { transform: translateY(-100%); } html.intro-out
 }
 html.intro-out .intro__lines, html.intro-out .intro__skip { opacity: 0; transform: scale(.98); transition: opacity .3s ease, transform .3s ease; }
 html.intro-out .intro { transition-delay: .2s; }
+
+/* ============================================================================================================
+ * Corporate pass on the landing: calm, exact, no gimmicks.
+ * ========================================================================================================== */
+/* Why Insidir: the problem as a quiet label, the answer as the line; no strikethrough. */
+.b-why__pain { text-decoration: none; color: var(--dim); font-size: calc(12 * var(--u)); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.b-why__row { border-radius: 14px; }
+@media (max-width: 760px) { .b-why__pain { font-size: 11.5px; } }
+/* How it works: a hairline and a small figure, no circles. */
+.b-how__n { width: auto; height: auto; border-radius: 0; background: none; color: var(--dim); font-size: calc(13 * var(--u)); font-weight: 600; letter-spacing: .12em; display: block; }
+.b-how__n::before { content: "0"; }
+@media (max-width: 760px) { .b-how__n { width: auto; height: auto; font-size: 12px; } }
+/* The hero's quick pick: thin outlined tabs, not bubbles. */
+.b-heropick__q { color: rgba(255, 255, 255, .62); font-size: calc(12 * var(--u)); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.b-heropick__chip { height: calc(34 * var(--u)); padding: 0 calc(15 * var(--u)); border-radius: 8px; background: rgba(0, 0, 0, .35); border: 1px solid rgba(255, 255, 255, .22); font-size: calc(13.5 * var(--u)); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: none; }
+.b-heropick__chip--more { color: rgba(255, 255, 255, .7); background: transparent; }
+@media (max-width: 760px) { .b-heropick__chip { height: 34px; padding: 0 13px; font-size: 13.5px; } }
+/* No empty screens: below the hero, a stage is as tall as its content plus generous air. */
+main[data-testid="landing"] .b-stage:not([data-first]):not(.b-stage--pulse):not(.b-stage--hrow):not([data-testid="final-cta"]) { min-height: 0; padding: 0; }
+main[data-testid="landing"] .b-stage:not([data-first]):not(.b-stage--pulse):not(.b-stage--hrow):not([data-testid="final-cta"]) > .b-stage__in { padding-top: calc(104 * var(--u)); padding-bottom: calc(104 * var(--u)); }
+@media (max-width: 760px) { main[data-testid="landing"] .b-stage:not([data-first]):not([data-testid="final-cta"]) > .b-stage__in { padding-top: 64px; padding-bottom: 64px; } }
+/* Buttons: one shape, one weight, one height everywhere on the landing. */
+main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; letter-spacing: -0.1px; }
+
+/* What's inside (components/brand/landing/Inside.tsx). */
+.in-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(16 * var(--u)); width: 100%; max-width: calc(1120 * var(--u)); margin: 0 auto; }
+.in-card { display: grid; align-content: start; gap: calc(10 * var(--u)); padding: calc(26 * var(--u)); border-radius: 16px; }
+.in-card--wide { grid-column: 1 / -1; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: calc(32 * var(--u)); }
+.in-card--wide .in-k, .in-card--wide .in-h, .in-card--wide .in-t { grid-column: 1; }
+.in-card--wide .in-sample { grid-column: 2; grid-row: 1 / span 4; align-self: start; }
+.in-k { margin: 0; color: var(--dim); font-size: calc(12 * var(--u)); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.in-h { margin: 0; color: var(--ink); font-size: calc(24 * var(--u)); font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.in-t { margin: 0; color: var(--ink-3); font-size: calc(15 * var(--u)); line-height: 1.55; }
+.in-sample { display: grid; border: 1px solid var(--glass-line); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, .35); }
+.in-sample__top { padding: 11px 16px; color: var(--ink); font-size: calc(13 * var(--u)); font-weight: 600; border-bottom: 1px solid var(--glass-line); }
+.in-sample__row { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--glass-line); color: var(--ink); font-size: calc(14 * var(--u)); line-height: 1.5; }
+.in-sample__row:last-child { border-bottom: 0; }
+.in-sample__row b { color: var(--dim); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding-top: 3px; }
+.in-lines { display: grid; gap: 8px; margin-top: 6px; }
+.in-lines p { margin: 0; padding: 12px 14px; border: 1px solid var(--glass-line); border-radius: 10px; color: var(--ink); font-size: calc(13.5 * var(--u)); line-height: 1.45; }
+.in-lines span { display: block; margin-top: 4px; color: var(--dim); }
+.in-asks { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.in-asks li { padding: 10px 14px; border: 1px solid var(--glass-line); border-radius: 10px; color: var(--ink); font-size: calc(13.5 * var(--u)); }
+@media (max-width: 900px) {
+  .in-grid { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
+  .in-card { padding: 20px; }
+  .in-card--wide { grid-template-columns: minmax(0, 1fr); }
+  .in-card--wide .in-sample { grid-column: 1; grid-row: auto; }
+  .in-h { font-size: 20px; } .in-t, .in-sample__row, .in-lines p, .in-asks li { font-size: 14px; }
+  .in-sample__row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
+/* ============================================================================================================
+ * Corporate pass on the app: neutral stat tiles, real buttons for row actions and Follow.
+ * ========================================================================================================== */
+.b-stats--3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: inherit; }
+@media (max-width: 552px) { .b-stats--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.b-stat { background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015)), var(--panel); border: 1px solid var(--glass-line); border-radius: 14px; }
+.b-stat__n { color: var(--ink); }
+:root[data-theme="light"] .b-stat { background: rgb(247 247 248); }
+/* Verify · Trade · Wallet: a quiet row of outlined mini buttons. */
+.b-verify { align-items: center; gap: 6px; }
+.b-verify__label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin-right: 2px; }
+.b-verify a { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--glass-line); text-decoration: none; color: var(--ink-muted); font-size: 12px; font-weight: 500; transition: border-color .15s ease, color .15s ease; }
+.b-verify a:hover { border-color: var(--ink); color: var(--ink); }
+.b-verify__at { margin-left: 4px; }
+/* Follow (and other text actions on cards): an outlined button, not floating text. */
+.s-wcard [data-testid="desk-follow"], .s-lb [data-testid="desk-follow"], table [data-testid="desk-follow"] {
+  display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--glass-line); background: transparent; color: var(--ink); font-size: 13px; font-weight: 500; text-decoration: none; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.s-wcard [data-testid="desk-follow"]:hover, table [data-testid="desk-follow"]:hover { border-color: var(--ink); }
+.s-wcard [data-testid="desk-follow"][aria-pressed="true"], table [data-testid="desk-follow"][aria-pressed="true"] { background: var(--ink); color: var(--btn-ink, #050505); border-color: var(--ink); }
+.s-wcard [data-testid="desk-follow"] { justify-self: start; margin-top: 4px; }
+.fr-nums { margin: 0; display: grid; gap: 14px; }
+.fr-nums div { display: grid; gap: 2px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-line); }
+.fr-nums div:last-child { border-bottom: 0; padding-bottom: 0; }
+.fr-nums dd { margin: 0; color: var(--ink); font-size: 28px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+.fr-nums dt { color: var(--dim); font-size: 13px; }

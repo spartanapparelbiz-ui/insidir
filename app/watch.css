@@ -38,3 +38,7 @@
   .w-told__row { grid-template-columns: 1fr auto; gap: 6px 12px; }
   .w-told__when { grid-column: 1 / -1; }
 }
+/* Always legible: white on black in the dark theme, black on white in the light one. */
+.w-btn, .b-root .w-btn, .b-app .w-btn { background: rgb(255 255 255); color: rgb(0 0 0) !important; }
+:root[data-theme="light"] .w-btn, :root[data-theme="light"] .b-root .w-btn { background: rgb(11 11 18); color: rgb(255 255 255) !important; }
+.w-btn:hover { opacity: .88; }

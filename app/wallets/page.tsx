@@ -43,9 +43,9 @@ export default async function Wallets() {
           <p className="b-sub">Every Polymarket wallet up $1M+ all-time that Insidir watches: its record, what it&apos;s betting now, and a ping when it bets again. {PAST}</p>
         </div>
         {s ? (
-          <div className="b-stats b-stats--4" data-testid="wallets-stats">
+          <div className={`b-stats ${s.proven > 0 ? "b-stats--4" : "b-stats--3"}`} data-testid="wallets-stats">
             <div className="b-stat"><span className="b-stat__n b-num">{s.wallets}</span><span className="b-small">wallets up $1M+ watched</span></div>
-            <div className="b-stat"><span className="b-stat__n b-num">{s.proven}</span><span className="b-small">proven: 30+ settled, real pickers</span></div>
+            {s.proven > 0 ? <div className="b-stat"><span className="b-stat__n b-num">{s.proven}</span><span className="b-small">proven: 30+ settled, real pickers</span></div> : null}
             <div className="b-stat"><span className="b-stat__n b-num">{s.activeToday}</span><span className="b-small">bet in the last 24 hours</span></div>
             <div className="b-stat"><span className="b-stat__n b-num">{dollars(s.weekMoney)}</span><span className="b-small">bet by millionaires this week</span></div>
           </div>
