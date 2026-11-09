@@ -61,7 +61,8 @@ export function ScrollReveal() {
     // Anything that hasn't come in after a long while (a jump, a fast fling) is simply shown.
     const safety = window.setTimeout(() => document.querySelectorAll(".sr:not(.sr-in)").forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight) el.classList.add("sr-in"); }), 4000);
 
-    // The hero drifts and fades; stage photos parallax; the progress line.
+    // The hero drifts and fades; stage photos parallax; the progress line. The individual translate / scale properties
+    // compose with each element's own transform (the hero is centred with one), never replacing it.
     const hero = document.querySelector<HTMLElement>(".b-stage[data-first] .b-hero-inner, .b-stage[data-first] .b-head");
     const heroBg = document.querySelector<HTMLElement>(".b-stage[data-first] .b-stage__bg");
     const bgs = [...document.querySelectorAll<HTMLElement>(".b-stage:not([data-first]) .b-stage__bg img")];
@@ -77,15 +78,15 @@ export function ScrollReveal() {
       bar.style.transform = `scaleX(${Math.min(1, y / max)})`;
       if (hero && y < h * 1.2) {
         const k = Math.min(1, y / (h * 0.8));
-        hero.style.transform = `translate3d(0, ${(-k * 60).toFixed(1)}px, 0)`;
+        hero.style.translate = `0 ${(-k * 60).toFixed(1)}px`;
         hero.style.opacity = String(1 - k * 0.85);
       }
-      if (heroBg && y < h * 1.2) heroBg.style.transform = `scale(${(1 + Math.min(1, y / h) * 0.08).toFixed(4)})`;
+      if (heroBg && y < h * 1.2) heroBg.style.scale = (1 + Math.min(1, y / h) * 0.08).toFixed(4);
       for (const img of bgs) {
         const r = img.parentElement!.getBoundingClientRect();
         if (r.bottom < 0 || r.top > h) continue;
         const k = (r.top + r.height / 2 - h / 2) / h;
-        img.style.transform = `translate3d(0, ${(k * -40).toFixed(1)}px, 0) scale(1.08)`;
+        img.style.translate = `0 ${(k * -40).toFixed(1)}px`; img.style.scale = "1.08";
       }
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(tick); };
