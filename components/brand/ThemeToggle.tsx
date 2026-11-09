@@ -6,7 +6,13 @@ import { useEffect, useState } from "react";
 type Theme = "light" | "dark";
 import { THEME_KEY as KEY } from "@/lib/brand/theme";
 
+/** Retired with light mode: the site is one terminal theme (lib/brand/theme.ts). Kept so callers need no change. */
 export function ThemeToggle() {
+  return null;
+}
+
+/** The old light/dark switch, unused. */
+export function ThemeToggleLegacy() {
   const [t, setT] = useState<Theme | null>(null);
   useEffect(() => { setT(document.documentElement.dataset.theme === "light" ? "light" : "dark"); }, []);
   const flip = () => {

@@ -6,7 +6,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ContinueButton } from "@/components/auth/ContinueButton";
 import { Lines, Stage } from "@/components/system";
-import { BrandFoot, BrandNav } from "@/components/brand/Nav";
+import { BrandFoot } from "@/components/brand/Nav";
+import { TerminalChrome } from "@/components/terminal/Chrome";
 import { safeNext } from "@/lib/auth/next";
 import { getViewer } from "@/lib/auth/viewer";
 import { slotPhoto } from "@/lib/brand/images";
@@ -31,7 +32,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (viewer.user) redirect("/go?step=paywall"); // signed in without Insidir: the paywall, never an empty app
   return (
     <main className="b-root" data-testid="login-page">
-      <BrandNav fixed start={false} />
+      <TerminalChrome fixed start={false} />
       <Stage bg={{ kind: "photo", photo: slotPhoto("cta"), dark: 0.55, priority: true }} first testid="login" labelledBy="login-h">
         <div className="b-head b-center">
           <Lines as="h1" id="login-h" lines={["Welcome back."]} size={64} />
