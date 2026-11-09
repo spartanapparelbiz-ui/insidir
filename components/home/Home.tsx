@@ -2,6 +2,7 @@
  * motion as the landing (components/system); each stage opens with one sentence computed from the data, then the visual
  * that proves it, then the action.
  *   1 Hero        "Wallets up $1M+ bet $X today.", the search, today's #1 position as a ticket (chart, Copy, Follow)
+ *   1b AI analyst  the 24-hour numbers, today's brief, Watch my bet, Bet Briefing, Ask Insidir (./AiDesk.tsx)
  *   2 Disagree    "Where they disagree with the price": the top 3, pinned while you scroll through them
  *   3 Election    "Tonight. Every race." (Election Day only)
  *   4 Board       "The live board": today's millionaire bets
@@ -23,6 +24,7 @@ import { Stream } from "@/components/system/Stream";
 import { RaceCards } from "@/components/system/Races";
 import { Ticket } from "@/components/system/Ticket";
 import { WalletCards } from "@/components/system/WalletCards";
+import { AiDesk } from "./AiDesk";
 
 const cents = (p: number) => `${Math.round(p * 100)}¢`;
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
@@ -41,6 +43,8 @@ export function HomePage({ d, search }: { d: Home; search: boolean }) {
           </div>
           {d.top ? <div className="s-col"><Ticket bet={d.top.bet} edge={d.top.edge} art={d.top.art} testid="home-ticket" /></div> : null}
         </Stage>
+
+        <AiDesk d={d} />
 
         {d.disagree.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6 }} testid="home-disagree" labelledBy="dis-h" className="s-pinstage">

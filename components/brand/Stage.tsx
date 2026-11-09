@@ -25,8 +25,8 @@ function Bg({ bg }: { bg: StageBg }) {
   const clip = globeReady(), poster = has(POSTER) ? POSTER : null;
   return (
     <div className={`b-stage__bg${bg.faint ? " b-stage__bg--faint" : ""}`} style={style}>
-      {clip && !bg.poster ? <Globe src={GLOBE} poster={poster ?? PHOTOS.hero.src} />
-        : <div className="b-globe">{poster ? <Image src={poster} alt="" fill sizes="max(100vw, 160vh)" priority={!bg.faint} quality={85} /> : <BrandPicture src={PHOTOS.hero.src} priority={!bg.faint} sizes="max(100vw, 160vh)" />}</div>}
+      {clip && !bg.poster ? <Globe src={GLOBE} poster={poster ?? PHOTOS.stadium.src} />
+        : <div className="b-globe">{poster ? <Image src={poster} alt="" fill sizes="max(100vw, 160vh)" priority={!bg.faint} quality={85} /> : <BrandPicture src={PHOTOS.stadium.src} priority={!bg.faint} sizes="max(100vw, 160vh)" />}</div>}
     </div>
   );
 }
