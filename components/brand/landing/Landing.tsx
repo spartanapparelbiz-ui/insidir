@@ -1,178 +1,163 @@
-/* The landing: a scrolling page of stages in the hero spec's language, one story told simply. Each stage is a
- * full-viewport black stage with one background that never animates; its foreground performs once as it enters
- * (components/brand/StageMotion.tsx).
- *   Hero (the globe) · [Election Day board, Nov 3–4 ET only] · Why Insidir (the problem) · How it works (three steps) ·
- *   See it work (recordings of the live site, ./Demo.tsx) · Free right now (a live sample, no account) · The record ·
- *   Pricing · FAQ · Final (the globe again, the footer inside). Stages: ./Why.tsx, ./Value.tsx; scroll motion: ./ScrollFx.tsx.
- * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
+/* The landing for visitors: the terminal itself, simple and built to convert. Five blocks and nothing else:
+ *   1. Hero      the top bar and ticker (components/terminal/Chrome.tsx), one headline, one line, the orange Start for $1,
+ *                the price line, and three live proof stats (hidden when there's no real value)
+ *   2. Board     the latest 8 bets from wallets up $1M+, 60 minutes late, sides locked (the lock is the reason to pay)
+ *   3. What you get   before you bet · while you hold · after it settles
+ *   4. Record    "What we told you": every settled $1M+ bet in 30 days, losses included, and $100 on each
+ *   5. Access + FAQ   the price block with the second and last Start for $1, five questions (faqLd kept)
+ * Plus the phones' sticky bar (./StickyStart.tsx), after the board and until the pricing block. Every number is live
+ * (lib/brand/landing.ts, 15-second shared cache); a block with nothing real to show says so. Information, not advice. */
+import "@/app/landing-terminal.css";
 import { electionDay } from "@/lib/brand/pulse";
-import type { CSSProperties } from "react";
-import { category as categoryInfo } from "@/lib/brand/categories";
-import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
-import { slotPhoto } from "@/lib/brand/images";
+import { FAQ, LANDING, PAST, START, faqLd } from "@/lib/brand/copy";
 import type { LandingData } from "@/lib/brand/landing";
-import { Lines, m, Pill } from "../Bits";
-import { BetRow } from "../BetRow";
-import { Faq } from "../Faq";
-import { HeroLine } from "../HeroLine";
-import { BrandFoot, BrandNav } from "../Nav";
+import type { BoardBet } from "@/lib/millionaires/queries";
+import { TIER_NAME } from "@/lib/millionaires/watchlist";
+import { betPath } from "@/lib/entities/slug";
+import { dollars } from "@/lib/money";
+import { BrandFoot } from "../Nav";
 import { PayMoments } from "../PayMoments";
-import { Stage } from "../Stage";
-import { StageMotion } from "../StageMotion";
 import { ViewAs } from "@/components/ViewAs";
-import { ScrollFx } from "./ScrollFx";
+import { TerminalChrome } from "@/components/terminal/Chrome";
+import { Panel } from "@/components/terminal/Panel";
+import { LandingBeacons } from "./LandingBeacons";
 import { StickyStart } from "./StickyStart";
-import { RaceRow } from "./ElectionLive";
-import { HowStage, WatchStage, WhyStage } from "./Why";
-import { ElectionStage } from "./Value";
 
-function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
+const ET_TIME = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const usual = (b: BoardBet): string => (b.usual && b.usual > 0 ? `${(b.amount / b.usual).toFixed(1)}×` : "—");
+
+function Hero({ d }: { d: LandingData }) {
+  const stats = [
+    d.pulse.sinceMidnight > 0 ? { v: dollars(d.pulse.sinceMidnight), k: "BET BY $1M+ WALLETS TODAY", id: "today" } : null,
+    d.pulse.millionaires > 0 ? { v: d.pulse.millionaires.toLocaleString("en-US"), k: "WALLETS UP $1M+ WATCHED", id: "wallets" } : null,
+    d.month ? { v: `${d.month.won}–${d.month.lost}`, k: "W–L SETTLED THIS MONTH", id: "month" } : null,
+  ].filter((x): x is { v: string; k: string; id: string } => x !== null);
   return (
-    <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
-      <BrandNav motion election={electionDay(Date.now())} />
-      <div className="b-hero-inner">
-        <Lines as="h1" id="hero-h" lines={HERO.h1} />
-        <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
-        <HeroLine initial={d.pulse} />
-        {/* Onboarding starts here: the funnel's first question (/go's "What do you bet on?"), answered in one tap. */}
-        <div className="b-heropick" data-m="settle" style={{ "--d": ".8s" } as CSSProperties} data-testid="hero-pick">
-          <span className="b-heropick__q">{HERO.ask}</span>
-          <div className="b-heropick__row">
-            {HERO.picks.map(c => <a key={c} className="b-heropick__chip" href={`/go?step=where&cats=${c}`} data-testid="hero-chip" data-checkout="hero-pick">{categoryInfo(c).name}</a>)}
-            <a className="b-heropick__chip b-heropick__chip--more" href="/go?step=cats" data-testid="hero-chip-more">More</a>
-          </div>
-        </div>
-        <div className="b-ctas">
-          <Pill href="/go?step=cats" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
-          <Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>
-        </div>
-      </div>
-    </Stage>
+    <section className="t-hero" data-testid="hero" aria-labelledby="hero-h">
+      <h1 id="hero-h" className="t-hero__h">{LANDING.h1}</h1>
+      <p className="t-hero__sub" data-testid="hero-sub">{LANDING.sub}</p>
+      <a className="t-cta t-cta--lg t-hero__go" href="/go" data-checkout="hero" data-cta="hero" data-testid="hero-start">{START} →</a>
+      <p className="t-hero__price" data-testid="hero-price">{LANDING.price}</p>
+      {stats.length ? (
+        <dl className="t-proof" data-testid="hero-proof">
+          {stats.map(s => <div key={s.id} className="t-proof__s" data-stat={s.id}><dt className="t-label">{s.k}</dt><dd className="t-kpi">{s.v}</dd></div>)}
+        </dl>
+      ) : null}
+    </section>
   );
 }
 
-function Free({ d }: { d: LandingData }) {
-  const t = d.topBet, late = d.lead.slice(0, 4);
+function Board({ d }: { d: LandingData }) {
+  const rows = d.lead.slice(0, 8);
   return (
-    <Stage id="free" bg={{ kind: "photo", photo: slotPhoto("free"), dark: 0.66 }} testid="free" labelledBy="free-h">
-      <div className="b-head"><Lines id="free-h" lines={STAGES.free} size={64} /><p className="b-sub">A live sample, no account.</p></div>
-      <div className="b-tiles3">
-        <section className="b-glass b-pad b-tile3" data-testid="free-top-bet" data-m="settle" style={{ "--d": ".6s" } as CSSProperties}>
-          <h3 className="b-panel-h">Today&apos;s #1 millionaire bet</h3>
-          {t ? (
-            <div style={{ display: "grid", gap: 12 }}>
-              <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
-              <p className="b-small">The biggest single bet since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
+    <Panel n={1} title="Board · bets $5K+ from wallets up $1M+" meta={rows.length ? `${rows.length} ROWS · 60 MIN DELAY` : "60 MIN DELAY"} source="Polymarket public data" fetchedAt={d.now}
+      testid="landing-board" compact empty={rows.length ? null : "No bets from wallets up $1M+ in the last day yet. They show here as they land, 60 minutes late."}>
+      <div className="t-scroll">
+        <table className="t-table">
+          <thead><tr><th>TIME</th><th>WALLET</th><th>MARKET</th><th className="r">SIZE</th><th className="r">× USUAL</th><th>SIDE</th></tr></thead>
+          <tbody>
+            {rows.map((b, i) => (
+              <tr key={b.id} className={i === 0 ? "t-new" : undefined} data-board-row="" data-href={betPath(b.id)} tabIndex={0} data-testid="landing-row">
+                <td className="t-muted">{ET_TIME.format(new Date(b.at))}</td>
+                <td><span className={`t-tier t-tier--${b.tier}`}>{TIER_NAME[b.tier].toUpperCase()}</span> {b.short}</td>
+                <td className="t-ell" title={b.title}>{b.title}</td>
+                <td className="r t-strong">{dollars(b.amount)}</td>
+                <td className="r">{usual(b)}</td>
+                <td><span className="t-lock" data-locked="side">MEMBERS</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="t-note">{LANDING.boardNote}</p>
+    </Panel>
+  );
+}
+
+function WhatYouGet() {
+  return (
+    <section className="t-three" data-testid="what-you-get" aria-label="What you get">
+      {LANDING.three.map(x => <div key={x.k} className="t-three__c"><h2 className="t-label t-three__k">{x.k}</h2><p className="t-three__t">{x.t}</p></div>)}
+    </section>
+  );
+}
+
+function Record({ d }: { d: LandingData }) {
+  const r = d.record30, t = r?.total, settled = t ? t.won + t.lost : 0;
+  const net = r && r.net !== null ? r.net : null;
+  return (
+    <Panel n={2} title="Record · what we told you" meta="LAST 30 DAYS · LOSSES INCLUDED" source="Polymarket settlements" fetchedAt={d.now} testid="landing-record"
+      empty={t && settled + t.void > 0 ? null : "No settled bets from wallets up $1M+ in the last 30 days yet."}>
+      {t ? (
+        <>
+          <dl className="t-rec">
+            <div><dt className="t-label">SETTLED W–L</dt><dd className="t-kpi" data-testid="record-wl">{t.won}–{t.lost}</dd></div>
+            <div><dt className="t-label">VOID</dt><dd className="t-kpi">{t.void}</dd></div>
+            <div><dt className="t-label">$100 ON EACH</dt>{net !== null
+              ? <dd className={`t-kpi ${net >= 0 ? "t-up" : "t-down"}`} data-testid="record-net">{net >= 0 ? "+" : "−"}${Math.abs(Math.round(net)).toLocaleString("en-US")}</dd>
+              : <dd className="t-kpi t-muted" data-testid="record-net">—</dd>}</div>
+          </dl>
+          {net === null ? <p className="t-note">The $100 line shows from 30 settled bets; {settled} so far.</p> : <p className="t-note">$100 on every settled bet at the price the wallet paid. {PAST}</p>}
+          {r!.byDay.length ? (
+            <div className="t-scroll">
+              <table className="t-table t-table--compact">
+                <thead><tr><th>DAY (ET)</th><th className="r">WON</th><th className="r">LOST</th><th className="r">VOID</th></tr></thead>
+                <tbody>{r!.byDay.slice(0, 5).map(x => <tr key={x.day}><td>{x.day}</td><td className="r t-up">{x.won}</td><td className="r t-down">{x.lost}</td><td className="r t-muted">{x.void}</td></tr>)}</tbody>
+              </table>
             </div>
-          ) : <p className="b-empty">No millionaire bet since midnight ET yet.</p>}
-        </section>
-        <section className="b-glass b-pad b-tile3" data-testid="free-late" data-m="settle" style={{ "--d": ".72s" } as CSSProperties}>
-          <h3 className="b-panel-h">The board, 60 minutes late</h3>
-          {late.length ? (
-            <>
-              <ul className="b-rows">{late.map(b => <li key={b.id}><BetRow bet={b} now={d.now} /></li>)}</ul>
-              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.pulse.countToday ? `${d.pulse.countToday.toLocaleString("en-US")} millionaire bets today. ` : ""}Members see each one the second it lands.</p>
-            </>
-          ) : <p className="b-empty">No millionaire bets in the last day yet.</p>}
-          <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/board">The board</a>
-        </section>
-        <section className="b-glass b-pad b-tile3" data-testid="free-race" data-m="settle" style={{ "--d": ".84s" } as CSSProperties}>
-          <h3 className="b-panel-h">One race in full</h3>
-          {d.race ? (
-            <>
-              <ul className="b-rows"><RaceRow r={d.race} /></ul>
-              <p className="b-small" style={{ marginTop: 12 }}>The race with the most watchlist money this week, whole: every side and the price now.</p>
-            </>
-          ) : <p className="b-empty">No race has watchlist money this week.</p>}
-          <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/election">Every race</a>
-        </section>
-      </div>
-    </Stage>
+          ) : null}
+          <p className="t-note"><a className="t-link" href="/results">Every settled bet, losses included →</a></p>
+        </>
+      ) : null}
+    </Panel>
   );
 }
 
-/** The record: the leading rule from the Kalshi backtest (positive over 100+ settled at Kalshi's ask + 1¢), or nothing. */
-function Proof({ d }: { d: LandingData }) {
-  if (!d.record) return null;
-  const r = d.record, net = `${r.net >= 0 ? "+" : "−"}$${Math.abs(Math.round(r.net)).toLocaleString("en-US")}`;
+function Access() {
   return (
-    <Stage bg={{ kind: "photo", photo: slotPhoto("space") }} testid="proof" label="The record">
-      <div className="b-center">
-        <p className="b-giant b-num" data-testid="proof-net"><span className="ln"><span className="ln-i">{net}</span></span></p>
-        <p className="b-sub" {...m("lift", 0.5)}>“{r.name}” on Kalshi · ${r.perBet} a bet · {r.won} won of {r.settled.toLocaleString("en-US")} settled · {r.days} days</p>
-        <p className="b-small" style={{ marginTop: 8 }}><a href="/results">Every rule we tested, losses included</a></p>
-        <p className="b-small" style={{ marginTop: 14 }} {...m("quiet", 0.8)}>{PAST}</p>
+    <section id="pricing" className="t-access" data-testid="pricing" aria-labelledby="price-h">
+      <div className="t-access__l">
+        <h2 id="price-h" className="t-label">ACCESS</h2>
+        <p className="t-access__p" data-testid="price-line">{LANDING.access}</p>
       </div>
-    </Stage>
+      <a className="t-cta t-cta--lg" href="/go" data-checkout="pricing" data-cta="pricing" data-testid="pricing-cta">{START} →</a>
+    </section>
   );
 }
 
-function Pricing() {
+function Faqs() {
   return (
-    <Stage id="pricing" bg={{ kind: "photo", photo: slotPhoto("world") }} testid="pricing" labelledBy="price-h">
-      <div className="b-center">
-        <Lines id="price-h" lines={STAGES.pricing} size={72} />
-        <p className="b-sub" {...m("lift", 0.58)} data-testid="price-line">{STAGES.pricingSub}</p>
-        <div className="b-ctas"><Pill href="/go" delay={0.9} data-testid="pricing-cta" data-checkout="pricing">Start for $1</Pill></div>
-      </div>
-    </Stage>
-  );
-}
-
-function FaqStage() {
-  return (
-    <Stage id="faq" bg={{ kind: "photo", photo: slotPhoto("faq"), dark: 0.7 }} testid="faq" labelledBy="faq-h">
-      <div className="b-head"><Lines id="faq-h" lines={STAGES.faq} size={64} /></div>
-      <Faq items={FAQ} />
+    <section id="faq" className="t-faq" data-testid="faq" aria-labelledby="faq-h">
+      <h2 id="faq-h" className="t-label">FAQ</h2>
+      <dl>
+        {FAQ.slice(0, 5).map(f => (
+          <div key={f.id} className="t-faq__i" data-testid="faq-item"><dt>{f.q}</dt><dd>{f.a}</dd></div>
+        ))}
+      </dl>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd() }} />
-    </Stage>
+    </section>
   );
 }
 
-function Final() {
-  return (
-    <Stage bg={{ kind: "globe", dark: 0.2 }} testid="final-cta" labelledBy="final-h" after={<BrandFoot />}>
-      <div className="b-center">
-        <Lines id="final-h" lines={STAGES.final} />
-        <div className="b-ctas">
-          <Pill href="/go" delay={0.9} data-testid="final-start" data-checkout="final">Start for $1</Pill>
-          <Pill href="/board" kind="ghost" delay={0.97}>See the board</Pill>
-        </div>
-      </div>
-    </Stage>
-  );
-}
-
-/** Everything below the hero, from the full landing data. */
-function Rest({ d }: { d: LandingData }) {
-  return (
-    <>
-      {/* Election Day (Nov 3–4 ET only) leads; otherwise the story: why, how, see it, try it free, the record. */}
-      {d.election ? <ElectionStage d={d} /> : null}
-      <WhyStage />
-      <HowStage />
-      <WatchStage />
-      <Free d={d} />
-      <Proof d={d} />
-      <Pricing />
-      <FaqStage />
-      <Final />
-      {d.member ? null : <StickyStart />}
-      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
-    </>
-  );
-}
-
-/** The landing: the hero, then every stage, in one response. */
+/** The landing: five blocks, in one response. */
 export function Landing({ d }: { d: LandingData }) {
   return (
     <>
     <ViewAs />
-    <main className="b-root" data-testid="landing">
-      <Hero d={d} />
-      <Rest d={d} />
-      <StageMotion />
-      <ScrollFx />
+    <main className="b-root t-landing" data-testid="landing">
+      <TerminalChrome start={false} election={electionDay(d.now)} />
+      <div className="t-wrap t-land">
+        <Hero d={d} />
+        <Board d={d} />
+        <WhatYouGet />
+        <Record d={d} />
+        <Access />
+        <Faqs />
+      </div>
+      <BrandFoot inline />
+      {d.member ? null : <StickyStart />}
+      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
+      <LandingBeacons />
     </main>
     </>
   );

@@ -1,5 +1,5 @@
 /* The home page.
- *   Visitors  the landing: a scroll of stages in the brand's language (components/brand/landing/Landing.tsx).
+ *   Visitors  the landing: the terminal in five blocks, built to convert (components/brand/landing/Landing.tsx).
  *   Members   their home (components/home/Home.tsx): the homepage's stages, unlocked and live, plus their own layer.
  * Everything else Insidir has stays live by URL. */
 import { cookies } from "next/headers";

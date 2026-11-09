@@ -98,3 +98,17 @@ export const MEMBER_GETS = [
   "Every wallet's record, losses included",
   "A copy ticket for any bet: their price, the price now, one tap to the market",
 ] as const;
+
+/** The terminal landing (components/brand/landing/Landing.tsx): five blocks, plain words, two Start for $1 buttons. */
+export const LANDING = {
+  h1: "See what the $1M+ wallets bet, before the game.",
+  sub: "Every Polymarket bet of $5K+ from wallets up $1M+, with what it needs to win.",
+  price: `$${TRIAL.fee} FOR ${TRIAL.days} DAYS · THEN $${PLANS.insidir.price}/MO · CANCEL ANYTIME`,
+  boardNote: "Members see these the minute they land, with the side.",
+  three: [
+    { k: "BEFORE YOU BET", t: "What the bet needs to win and who's on each side." },
+    { k: "WHILE YOU HOLD", t: "An alert when a $1M+ wallet takes the other side or gets out." },
+    { k: "AFTER IT SETTLES", t: "What happened and what following each wallet would have made." },
+  ],
+  access: `$${TRIAL.fee} · ${TRIAL.days} DAYS → $${PLANS.insidir.price}/MO · CANCEL ANYTIME`,
+} as const;
