@@ -162,7 +162,7 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
   .b-root .t-top.b-nav { height: 48px; gap: 8px; padding: 0 8px; }
   .t-top__cmd { display: none; position: absolute; left: 0; right: 0; top: 48px; z-index: 45; max-width: none; padding: 8px; background: var(--t-page); border-bottom: 1px solid var(--t-line); }
   .b-root .t-top.is-searching .t-top__cmd { display: block; }
-  .t-clock, .t-tag, .b-root .t-top .t-btn, .b-root .t-top .t-start { display: none !important; }
+  .t-clock, .t-tag, .b-root .t-top .t-btn { display: none !important; }
   .b-root .t-searchbtn { display: inline-flex; width: 44px; height: 44px; }
   .b-root .t-top .b-burger { width: 44px; height: 44px; }
   .t-statusbar { display: none; }
@@ -271,3 +271,6 @@ html:has(.b-root), body:has(.b-root) { background: var(--t-page); }
 .b-root .t-panel { background: linear-gradient(180deg, rgb(var(--t-text-rgb) / .06), rgb(var(--t-text-rgb) / .015)), rgb(var(--t-page-rgb) / .55); border: 1px solid rgb(var(--t-text-rgb) / .1);
   box-shadow: inset 0 1px 0 rgb(var(--t-text-rgb) / .07), 0 30px 80px -50px rgb(var(--t-page-rgb) / .9) !important; }
 .b-root .t-table th { background: transparent; }
+/* Phones: a compact Start for $1 in the top bar (visitors). */
+@media (max-width: 899px) { .b-root .t-top .t-start { height: 36px; padding: 0 14px; font-size: 13px; gap: 6px; white-space: nowrap; } .b-root .t-top .t-start .b-arw { display: none; } }
+@media (max-width: 359px) { .b-root .t-top .t-start { display: none; } }

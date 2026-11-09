@@ -27,10 +27,10 @@ export function Waves() {
   return (
     <svg className="c-waves" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
       <defs>
-        <radialGradient id="cw-core" cx="50%" cy="100%" r="62%">
-          <stop offset="0%" style={{ stopColor: "var(--t-cta)", stopOpacity: 0.55 }} />
-          <stop offset="14%" style={{ stopColor: "var(--t-blue)", stopOpacity: 0.7 }} />
-          <stop offset="46%" style={{ stopColor: "var(--t-blue)", stopOpacity: 0.22 }} />
+        <radialGradient id="cw-core" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" style={{ stopColor: "var(--t-cta)", stopOpacity: 0.5 }} />
+          <stop offset="12%" style={{ stopColor: "var(--t-blue)", stopOpacity: 0.95 }} />
+          <stop offset="45%" style={{ stopColor: "var(--t-blue)", stopOpacity: 0.38 }} />
           <stop offset="100%" style={{ stopColor: "var(--t-page)", stopOpacity: 0 }} />
         </radialGradient>
         <linearGradient id="cw-line" x1="0" x2="1" y1="0" y2="0">
@@ -42,13 +42,13 @@ export function Waves() {
         </linearGradient>
         <linearGradient id="cw-ring" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" style={{ stopColor: "var(--t-text)", stopOpacity: 0.05 }} />
-          <stop offset="100%" style={{ stopColor: "var(--t-blue)", stopOpacity: 0.55 }} />
+          <stop offset="100%" style={{ stopColor: "var(--t-blue)", stopOpacity: 0.85 }} />
         </linearGradient>
         <filter id="cw-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="28" /></filter>
         <filter id="cw-soft"><feGaussianBlur stdDeviation="1.2" /></filter>
       </defs>
       {/* The glow, then the arcs, then the waves of light. */}
-      <ellipse className="c-waves__core" cx={W / 2} cy={H + 40} rx={760} ry={520} fill="url(#cw-core)" filter="url(#cw-blur)" />
+      <ellipse className="c-waves__core" cx={W / 2} cy={H - 10} rx={820} ry={430} fill="url(#cw-core)" filter="url(#cw-blur)" />
       <g className="c-waves__rings">
         {RINGS.map((r, i) => <ellipse key={r} className="c-waves__ring" style={{ animationDelay: `${-i * 1.4}s` }} cx={W / 2} cy={H + 60} rx={r} ry={r * 0.78} fill="none" stroke="url(#cw-ring)" strokeWidth={i < 2 ? 1.4 : 1} />)}
       </g>

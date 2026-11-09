@@ -48,7 +48,7 @@ test("landing: the terminal in five blocks; the board 60 minutes late with sides
     if (at) expect(Date.now() - new Date(at).getTime()).toBeGreaterThanOrEqual(59 * 60_000);
   }
   await expect(page.getByTestId("landing-board")).toContainText("Members see these the minute they land, with the side.");
-  await expect(page.getByTestId("what-you-get")).toContainText("BEFORE YOU BET");
+  await expect(page.getByTestId("what-you-get")).toContainText("Before you bet");
   await expect(page.getByTestId("what-you-get")).toContainText("WHILE YOU HOLD");
   await expect(page.getByTestId("what-you-get")).toContainText("AFTER IT SETTLES");
   await expect(page.getByTestId("landing-record").getByRole("link", { name: /Every settled bet, losses included/ }).or(page.getByTestId("landing-record").getByTestId("t-empty"))).toHaveCount(1);
@@ -216,8 +216,8 @@ test("a member's home is the workspace: panels (board, watch my bet, alerts, wal
   // Their desk: copies, follows, pings; never a stat that reads 0.
   const desk = page.getByTestId("home-desk");
   await expect(desk.getByTestId("desk-follows")).not.toContainText(/^0$/m);
-  // The terminal's type: numbers in IBM Plex Mono; no sidebar.
-  expect(await page.getByTestId("home-board").locator("td").first().evaluate(e => getComputedStyle(e).fontFamily)).toMatch(/plex.?mono|ui-monospace/i);
+  // The type: IBM Plex Sans with tabular figures; no sidebar.
+  expect(await page.getByTestId("home-board").locator("td").first().evaluate(e => getComputedStyle(e).fontFamily)).toMatch(/plex.?sans/i);
   await expect(page.locator(".b-sidebar")).toHaveCount(0);
   // Ask Insidir: an example question answered from Insidir's data (or "I don't have that."), never empty.
   await page.getByTestId("home-ask-example").first().click();

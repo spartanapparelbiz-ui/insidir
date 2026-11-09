@@ -129,7 +129,7 @@
 .c-faq__i p { margin: 0 0 18px; color: var(--t-muted); font: 400 16px/1.6 var(--t-body-font); }
 
 /* The top bar's Start for $1 waits until the hero's button has scrolled away. */
-.t-landing:not([data-cta-out]) .t-top .t-start { visibility: hidden; }
+.t-landing:not([data-cta-out]) .t-top .t-start { display: none !important; }
 
 /* Scroll motion: blocks rise in once, gently (components/brand/landing/Reveal.tsx); nothing under reduced motion. */
 .c-hero__copy > *, .c-hero__art { animation: c-rise .8s cubic-bezier(.2, .8, .2, 1) both; }
@@ -249,3 +249,4 @@
   .c-tile { min-height: 220px; }
 }
 @media (prefers-reduced-motion: reduce) { .c-waves__flow, .c-waves__ring, .c-waves__core { animation: none !important; } }
+@media (max-width: 899px) { .c-hero { min-height: 0; place-items: start center; padding: 44px 18px 240px; } }

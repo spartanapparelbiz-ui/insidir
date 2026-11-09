@@ -224,7 +224,7 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   await context.clearCookies();
   const p2 = await context.newPage();
   await p2.clock.install();
-  await p2.goto("/");
+  await p2.goto("/board");
   await p2.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true);
   await p2.clock.runFor(16_000);
   await p2.evaluate(() => window.dispatchEvent(new Event("insidir:free-used")));

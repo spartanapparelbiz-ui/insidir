@@ -38,7 +38,7 @@ describe("V2 landing page", () => {
     // The terminal chrome first (no nav Start button on the landing), then the five blocks in order.
     // The top bar's Start for $1 waits until the hero's button has scrolled away (components/brand/landing/Reveal.tsx).
     expect(landing).toContain("<TerminalChrome election=");
-    expect(read("app/landing-clean.css")).toContain(".t-landing:not([data-cta-out]) .t-top .t-start { visibility: hidden; }");
+    expect(read("app/landing-clean.css")).toContain(".t-landing:not([data-cta-out]) .t-top .t-start { display: none !important; }");
     const order = ["<Hero d={d} />", "<Board d={d} />", "<WhatYouGet />", "<Record d={d} />", "<Access />", "<Faqs />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
