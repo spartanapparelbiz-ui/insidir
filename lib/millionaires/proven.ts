@@ -67,7 +67,7 @@ export interface ScreenSource { trades(wallet: string, sinceMs: number): Promise
 /** Screens the $1M+ wallets screened longest ago (or never), `perRun` at a time, each at most once a day. */
 export async function screenWallets(db: Db, src: ScreenSource, now: number, perRun = 15): Promise<{ screened: number; proven: number; excluded: number }> {
   // Short records whose closed-market count hasn't been read yet aren't judged: they keep their tier until it is.
-  await db.execute(sql`update terminal.watchlist w set tier = 'millionaire', exclusion = null, screened_at = null
+  await db.execute(sql`update terminal.watchlist w set exclusion = null, screened_at = null
     where w.exclusion = 'under 30 settled' and w.pnl >= 1000000 and not exists (select 1 from terminal.wallet_pnl p where p.wallet = w.wallet)`);
   const due = await db.select({ wallet: watchlist.wallet }).from(watchlist)
     .where(and(sql`${watchlist.pnl} >= 1000000`, or(isNull(watchlist.screenedAt), lt(watchlist.screenedAt, new Date(now - 86_400_000)),
@@ -83,7 +83,8 @@ export async function screenWallets(db: Db, src: ScreenSource, now: number, perR
       (select closed from terminal.wallet_pnl where wallet = ${wallet}) as closed`)).rows[0] as { resolved: number | null; closed: number | null } | undefined;
     const settled = settledCount(rec?.resolved ?? null, rec?.closed ?? null);
     const reason = provenReason(s, settled);
-    await db.update(watchlist).set({ screenedAt: new Date(now), exclusion: reason, settled, screen: s, tier: reason ? "pro" : "millionaire" }).where(eq(watchlist.wallet, wallet));
+    // The verdict is kept as `exclusion` (proven = none); it never changes the tier, which is the profit alone.
+    await db.update(watchlist).set({ screenedAt: new Date(now), exclusion: reason, settled, screen: s }).where(eq(watchlist.wallet, wallet));
     if (reason) excluded++; else proven++;
   }
   return { screened: due.length, proven, excluded };

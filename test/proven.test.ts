@@ -88,8 +88,8 @@ describe.skipIf(!URL0)("the screen in Postgres", () => {
     expect(r).toEqual({ screened: 2, proven: 1, excluded: 1 });
     const rows = new Map((await db.select().from(schema.watchlist)).map(x => [x.wallet, [x.tier, x.exclusion, x.settled]]));
     expect(rows.get(W(1))).toEqual(["millionaire", null, 200]);
-    expect(rows.get(W(2))).toEqual(["pro", "under 30 settled", 12]);
+    expect(rows.get(W(2))).toEqual(["millionaire", "under 30 settled", 12]); // the verdict never changes the tier
     expect(rows.get(W(3))).toEqual(["millionaire", null, null]);
-    expect(rows.get(W(4))).toEqual(["millionaire", null, 12]);
+    expect(rows.get(W(4))).toEqual(["pro", null, 12]); // tier untouched by the screen (the refresh sets it from profit)
   });
 });
