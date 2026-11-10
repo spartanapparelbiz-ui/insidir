@@ -18,11 +18,11 @@ const fill = (o: Partial<Fill> & { at: number; contracts: number; price: number 
   outcome: "Lakers", outcomeSide: "no", side: "SELL", wallet: W, walletName: null, url: "https://polymarket.com/event/nba-mia-lal-2026-11-04/nba-mia-lal-2026-11-04", ...o });
 
 describe("positions, pure", () => {
-  it("merges a wallet's SELL fills into runs ($5K+), never its buys or anyone unwatched", () => {
-    const fills = [fill({ at: 0, contracts: 10_000, price: 0.5 }), fill({ at: 5 * MIN, contracts: 6_000, price: 0.6 }), fill({ at: 40 * MIN, contracts: 2_000, price: 0.5 }),
+  it("merges a wallet's SELL fills into runs ($1K+), never its buys or anyone unwatched", () => {
+    const fills = [fill({ at: 0, contracts: 10_000, price: 0.5 }), fill({ at: 5 * MIN, contracts: 6_000, price: 0.6 }), fill({ at: 40 * MIN, contracts: 1_500, price: 0.5 }),
       fill({ at: 1, contracts: 50_000, price: 0.5, side: "BUY" }), fill({ at: 2, contracts: 50_000, price: 0.5, wallet: "0xother" })];
     const runs = sellRuns(fills, w => w === W);
-    expect(runs).toHaveLength(1); // the $1K run 40 minutes later is under $5K
+    expect(runs).toHaveLength(1); // the $750 run 40 minutes later is under BET_MIN ($1K)
     expect(runs[0]).toMatchObject({ wallet: W, shares: 16_000, amount: 8_600, at: 0, lastAt: 5 * MIN });
     expect(runs[0]!.price).toBeCloseTo(8_600 / 16_000);
   });

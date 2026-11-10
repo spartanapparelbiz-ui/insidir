@@ -67,7 +67,7 @@ export async function movesOnce(db: Db, poller: MovesPoller, directory: MarketDi
     fresh.push(...await upsertMoves(db, await poller.pollPolymarket(now, ids => directory.lookup("polymarket", ids, now))));
     await beat("moves:polymarket", true);
     if (watch) {
-      // Every bet of $5K+ by a watchlist wallet (lib/millionaires/bets.ts).
+      // Every bet of $1K+ by a watchlist wallet (lib/millionaires/bets.ts).
       try {
         const watched = poller.lastWatchedBets();
         // The outcome names, from the directory (already in memory: the poll just looked these markets up).

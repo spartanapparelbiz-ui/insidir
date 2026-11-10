@@ -73,9 +73,10 @@ export function AiDesk({ d, userId }: { d: Home; userId: string }) {
   const money = d.today?.money ?? d.day?.money ?? 0, bets = d.today?.bets ?? d.day?.bets ?? 0;
   const top = d.ai.topCategory && isCategory(d.ai.topCategory) ? categoryInfo(d.ai.topCategory).name : null;
   const stats = [
-    money > 0 ? { v: dollars(money), k: `bet by $1M+ wallets ${span}` } : null,
-    bets > 0 ? { v: bets.toLocaleString("en-US"), k: `bets of $5K+ ${span}` } : null,
-    d.today?.wallets ? { v: d.today.wallets.toLocaleString("en-US"), k: "$1M+ wallets active today" } : null,
+    money > 0 ? { v: dollars(money), k: `bet by wallets up $100K+ ${span}` } : null,
+    d.ai.day1m.money > 0 ? { v: dollars(d.ai.day1m.money), k: "of it from wallets up $1M+, 24 hours" } : null,
+    bets > 0 ? { v: bets.toLocaleString("en-US"), k: `bets of $1K+ ${span}` } : null,
+    d.today?.wallets ? { v: d.today.wallets.toLocaleString("en-US"), k: "wallets active today" } : null,
     d.ai.markets > 0 ? { v: d.ai.markets.toLocaleString("en-US"), k: "markets they bet, 24 hours" } : null,
     top ? { v: top, k: "where the most money went" } : null,
   ].filter((x): x is { v: string; k: string } => x !== null);

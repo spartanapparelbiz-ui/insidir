@@ -3,7 +3,7 @@
  * exit forward; nothing is filtered out or deleted.
  *   1. log     every position on the board (terminal.millionaire_bets) not logged yet, flagged with its tier; the
  *              provenance of open rows follows the position (a hash found later, fills added)
- *   2. unusual every unusual bet (a wallet new to Polymarket putting $5K+ on a long shot at 25¢ or less, lib/brand/
+ *   2. unusual every unusual bet (a wallet new to Polymarket putting $1K+ on a long shot at 25¢ or less, lib/brand/
  *              pulse.ts unusualBet's rule), flagged "unusual"
  *   3. disagree the open millionaire positions on the side that holds 70%+ of a market's millionaire money while that
  *              side is priced at 50¢ or less (lib/brand/pulse.ts disagreements), flagged "disagreement"

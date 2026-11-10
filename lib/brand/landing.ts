@@ -16,7 +16,7 @@ const DAY = 86_400_000;
 
 export interface BestPrice { question: string; yes: { polymarket: number | null; kalshi: number | null } }
 export interface Biggest { title: string; amount: number; pnl: number | null }
-export const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0 };
+export const EMPTY_PULSE: Pulse = { count: 0, window: "hour", wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, all: { count: 0, window: "hour" as const, today: 0, sinceMidnight: 0, countToday: 0 } };
 
 export interface LandingData {
   now: number;

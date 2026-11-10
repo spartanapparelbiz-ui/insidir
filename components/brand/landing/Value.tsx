@@ -83,7 +83,7 @@ export function PulseStage({ d }: { d: LandingData }) {
               <span className="b-dtitle">{u.title}</span>
               <span className="b-small">A new wallet, a long shot: <span className="b-side">{u.outcome}</span></span>
             </div>
-          ) : <p className="b-empty">No unusual bet today yet: a new wallet betting $5K+ at 25¢ or less shows here.</p>}
+          ) : <p className="b-empty">No unusual bet today yet: a new wallet betting $1K+ at 25¢ or less shows here.</p>}
         </section>
       </div>
       <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" data-testid="pulse-start" data-checkout="pulse">Start for $1</Pill></div></div>

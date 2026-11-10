@@ -45,9 +45,13 @@ test("/board: visitors see bets 60 minutes late with the live count and Start fo
   // Only the fixtures older than an hour (read from the database: a long run ages them); never a newer one, no Copy, no side.
   const ages = await q<{ id: string; old: boolean }>("select id, at < now() - interval '60 minutes' as old from terminal.millionaire_bets where id like 'e2e:mb%'");
   for (const { id, old } of ages) { if (old) continue; expect(visitor, id).not.toContain(id); }
-  // "Wallets up $1M+" means $1M+: the Pro fixture (mb3) only under the Pro filter.
-  expect(visitor).toEqual(expect.arrayContaining(["e2e:mb6"]));
-  expect(visitor).not.toContain("e2e:mb3");
+  // The board's default is every watched wallet up $100K+: the $1M+ fixture (mb6) and the $100K+ one (mb3) both, each
+  // labelled; "$1M+ only" (?tier=1m) leaves the $100K+ one out; "$100K–$1M" (?tier=pro) shows it.
+  expect(visitor).toEqual(expect.arrayContaining(["e2e:mb6", "e2e:mb3"]));
+  await page.goto("/board?tier=1m");
+  const only1m = await page.getByTestId("bet-row").evaluateAll(rs => rs.flatMap(r => (r.getAttribute("data-ids") ?? r.getAttribute("data-bet") ?? "").split(" ")));
+  expect(only1m).toEqual(expect.arrayContaining(["e2e:mb6"]));
+  expect(only1m).not.toContain("e2e:mb3");
   await page.goto("/board?tier=pro");
   expect(await page.getByTestId("bet-row").evaluateAll(rs => rs.flatMap(r => (r.getAttribute("data-ids") ?? "").split(" ")))).toContain("e2e:mb3");
   await page.goto("/board");

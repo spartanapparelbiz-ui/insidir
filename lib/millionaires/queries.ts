@@ -172,10 +172,17 @@ export function pulse(db: Db, now: number, category?: CategorySlug | null): Prom
         coalesce(sum(amount) filter (where tier = 'millionaire' and at >= ${new Date(midnightET(now))}), 0)::float as since_midnight,
         count(*) filter (where tier = 'millionaire' and at >= ${new Date(midnightET(now))})::int as count_today,
         (select count(*)::int from terminal.watchlist) as wallets,
-        (select count(*)::int from terminal.watchlist where tier = 'millionaire') as millionaires
+        (select count(*)::int from terminal.watchlist where tier = 'millionaire') as millionaires,
+        count(*) filter (where at > ${new Date(now - HOUR)})::int as a_hour,
+        count(*)::int as a_day,
+        coalesce(sum(amount), 0)::float as a_today,
+        coalesce(sum(amount) filter (where at >= ${new Date(midnightET(now))}), 0)::float as a_since_midnight,
+        count(*) filter (where at >= ${new Date(midnightET(now))})::int as a_count_today
       from terminal.millionaire_bets where at > ${new Date(now - DAY)} ${category ? sql`and category = ${category}` : sql``}`)).rows[0] as Row;
     const hour = n(r.hour);
-    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight), countToday: n(r.count_today) };
+    const aHour = n(r.a_hour);
+    return { count: hour || n(r.day), window: hour ? "hour" : "day", wallets: n(r.wallets), millionaires: n(r.millionaires), today: n(r.today), sinceMidnight: n(r.since_midnight), countToday: n(r.count_today),
+      all: { count: aHour || n(r.a_day), window: aHour ? "hour" : "day", today: n(r.a_today), sinceMidnight: n(r.a_since_midnight), countToday: n(r.a_count_today) } };
   });
 }
 

@@ -26,16 +26,16 @@ export async function kpis(db: Db, now: number): Promise<Kpi[]> {
   const mid = midnightET(now), hours = Math.max(1, Math.ceil((now - mid) / HOUR));
   const r = (await db.execute(sql`select floor(extract(epoch from (at - ${new Date(mid)})) / 3600)::int as h,
       sum(amount)::float as money, count(*)::int as bets, count(distinct wallet)::int as wallets, max(amount)::float as biggest
-    from terminal.millionaire_bets where tier = 'millionaire' and at >= ${new Date(mid)} group by 1 order by 1`)).rows as Array<{ h: number; money: number; bets: number; wallets: number; biggest: number }>;
+    from terminal.millionaire_bets where at >= ${new Date(mid)} group by 1 order by 1`)).rows as Array<{ h: number; money: number; bets: number; wallets: number; biggest: number }>;
   const tot = (await db.execute(sql`select coalesce(sum(amount), 0)::float as money, count(*)::int as bets, count(distinct wallet)::int as wallets
-    from terminal.millionaire_bets where tier = 'millionaire' and at >= ${new Date(mid)}`)).rows[0] as { money: number; bets: number; wallets: number };
+    from terminal.millionaire_bets where at >= ${new Date(mid)}`)).rows[0] as { money: number; bets: number; wallets: number };
   const big = (await db.execute(sql`select market_title, outcome, amount::float as amount from terminal.millionaire_bets
-    where tier = 'millionaire' and at >= ${new Date(mid)} order by amount desc limit 1`)).rows[0] as { market_title: string; outcome: string; amount: number } | undefined;
+    where at >= ${new Date(mid)} order by amount desc limit 1`)).rows[0] as { market_title: string; outcome: string; amount: number } | undefined;
   const series = (k: "money" | "bets" | "wallets" | "biggest") => Array.from({ length: hours }, (_, h) => Number(r.find(x => x.h === h)?.[k] ?? 0));
   const out: Kpi[] = [];
-  if (tot.money > 0) out.push({ key: "money", value: tot.money, series: series("money"), label: "Millionaire money today" });
-  if (tot.bets > 0) out.push({ key: "bets", value: tot.bets, series: series("bets"), label: tot.bets === 1 ? "Millionaire bet today" : "Millionaire bets today" });
-  if (tot.wallets > 0) out.push({ key: "wallets", value: tot.wallets, series: series("wallets"), label: tot.wallets === 1 ? "Millionaire wallet active" : "Millionaire wallets active" });
+  if (tot.money > 0) out.push({ key: "money", value: tot.money, series: series("money"), label: "$100K+ wallets' money today" });
+  if (tot.bets > 0) out.push({ key: "bets", value: tot.bets, series: series("bets"), label: tot.bets === 1 ? "Bet from $100K+ wallets today" : "Bets from $100K+ wallets today" });
+  if (tot.wallets > 0) out.push({ key: "wallets", value: tot.wallets, series: series("wallets"), label: tot.wallets === 1 ? "$100K+ wallet active" : "$100K+ wallets active" });
   if (big) out.push({ key: "biggest", value: big.amount, series: series("biggest"), label: "Biggest bet", detail: `${big.outcome} · ${big.market_title}` });
   return out;
 }

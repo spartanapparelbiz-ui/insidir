@@ -11,7 +11,8 @@ import { trackedWallets, walletPnl, walletPnlQueue, watchlist } from "@/lib/db/s
 import { isObject, num, rows, str } from "@/lib/exchanges/parse";
 import { leaderboardCursor } from "@/lib/moves/sources";
 
-export const WATCHLIST_SIZE = 1_000;
+export const MIN_READ = 500;
+export const WATCHLIST_SIZE = 2_500; // every wallet up $100K+ (1,991 on 2026-11-10), with room to grow
 export const WATCHLIST_MS = 24 * 3_600_000;
 const PAGE = 100;
 export const MILLIONAIRE_MIN = 1_000_000;
@@ -56,7 +57,8 @@ export async function readTop(poly: BoardSource, size = WATCHLIST_SIZE): Promise
  *  list, e.g. a failed page) leaves yesterday's list in place. */
 export async function refreshWatchlist(db: Db, poly: BoardSource, now: number): Promise<{ wallets: number; millionaires: number }> {
   const top = await readTop(poly);
-  if (top.length < WATCHLIST_SIZE / 2) throw new Error(`leaderboard: only ${top.length} wallets read`);
+  // A short read (a failed page) keeps yesterday's list: under 500 wallets up $100K+ can't be the whole leaderboard.
+  if (top.length < MIN_READ) throw new Error(`leaderboard: only ${top.length} wallets read`);
   const at = new Date(now);
   await db.transaction(async tx => {
     for (let i = 0; i < top.length; i += 500) {

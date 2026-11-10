@@ -194,7 +194,7 @@ test("a member's home is the homepage, unlocked: stages with computed headlines,
   await page.goto("/");
   await expect(page.locator('[data-home="stages"]')).toBeVisible();
   // The hero: a computed headline about today's (or the last 24 hours') millionaire money, on the homepage's stage.
-  await expect(page.getByTestId("home-hero").getByRole("heading", { level: 1 })).toHaveText(/^Wallets up \$1M\+ bet \$[\d.]+[KM] (today|in the last 24 hours)\.$/);
+  await expect(page.getByTestId("home-hero").getByRole("heading", { level: 1 })).toHaveText(/^Wallets up \$100K\+ bet \$[\d.]+[KM] (today|in the last 24 hours)\.$/);
   // Today's #1 open position: $85K on the Chiefs (now 51¢); every millionaire entry on that side, $85K + $20K, at an
   // average 47¢; then Copy at the price now and Follow.
   const t = page.getByTestId("home-ticket");

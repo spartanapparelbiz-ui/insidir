@@ -47,6 +47,8 @@ export interface Home {
   /** The AI analyst on the home: today's brief (written by the AI from our data, numbers verified; the template when the
    *  model is slow or off), the member's watched bets, and the 24-hour data strip. */
   ai: { watching: number; markets: number; topCategory: string | null;
+    /** Of the 24 hours' money and bets, how much came from wallets up $1M+. */
+    day1m: { money: number; bets: number };
     /** The last 24 hours of $1M+ money: by hour (oldest first, 24 values) and by category (biggest first). */
     hours: number[]; cats: Array<{ category: string; total: number }> };
 }
@@ -103,22 +105,22 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("home", e instanceof Error ? e.message : e); return d; });
   const [k, flow, pool, ls, el, desk, copies, polled, last, streamRows] = await Promise.all([
     safe(kpis(db, now), []),
-    safe(recentBets(db, { now, limit: 40, member: true, tier: "millionaire", since: now - DAY }), [] as BoardBet[]),
+    safe(recentBets(db, { now, limit: 80, member: true, since: now - DAY }), [] as BoardBet[]), // every watched wallet up $100K+ ($1M+ marked)
     safe(marketMoney(db, { since: now - DAY, limit: 60, now }), []),
     safe(leaders(db, now, userId, 6).then(l => l.length ? l : leaders(db, now, userId, 6, now - DAY)), [] as Leader[]),
     isElectionDay(now) ? safe(electionDay(db, now, true), null) : Promise.resolve(null),
     safe(yourDesk(db, userId, settings), { pushOn: false, devices: 0, following: 0, copies: { open: 0, settled: 0, centsSince: null } }),
     safe(yourCopies(db, userId, 20), null),
     safe(db.execute(sql`select last_ok_at as at from terminal.worker_heartbeats where job = 'moves:polymarket'`).then(r => (r.rows[0] as { at: string | null } | undefined)?.at ?? null), null),
-    safe(db.execute(sql`select max(at) as at from terminal.millionaire_bets where tier = 'millionaire'`).then(r => (r.rows[0] as { at: string | null }).at), null),
+    safe(db.execute(sql`select max(at) as at from terminal.millionaire_bets`).then(r => (r.rows[0] as { at: string | null }).at), null),
     safe(streamFor(db, now), null),
   ]);
   const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
   const [hourRows, catRows] = await Promise.all([
     safe(db.execute(sql`select floor(extract(epoch from (at - ${new Date(now - DAY)})) / 3600)::int as h, sum(amount)::float8 as d
-        from terminal.millionaire_bets where tier = 'millionaire' and at > ${new Date(now - DAY)} group by 1`).then(r => r.rows as Array<{ h: number; d: number }>), []),
+        from terminal.millionaire_bets where at > ${new Date(now - DAY)} group by 1`).then(r => r.rows as Array<{ h: number; d: number }>), []),
     safe(db.execute(sql`select category, sum(amount)::float8 as d from terminal.millionaire_bets
-        where tier = 'millionaire' and at > ${new Date(now - DAY)} group by 1 order by 2 desc limit 6`).then(r => r.rows as Array<{ category: string; d: number }>), []),
+        where at > ${new Date(now - DAY)} group by 1 order by 2 desc limit 6`).then(r => r.rows as Array<{ category: string; d: number }>), []),
   ]);
   const hours = Array.from({ length: 24 }, () => 0);
   for (const r of hourRows) hours[Math.min(23, Math.max(0, Number(r.h)))]! += Number(r.d);
@@ -128,6 +130,8 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
   const today = v("money") > 0 ? { money: v("money"), bets: v("bets"), wallets: v("wallets") } : null;
   // Just after midnight ET today can be empty: the last 24 hours, said as such.
   const day = flow.length ? { money: flow.reduce((t, b) => t + b.amount, 0), bets: flow.length } : null;
+  const m1 = flow.filter(b => b.tier === "millionaire");
+  const day1m = { money: m1.reduce((t, b) => t + b.amount, 0), bets: m1.length };
   const openIds = copies?.list.filter(x => x.result === null).map(x => x.betId) ?? [];
   const nowRows = openIds.length ? await safe(db.execute(sql`select b.id, case when b.outcome_side = 'no' then 1 - i.yes_price else i.yes_price end as p from terminal.millionaire_bets b
       join terminal.market_info i on i.source = b.source and i.market_id = b.market_id where b.id in (${sql.join(openIds.map(x => sql`${x}`), sql`, `)}) and i.yes_price is not null`).then(r => r.rows as Array<{ id: string; p: number }>), []) : [];
@@ -151,14 +155,14 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     now, today, top: top ? { bet: top, edge, art: art && !(logosOff() && SPORTS.has(top.category)) ? art : null } : null,
     copyNow, day, stream, disagree: dis, election: el ? { day: el, insight: raceInsight(el) } : null, board: flow.slice(0, 24), wallets, desk, copies,
     insight: {
-      hero: today ? `Wallets up $1M+ bet ${dollars(today.money)} today.` : day ? `Wallets up $1M+ bet ${dollars(day.money)} in the last 24 hours.` : null,
+      hero: today ? `Wallets up $100K+ bet ${dollars(today.money)} today.` : day ? `Wallets up $100K+ bet ${dollars(day.money)} in the last 24 hours.` : null,
       disagree: dis[0] ? `Millionaires are ${pct(dis[0].share)} on ${dis[0].outcome}. The price says ${c(dis[0].price)}.` : null,
       board: boardInsight(live),
       wallets: walletsInsight(wallets),
       desk: openCopies.length ? `You have ${openCopies.length} open ${openCopies.length === 1 ? "copy" : "copies"}.` : null,
     },
     polledAt: polled ? new Date(polled).getTime() : null, lastBetAt: last ? new Date(last).getTime() : null,
-    ai: { hours, cats, watching, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
+    ai: { hours, cats, watching, day1m, markets: new Set(flow.map(b => b.marketId)).size, topCategory: stream?.bands[0]?.category ?? null },
   };
 }
 

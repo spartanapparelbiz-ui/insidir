@@ -18,7 +18,7 @@ export function plainDay(d: Home): string[] {
   const out: string[] = [];
   const money = d.today?.money ?? d.day?.money ?? 0, bets = d.today?.bets ?? d.day?.bets ?? 0;
   const span = d.today ? "Today" : "In the last 24 hours";
-  if (money > 0) out.push(`${span}, wallets that have already made over $1 million betting put ${dollars(money)} on ${bets.toLocaleString("en-US")} bets${d.ai.markets ? ` across ${d.ai.markets} markets` : ""}.`);
+  if (money > 0) out.push(`${span}, wallets that have already made $100K or more betting put ${dollars(money)} on ${bets.toLocaleString("en-US")} bets${d.ai.markets ? ` across ${d.ai.markets} markets` : ""}${d.ai.day1m.money > 0 ? `; ${dollars(d.ai.day1m.money)} of it came from wallets up over $1 million` : ""}.`);
   const cats = d.ai.cats;
   const total = cats.reduce((s, b) => s + b.total, 0);
   if (cats.length > 1 && total > 0) out.push(`Most of it went to ${catName(cats[0]!.category)}: ${dollars(cats[0]!.total)}, about ${pct(cats[0]!.total / total)} of the money.`);
@@ -54,7 +54,7 @@ export function DayPicture({ d }: { d: Home }) {
         <section className="dp__pic b-glass b-pad" data-testid="ai-picture">
           <p className="b-label">The day in a picture</p>
           <div className="dp__chart">
-            <p className="dp__k">Money from $1M+ wallets, hour by hour (last {hours} hours)</p>
+            <p className="dp__k">Money from wallets up $100K+, hour by hour (last {hours} hours)</p>
             <svg className="dp__hours" viewBox={`0 0 ${hours * 10} 80`} preserveAspectRatio="none" role="img" aria-label={`Money by hour; the busiest hour had ${dollars(byHour[peak] ?? 0)}`}>
               {byHour.map((v, h) => <rect key={h} x={h * 10 + 1.5} y={80 - (v / max) * 76} width={7} height={Math.max(v > 0 ? 2 : 0.6, (v / max) * 76)} rx={1.5} className={h === peak ? "dp__bar dp__bar--peak" : "dp__bar"} />)}
             </svg>
