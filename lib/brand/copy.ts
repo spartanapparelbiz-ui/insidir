@@ -6,8 +6,11 @@ import { PLANS, TRIAL } from "@/lib/plans";
 /** The product in one line: "Bet with the people who actually win, on Kalshi, in seconds, and know when they get out." */
 export const ONE_LINE = "Bet with the people who actually win, on Kalshi, in seconds, and know when they get out.";
 export const HERO = {
-  h1: ["Bet with the people", "who actually win."],
-  sub: "On Kalshi, in seconds, and know when they get out.",
+  h1: ["Real-Time Prediction Market", "& Sports Trading Intelligence."],
+  sub: "Track whale trades, arbitrage line mispricings across Polymarket & Kalshi, and catch volume spikes before odds shift.",
+  /** The two hero buttons: the markets (free to browse) first, then the paid live feed and alerts. */
+  ctaMarkets: "View Live Markets",
+  ctaAlerts: "Unlock Real-Time Alerts",
   /** Under it, the live line (components/brand/HeroLine.tsx): "Wallets up $100K+ bet $X today. Which side were you on?" */
   /** The onboarding's first question, on the first screen: one tap answers it and opens /go at the next step. */
   ask: "What do you bet on?",

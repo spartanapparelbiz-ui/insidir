@@ -26,6 +26,7 @@ import { Ticket } from "@/components/system/Ticket";
 import { WalletCards } from "@/components/system/WalletCards";
 import { AiDesk } from "./AiDesk";
 import { LiveStrip } from "./LiveStrip";
+import { WhaleTicker } from "@/components/system/WhaleTicker";
 import { Suspense } from "react";
 import { getDb } from "@/lib/db";
 import { homeGaps } from "@/lib/home/data";
@@ -89,6 +90,8 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
           {d.top ? <div className="s-col"><Ticket bet={d.top.bet} edge={d.top.edge} art={d.top.art} testid="home-ticket" /></div> : null}
         </Stage>
 
+        {/* The whale ticker sits at the top of the dashboard, above the sticky bar, so the bar stays one line. */}
+        <WhaleTicker />
         <div className="hm-bar">
         <LiveStrip initial={{ now: d.now, money: d.today?.money ?? d.day?.money ?? 0, bets: d.today?.bets ?? d.day?.bets ?? 0, window: d.today ? "today" : "24h", lastBetAt: d.lastBetAt, polledAt: d.polledAt }} />
         <nav className="hm-nav" aria-label="Sections" data-testid="home-nav">

@@ -19,11 +19,11 @@ test("404: on-brand, says what happened, links back home", async ({ page }) => {
   await noHorizontalScroll(page);
 });
 
-test("one primary action: pricing and legal pages show exactly one; the landing's white pills are only Start for $1", async ({ page }) => {
+test("one primary action: pricing and legal pages show exactly one; the landing's white pills are only Start for $1 and the hero's View Live Markets", async ({ page }) => {
   await page.goto("/");
   const home = await page.locator("main .b-primary").evaluateAll(els => els.map(e => (e as HTMLElement).innerText.trim()));
   expect(home.length).toBeGreaterThan(1);
-  for (const t of home) expect(["Start for $1"]).toContain(t);
+  for (const t of home) expect(["Start for $1", "View Live Markets"]).toContain(t);
   for (const path of ["/pricing", "/terms", "/privacy"]) {
     await page.goto(path);
     // Pictures of the app are inert, and a closed laptop panel isn't shown: neither is an action on this page.

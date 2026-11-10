@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAIN_KINDS, type TapeKind, type TapeRow } from "@/lib/tape";
 import { dollars } from "@/lib/money";
+import { DelayNotice } from "./DelayNotice";
 
 const FILTERS: Array<[string, readonly TapeKind[]]> = [["Everything", MAIN_KINDS], ["Big only", MAIN_KINDS], ["New bets", ["bet"]], ["Exits", ["trim", "exit"]], ["Any-wallet whales", ["whale"]], ["Kalshi", ["kalshi"]]];
 const KIND: Record<TapeKind, string> = { bet: "BET", trim: "TRIM", exit: "EXIT", whale: "WHALE", kalshi: "KALSHI" };
@@ -62,6 +63,7 @@ export function Tape({ initial, now: now0, member, n = 40, testid = "tape" }: { 
         {FILTERS.map(([t], i) => <button key={t} type="button" className="b-btn b-panel-pill" aria-pressed={filter === i} onClick={() => setFilter(i)}>{t}</button>)}
         <span className="tp__live"><span className="tp__dot" aria-hidden="true" />{member ? "Live" : "60 min late"} · every 10s</span>
       </div>
+      {member ? null : <DelayNotice where="tape" />}
       {shown.length ? (
         <ol className="tp__rows">
           {shown.map(r => {

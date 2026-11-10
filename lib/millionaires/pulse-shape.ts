@@ -19,6 +19,10 @@ export const EMPTY_ALL: Pulse["all"] = { count: 0, window: "hour", today: 0, sin
 
 /** The hero's live line: today's total (since midnight ET), or the last 24 hours when today is under HERO_MIN. */
 export const HERO_MIN = 100_000;
+
+/** How late visitors see a bet (and never its side before then), in ms and in minutes. */
+export const BOARD_DELAY_MS = 60 * 60_000;
+export const BOARD_DELAY_MIN = BOARD_DELAY_MS / 60_000;
 /** The same, over every watched wallet (up $100K+): the landing's headline number. */
 export function heroTotalAll(p: Pulse): { amount: number; window: "today" | "24h" } {
   const a = p.all ?? { sinceMidnight: 0, today: 0 };

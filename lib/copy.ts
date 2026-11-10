@@ -11,6 +11,8 @@ export const FOOTER =
 
 /** What Insidir is and isn't, under every page and on /disclosures. */
 export const DATA_COMPANY = "Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.";
+/** The data disclaimer, last in every footer: what Insidir is, and isn't. */
+export const DISCLAIMER = "Disclaimer: Insidir is a research and data analytics tool. Content provided is strictly for informational purposes and does not constitute financial, trading, or wagering advice. Insidir is not a brokerage, sportsbook, or gambling operator and does not take custody of user funds.";
 /** The problem-gambling line: the footer, every sports page and /disclosures. */
 export const GAMBLER = "Gambling problem? Call 1-800-GAMBLER.";
 /** Who builds Insidir. */

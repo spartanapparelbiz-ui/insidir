@@ -44,19 +44,19 @@ describe("V2 landing page", () => {
     expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
-  it("the hero's words, its two CTAs (Start for $1 → /go, the free sample), and no stocks, crypto or Congress in the pitch", async () => {
+  it("the hero's words, its two CTAs (View Live Markets → /markets, Unlock Real-Time Alerts → the $1 checkout), and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
-    expect(copy.HERO.h1).toEqual(["Bet with the people", "who actually win."]);
-    expect(copy.HERO.sub).toBe("On Kalshi, in seconds, and know when they get out.");
-    expect([...copy.HERO.h1, copy.HERO.sub].join(" ").replace("win. On", "win, on")).toBe(copy.ONE_LINE);
+    expect(copy.HERO.h1).toEqual(["Real-Time Prediction Market", "& Sports Trading Intelligence."]);
+    expect(copy.HERO.sub).toBe("Track whale trades, arbitrage line mispricings across Polymarket & Kalshi, and catch volume spikes before odds shift.");
     expect(copy.STAGES.final).toEqual(["Bet with the people", "who actually win."]);
     expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing).toContain('<Pill href="/go?step=checkout" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>');
+    expect(landing).toContain('<Pill href="/markets" delay={0.9} data-testid="hero-markets">{HERO.ctaMarkets}</Pill>');
+    expect(landing).toContain('<Pill href="/go?step=checkout" kind="ghost" className="b-hl" delay={0.97} data-testid="hero-start" data-checkout="hero">{HERO.ctaAlerts}</Pill>');
+    expect([copy.HERO.ctaMarkets, copy.HERO.ctaAlerts]).toEqual(["View Live Markets", "Unlock Real-Time Alerts"]);
     // The onboarding's first question on the first screen: each chip opens /go at the next step with it answered.
     expect(landing).toContain('href={`/go?step=checkout&cats=${c}`}');
     expect(copy.HERO.ask).toBe("What do you bet on?");
-    expect(landing).toContain('<Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>');
     const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);

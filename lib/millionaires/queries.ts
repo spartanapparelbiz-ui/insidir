@@ -150,7 +150,7 @@ export const redact = (b: BoardBet): BoardBet => ({ ...b, outcome: null, side: n
 
 
 /** /board for visitors: bets 60 minutes late (the live count stays live); members see them as they land. */
-export const BOARD_DELAY_MS = 60 * 60_000;
+export { BOARD_DELAY_MS } from "./pulse-shape";
 
 /** Midnight US Eastern of the day `now` falls on, as epoch ms. */
 export function midnightET(now: number): number {
