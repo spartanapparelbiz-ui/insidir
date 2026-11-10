@@ -19,7 +19,7 @@ export interface LeaderRow {
   /** Average price paid over its resolved markets (0..1), weighted by money in. */
   avgPrice: number | null;
   biggestWin: number | null;
-  /** $5K+ bets in the last 7 days: money and count. */
+  /** $1K+ bets in the last 7 days: money and count. */
   week: number;
   weekBets: number;
   /** The category it put the most into over the last 30 days. */

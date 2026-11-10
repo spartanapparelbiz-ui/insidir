@@ -67,7 +67,7 @@ export function WalletBoard({ rows, now }: { rows: LeaderRow[]; now: number }) {
                   ) : <span>No settled record yet</span>}
                 </span>
                 <span className="s-wb__week" data-label="This week">
-                  {r.weekBets ? <><b className="b-num">{dollars(r.week)}</b><span>{r.weekBets} {r.weekBets === 1 ? "bet" : "bets"}{catName(r.topCategory) ? ` · mostly ${catName(r.topCategory)}` : ""}</span></> : <span>No $5K+ bet</span>}
+                  {r.weekBets ? <><b className="b-num">{dollars(r.week)}</b><span>{r.weekBets} {r.weekBets === 1 ? "bet" : "bets"}{catName(r.topCategory) ? ` · mostly ${catName(r.topCategory)}` : ""}</span></> : <span>No $1K+ bet</span>}
                 </span>
                 <span className="s-wb__last" data-label="Latest bet">
                   {r.last ? <><b>{r.last.title}</b><span className="b-num">{dollars(r.last.amount)} · {agoShort(r.last.at, now)}</span></> : <span>None seen yet</span>}

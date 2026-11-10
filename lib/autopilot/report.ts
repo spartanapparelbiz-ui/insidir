@@ -30,7 +30,7 @@ export function rulesReport(rows: readonly BtRow[], now: number): RulesReport {
     const settled = result.won + result.lost;
     out.push({ key, group, name, result, settled, leads: settled >= LEAD_MIN_SETTLED && result.net > 0 });
   };
-  add("all", "Baseline", "Every proven-wallet bet of $5K+", spec());
+  add("all", "Baseline", "Every proven-wallet bet of $1K+", spec());
   for (const s of STARTERS) add(`starter:${s.key}`, "Starter rules", s.name, { ...s.spec, stake: { perBet: 25, daily: 1e9, weekly: 1e9 } });
   add("consensus", "Variants", "2+ proven wallets, same side, within 1h", spec({ triggers: { consensus: true } }));
   add("first", "Variants", "First entry only", spec({ triggers: { firstEntry: true } }));

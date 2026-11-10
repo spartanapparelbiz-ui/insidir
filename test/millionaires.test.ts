@@ -33,7 +33,7 @@ describe("watchlist", () => {
     expect(leaderboardCursor({ data: [], pagination: { has_more: false, next_cursor: "x" } })).toBeNull();
   });
 
-  it("pages by cursor to the top 1,000, each wallet once", async () => {
+  it("pages by cursor to the size asked for, each wallet once; by default every wallet up $100K+", async () => {
     const calls: Array<string | null | undefined> = [];
     const poly = {
       getLeaderboardPage: async (o: { cursor?: string | null; limit?: number }) => {
@@ -43,11 +43,13 @@ describe("watchlist", () => {
         return { data, pagination: { has_more: page < 12, next_cursor: String(page + 1) } };
       },
     };
-    const top = await readTop(poly);
+    const top = await readTop(poly, 1000);
     expect(top).toHaveLength(1000);
     expect(calls).toEqual([null, "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
     expect(top.filter(t => t.tier === "millionaire")).toHaveLength(801);
     expect(new Set(top.map(t => t.wallet)).size).toBe(1000);
+    // The default size (WATCHLIST_SIZE) reads on until the leaderboard drops under $100K: here 1,161 wallets.
+    expect(await readTop(poly)).toHaveLength(1161);
   });
 
   it("shortens wallets for display", () => {
@@ -68,10 +70,10 @@ const fill = (o: Partial<{ wallet: string; usd: number; at: number; market: stri
 });
 
 describe("millionaire bets from the moves poller", () => {
-  it("watched wallets count from $5K; everyone else stays at the moves threshold", async () => {
+  it("watched wallets count from $1K; everyone else stays at the moves threshold", async () => {
     const now = Date.now();
     const millionaire = W("m"), pro = W("p"), stranger = W("s");
-    const fills = [fill({ wallet: millionaire, usd: 6000, at: now - 60_000 }), fill({ wallet: pro, usd: 4000, at: now - 60_000, market: "0xm2" }), fill({ wallet: stranger, usd: 6000, at: now - 60_000, market: "0xm3" })];
+    const fills = [fill({ wallet: millionaire, usd: 6000, at: now - 60_000 }), fill({ wallet: pro, usd: 900, at: now - 60_000, market: "0xm2" }), fill({ wallet: stranger, usd: 6000, at: now - 60_000, market: "0xm3" })];
     const lookups: string[][] = [];
     const poller = new MovesPoller({
       polyTradesPage: async page => (page === 0 ? fills : []), polyWalletTrades: async () => [], kalshiTradesPage: async () => ({ trades: [] }),
@@ -81,7 +83,7 @@ describe("millionaire bets from the moves poller", () => {
     expect(moves).toEqual([]); // nobody reached the $10K moves threshold
     expect(lookups[0]).toContain("0xm1"); // the watched bet's market is looked up for its category
     const watched = poller.lastWatchedBets();
-    expect(watched.map(m => m.wallet)).toEqual([millionaire]); // the Pro wallet's $4K is under BET_MIN
+    expect(watched.map(m => m.wallet)).toEqual([millionaire]); // the Pro wallet's $900 is under BET_MIN
     expect(watched[0]!.amount).toBeGreaterThanOrEqual(BET_MIN);
     const tiers = new Map([[millionaire, "millionaire" as const], [pro, "pro" as const]]);
     const rows = betsFrom(watched, w => tiers.get(w) ?? null);
@@ -89,12 +91,12 @@ describe("millionaire bets from the moves poller", () => {
     expect(rows[0]).toMatchObject({ wallet: millionaire, tier: "millionaire", source: "polymarket", marketId: "0xm1", outcomeSide: "yes", amount: 6000, price: 0.5, category: "football" });
   });
 
-  it("drops Kalshi (anonymous), unwatched wallets and bets under $5K", () => {
+  it("drops Kalshi (anonymous), unwatched wallets and bets under $1K", () => {
     const base = { id: "x", source: "polymarket", marketId: "m", eventTitle: "E", marketTitle: "Will it rain in NYC?", outcome: "Yes", outcomeSide: "yes", amount: 5000, avgPrice: 0.4,
       wallet: W("a"), walletName: null, at: 1, lastAt: 1, fills: 1, tab: "markets", league: null, category: "weather", url: null, result: null, settledAt: null } as Move;
     const tier = (w: string) => (w === W("a") ? "pro" as const : null);
     expect(betsFrom([base], tier)[0]).toMatchObject({ tier: "pro", category: "weather" });
-    expect(betsFrom([{ ...base, amount: 4999 }], tier)).toEqual([]);
+    expect(betsFrom([{ ...base, amount: 999 }], tier)).toEqual([]);
     expect(betsFrom([{ ...base, wallet: W("b") }], tier)).toEqual([]);
     expect(betsFrom([{ ...base, source: "kalshi", wallet: null }], tier)).toEqual([]);
   });

@@ -26,7 +26,7 @@ export const PROBLEM = {
 } as const;
 /** How it works: three steps, one sentence each. */
 export const HOW = [
-  { t: "See the money.", d: "Every $5K+ bet from a wallet up $1M+, the second it lands: the market, the side, the price." },
+  { t: "See the money.", d: "Every $1K+ bet from a wallet up $1M+, the second it lands: the market, the side, the price." },
   { t: "Get the ping.", d: "A push the moment a millionaire buys, adds to or sells out of a position in your categories." },
   { t: "Bet at the better price.", d: "Kalshi's price beside Polymarket's, and one tap to the same bet. You decide; we never hold your money." },
 ] as const;

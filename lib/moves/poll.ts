@@ -41,7 +41,7 @@ export interface MoveSources {
 }
 
 /** A watchlist wallet's bet counts from this much (lib/millionaires/bets.ts). */
-export const BET_MIN = 5_000;
+export const BET_MIN = 1_000;
 
 export class MovesPoller {
   private polyFills = new Map<string, Fill>();

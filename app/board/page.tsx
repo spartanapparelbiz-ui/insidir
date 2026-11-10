@@ -23,7 +23,7 @@ import { dollars } from "@/lib/money";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "The board: millionaire bets, live", description: "Every bet of $5K+ by Polymarket wallets with $1M+ in all-time profit, as it happens." };
+export const metadata: Metadata = { title: "The board: millionaire bets, live", description: "Every bet of $1K+ by Polymarket wallets with $1M+ in all-time profit, as it happens." };
 
 const EMPTY_PULSE = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, all: { count: 0, window: "hour" as const, today: 0, sinceMidnight: 0, countToday: 0 } };
 const href = (c: CategorySlug | null, t: "all" | "1m" | "pro") => { const p = new URLSearchParams(); if (c) p.set("cat", c); if (t !== "all") p.set("tier", t); const s = p.toString(); return `/board${s ? `?${s}` : ""}`; };
@@ -66,7 +66,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
       <Stage bg={{ kind: "photo", photo, dark: 0.6, priority: true }} first testid="board-band" labelledBy="board-h">
         <div className="b-head">
           <Insight id="board-h" text={headline} fallback={[title]} size={60} />
-          <p className="b-sub" data-m="lift">Every bet of $5K+ from {who}{where}, {member ? "live" : "60 minutes late"}.</p>
+          <p className="b-sub" data-m="lift">Every bet of $1K+ from {who}{where}, {member ? "live" : "60 minutes late"}.</p>
           {stats ? <p className="b-small b-center" data-testid="board-stats" data-m="lift">{stats}</p> : null}
         </div>
         {member ? (

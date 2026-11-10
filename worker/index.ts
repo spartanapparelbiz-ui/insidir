@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 /* Insidir Terminal worker (Railway service "worker": `npm run worker`).
  *
  *   gaps      every BOOKS_MS (10s), only with GAPS_ENABLED=1: books for the Price gaps targets the cron matcher
@@ -353,7 +354,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
   const lastTickAt = new Map<string, number>();
   log(`worker starting (Price gaps ${gaps ? "on" : "off: GAPS_ENABLED is not 1"})`);
   // Big money moves (docs/INSIDIR-V2.md): only with both public clients in place.
-  // The millionaire watchlist in memory (lib/millionaires/watchlist.ts): the poller counts its wallets' bets from $5K.
+  // The millionaire watchlist in memory (lib/millionaires/watchlist.ts): the poller counts its wallets' bets from $1K.
   const watch = new WatchCache();
   const poller = clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? movesPoller(clients.polymarket, clients.kalshi, watch) : null;
   const directory = new MarketDirectory(getDb(), { polymarket: clients.polymarket, kalshi: clients.kalshi });
@@ -448,7 +449,9 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       // Checked hourly, refreshed when a day old (so a restart doesn't re-read it, and a missed day catches up).
       every("millionaires:watchlist", 3_600_000, async () => {
         const db = getDb(), now = Date.now(), age = await watchlistAge(db);
-        if (age !== null && now - age < WATCHLIST_MS) return;
+        // A day old, or still the old 1,000-wallet list (the watchlist now holds every wallet up $100K+): refresh now.
+        const count = Number(((await db.execute(sql`select count(*)::int as n from terminal.watchlist`)).rows[0] as { n?: number } | undefined)?.n ?? 0);
+        if (age !== null && now - age < WATCHLIST_MS && count > 1_000) return;
         const r = await refreshWatchlist(db, clients.polymarket as PolymarketClient, now);
         await watch.load(db, now + WATCHLIST_MS);
         log(`millionaires: watchlist ${r.wallets} wallets, ${r.millionaires} millionaires`);

@@ -1,4 +1,4 @@
-/* Millionaire bets: every bet of BET_MIN ($5K) or more by a watchlist wallet, from the moves poller's Polymarket fills
+/* Millionaire bets: every bet of BET_MIN ($1K) or more by a watchlist wallet, from the moves poller's Polymarket fills
  * (lib/moves/poll.ts lastWatchedBets: one wallet, one market and outcome, fills within 10 minutes merged, the same
  * as moves). Stored with the market, side, size, the average price paid then, the wallet's tier when it bet, the
  * category (lib/brand/categories.ts) and the time. A run that grows keeps its id and is updated in place. Settled with

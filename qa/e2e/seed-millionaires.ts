@@ -53,7 +53,7 @@ export async function seedMillionaires(db: Db, now: number): Promise<void> {
   const res = (won: number, lost: number, net: number) => ({ days: 180, from: now - 180 * DAY, to: now, bets: won + lost, won, lost, void: 0, open: 0, staked: (won + lost) * 25, net,
     roi: net / ((won + lost) * 25), winRate: won / (won + lost), tooLate: 0, capped: 0, maxDrawdown: 0, offKalshi: 0 });
   const report = { at: now, days: 180, bets: 400, onKalshi: 380, note: "", rows: [
-    { key: "all", group: "Baseline", name: "Every proven-wallet bet of $5K+", result: res(133, 144, -907), settled: 277, leads: false },
+    { key: "all", group: "Baseline", name: "Every proven-wallet bet of $1K+", result: res(133, 144, -907), settled: 277, leads: false },
     { key: "consensus", group: "Variants", name: "2+ proven wallets, same side, within 1h", result: res(40, 20, 300), settled: 60, leads: false },
     { key: "big", group: "Variants", name: "Bets of $50K+", result: res(64, 54, 412), settled: 118, leads: true },
   ] };

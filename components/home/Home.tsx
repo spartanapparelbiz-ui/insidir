@@ -114,7 +114,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
 
         {d.board.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.baseball, dark: 0.7 }} id="board" testid="home-board" labelledBy="board-h">
-            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest bets of $5K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p><p className="hm-plain"><b>In plain English:</b> each row is one real bet: who placed it, what they bet on, the price they paid and the price now. Copy places the same bet; Verify shows it on the blockchain.</p></div>
+            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest bets of $1K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p><p className="hm-plain"><b>In plain English:</b> each row is one real bet: who placed it, what they bet on, the price they paid and the price now. Copy places the same bet; Verify shows it on the blockchain.</p></div>
             {d.stream ? <div className="s-col s-col--wide"><Stream data={d.stream} /></div> : null}
             <LiveBoard initial={d.board.slice(0, 10)} now={d.now} />
             <div className="b-center"><div className="b-ctas"><Pill href="/board" kind="ghost">The full board</Pill></div>

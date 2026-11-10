@@ -50,16 +50,16 @@ describe.skipIf(!URL0)("millionaires, in Postgres", () => {
     clearMemo();
   });
 
-  it("refreshes the watchlist: top 1,000 replaced, tiers set, wallet_pnl refreshed, new wallets queued, no names kept", async () => {
+  it("refreshes the watchlist: every wallet up $100K+ replaced, tiers set, wallet_pnl refreshed, new wallets queued, no names kept", async () => {
     await pool.query(`insert into terminal.watchlist values ('${W(99999)}', 'pro', 200000, now())`);
     await pool.query(`insert into terminal.wallet_pnl (wallet, closed, pnl, read_at) values ('${W(1)}', 40, 5, now())`);
     const r = await refreshWatchlist(db, board(1200), NOW);
-    expect(r).toEqual({ wallets: 1000, millionaires: 801 });
+    expect(r).toEqual({ wallets: 1161, millionaires: 801 }); // every wallet up $100K+ (the 1,200-wallet board's first 1,161)
     const w = await pool.query("select count(*)::int n, count(*) filter (where tier = 'millionaire')::int m from terminal.watchlist");
-    expect(w.rows[0]).toEqual({ n: 1000, m: 801 });
+    expect(w.rows[0]).toEqual({ n: 1161, m: 801 });
     expect((await pool.query(`select 1 from terminal.watchlist where wallet = '${W(99999)}'`)).rowCount).toBe(0);
     expect((await pool.query(`select pnl, closed from terminal.wallet_pnl where wallet = '${W(1)}'`)).rows[0]).toEqual({ pnl: 3e6, closed: 40 });
-    expect((await pool.query("select count(*)::int n from terminal.wallet_pnl_queue")).rows[0].n).toBe(999);
+    expect((await pool.query("select count(*)::int n from terminal.wallet_pnl_queue")).rows[0].n).toBe(1160);
     const cols = (await pool.query("select column_name from information_schema.columns where table_schema = 'terminal' and table_name = 'watchlist'")).rows.map(x => x.column_name);
     expect(cols.sort()).toEqual(["exclusion", "pnl", "refreshed_at", "screen", "screened_at", "settled", "tier", "wallet"]); // no name or face columns
   });

@@ -296,7 +296,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               <div key={w.wallet} className="b-glass b-pad"  {...st(0.5 + i * 0.08, { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left" })} data-testid="go-wallet">
                 <span style={{ display: "grid", gap: 4 }}>
                   <span style={{ display: "flex", gap: 8, alignItems: "center" }}><TierBadge tier={w.tier} /><span className="b-small">{w.short}</span></span>
-                  <span style={{ fontWeight: 500 }}><span className="b-up">{signedDollars(w.pnl)}</span> all time · {w.bets} bets of $5K+ in 30 days</span>
+                  <span style={{ fontWeight: 500 }}><span className="b-up">{signedDollars(w.pnl)}</span> all time · {w.bets} bets of $1K+ in 30 days</span>
                 </span>
                 <button type="button" className="b-btn b-panel-pill" aria-pressed={followed.has(w.wallet)} data-testid="go-follow-btn"
                   onClick={async () => { const r = await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "trader", target: w.wallet }) }).catch(() => null); if (r?.ok) setFollowed(new Set([...followed, w.wallet])); }}>
@@ -338,7 +338,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               <div className="b-go-art__card">
                 <span className="b-go-art__live"><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "bet" : "bets"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
                 {hook && step !== "hook" ? <p className="b-go-art__bet">A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : "$1M+ "}wallet just bet <b className="b-num">{dollars(hook.amount)}</b> on {hook.title}.</p>
-                  : <p className="b-go-art__bet">Every bet of $5K+ from wallets up $1M+, the second it lands.</p>}
+                  : <p className="b-go-art__bet">Every bet of $1K+ from wallets up $1M+, the second it lands.</p>}
                 {cats.length ? <span className="b-go-art__picks">Your feed: {names(cats)}</span> : null}
               </div>
             </div>

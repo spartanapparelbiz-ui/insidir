@@ -1073,7 +1073,7 @@ export const watchlist = terminal.table("watchlist", {
   screen: jsonb("screen").$type<{ reason: string | null; trades: number; markets: number; bothSides: number; mmMarkets: number; busiestDay: number }>(),
 }, t => [index("watchlist_tier_idx").on(t.tier)]);
 
-/** Every bet of $5K+ by a watchlist wallet (lib/millionaires/bets.ts): the moves poller's Polymarket fills, merged the
+/** Every bet of $1K+ by a watchlist wallet (lib/millionaires/bets.ts): the moves poller's Polymarket fills, merged the
  *  same way as moves (one wallet, one market and outcome, fills within 10 minutes), matched against the watchlist.
  *  price is the average price paid then; tier is the wallet's tier when it bet; category is lib/brand/categories.ts.
  *  result is set when the market settles (won / lost / void). */
