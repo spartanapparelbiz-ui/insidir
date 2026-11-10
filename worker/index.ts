@@ -439,7 +439,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       }),
     ] : []),
     every("twins:daily", 15 * 60_000, async () => { await twinsDailyOnce(getDb(), Date.now()); }),
-    every("whales", WHALE_MS, () => whalesOnce(clients)),
+    every("whales", WHALE_MS, async () => { await whalesOnce(clients); await heartbeat(getDb(), "whales", true, null); }),
     every("settle", SETTLE_MS, () => settleOnce(clients)),
     ...(poller ? [
       every("moves", MOVES_MS, async () => {
@@ -551,6 +551,7 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
       every("moves:leaderboard", 6 * 3_600_000, async () => {
         const n = await leaderboardOnce(getDb(), clients.polymarket as PolymarketClient);
         log(`moves: ${n} leaderboard wallets tracked`);
+        await heartbeat(getDb(), "moves:leaderboard", true, null, { wallets: n });
       }),
     ] : []),
     // SEC Form 4 database (docs/INSIDIR-V3.md §3): the live feed, the daily-index backfill and their accuracy check.
