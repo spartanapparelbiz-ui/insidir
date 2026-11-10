@@ -29,7 +29,7 @@ import { LiveStrip } from "./LiveStrip";
 import { Suspense } from "react";
 import { getDb } from "@/lib/db";
 import { homeGaps } from "@/lib/home/data";
-import { tape } from "@/lib/tape";
+import { MAIN_KINDS, tape } from "@/lib/tape";
 import { Tape } from "@/components/system/Tape";
 import { ScrollReveal } from "@/components/brand/ScrollReveal";
 
@@ -65,7 +65,7 @@ async function GapsStage({ now }: { now: number }) {
 
 /** The tape (lib/tape.ts): every big move, streamed in so the page never waits on it. */
 async function TapeStage({ now }: { now: number }) {
-  const rows = await tape(getDb(), { now, member: true, limit: 40 }).catch(() => []);
+  const rows = await tape(getDb(), { now, member: true, limit: 40, kinds: MAIN_KINDS }).catch(() => []);
   return (
     <Stage id="tape" testid="home-tape" labelledBy="tape-h">
       <div className="b-head"><p className="hm-eyebrow">The tape</p><h2 id="tape-h" className="ai-h">Every big move.</h2><p className="hm-plain"><b>In plain English:</b> each line is one big move: a $100K+ wallet betting or selling out, any Polymarket wallet trading $10K+, or a $5K+ Kalshi trade. Who did it, how big, which side, and how much big money is already in that market.</p></div>

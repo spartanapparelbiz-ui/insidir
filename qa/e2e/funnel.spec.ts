@@ -100,7 +100,7 @@ test("Start for $1 in the nav on public pages, home included (the brand nav's pi
   }
   await page.goto("/");
   await expect(page.getByTestId("nav-start")).toHaveText("Start for $1");
-  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
+  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", /^\/go(\?step=checkout)?$/);
   expect(Math.round((await page.getByTestId("nav-start").boundingBox())!.height)).toBeGreaterThanOrEqual(28);
   await page.goto("/pricing");
   await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");

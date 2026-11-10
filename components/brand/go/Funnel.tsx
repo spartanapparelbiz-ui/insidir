@@ -17,7 +17,8 @@ import { leadLine } from "@/lib/autopilot/lead-line";
 import { dollars } from "@/lib/money";
 import { Arrow, Lines, m, Mark, signedDollars, TierBadge } from "../Bits";
 import { MoneyCard } from "../MoneyCard";
-import { PAY_BULLETS, Paywall } from "../Paywall";
+import { chargeDate, PAY_BULLETS, Paywall } from "../Paywall";
+import { PLANS, TRIAL } from "@/lib/plans";
 import { BrandFoot } from "../Nav";
 
 type WhopCheckout = { checkout: { create: (o: Record<string, unknown>) => { create: (k: "checkout", p?: Record<string, unknown>) => { mount: (sel: string | HTMLElement) => void } } } };
@@ -280,6 +281,14 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       body = (
         <GoStage testid="go-checkout-step">
           <div className="b-head"><Lines as="h1" lines={["Start for $1."]} size={56} /></div>
+          <div className="b-glass b-pad go-get" {...st(0.3, { width: "100%", maxWidth: 480, textAlign: "left" })} data-testid="go-get">
+            <ul className="go-get__list">
+              <li>Every bet from wallets up $100K+, live, with the side they took</li>
+              <li>Your AI analyst: what each big bet means, in plain English</li>
+              <li>Exits, whales and the full tape, the moment they land</li>
+            </ul>
+            <p className="b-small" data-testid="go-price">${TRIAL.fee} today, then ${PLANS.insidir.price}/month from {chargeDate(now)}. Cancel anytime. 18+ only.</p>
+          </div>
           <Checkout elementsUrl={elementsUrl} ageConfirmed={ageConfirmed} />
         </GoStage>
       );

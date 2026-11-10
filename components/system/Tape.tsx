@@ -1,13 +1,13 @@
 "use client";
-/* The tape (lib/tape.ts): every big move, newest first, re-read every 10 seconds. Filters: everything, new bets from the
+/* The tape (lib/tape.ts): every big move, newest first, re-read every 10 seconds. Filters: everything (named wallets), big only ($25K+), new bets from the
  * $100K+ wallets, exits and trims, big trades from any wallet, Kalshi. Each row: when, what kind, who (tier, short
  * address, all-time profit, record), the market, the size, and for members the side at its price; under it, the big
  * money in that market. A new row flashes once. Visitors: 60 minutes late, sides locked. Information, not advice. */
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { TapeKind, TapeRow } from "@/lib/tape";
+import { MAIN_KINDS, type TapeKind, type TapeRow } from "@/lib/tape";
 import { dollars } from "@/lib/money";
 
-const FILTERS: Array<[string, readonly TapeKind[] | null]> = [["Everything", null], ["New bets", ["bet"]], ["Exits", ["trim", "exit"]], ["Any-wallet whales", ["whale"]], ["Kalshi", ["kalshi"]]];
+const FILTERS: Array<[string, readonly TapeKind[]]> = [["Everything", MAIN_KINDS], ["Big only", MAIN_KINDS], ["New bets", ["bet"]], ["Exits", ["trim", "exit"]], ["Any-wallet whales", ["whale"]], ["Kalshi", ["kalshi"]]];
 const KIND: Record<TapeKind, string> = { bet: "BET", trim: "TRIM", exit: "EXIT", whale: "WHALE", kalshi: "KALSHI" };
 const cents = (p: number) => `${Math.round(p * 100)}¢`;
 const ago = (ms: number) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`; };
@@ -42,7 +42,7 @@ export function Tape({ initial, now: now0, member, n = 40, testid = "tape" }: { 
     let stop = false;
     const read = async () => {
       if (document.visibilityState !== "visible") return;
-      const r = await fetch(`/api/tape?n=${n}${kinds ? `&kinds=${kinds.join(",")}` : ""}`, { cache: "no-store" }).catch(() => null);
+      const r = await fetch(`/api/tape?n=${n}&kinds=${kinds.join(",")}`, { cache: "no-store" }).catch(() => null);
       if (!r?.ok || stop) return;
       const j = await r.json() as { now: number; rows: TapeRow[] };
       setFresh(new Set(j.rows.filter(x => !seen.current.has(x.id)).map(x => x.id)));
@@ -54,7 +54,8 @@ export function Tape({ initial, now: now0, member, n = 40, testid = "tape" }: { 
     return () => { stop = true; clearInterval(id); };
   }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const shown = useMemo(() => (kinds ? rows.filter(r => kinds.includes(r.kind)) : rows), [rows, kinds]);
+  const bigOnly = FILTERS[filter]![0] === "Big only";
+  const shown = useMemo(() => rows.filter(r => kinds.includes(r.kind) && (!bigOnly || r.big)), [rows, kinds, bigOnly]);
   return (
     <div className="tp" data-testid={testid}>
       <div className="tp__bar" role="group" aria-label="What the tape shows">
@@ -70,12 +71,13 @@ export function Tape({ initial, now: now0, member, n = 40, testid = "tape" }: { 
                 <span className="tp__t b-num">{ago(now - r.at)}</span>
                 <span className={`tp__k tp__k--${r.kind}`}>{KIND[r.kind]}</span>
                 <span className="tp__main">
-                  <span className="tp__m">{r.title}</span>
+                  <span className="tp__m">{r.big ? <span className="tp__big" data-testid="tape-big">BIG</span> : null}{r.title}</span>
                   <span className="tp__who"><span className={`tp__tier tp__tier--${r.tier ?? "kalshi"}`}>{tierName(r.tier)}</span>{who(r)}</span>
                   {line ? <span className="tp__info">{line}</span> : null}
                 </span>
                 <span className="tp__right">
                   <b className="tp__amt b-num">{dollars(r.amount)}</b>
+                  {r.trades > 1 ? <span className="tp__n b-num" data-testid="tape-trades">{r.trades} trades · {ago(r.at - r.firstAt) === "0s" ? "same minute" : `over ${ago(r.at - r.firstAt)}`}</span> : null}
                   {member && r.outcome ? <span className="tp__side">{r.kind === "exit" || r.kind === "trim" ? "sold " : ""}{r.outcome}{r.price !== null ? ` @ ${cents(r.price)}` : ""}</span>
                     : <span className="tp__side tp__side--locked" data-locked="side">Side: members</span>}
                 </span>
@@ -88,8 +90,8 @@ export function Tape({ initial, now: now0, member, n = 40, testid = "tape" }: { 
             );
           })}
         </ol>
-      ) : <p className="b-empty">Nothing on the tape {kinds ? "of this kind " : ""}in the last 24 hours yet. The next one shows here as it lands.</p>}
-      <p className="b-small tp__src">Source: Polymarket and Kalshi public trades, Polygon. Whales are any Polymarket wallet trading $10K+; Kalshi trades are anonymous. Information, not advice.</p>
+      ) : <p className="b-empty">Nothing on the tape {filter ? "of this kind " : ""}in the last 24 hours yet. The next one shows here as it lands.</p>}
+      <p className="b-small tp__src">Source: Polymarket and Kalshi public trades, Polygon. Whales are any Polymarket wallet trading $10K+; Kalshi trades are anonymous. Repeat trades by one wallet on one side within 10 minutes show as one row; BIG is $25K+. Information, not advice.</p>
     </div>
   );
 }

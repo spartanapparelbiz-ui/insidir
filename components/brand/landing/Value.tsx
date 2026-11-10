@@ -86,7 +86,7 @@ export function PulseStage({ d }: { d: LandingData }) {
           ) : <p className="b-empty">No unusual bet today yet: a new wallet betting $1K+ at 25¢ or less shows here.</p>}
         </section>
       </div>
-      <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" data-testid="pulse-start" data-checkout="pulse">Start for $1</Pill></div></div>
+      <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go?step=checkout" data-testid="pulse-start" data-checkout="pulse">Start for $1</Pill></div></div>
     </Stage>
   );
 }
@@ -99,7 +99,7 @@ export function ElectionStage({ d }: { d: LandingData }) {
     <Stage bg={{ kind: "photo", photo: slotPhoto("election"), dark: 0.6 }} testid="election" labelledBy="election-h">
       <div className="b-head"><Lines id="election-h" lines={STAGES.election} size={64} /></div>
       <ElectionLive initial={d.election} member={d.member} />
-      {d.member ? null : <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" data-testid="election-start" data-checkout="election">Start for $1</Pill></div></div>}
+      {d.member ? null : <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go?step=checkout" data-testid="election-start" data-checkout="election">Start for $1</Pill></div></div>}
     </Stage>
   );
 }
@@ -112,7 +112,7 @@ export function BoardLeadStage({ d }: { d: LandingData }) {
       <div className="b-head"><Lines id="lead-h" lines={["Every millionaire bet."]} size={60} />
         {d.member ? null : <p className="b-sub">Live now: <b className="b-num">{d.pulse.countToday}</b> today. Here 60 minutes late; members see each one the second it lands.</p>}</div>
       <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.lead }} n={8} board copy={d.member} />
-      <div className="b-center" style={{ marginTop: 18 }}><div className="b-ctas">{d.member ? <Pill href="/board" kind="ghost">The whole board</Pill> : <Pill href="/go" data-testid="lead-start" data-checkout="lead">Start for $1</Pill>}</div></div>
+      <div className="b-center" style={{ marginTop: 18 }}><div className="b-ctas">{d.member ? <Pill href="/board" kind="ghost">The whole board</Pill> : <Pill href="/go?step=checkout" data-testid="lead-start" data-checkout="lead">Start for $1</Pill>}</div></div>
     </Stage>
   );
 }
@@ -192,7 +192,7 @@ export function MembersStage({ d }: { d: LandingData }) {
         </div>
       </div>
       <div className="b-center" style={{ marginTop: 24 }}>
-        <div className="b-ctas"><Pill href="/go" data-testid="members-start" data-checkout="members">Start for $1</Pill></div>
+        <div className="b-ctas"><Pill href="/go?step=checkout" data-testid="members-start" data-checkout="members">Start for $1</Pill></div>
         <p className="b-small" style={{ marginTop: 10 }}>$1 for 3 days, then $39/month.</p>
       </div>
     </Stage>
@@ -223,7 +223,7 @@ export function SpotlightStage({ d }: { d: LandingData }) {
         </ul>
         <p className="b-small">Its closed positions on Polymarket (held to the end or sold), newest first, losses included. {PAST}</p>
       </div>
-      <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go" kind="ghost" data-testid="spotlight-start" data-checkout="spotlight">Follow wallets like this</Pill></div><p className="b-small" style={{ marginTop: 10 }}>Following is for members: $1 for 3 days.</p></div>
+      <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go?step=checkout" kind="ghost" data-testid="spotlight-start" data-checkout="spotlight">Follow wallets like this</Pill></div><p className="b-small" style={{ marginTop: 10 }}>Following is for members: $1 for 3 days.</p></div>
     </Stage>
   );
 }

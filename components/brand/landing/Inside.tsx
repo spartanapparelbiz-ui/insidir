@@ -74,7 +74,7 @@ export async function InsideStage({ d }: { d: LandingData }) {
         </article>
       </div>
       <div className="in-cta" data-m="settle" style={card(4)}>
-        <div className="b-ctas"><Pill href="/go?step=cats" data-checkout="inside" data-testid="inside-start">Start for $1</Pill></div>
+        <div className="b-ctas"><Pill href="/go?step=checkout" data-checkout="inside" data-testid="inside-start">Start for $1</Pill></div>
         <p className="b-small">{`$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price} a month. Cancel anytime. The AI analyst is included.`}</p>
       </div>
     </Stage>
