@@ -20,6 +20,8 @@ import { boardInsight, streamFor } from "@/lib/home/data";
 import { headlineLines } from "@/lib/market/headline";
 import { BOARD_DELAY_MS, pulse, recentBets, type BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
+import { tape, type TapeRow } from "@/lib/tape";
+import { Tape } from "@/components/system/Tape";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -38,11 +40,12 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   const who = pro ? "wallets up $100K–$1M" : oneM ? "wallets up $1M+" : "wallets up $100K+ ($1M+ marked)";
   const db = hasDatabase() ? getDb() : null;
   const safe = <T,>(p: Promise<T>, d: T) => p.catch(e => { console.error("board", e instanceof Error ? e.message : e); return d; });
-  const [p, bets, stream] = db ? await Promise.all([
+  const [p, bets, stream, tapeRows] = db ? await Promise.all([
     safe(pulse(db, now, cat), null),
     safe(recentBets(db, { now, limit: member ? 40 : 30, member, tier: tier === "all" ? undefined : tier, categories: cat ? [cat] : undefined, delayMs: member ? 0 : BOARD_DELAY_MS }), []),
     member && oneM ? safe(streamFor(db, now, cat ?? undefined), null) : Promise.resolve(null),
-  ]) : [null, [] as BoardBet[], null] as const;
+    safe(tape(db, { now, member, limit: 40 }), [] as TapeRow[]),
+  ]) : [null, [] as BoardBet[], null, [] as TapeRow[]] as const;
   const pl = p ?? EMPTY_PULSE;
   const where = cat ? ` in ${categoryInfo(cat).name}` : "";
   // Every number follows the filter (pulse is computed for the category).
@@ -95,6 +98,13 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
           </div>
         )}
         <p className="b-small b-center">Information, not advice.</p>
+      </Stage>
+      <Stage testid="board-tape" labelledBy="tape-h">
+        <div className="b-head">
+          <h2 id="tape-h" className="ai-h">The tape. Every big move.</h2>
+          <p className="b-sub">New bets from wallets up $100K+, their exits, $10K+ trades from any Polymarket wallet, and $5K+ trades on Kalshi, newest first, with who&apos;s behind each and the big money in that market.</p>
+        </div>
+        <Tape initial={[...tapeRows]} now={now} member={member} />
       </Stage>
       {member ? null : <PayMoments ctx={{ count: pl.count, window: pl.window, biggest: null }} now={now} />}
       <ScrollFx />

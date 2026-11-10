@@ -29,6 +29,8 @@ import { LiveStrip } from "./LiveStrip";
 import { Suspense } from "react";
 import { getDb } from "@/lib/db";
 import { homeGaps } from "@/lib/home/data";
+import { tape } from "@/lib/tape";
+import { Tape } from "@/components/system/Tape";
 import { ScrollReveal } from "@/components/brand/ScrollReveal";
 
 const cents = (p: number) => `${Math.round(p * 100)}¢`;
@@ -61,6 +63,17 @@ async function GapsStage({ now }: { now: number }) {
   );
 }
 
+/** The tape (lib/tape.ts): every big move, streamed in so the page never waits on it. */
+async function TapeStage({ now }: { now: number }) {
+  const rows = await tape(getDb(), { now, member: true, limit: 40 }).catch(() => []);
+  return (
+    <Stage id="tape" testid="home-tape" labelledBy="tape-h">
+      <div className="b-head"><p className="hm-eyebrow">The tape</p><h2 id="tape-h" className="ai-h">Every big move.</h2><p className="hm-plain"><b>In plain English:</b> each line is one big move: a $100K+ wallet betting or selling out, any Polymarket wallet trading $10K+, or a $5K+ Kalshi trade. Who did it, how big, which side, and how much big money is already in that market.</p></div>
+      <Tape initial={rows} now={now} member testid="home-tape-list" />
+    </Stage>
+  );
+}
+
 export function HomePage({ d, search, userId }: { d: Home; search: boolean; userId: string }) {
   const live = d.polledAt !== null && d.now - d.polledAt < 5 * 60_000;
   return (
@@ -79,7 +92,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
         <div className="hm-bar">
         <LiveStrip initial={{ now: d.now, money: d.today?.money ?? d.day?.money ?? 0, bets: d.today?.bets ?? d.day?.bets ?? 0, window: d.today ? "today" : "24h", lastBetAt: d.lastBetAt, polledAt: d.polledAt }} />
         <nav className="hm-nav" aria-label="Sections" data-testid="home-nav">
-          {[["overview", "Today"], ["ai", "AI analyst"], ...(d.disagree.length ? [["disagree", "Money vs price"]] : []), ...(d.election && d.election.day.races.length ? [["election", "Election"]] : []),
+          {[["overview", "Today"], ["ai", "AI analyst"], ["tape", "The tape"], ...(d.disagree.length ? [["disagree", "Money vs price"]] : []), ...(d.election && d.election.day.races.length ? [["election", "Election"]] : []),
             ...(d.board.length ? [["board", "Live board"]] : []), ...(d.wallets.length ? [["wallets", "Wallets"]] : []), ["desk", "Your desk"]]
             .map(([id, t]) => <a key={id} href={`#${id}`}>{t}</a>)}
         </nav>
@@ -111,6 +124,8 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
             <div className="b-center"><div className="b-ctas"><Pill href="/election" kind="ghost">Every race</Pill></div></div>
           </Stage>
         ) : null}
+
+        <Suspense fallback={null}><TapeStage now={d.now} /></Suspense>
 
         {d.board.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.baseball, dark: 0.7 }} id="board" testid="home-board" labelledBy="board-h">
