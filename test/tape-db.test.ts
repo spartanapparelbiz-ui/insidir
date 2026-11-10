@@ -71,7 +71,7 @@ describe.skipIf(!URL0)("the tape, in Postgres", () => {
   });
 
   it("the whale ticker: $10K+ trades on both venues, the side's probability then ➔ now, links to the market", async () => {
-    await db.insert(schema.marketInfo).values([{ source: "polymarket", marketId: "0xm1", yesPrice: 0.62, closed: false }, { source: "polymarket", marketId: "0xm2", yesPrice: 0.3, closed: false }]);
+    await db.insert(schema.marketInfo).values([{ source: "polymarket", marketId: "0xm1", yesPrice: 0.62, closed: false, historyKey: "tok1", endAt: new Date(NOW + 86_400_000) }, { source: "polymarket", marketId: "0xm2", yesPrice: 0.3, closed: false }]);
     const t = await whaleTicker(db, { now: NOW });
     expect(t.map(x => x.id)).toEqual(["b1", "w1"]); // b2 ($3K) and k1 ($8K) are under $10K; w2 is a watched wallet's move
     expect(t[0]).toMatchObject({ venue: "polymarket", outcome: "Bills", amount: 20_000, from: 0.55, to: 0.62, external: false });
@@ -90,9 +90,12 @@ describe.skipIf(!URL0)("the tape, in Postgres", () => {
     expect(await marketMoves(db, "0xm1", { now: NOW, member: false })).toEqual({ count: 3, rows: [] });
   });
 
-  it("the sample pages open the open market with the most watched money", async () => {
+  it("the sample pages open the open market with the most watched money, never one that's over", async () => {
     expect(await sampleMarket(db, "sample-polymarket", NOW)).toEqual({ id: "0xm1", title: "Bills vs. Vikings" });
     expect(await sampleMarket(db, "nba-championship", NOW)).toEqual({ id: "0xm1", title: "Bills vs. Vikings" }); // no NBA market: the sample
+    await db.update(schema.marketInfo).set({ endAt: new Date(NOW - 60_000) }).where(sql`market_id = '0xm1'`);
+    expect(await sampleMarket(db, "sample-polymarket", NOW)).toBeNull(); // the only candidate has ended
+    await db.update(schema.marketInfo).set({ endAt: new Date(NOW + 86_400_000) }).where(sql`market_id = '0xm1'`);
   });
 
   it("filters by kind", async () => {
