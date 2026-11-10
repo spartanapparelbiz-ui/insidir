@@ -24,10 +24,10 @@ export function LiveStrip({ initial }: { initial: Initial }) {
     const read = async () => {
       if (document.visibilityState !== "visible") return;
       try {
-        const r = await fetch("/api/millionaires/live?n=1", { cache: "no-store" });
+        const r = await fetch("/api/millionaires/live?n=1&tier=all", { cache: "no-store" });
         if (!r.ok) throw new Error(String(r.status));
         const j = await r.json() as { now: number; pulse: Pulse; bets: Array<{ at: number }> };
-        const p = j.pulse, today = p.sinceMidnight > 0;
+        const p = j.pulse.all, today = p.sinceMidnight > 0;
         const next: Initial = { now: j.now, money: today ? p.sinceMidnight : p.today, bets: today ? p.countToday : p.window === "day" ? p.count : last.current.bets,
           window: today ? "today" : "24h", lastBetAt: j.bets[0]?.at ?? last.current.lastBetAt, polledAt: j.now };
         if (next.money !== last.current.money) setFlash("money"); else if (next.lastBetAt !== last.current.lastBetAt) setFlash("last");
@@ -44,8 +44,8 @@ export function LiveStrip({ initial }: { initial: Initial }) {
   return (
     <div className="hm-live" role="status" aria-live="off" data-testid="live-strip">
       <span className={`hm-live__k${ok ? "" : " hm-live__k--off"}`}><span className="hm-live__dot" aria-hidden="true" />{ok ? "LIVE" : "RECONNECTING"}</span>
-      {v.lastBetAt ? <span className={flash === "last" ? "hm-flash" : undefined}>Last $1M+ bet <b className="b-num">{age(clock - v.lastBetAt)}</b> ago</span> : null}
-      {v.money > 0 ? <span className={flash === "money" ? "hm-flash" : undefined}><b className="b-num">{dollars(v.money)}</b> {v.window === "today" ? "today" : "in 24h"}</span> : null}
+      {v.lastBetAt ? <span className={flash === "last" ? "hm-flash" : undefined}>Last big-wallet bet <b className="b-num">{age(clock - v.lastBetAt)}</b> ago</span> : null}
+      {v.money > 0 ? <span className={flash === "money" ? "hm-flash" : undefined}><b className="b-num">{dollars(v.money)}</b> from $100K+ wallets {v.window === "today" ? "today" : "in 24h"}</span> : null}
       {v.bets > 0 ? <span><b className="b-num">{v.bets.toLocaleString("en-US")}</b> {v.bets === 1 ? "bet" : "bets"}</span> : null}
       <span className="hm-live__clock b-num">{ET.format(new Date(clock))} ET</span>
     </div>

@@ -12,11 +12,11 @@ import { BetRow } from "./BetRow";
 
 export interface FeedState { now: number; pulse: Pulse; bets: BoardBet[] }
 
-export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true, board = false, copy = false, tier = "millionaire", polymarket = false }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean;
+export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = true, board = false, copy = false, tier = "all", polymarket = false }: { initial: FeedState; n?: number; cats?: readonly string[]; links?: boolean; settle?: boolean;
   /** The viewer is outside the US: Verify may show the Polymarket market page. */
   polymarket?: boolean;
   /** Wallets up $1M+ (the default) or Pro ($100K–$1M): never mixed. */
-  tier?: "millionaire" | "pro";
+  tier?: "all" | "millionaire" | "pro";
   /** /board: visitors get bets 60 minutes late (the API applies it). */
   board?: boolean;
   /** Members: a Copy pill on each row (the copy ticket). */
@@ -37,16 +37,16 @@ export function LiveFeed({ initial, n = 6, cats = [], links = true, settle = tru
     const id = setInterval(tick, 15_000);
     return () => { stop = true; clearInterval(id); };
   }, [n, cats.join(","), board, tier]); // eslint-disable-line react-hooks/exhaustive-deps
-  const rows = groupBets(s.bets.filter(b => b.tier === tier));
+  const rows = groupBets(tier === "all" ? s.bets : s.bets.filter(b => b.tier === tier));
   return (
     <div className="b-feed b-glass b-pad" data-testid="live-feed" {...(settle ? { "data-m": "settle", style: { "--d": ".5s" } as React.CSSProperties } : {})}>
       <div className="b-feed__top">
         <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> {misses >= 2 ? <span data-testid="feed-behind">Catching up</span> : "Live"}</span>
         {/* Today means since midnight ET (as the hero and the board say); before the first bet of the day, the last 24 hours. */}
-        {s.pulse.sinceMidnight > 0
-          ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(s.pulse.sinceMidnight)}</span> bet by millionaires today</span>
-          : s.pulse.today > 0
-            ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(s.pulse.today)}</span> bet by millionaires in the last 24 hours</span>
+        {(tier === "all" ? s.pulse.all?.sinceMidnight ?? 0 : s.pulse.sinceMidnight) > 0
+          ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(tier === "all" ? s.pulse.all.sinceMidnight : s.pulse.sinceMidnight)}</span> bet by {tier === "all" ? "wallets up $100K+" : "millionaires"} today</span>
+          : (tier === "all" ? s.pulse.all?.today ?? 0 : s.pulse.today) > 0
+            ? <span className="b-small"><span className="b-feed__total b-num b-gold" data-testid="feed-total">{dollars(tier === "all" ? s.pulse.all.today : s.pulse.today)}</span> bet by {tier === "all" ? "wallets up $100K+" : "millionaires"} in the last 24 hours</span>
             : <span className="b-small" data-testid="feed-total">No millionaire bets in the last 24 hours</span>}
       </div>
       {rows.length ? (

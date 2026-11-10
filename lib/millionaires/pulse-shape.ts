@@ -11,7 +11,11 @@ export interface Pulse {
   sinceMidnight: number;
   /** How many millionaire-tier bets since midnight US Eastern. */
   countToday: number;
+  /** The same, for every watched wallet up $100K+ (the $1M+ ones included): the board's and the dashboard's default. */
+  all: { count: number; window: "hour" | "day"; today: number; sinceMidnight: number; countToday: number };
 }
+
+export const EMPTY_ALL: Pulse["all"] = { count: 0, window: "hour", today: 0, sinceMidnight: 0, countToday: 0 };
 
 /** The hero's live line: today's total (since midnight ET), or the last 24 hours when today is under HERO_MIN. */
 export const HERO_MIN = 100_000;

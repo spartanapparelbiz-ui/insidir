@@ -3,7 +3,7 @@
  * time on the same line; under it, the side at its price, now, and the wallet. Repeats (same wallet, market and side
  * within 2 hours) are one row: "4 bets · $X total · avg 63¢". Selecting a row reveals its Copy (only there); the price
  * change is the only green or red. One row of category chips that scrolls sideways. Refreshes every 30 s while visible.
- * "Wallets up $1M+" means $1M+: Pro wallets ($100K–$1M) only under the Pro filter. */
+ * The default is every watched wallet up $100K+ (each row labelled with its tier); "$1M+" and "$100K–$1M" filter it. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Verify } from "@/components/brand/Verify";
 import { betExplain } from "@/lib/brief/explain";
@@ -20,7 +20,7 @@ const ago = (ms: number, now: number) => { const s = Math.max(0, Math.round((now
 /** n: rows to fetch; cat: the server-side category (the board's ?cat=, kept when it refreshes); tier: millionaire
  *  ($1M+, the default) or pro; links: category chips as links to /board (the full board) rather than an in-place
  *  filter. */
-export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: serverCat = null, tier = "millionaire", links = false, polymarket = false }: { initial: BoardBet[]; now: number; copy?: boolean; n?: number; cat?: CategorySlug | null; tier?: "millionaire" | "pro"; links?: boolean;
+export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: serverCat = null, tier = "all", links = false, polymarket = false }: { initial: BoardBet[]; now: number; copy?: boolean; n?: number; cat?: CategorySlug | null; tier?: "all" | "millionaire" | "pro"; links?: boolean;
   /** The viewer is outside the US: Verify may show the Polymarket market page. */
   polymarket?: boolean }) {
   const [bets, setBets] = useState(initial);
@@ -38,20 +38,21 @@ export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: server
       const j = await r.json() as { now: number; bets: BoardBet[] };
       const fr = new Set(j.bets.filter(b => !seen.current.has(b.id)).map(b => b.id));
       for (const b of j.bets) seen.current.add(b.id);
-      setBets(j.bets.filter(b => b.tier === tier)); setNow(j.now); setFresh(fr);
+      setBets(tier === "all" ? j.bets : j.bets.filter(b => b.tier === tier)); setNow(j.now); setFresh(fr);
     }, 10_000); // every 10 seconds: a new $1M+ bet is on the board within seconds of the poller saving it
     return () => { stop = true; clearInterval(id); };
   }, [n, serverCat, tier]);
   const cats = useMemo(() => [...new Set(bets.map(b => b.category))], [bets]);
   const rows = useMemo(() => groupBets(cat === "all" ? bets : bets.filter(b => b.category === cat)), [bets, cat]);
-  const q = (c: CategorySlug | null, t: "millionaire" | "pro") => { const p = new URLSearchParams(); if (c) p.set("cat", c); if (t === "pro") p.set("tier", "pro"); const s = p.toString(); return `/board${s ? `?${s}` : ""}`; };
+  const q = (c: CategorySlug | null, t: "all" | "millionaire" | "pro") => { const p = new URLSearchParams(); if (c) p.set("cat", c); if (t === "pro") p.set("tier", "pro"); if (t === "millionaire") p.set("tier", "1m"); const s = p.toString(); return `/board${s ? `?${s}` : ""}`; };
   return (
     <div className="s-board" data-testid="live-board">
       {links ? (
         <ChipRow>
-          <a className="b-btn b-panel-pill" aria-pressed={!serverCat && tier === "millionaire"} href="/board">All</a>
+          <a className="b-btn b-panel-pill" aria-pressed={!serverCat && tier === "all"} href="/board">All</a>
+          <a className="b-btn b-panel-pill" aria-pressed={tier === "millionaire"} href={q(serverCat, tier === "millionaire" ? "all" : "millionaire")} data-testid="filter-1m" title="Wallets up $1M+ only">$1M+ only</a>
+          <a className="b-btn b-panel-pill" aria-pressed={tier === "pro"} href={q(serverCat, tier === "pro" ? "all" : "pro")} data-testid="filter-pro" title="Wallets up $100K–$1M">$100K–$1M</a>
           {CATEGORIES.map(c => <a key={c.slug} className="b-btn b-panel-pill" aria-pressed={serverCat === c.slug} href={q(c.slug, tier)}>{c.name}</a>)}
-          <a className="b-btn b-panel-pill" aria-pressed={tier === "pro"} href={q(serverCat, tier === "pro" ? "millionaire" : "pro")} data-testid="filter-pro" title="Wallets up $100K–$1M">Pro</a>
         </ChipRow>
       ) : (
         <ChipRow as="div">
@@ -77,7 +78,7 @@ export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: server
           );
         })}
       </ol>
-      {rows.length ? null : <p className="b-empty">No {tier === "pro" ? "Pro" : "millionaire"} bet {serverCat || cat !== "all" ? "in this category " : ""}in the last day yet. The second one lands, it shows up here.</p>}
+      {rows.length ? null : <p className="b-empty">No {tier === "pro" ? "$100K–$1M" : tier === "millionaire" ? "$1M+" : "$100K+"} bet {serverCat || cat !== "all" ? "in this category " : ""}in the last day yet. The second one lands, it shows up here.</p>}
     </div>
   );
 }

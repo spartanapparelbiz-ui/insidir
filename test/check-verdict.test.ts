@@ -66,7 +66,7 @@ describe("/go", () => {
 import { HERO_MIN, heroTotal, midnightET } from "@/lib/millionaires/queries";
 describe("the hero's live line", () => {
   it("today since midnight ET; under $100K, the last 24 hours", () => {
-    const p = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, countToday: 0 };
+    const p = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, countToday: 0, all: { count: 0, window: "hour" as const, today: 0, sinceMidnight: 0, countToday: 0 } };
     expect(heroTotal({ ...p, today: 900_000, sinceMidnight: 4_200_000 })).toEqual({ amount: 4_200_000, window: "today" });
     expect(heroTotal({ ...p, today: 900_000, sinceMidnight: HERO_MIN - 1 })).toEqual({ amount: 900_000, window: "24h" });
   });
