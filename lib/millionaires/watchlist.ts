@@ -62,8 +62,10 @@ export async function refreshWatchlist(db: Db, poly: BoardSource, now: number): 
     for (let i = 0; i < top.length; i += 500) {
       await tx.insert(watchlist).values(top.slice(i, i + 500).map(t => ({ ...t, refreshedAt: at })))
         .onConflictDoUpdate({ target: watchlist.wallet, set: {
-          // A screened $1M+ wallet keeps the screen's verdict (lib/millionaires/proven.ts): millionaire only when proven.
-          tier: sql`case when excluded.tier = 'millionaire' and ${watchlist.screenedAt} is not null and ${watchlist.exclusion} is not null then 'pro' else excluded.tier end`,
+          // The tier is the wallet's all-time profit, nothing else: $1M+ is Millionaire everywhere. (It used to keep the
+          // proven screen's verdict, which showed $1M+ wallets as Pro and hid their bets from every $1M+ count; the
+          // verdict stays in `exclusion`, lib/millionaires/proven.ts.)
+          tier: sql`excluded.tier`,
           pnl: sql`excluded.pnl`, refreshedAt: at } });
     }
     await tx.delete(watchlist).where(notInArray(watchlist.wallet, top.map(t => t.wallet)));
@@ -76,7 +78,22 @@ export async function refreshWatchlist(db: Db, poly: BoardSource, now: number): 
     const mil = top.filter(t => t.tier === "millionaire").map(t => ({ wallet: t.wallet, name: null, reason: "watchlist" }));
     for (let i = 0; i < mil.length; i += 500) await tx.insert(trackedWallets).values(mil.slice(i, i + 500)).onConflictDoNothing();
   });
+  await syncTiers(db);
   return { wallets: top.length, millionaires: top.filter(t => t.tier === "millionaire").length };
+}
+
+/** Every stored bet carries its wallet's tier as it is today, so the board, the counts and the record agree with the
+ *  watchlist: a wallet up $1M+ is Millionaire on every row. Wallets that left the watchlist keep what they had. */
+export async function syncTiers(db: Db): Promise<number> {
+  let n = 0;
+  for (const t of ["millionaire_bets", "position_events"]) {
+    n += (await db.execute(sql`update terminal.${sql.raw(t)} b set tier = w.tier from terminal.watchlist w
+      where b.wallet = w.wallet and b.tier <> w.tier`)).rowCount ?? 0;
+  }
+  n += (await db.execute(sql`update terminal.record_log r set tier = w.tier,
+      flags = case when w.tier = any(r.flags) then r.flags else array(select distinct unnest(r.flags || array[w.tier])) end
+    from terminal.watchlist w where r.wallet = w.wallet and r.tier in ('millionaire', 'pro') and r.tier <> w.tier`)).rowCount ?? 0;
+  return n;
 }
 
 /** When the list was last refreshed (null: never). */
