@@ -40,7 +40,10 @@ async function beats(ageMs: number) {
 }
 
 describe.skipIf(!URL0)("the product checks", () => {
+  // Autopilot is behind its switch (lib/features.ts): these checks cover it switched on.
+  const ready0 = process.env.FEATURES_READY;
   beforeAll(async () => {
+    process.env.FEATURES_READY = "autopilot";
     admin = new pg.Client({ connectionString: URL0 });
     await admin.connect();
     await admin.query(`drop database if exists ${NAME}`);
@@ -54,7 +57,7 @@ describe.skipIf(!URL0)("the product checks", () => {
     await db.insert(schema.marketTwins).values({ polymarketId: M, kalshiId: K, kalshiUrl: KURL, polymarketTitle: "Heat vs. Lakers", kalshiTitle: "Miami wins", kind: "winner", verdict: "candidate",
       status: "approved", confidence: 0.99, checks: { event: true, outcome: true, line: true, rules: true, close: true } });
   }, 60_000);
-  afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
+  afterAll(async () => { if (ready0 === undefined) delete process.env.FEATURES_READY; else process.env.FEATURES_READY = ready0; await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
 
   it("every step passes; the fixture match is right and leaves nothing behind", async () => {
     await beats(30_000);
