@@ -1755,3 +1755,10 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
 .go-get__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .go-get__list li { position: relative; padding-left: 20px; font-size: 14px; line-height: 1.45; }
 .go-get__list li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
+
+/* Checkout on a phone: the live bet stays, the photo shrinks, so the price and the payment form sit on the first screen. */
+@media (max-width: 900px) {
+  .b-go-split--checkout .b-go-art { padding-top: 64px; }
+  .b-go-split--checkout .b-go-art__frame { height: 128px; }
+  .b-go-split--checkout .b-stage { padding-top: 18px; }
+}

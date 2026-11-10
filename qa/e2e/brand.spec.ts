@@ -36,7 +36,7 @@ test("landing: the story (why, how, the demo), then value (free tiles); sides lo
     await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $1M+ bet $299K today. Which side were you on?", { timeout: 5_000 });
   } else {
     await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", /^[1-9]\d*$/);
-    await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$1M\+ bet \$\d+K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
+    await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$100K\+ bet \$\d+K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
   }
   await expect(page.getByTestId("hero-sample")).toHaveAttribute("href", "#free");
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go?step=checkout");

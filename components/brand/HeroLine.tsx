@@ -1,20 +1,20 @@
 "use client";
-/* The hero's live line: "Wallets up $1M+ bet $4.2M today. Which side were you on?" The amount is the real total of
- * millionaire-tier watchlist bets since midnight ET (under $100K: the last 24 hours, said so), re-read every minute.
+/* The hero's live line: "Wallets up $100K+ bet $4.2M today. Which side were you on?" The amount is the real total of
+ * every watched wallet's bets (up $100K+) since midnight ET (under $100K: the last 24 hours, said so), re-read every minute.
  * It shows the real total from first paint (never a count from $0) and ticks to each new total. Reduced motion: no tick. */
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { heroTotal, type Pulse } from "@/lib/millionaires/pulse-shape";
+import { heroTotalAll, type Pulse } from "@/lib/millionaires/pulse-shape";
 import { dollars } from "@/lib/money";
 
 export function HeroLine({ initial }: { initial: Pulse }) {
-  const [t, setT] = useState(() => heroTotal(initial));
+  const [t, setT] = useState(() => heroTotalAll(initial));
   const [shown, setShown] = useState(t.amount);
   const from = useRef<number | null>(t.amount);
 
   useEffect(() => {
     const id = setInterval(async () => {
       if (document.visibilityState !== "visible") return;
-      try { const r = await fetch("/api/millionaires/live?n=1", { cache: "no-store" }); if (r.ok) setT(heroTotal((await r.json()).pulse)); } catch { /* keep */ }
+      try { const r = await fetch("/api/millionaires/live?n=1", { cache: "no-store" }); if (r.ok) setT(heroTotalAll((await r.json()).pulse)); } catch { /* keep */ }
     }, 60_000);
     return () => clearInterval(id);
   }, []);
@@ -39,7 +39,7 @@ export function HeroLine({ initial }: { initial: Pulse }) {
 
   return (
     <p className="b-sub" data-m="lift" style={{ "--d": ".58s" } as CSSProperties} data-testid="hero-line" aria-live="polite">
-      Wallets up $1M+ bet <span className="b-num" style={{ fontWeight: 500, color: "#fff" }} data-testid="hero-total" data-amount={Math.round(t.amount)}>{dollars(shown)}</span> {t.window === "today" ? "today" : "in the last 24 hours"}.<br />{" "}Which side were you on?
+      Wallets up $100K+ bet <span className="b-num" style={{ fontWeight: 500, color: "#fff" }} data-testid="hero-total" data-amount={Math.round(t.amount)}>{dollars(shown)}</span> {t.window === "today" ? "today" : "in the last 24 hours"}.<br />{" "}Which side were you on?
     </p>
   );
 }

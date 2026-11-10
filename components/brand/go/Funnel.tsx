@@ -332,14 +332,14 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       {/* The header: the mark in the middle, the step count on the right (before paying; after, it's account setup). */}
       <header className="b-go-top" aria-hidden="true">
         <span className="b-go-top__mark"><Mark /></span>
-        {shown.includes(step) ? <span className="b-go-top__n">Step {shown.indexOf(step) + 1} of {shown.length}</span> : null}
+        {shown.includes(step) && shown.length > 1 ? <span className="b-go-top__n">Step {shown.indexOf(step) + 1} of {shown.length}</span> : null}
       </header>
       <div className="b-go-bar" role="progressbar" aria-label="Your progress" aria-valuemin={1} aria-valuemax={ORDER.length} aria-valuenow={ORDER.indexOf(step) + 1}
         aria-valuetext={`Step ${ORDER.indexOf(step) + 1} of ${ORDER.length}`} data-testid="go-progress"><span style={{ transform: `scaleX(${progress})` }} /></div>
-      {step === "hook" ? <a className="b-go-back" href="/" aria-label="Back to the home page" data-testid="go-back"><BackArrow /></a>
+      {step === "hook" || (step === "checkout" && start === "checkout") ? <a className="b-go-back" href="/" aria-label="Back to the home page" data-testid="go-back"><BackArrow /></a>
         : BACK[step] ? <button type="button" className="b-go-back" aria-label="Back" data-testid="go-back" onClick={() => go(BACK[step]!)}><BackArrow /></button> : null}
       {ART.includes(step) ? (
-        <div key={step} className="b-go-split">
+        <div key={step} className={step === "checkout" ? "b-go-split b-go-split--checkout" : "b-go-split"}>
           {/* The picture side: the picked category's photo (the brand's, before a pick), and a live millionaire bet over it. */}
           <aside className="b-go-art" aria-hidden="true">
             <div className="b-go-art__frame">

@@ -8,7 +8,7 @@ export const ONE_LINE = "Bet with the people who actually win, on Kalshi, in sec
 export const HERO = {
   h1: ["Bet with the people", "who actually win."],
   sub: "On Kalshi, in seconds, and know when they get out.",
-  /** Under it, the live line (components/brand/HeroLine.tsx): "Wallets up $1M+ bet $X today. Which side were you on?" */
+  /** Under it, the live line (components/brand/HeroLine.tsx): "Wallets up $100K+ bet $X today. Which side were you on?" */
   /** The onboarding's first question, on the first screen: one tap answers it and opens /go at the next step. */
   ask: "What do you bet on?",
   picks: ["football", "basketball", "soccer", "elections", "tennis", "esports"],
@@ -26,7 +26,7 @@ export const PROBLEM = {
 } as const;
 /** How it works: three steps, one sentence each. */
 export const HOW = [
-  { t: "See the money.", d: "Every $1K+ bet from a wallet up $1M+, the second it lands: the market, the side, the price." },
+  { t: "See the money.", d: "Every $1K+ bet from a wallet up $100K+ ($1M+ marked), the second it lands: the market, the side, the price." },
   { t: "Get the ping.", d: "A push the moment a millionaire buys, adds to or sells out of a position in your categories." },
   { t: "Bet at the better price.", d: "Kalshi's price beside Polymarket's, and one tap to the same bet. You decide; we never hold your money." },
 ] as const;
