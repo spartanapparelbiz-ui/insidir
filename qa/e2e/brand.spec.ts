@@ -27,13 +27,14 @@ test("landing: the story (why, how, the demo), then value (free tiles); sides lo
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
   await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("Bet with the people who actually win.");
   await expect(page.getByTestId("hero-sub")).toHaveText("On Kalshi, in seconds, and know when they get out.");
-  // Today's real total since midnight ET: the fixtures' six Millionaire bets of the last 90 minutes ($299K) once they all
+  // Today's real total since midnight ET: every watched wallet's (up $100K+) fixture bets of the last 90 minutes ($320K: the six
+  // Millionaire bets' $299K and the Pro bets') once they all
   // fall after midnight. Within 95 minutes of midnight ET only part of them do: then today's part, or the last 24 hours
   // while today is still under $100K.
   const etMinutes = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()); return Number(p.find(x => x.type === "hour")!.value) * 60 + Number(p.find(x => x.type === "minute")!.value); })();
   if (etMinutes > 95) {
-    await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", "299000");
-    await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $1M+ bet $299K today. Which side were you on?", { timeout: 5_000 });
+    await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", "320000");
+    await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $100K+ bet $320K today. Which side were you on?", { timeout: 5_000 });
   } else {
     await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", /^[1-9]\d*$/);
     await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$100K\+ bet \$\d+K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
