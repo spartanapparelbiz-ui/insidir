@@ -19,6 +19,12 @@ export const EMPTY_ALL: Pulse["all"] = { count: 0, window: "hour", today: 0, sin
 
 /** The hero's live line: today's total (since midnight ET), or the last 24 hours when today is under HERO_MIN. */
 export const HERO_MIN = 100_000;
+/** The same, over every watched wallet (up $100K+): the landing's headline number. */
+export function heroTotalAll(p: Pulse): { amount: number; window: "today" | "24h" } {
+  const a = p.all ?? { sinceMidnight: 0, today: 0 };
+  return a.sinceMidnight >= HERO_MIN ? { amount: a.sinceMidnight, window: "today" } : { amount: a.today, window: "24h" };
+}
+
 export function heroTotal(p: Pulse): { amount: number; window: "today" | "24h" } {
   return p.sinceMidnight >= HERO_MIN ? { amount: p.sinceMidnight, window: "today" } : { amount: p.today, window: "24h" };
 }

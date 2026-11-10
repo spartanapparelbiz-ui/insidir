@@ -10,7 +10,7 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
   await page.goto("/");
   const h1 = page.getByRole("heading", { level: 1 });
   await expect(h1).toHaveText(/Bet with the people\s*who actually win\./);
-  await expect(page.getByTestId("hero-line")).toContainText("Wallets up $1M+ bet");
+  await expect(page.getByTestId("hero-line")).toContainText("Wallets up $100K+ bet");
   // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
   const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
   // Election Day leads the nav on Nov 3–4 ET (lib/brand/pulse.ts electionDay), then drops out.

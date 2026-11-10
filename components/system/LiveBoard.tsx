@@ -72,7 +72,7 @@ export function LiveBoard({ initial, now: now0, copy = true, n = 24, cat: server
                 <span className="b-small s-row__meta">{b.n > 1 ? `${b.n} bets · ` : ""}on <b>{b.outcome}</b> at {b.n > 1 ? "avg " : ""}{cents(b.priceThen)} · now {cents(b.priceNow)}{d ? <span className={d > 0 ? "s-up" : "s-down"}> {d > 0 ? "up" : "down"} {Math.abs(d)}¢</span> : null} · {b.short}{b.pnl !== null ? ` (${b.pnl >= 0 ? "+" : "−"}${dollars(Math.abs(b.pnl))} all-time)` : ""}</span>
                 {betExplain(b) ? <span className="b-small" style={{ gridColumn: "1 / -1" }} data-testid="bet-explain">{betExplain(b)}</span> : null}
               </button>
-              {b.verify ? <span className="s-row__verify"><Verify v={b.verify} marketId={b.marketId} polymarket={polymarket} compact /></span> : null}
+              {b.verify && !(b.verify.locked && !b.verify.tx && !b.verify.address && !b.verify.kalshi) ? <span className="s-row__verify"><Verify v={b.verify} marketId={b.marketId} polymarket={polymarket} compact /></span> : null}
               {on ? <span className="s-row__act">{dec ? <span className="b-small">{decidedText(dec, b.outcome)}</span> : copy ? <a className="b-btn b-btn-lg b-primary" href={`/copy/${encodeURIComponent(b.id)}`} data-testid="bet-copy">Copy at {cents(b.priceNow)}</a> : null}</span> : null}
             </li>
           );
