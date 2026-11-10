@@ -7,7 +7,8 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { tape } from "@/lib/tape";
+import { marketMoves, tape, whaleTicker } from "@/lib/tape";
+import { sampleMarket } from "@/lib/entities/sample";
 
 const URL0 = process.env.E2E_DATABASE_URL;
 const NAME = `terminal_tape_${process.pid}`;
@@ -67,6 +68,31 @@ describe.skipIf(!URL0)("the tape, in Postgres", () => {
     expect(rows.map(r => [r.id, r.trades, r.amount, r.big])).toEqual([["g1", 2, 40_000, true], ["g3", 1, 5_000, false]]);
     expect(rows[0]!.price).toBeCloseTo(0.55);
     await db.delete(schema.millionaireBets).where(sql`id in ('g1','g2','g3')`);
+  });
+
+  it("the whale ticker: $10K+ trades on both venues, the side's probability then ➔ now, links to the market", async () => {
+    await db.insert(schema.marketInfo).values([{ source: "polymarket", marketId: "0xm1", yesPrice: 0.62, closed: false }, { source: "polymarket", marketId: "0xm2", yesPrice: 0.3, closed: false }]);
+    const t = await whaleTicker(db, { now: NOW });
+    expect(t.map(x => x.id)).toEqual(["b1", "w1"]); // b2 ($3K) and k1 ($8K) are under $10K; w2 is a watched wallet's move
+    expect(t[0]).toMatchObject({ venue: "polymarket", outcome: "Bills", amount: 20_000, from: 0.55, to: 0.62, external: false });
+    expect(t[0]!.href).toMatch(/^\/market\//);
+    expect(t.find(x => x.id === "w1")).toMatchObject({ from: 0.5, to: 0.3 });
+    await db.insert(schema.moves).values({ id: "k2", source: "kalshi", marketId: "KX-2", eventTitle: "E", marketTitle: "Heat vs. Bulls", outcome: "Heat", outcomeSide: "no", amount: 15_000, avgPrice: 0.4,
+      wallet: null, walletName: null, at: ago(1), lastAt: ago(1), fills: 1, tab: "sports" as const, league: null, category: "basketball", url: "https://kalshi.com/markets/kx-2" });
+    expect((await whaleTicker(db, { now: NOW }))[0]).toMatchObject({ id: "k2", venue: "kalshi", outcome: "Heat", from: 0.4, to: null, href: "https://kalshi.com/markets/kx-2", external: true });
+    await db.delete(schema.moves).where(sql`id = 'k2'`);
+  });
+
+  it("a market's big-wallet moves: members get the rows, visitors only the count", async () => {
+    const m = await marketMoves(db, "0xm1", { now: NOW, member: true });
+    expect(m.count).toBe(3);
+    expect(m.rows.map(r => [r.id, r.kind])).toEqual([["b1", "bet"], ["ps:1", "exit"], ["b2", "bet"]]);
+    expect(await marketMoves(db, "0xm1", { now: NOW, member: false })).toEqual({ count: 3, rows: [] });
+  });
+
+  it("the sample pages open the open market with the most watched money", async () => {
+    expect(await sampleMarket(db, "sample-polymarket", NOW)).toEqual({ id: "0xm1", title: "Bills vs. Vikings" });
+    expect(await sampleMarket(db, "nba-championship", NOW)).toEqual({ id: "0xm1", title: "Bills vs. Vikings" }); // no NBA market: the sample
   });
 
   it("filters by kind", async () => {

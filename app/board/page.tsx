@@ -4,6 +4,7 @@
  * only, green/red only on price change). The category filter filters everything on the page: the numbers, the live
  * panel, the total and the list. "Wallets up $1M+" means $1M+; Pro wallets ($100K–$1M) only under the Pro filter.
  * Members: live. Visitors: 60 minutes late, sides locked, with the live count and Start for $1. */
+import { DelayNotice } from "@/components/system/DelayNotice";
 import type { Metadata } from "next";
 import { Frame } from "@/components/brand/app/Frame";
 import { LiveFeed } from "@/components/brand/LiveFeed";
@@ -94,6 +95,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
               <a className="b-btn b-panel-pill" aria-pressed={pro} href={href(cat, pro ? "all" : "pro")} data-testid="filter-pro" title="Wallets up $100K–$1M">$100K–$1M</a>
               {CATEGORIES.map(c => <a key={c.slug} className="b-btn b-panel-pill" aria-pressed={cat === c.slug} href={href(c.slug, pro ? "pro" : oneM ? "1m" : "all")}>{c.name}</a>)}
             </ChipRow>
+            <DelayNotice where="board" />
             <LiveFeed initial={{ now, pulse: pl, bets: [...bets] }} n={30} cats={cat ? [cat] : []} board copy={false} tier={tier} polymarket={viewer.region === "non_us"} />
           </div>
         )}

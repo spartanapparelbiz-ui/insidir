@@ -119,3 +119,64 @@ export async function tape(db: Db, o: { now: number; member: boolean; limit?: nu
     };
   });
 }
+
+/* ---------- The whale ticker (components/system/WhaleTicker.tsx, /api/tape/whales): members only ---------- */
+
+export const WHALE_TICKER_MIN = 10_000;
+export interface WhaleTick {
+  id: string; venue: "polymarket" | "kalshi"; at: number;
+  title: string; outcome: string; amount: number;
+  /** The side's implied probability when the trade filled, and the same side's price now (market_info); null when unknown. */
+  from: number | null; to: number | null;
+  /** Our market page (Polymarket), or the market on Kalshi; null when there's neither. */
+  href: string | null; external: boolean;
+}
+
+/** The newest $10K+ trades in the last 6 hours, both venues: watched wallets' bets, any-wallet whales, Kalshi. */
+export async function whaleTicker(db: Db, o: { now: number; limit?: number }): Promise<WhaleTick[]> {
+  const limit = Math.min(Math.max(o.limit ?? 24, 1), 60), since = new Date(o.now - 6 * 3_600_000), until = new Date(o.now);
+  const r = await db.execute(sql`select x.*, i.yes_price from (
+      select b.id, 'polymarket' as venue, b.at, b.market_title as title, b.market_id, b.outcome, b.outcome_side as side, b.price, b.amount, null::text as url
+        from terminal.millionaire_bets b where b.at > ${since} and b.at <= ${until} and b.amount >= ${WHALE_TICKER_MIN}
+      union all
+      select m.id, m.source, m.at, m.market_title, m.market_id, m.outcome, m.outcome_side, m.avg_price, m.amount, m.url
+        from terminal.moves m where m.hidden_at is null and m.amount >= ${WHALE_TICKER_MIN} and m.at > ${since} and m.at <= ${until}
+          and (m.source = 'kalshi' or (m.source = 'polymarket' and (m.wallet is null or not exists (select 1 from terminal.watchlist w where w.wallet = m.wallet))))
+    ) x left join terminal.market_info i on i.source = x.venue and i.market_id = x.market_id
+    order by x.at desc limit ${limit}`);
+  return (r.rows as Array<Record<string, unknown>>).map(x => {
+    const venue = x.venue === "kalshi" ? "kalshi" as const : "polymarket" as const, title = humanLine({ title: String(x.title ?? "") });
+    const yes = nn(x.yes_price), side = x.side === "no" ? "no" : "yes";
+    const from = nn(x.price), to = yes === null ? null : side === "no" ? 1 - yes : yes;
+    const url = x.url ? String(x.url) : null;
+    return {
+      id: String(x.id), venue, at: new Date(String(x.at)).getTime(), title, outcome: x.outcome ? String(x.outcome) : side === "no" ? "No" : "Yes",
+      amount: n(x.amount), from: from !== null && from > 0 && from < 1 ? from : null, to: to !== null && to >= 0 && to <= 1 ? to : null,
+      href: venue === "polymarket" ? marketPath(String(x.market_id), title) : url, external: venue === "kalshi" && url !== null,
+    };
+  });
+}
+
+/* ---------- One market's big-wallet move log (the market page's members-only panel) ---------- */
+
+export interface MarketMove { id: string; kind: "bet" | "trim" | "exit"; at: number; amount: number; tier: "millionaire" | "pro" | null; short: string; outcome: string | null; price: number | null }
+
+/** The last 7 days of $1K+ bets, trims and exits by watched wallets on one market, newest first, and how many there
+ *  were. Visitors get the count only (the rows name sides). */
+export async function marketMoves(db: Db, marketId: string, o: { now: number; member: boolean; limit?: number }): Promise<{ count: number; rows: MarketMove[] }> {
+  const since = new Date(o.now - 7 * DAY), until = new Date(o.now);
+  const r = await db.execute(sql`select * from (
+      select id, 'bet' as kind, at, amount, tier, wallet, outcome, price from terminal.millionaire_bets where market_id = ${marketId} and at > ${since} and at <= ${until}
+      union all
+      select id, kind, at, amount, tier, wallet, outcome, price from terminal.position_events where market_id = ${marketId} and kind in ('trim', 'exit') and at > ${since} and at <= ${until}
+    ) x order by at desc`);
+  const all = r.rows as Array<Record<string, unknown>>;
+  if (!o.member) return { count: all.length, rows: [] };
+  return {
+    count: all.length,
+    rows: all.slice(0, o.limit ?? 12).map(x => ({
+      id: String(x.id), kind: x.kind === "trim" || x.kind === "exit" ? x.kind : "bet", at: new Date(String(x.at)).getTime(), amount: n(x.amount),
+      tier: x.tier === "millionaire" || x.tier === "pro" ? x.tier : null, short: shortWallet(String(x.wallet)), outcome: x.outcome ? String(x.outcome) : null, price: nn(x.price),
+    })),
+  };
+}

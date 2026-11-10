@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
 import { ThemeToggle } from "./ThemeToggle";
-import { COMPANY, DATA_COMPANY, GAMBLER, FOOTER } from "@/lib/copy";
+import { COMPANY, DATA_COMPANY, DISCLAIMER, GAMBLER, FOOTER } from "@/lib/copy";
 
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
 const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m": kind, style: { "--d": `${d}s` } as CSSProperties } : {});
@@ -80,6 +80,7 @@ export function BrandFoot({ inline = false }: { inline?: boolean }) {
         <span>{DATA_COMPANY}</span>
         <span>{GAMBLER}</span>
         <span>{FOOTER} Operated by Aethric LLC.</span>
+        <span className="b-foot__disclaimer" data-testid="footer-disclaimer">{DISCLAIMER}</span>
       </div>
     </footer>
   );

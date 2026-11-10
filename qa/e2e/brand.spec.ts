@@ -25,8 +25,8 @@ test("landing: the story (why, how, the demo), then value (free tiles); sides lo
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
-  await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("Bet with the people who actually win.");
-  await expect(page.getByTestId("hero-sub")).toHaveText("On Kalshi, in seconds, and know when they get out.");
+  await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("Real-Time Prediction Market & Sports Trading Intelligence.");
+  await expect(page.getByTestId("hero-sub")).toHaveText("Track whale trades, arbitrage line mispricings across Polymarket & Kalshi, and catch volume spikes before odds shift.");
   // Today's real total since midnight ET: every watched wallet's (up $100K+) fixture bets of the last 90 minutes ($320K: the six
   // Millionaire bets' $299K and the Pro bets') once they all
   // fall after midnight. Within 95 minutes of midnight ET only part of them do: then today's part, or the last 24 hours
@@ -39,7 +39,9 @@ test("landing: the story (why, how, the demo), then value (free tiles); sides lo
     await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", /^[1-9]\d*$/);
     await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$100K\+ bet \$\d+K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
   }
-  await expect(page.getByTestId("hero-sample")).toHaveAttribute("href", "#free");
+  await expect(page.getByTestId("hero-markets")).toHaveAttribute("href", "/markets");
+  await expect(page.getByTestId("hero-markets")).toHaveText("View Live Markets");
+  await expect(page.getByTestId("hero-start")).toHaveText("Unlock Real-Time Alerts");
   await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go?step=checkout");
   // The first onboarding question on the first screen: a chip opens the $1 checkout with that answer kept.
   await expect(page.getByTestId("hero-chip")).toHaveCount(6);

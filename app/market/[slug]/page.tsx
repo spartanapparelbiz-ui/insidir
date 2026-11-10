@@ -3,6 +3,12 @@
  * related markets. Visitors: the board's rules (no side) and its 60-minute delay; members see everything live. An old
  * id link, a Kalshi ticker or a slug whose words changed opens it too, with the canonical link on the human slug. Not
  * advice. */
+import { redirect } from "next/navigation";
+import { isSampleSlug, sampleMarket } from "@/lib/entities/sample";
+import { marketDepth } from "@/lib/markets/depth";
+import { marketMoves } from "@/lib/tape";
+import { MarketDepth, MoveLog } from "@/components/system/MarketExtras";
+import { DelayNotice } from "@/components/system/DelayNotice";
 import { nearestKalshi } from "@/lib/twins/nearest";
 import type { Metadata } from "next";
 import { humanLine } from "@/lib/markets/title";
@@ -48,6 +54,8 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   if (!hasDatabase()) notFound();
   const db = getDb(), now = Date.now();
+  // The public samples (/market/sample-polymarket, /market/nba-championship) open today's real market.
+  if (isSampleSlug(slug)) { const s = await sampleMarket(db, slug, now).catch(() => null); if (!s) notFound(); redirect(marketPath(s.id, s.title)); }
   const [ref, viewer] = await Promise.all([resolveMarketSlug(db, slug).catch(() => null), getViewer()]);
   if (!ref) notFound();
   const canonical = marketPath(ref.id, ref.title);
@@ -75,6 +83,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   const briefing = await Promise.race([getBriefing(db, ref.id, now).catch(() => null), new Promise<null>(r => setTimeout(() => r(null), 6000))]);
   if (briefing && member && viewer.user) await logTold(db, viewer.user.id, briefing, now).catch(() => undefined);
   const gated = briefing ? gateBriefing(briefing, member) : null;
+  const [depth, moves] = await Promise.all([m.closed ? null : marketDepth(db, ref.id, now), marketMoves(db, ref.id, { now, member }).catch(() => ({ count: 0, rows: [] }))]);
   return (
     <Frame member={member} current="markets" testid="market-page">
       {/* Logos never sit on a photo: a game's hero is the plain stage, its two logos the only images. */}
@@ -123,8 +132,23 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         </Stage>
       ) : null}
 
+      {depth ? (
+        <Stage bg={{ kind: "globe", dark: 0.7 }} testid="market-book" labelledBy="book-h">
+          <div className="b-head"><Lines as="h2" id="book-h" lines={["Spread and depth."]} size={48} /><p className="b-sub">The order book now, and Kalshi&apos;s price beside it.</p></div>
+          <Panel className="s-col"><MarketDepth d={depth} yesLabel={m.yesLabel} twin={m.twin} /></Panel>
+        </Stage>
+      ) : null}
+
+      {moves.count ? (
+        <Stage bg={{ kind: "globe", dark: 0.7 }} testid="market-alerts" labelledBy="alerts-h">
+          <div className="b-head"><Lines as="h2" id="alerts-h" lines={["Big-wallet moves."]} size={48} /><p className="b-sub">Every bet, trim and exit by wallets up $100K+ here, last 7 days.</p></div>
+          <Panel className="s-col"><MoveLog count={moves.count} rows={moves.rows} member={member} /></Panel>
+        </Stage>
+      ) : null}
+
       <Stage bg={{ kind: "globe", dark: 0.7 }} testid="market-bets" labelledBy="bets-h">
         <div className="b-head"><Lines as="h2" id="bets-h" lines={["Every bet."]} size={48} />{member ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
+        {member ? null : <div className="s-col"><DelayNotice where="market" /></div>}
         {m.bets.length ? (
           <ul className="b-rows s-board" data-testid="market-bet-rows">{m.bets.slice(0, 100).map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
         ) : <p className="b-empty b-center">{member ? "No bets yet." : "No bets older than an hour yet."}</p>}
