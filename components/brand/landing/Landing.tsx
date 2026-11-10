@@ -34,9 +34,9 @@ import { ElectionStage } from "./Value";
 function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
   return (
     <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
-      <BrandNav motion election={electionDay(Date.now())} />
+      <BrandNav motion startHref="/go?step=checkout" election={electionDay(Date.now())} />
       <div className="b-hero-inner">
-        <a className="b-offer" href="/go?step=cats" data-checkout="hero-offer" data-testid="hero-offer" data-m="settle" style={{ "--d": ".1s" } as CSSProperties}><b>{`$${TRIAL.fee} for ${TRIAL.days} days`}</b><span>Your AI analyst included</span></a>
+        <a className="b-offer" href="/go?step=checkout" data-checkout="hero-offer" data-testid="hero-offer" data-m="settle" style={{ "--d": ".1s" } as CSSProperties}><b>{`$${TRIAL.fee} for ${TRIAL.days} days`}</b><span>Your AI analyst included</span></a>
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
         <HeroLine initial={d.pulse} />
@@ -44,12 +44,12 @@ function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
         <div className="b-heropick" data-m="settle" style={{ "--d": ".8s" } as CSSProperties} data-testid="hero-pick">
           <span className="b-heropick__q">{HERO.ask}</span>
           <div className="b-heropick__row">
-            {HERO.picks.map(c => <a key={c} className="b-heropick__chip" href={`/go?step=where&cats=${c}`} data-testid="hero-chip" data-checkout="hero-pick">{categoryInfo(c).name}</a>)}
-            <a className="b-heropick__chip b-heropick__chip--more" href="/go?step=cats" data-testid="hero-chip-more">More</a>
+            {HERO.picks.map(c => <a key={c} className="b-heropick__chip" href={`/go?step=checkout&cats=${c}`} data-testid="hero-chip" data-checkout="hero-pick">{categoryInfo(c).name}</a>)}
+            <a className="b-heropick__chip b-heropick__chip--more" href="/go?step=checkout" data-testid="hero-chip-more">More</a>
           </div>
         </div>
         <div className="b-ctas">
-          <Pill href="/go?step=cats" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
+          <Pill href="/go?step=checkout" delay={0.9} data-testid="hero-start" data-checkout="hero">Start for $1</Pill>
           <Pill href="#free" kind="ghost" delay={0.97} data-testid="hero-sample">See a free sample</Pill>
         </div>
         <p className="b-hero-terms" data-m="quiet" style={{ "--d": "1.05s" } as CSSProperties} data-testid="hero-terms">{STAGES.pricingSub} Apple Pay, Google Pay or card.</p>
@@ -126,7 +126,7 @@ function Pricing() {
       <div className="b-center">
         <Lines id="price-h" lines={STAGES.pricing} size={72} />
         <p className="b-sub" {...m("lift", 0.58)} data-testid="price-line">{STAGES.pricingSub}</p>
-        <div className="b-ctas"><Pill href="/go" delay={0.9} data-testid="pricing-cta" data-checkout="pricing">Start for $1</Pill></div>
+        <div className="b-ctas"><Pill href="/go?step=checkout" delay={0.9} data-testid="pricing-cta" data-checkout="pricing">Start for $1</Pill></div>
       </div>
     </Stage>
   );
@@ -148,7 +148,7 @@ function Final() {
       <div className="b-center">
         <Lines id="final-h" lines={STAGES.final} />
         <div className="b-ctas">
-          <Pill href="/go" delay={0.9} data-testid="final-start" data-checkout="final">Start for $1</Pill>
+          <Pill href="/go?step=checkout" delay={0.9} data-testid="final-start" data-checkout="final">Start for $1</Pill>
           <Pill href="/board" kind="ghost" delay={0.97}>See the board</Pill>
         </div>
       </div>

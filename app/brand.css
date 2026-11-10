@@ -1737,6 +1737,8 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
 .tp__amt { font-size: 15px; font-weight: 600; }
 .tp__side { color: var(--ink-muted); font-size: 12px; white-space: nowrap; }
 .tp__side--locked { color: var(--dim); }
+.tp__big { display: inline-block; margin-right: 8px; padding: 1px 6px; border-radius: 5px; background: var(--ink); color: var(--btn-ink, #050505); font-size: 10px; font-weight: 600; letter-spacing: .08em; vertical-align: 2px; }
+.tp__n { color: var(--dim); font-size: 11.5px; white-space: nowrap; }
 .tp__src { margin: 0; }
 @media (max-width: 760px) {
   .tp__row > a, .tp__row > div { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 4px 10px; }
@@ -1747,3 +1749,9 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
   .tp__m { white-space: normal; }
   .tp__live { margin-left: 0; width: 100%; }
 }
+
+/* /go?step=checkout straight from the landing: what $1 gets, the price in full, then the checkout. */
+.go-get { display: grid; gap: 12px; }
+.go-get__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.go-get__list li { position: relative; padding-left: 20px; font-size: 14px; line-height: 1.45; }
+.go-get__list li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }

@@ -15,7 +15,7 @@ test("landing: final on first paint, the hero's words and its CTAs, the nav, no 
   const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
   // Election Day leads the nav on Nov 3–4 ET (lib/brand/pulse.ts electionDay), then drops out.
   if (page.viewportSize()!.width > 1160) expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
-  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");
+  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go?step=checkout");
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
   // The pitch (the footer's "isn't affiliated with … the SEC" aside).
   const text = await page.evaluate(() => { const m = document.querySelector("main")!.cloneNode(true) as HTMLElement; m.querySelectorAll("footer").forEach(f => f.remove()); return m.innerText; });

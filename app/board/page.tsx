@@ -20,7 +20,7 @@ import { boardInsight, streamFor } from "@/lib/home/data";
 import { headlineLines } from "@/lib/market/headline";
 import { BOARD_DELAY_MS, pulse, recentBets, type BoardBet } from "@/lib/millionaires/queries";
 import { dollars } from "@/lib/money";
-import { tape, type TapeRow } from "@/lib/tape";
+import { MAIN_KINDS, tape, type TapeRow } from "@/lib/tape";
 import { Tape } from "@/components/system/Tape";
 import { isPaid } from "@/lib/plans";
 
@@ -44,7 +44,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
     safe(pulse(db, now, cat), null),
     safe(recentBets(db, { now, limit: member ? 40 : 30, member, tier: tier === "all" ? undefined : tier, categories: cat ? [cat] : undefined, delayMs: member ? 0 : BOARD_DELAY_MS }), []),
     member && oneM ? safe(streamFor(db, now, cat ?? undefined), null) : Promise.resolve(null),
-    safe(tape(db, { now, member, limit: 40 }), [] as TapeRow[]),
+    safe(tape(db, { now, member, limit: 40, kinds: MAIN_KINDS }), [] as TapeRow[]),
   ]) : [null, [] as BoardBet[], null, [] as TapeRow[]] as const;
   const pl = p ?? EMPTY_PULSE;
   const where = cat ? ` in ${categoryInfo(cat).name}` : "";

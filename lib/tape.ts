@@ -18,6 +18,8 @@ import { betPath, marketPath } from "@/lib/entities/slug";
 
 export const TAPE_KINDS = ["bet", "trim", "exit", "whale", "kalshi"] as const;
 export type TapeKind = typeof TAPE_KINDS[number];
+/** "Everything": the wallets we can name. Kalshi (anonymous, many small fills) has its own filter. */
+export const MAIN_KINDS: readonly TapeKind[] = ["bet", "trim", "exit", "whale"];
 export const isTapeKind = (k: unknown): k is TapeKind => typeof k === "string" && (TAPE_KINDS as readonly string[]).includes(k);
 
 export interface TapeRow {
@@ -31,7 +33,15 @@ export interface TapeRow {
   short: string | null; pnl: number | null; record: { won: number; lost: number } | null; newWallet: boolean | null;
   /** The $100K+ wallets' money in this market over 7 days: per side for members, the total for everyone. */
   market: { total: number; wallets: number; yes: number | null; no: number | null } | null;
+  /** Trades folded into this row: the same wallet (or Kalshi market) on the same market and side within 10 minutes. */
+  trades: number; firstAt: number;
+  /** $25K or more in this row. */
+  big: boolean;
 }
+
+/** Repeat trades within this window fold into one row. */
+export const GROUP_MS = 10 * 60_000;
+export const BIG = 25_000;
 
 const DAY = 86_400_000;
 const n = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
@@ -40,32 +50,46 @@ const cat = (c: unknown): CategorySlug => (isCategory(String(c)) ? (String(c) as
 
 /** Newest first, merged, `limit` rows; `kinds` narrows it. */
 export async function tape(db: Db, o: { now: number; member: boolean; limit?: number; kinds?: readonly TapeKind[]; since?: number }): Promise<TapeRow[]> {
-  const limit = Math.min(Math.max(o.limit ?? 40, 1), 100);
+  const limit = Math.min(Math.max(o.limit ?? 40, 1), 100), raw = limit * 4;
   const until = new Date(o.now - (o.member ? 0 : BOARD_DELAY_MS)), since = new Date(o.since ?? o.now - DAY);
   const want = (k: TapeKind) => !o.kinds?.length || o.kinds.includes(k);
   const [bets, exits, whales, kalshi] = await Promise.all([
     want("bet") ? db.execute(sql`select b.id, 'bet' as kind, b.at, b.market_title as title, b.category, b.market_id, b.amount, b.outcome_side as side, b.outcome, b.price,
         b.tier, b.wallet, w.pnl, r.won, r.lost, null::boolean as new_wallet
       from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet left join terminal.trader_records r on r.wallet = b.wallet
-      where b.at > ${since} and b.at <= ${until} order by b.at desc limit ${limit}`).then(r => r.rows) : Promise.resolve([]),
+      where b.at > ${since} and b.at <= ${until} order by b.at desc limit ${raw}`).then(r => r.rows) : Promise.resolve([]),
     want("trim") || want("exit") ? db.execute(sql`select e.id, e.kind, e.at, e.market_title as title, e.category, e.market_id, e.amount, e.outcome_side as side, e.outcome, e.price,
         e.tier, e.wallet, w.pnl, r.won, r.lost, null::boolean as new_wallet
       from terminal.position_events e left join terminal.watchlist w on w.wallet = e.wallet left join terminal.trader_records r on r.wallet = e.wallet
-      where e.kind in ('trim', 'exit') and e.at > ${since} and e.at <= ${until} order by e.at desc limit ${limit}`).then(r => r.rows.filter(x => want(String(x.kind) as TapeKind))) : Promise.resolve([]),
+      where e.kind in ('trim', 'exit') and e.at > ${since} and e.at <= ${until} order by e.at desc limit ${raw}`).then(r => r.rows.filter(x => want(String(x.kind) as TapeKind))) : Promise.resolve([]),
     want("whale") ? db.execute(sql`select m.id, 'whale' as kind, m.at, m.market_title as title, m.category, m.market_id, m.amount, m.outcome_side as side, m.outcome, m.avg_price as price,
         'whale' as tier, m.wallet, p.pnl, r.won, r.lost, m.new_wallet
       from terminal.moves m left join terminal.wallet_pnl p on p.wallet = m.wallet left join terminal.trader_records r on r.wallet = m.wallet
       where m.source = 'polymarket' and m.hidden_at is null and m.wallet is not null and m.at > ${since} and m.at <= ${until}
         and not exists (select 1 from terminal.watchlist w where w.wallet = m.wallet)
-      order by m.at desc limit ${limit}`).then(r => r.rows) : Promise.resolve([]),
+      order by m.at desc limit ${raw}`).then(r => r.rows) : Promise.resolve([]),
     want("kalshi") ? db.execute(sql`select m.id, 'kalshi' as kind, m.at, m.market_title as title, m.category, m.market_id, m.amount, m.outcome_side as side, m.outcome, m.avg_price as price,
         null as tier, null as wallet, null::float8 as pnl, null::int as won, null::int as lost, null::boolean as new_wallet
       from terminal.moves m where m.source = 'kalshi' and m.hidden_at is null and m.at > ${since} and m.at <= ${until}
-      order by m.at desc limit ${limit}`).then(r => r.rows) : Promise.resolve([]),
+      order by m.at desc limit ${raw}`).then(r => r.rows) : Promise.resolve([]),
   ]);
   const all = [...bets, ...exits, ...whales, ...kalshi] as Array<Record<string, unknown>>;
   all.sort((a, b) => new Date(String(b.at)).getTime() - new Date(String(a.at)).getTime());
-  const rows = all.slice(0, limit);
+  // Fold repeat trades (a wallet splitting one bet into many fills) into one row: same kind, market, wallet and side,
+  // each within GROUP_MS of the next. The newest trade gives the row its id and time; amounts add up, the price is
+  // the money-weighted average.
+  type G = { r: Record<string, unknown>; amount: number; px: number; trades: number; oldest: number };
+  const groups: G[] = [], open = new Map<string, G>();
+  for (const r of all) {
+    const at = new Date(String(r.at)).getTime(), amt = n(r.amount), p = nn(r.price);
+    const key = [r.kind, r.market_id, r.wallet ?? "", r.side ?? ""].join("|");
+    const g = open.get(key);
+    if (g && g.oldest - at <= GROUP_MS) { g.amount += amt; g.px += (p ?? 0) * amt; g.trades += 1; g.oldest = at; continue; }
+    const ng = { r, amount: amt, px: (p ?? 0) * amt, trades: 1, oldest: at };
+    open.set(key, ng); groups.push(ng);
+  }
+  const kept = groups.slice(0, limit);
+  const rows = kept.map(g => g.r);
   // The big money in each market on the tape (Polymarket markets; the $100K+ wallets, 7 days).
   const ids = [...new Set(rows.filter(r => r.kind !== "kalshi").map(r => String(r.market_id)))];
   const money = new Map<string, { yes: number; no: number; wallets: number }>();
@@ -76,21 +100,22 @@ export async function tape(db: Db, o: { now: number; member: boolean; limit?: nu
         and market_id in (${sql.join(ids.map(i => sql`${i}`), sql`, `)}) group by market_id`).catch(() => ({ rows: [] }));
     for (const x of r.rows as Array<Record<string, unknown>>) money.set(String(x.market_id), { yes: n(x.yes), no: n(x.no), wallets: n(x.wallets) });
   }
-  return rows.map(r => {
-    const kind = String(r.kind) as TapeKind, id = String(r.id), title = humanLine({ title: String(r.title ?? "") }), mid = String(r.market_id);
+  return kept.map(g => {
+    const r = g.r, kind = String(r.kind) as TapeKind, id = String(r.id), title = humanLine({ title: String(r.title ?? "") }), mid = String(r.market_id);
     const m = money.get(mid), wallet = r.wallet ? String(r.wallet) : null;
     const tier = r.tier === "millionaire" || r.tier === "pro" || r.tier === "whale" ? r.tier : null;
     return {
       id, kind, at: new Date(String(r.at)).getTime(), title, category: cat(r.category), marketId: mid,
       href: kind === "bet" ? betPath(id) : kind === "kalshi" ? null : marketPath(mid, title),
-      amount: n(r.amount),
+      amount: g.amount,
       side: o.member ? (r.side === "no" ? "no" : r.side === "yes" ? "yes" : null) : null,
       outcome: o.member && r.outcome ? String(r.outcome) : null,
-      price: o.member ? nn(r.price) : null,
+      price: o.member && r.price !== null && r.price !== undefined && g.amount > 0 ? g.px / g.amount : null,
       tier, short: wallet ? shortWallet(wallet) : null, pnl: nn(r.pnl),
       record: r.won !== null && r.won !== undefined ? { won: n(r.won), lost: n(r.lost) } : null,
       newWallet: r.new_wallet === null || r.new_wallet === undefined ? null : Boolean(r.new_wallet),
       market: m ? { total: m.yes + m.no, wallets: m.wallets, yes: o.member ? m.yes : null, no: o.member ? m.no : null } : null,
+      trades: g.trades, firstAt: g.oldest, big: g.amount >= BIG,
     };
   });
 }

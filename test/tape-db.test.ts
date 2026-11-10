@@ -1,5 +1,6 @@
 /* The tape (lib/tape.ts) against a throwaway Postgres next to E2E_DATABASE_URL: every kind merged newest first, whales are
  * wallets outside the watchlist, visitors 60 minutes late with no side, outcome or price, and the big money per market. */
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
@@ -33,7 +34,7 @@ describe.skipIf(!URL0)("the tape, in Postgres", () => {
     await db.insert(schema.positionEvents).values({ id: "ps:1", wallet: W(1), tier: "millionaire", marketId: "0xm1", outcomeSide: "yes", outcome: "Bills", marketTitle: "Bills vs. Vikings",
       eventTitle: "Bills vs. Vikings", category: "football", url: null, kind: "exit", amount: 12_000, price: 0.6, shares: 20_000, heldAfter: 0, at: ago(70), lastAt: ago(70) });
     const move = (id: string, source: "polymarket" | "kalshi", wallet: string | null, m: number, amount: number) => ({ id, source, marketId: source === "kalshi" ? "KX-1" : "0xm2", eventTitle: "E", marketTitle: "Lakers vs. Hawks",
-      outcome: "Lakers", outcomeSide: "yes" as const, amount, avgPrice: 0.5, wallet, walletName: null, at: ago(m), lastAt: ago(m), fills: 1, tab: "sports", league: null, category: "basketball", url: null });
+      outcome: "Lakers", outcomeSide: "yes" as const, amount, avgPrice: 0.5, wallet, walletName: null, at: ago(m), lastAt: ago(m), fills: 1, tab: "sports" as const, league: null, category: "basketball", url: null });
     await db.insert(schema.moves).values([move("w1", "polymarket", W(9), 80, 25_000), move("w2", "polymarket", W(1), 75, 30_000), move("k1", "kalshi", null, 100, 8_000)]);
   }, 60_000);
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
@@ -54,6 +55,18 @@ describe.skipIf(!URL0)("the tape, in Postgres", () => {
     expect(rows.map(r => r.id)).toEqual(["ps:1", "w1", "b2", "k1"]); // b1 (5 minutes old) isn't there yet
     for (const r of rows) expect({ side: r.side, outcome: r.outcome, price: r.price }).toEqual({ side: null, outcome: null, price: null });
     expect(rows.find(r => r.id === "ps:1")!.market).toEqual({ total: 3_000, wallets: 1, yes: null, no: null });
+  });
+
+  it("folds a wallet's repeat trades on one market and side into one row, money-weighted", async () => {
+    await db.insert(schema.millionaireBets).values([
+      { id: "g1", wallet: W(1), tier: "millionaire", source: "polymarket", marketId: "0xg", eventTitle: "G", marketTitle: "Jets vs. Bears", outcome: "Jets", outcomeSide: "yes", amount: 10_000, price: 0.4, category: "football", url: null, at: ago(2), lastAt: ago(2) },
+      { id: "g2", wallet: W(1), tier: "millionaire", source: "polymarket", marketId: "0xg", eventTitle: "G", marketTitle: "Jets vs. Bears", outcome: "Jets", outcomeSide: "yes", amount: 30_000, price: 0.6, category: "football", url: null, at: ago(8), lastAt: ago(8) },
+      { id: "g3", wallet: W(1), tier: "millionaire", source: "polymarket", marketId: "0xg", eventTitle: "G", marketTitle: "Jets vs. Bears", outcome: "Jets", outcomeSide: "yes", amount: 5_000, price: 0.5, category: "football", url: null, at: ago(40), lastAt: ago(40) },
+    ]);
+    const rows = (await tape(db, { now: NOW, member: true, kinds: ["bet"] })).filter(r => r.marketId === "0xg");
+    expect(rows.map(r => [r.id, r.trades, r.amount, r.big])).toEqual([["g1", 2, 40_000, true], ["g3", 1, 5_000, false]]);
+    expect(rows[0]!.price).toBeCloseTo(0.55);
+    await db.delete(schema.millionaireBets).where(sql`id in ('g1','g2','g3')`);
   });
 
   it("filters by kind", async () => {
