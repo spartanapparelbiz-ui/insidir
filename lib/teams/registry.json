@@ -5300,6 +5300,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_depaul_60000066.png"
     },
     {
+     "abbr": "des",
+     "name": "DeSales Bulldogs",
+     "short": "DeSales Bulldogs",
+     "color": "#99a8ab",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "det",
      "name": "Detroit Titans",
      "short": "Detroit Titans",
@@ -5545,6 +5556,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_fairdk_60000224.png"
     },
     {
+     "abbr": "ferrum",
+     "name": "Ferrum Panthers",
+     "short": "Ferrum Panthers",
+     "color": "#9e8742",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 249×249, under 400px"
+    },
+    {
      "abbr": "fisk",
      "name": "Fisk Bulldogs",
      "short": "Fisk Bulldogs",
@@ -5603,6 +5625,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_flint_60000140.png"
+    },
+    {
+     "abbr": "flmem",
+     "name": "Florida Memorial Lions",
+     "short": "Florida Memorial Lions",
+     "color": "#254798",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 175×175, under 400px"
     },
     {
      "abbr": "flst",
@@ -6680,6 +6713,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_mia_60000023.png"
     },
     {
+     "abbr": "miah",
+     "name": "Miami-Hamilton Harriers",
+     "short": "Miami-Hamilton Harriers",
+     "color": "#d92020",
+     "logo": "/teams/cbb/miah",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Miami-Hamilton Harriers-43540a1137.jpg",
+     "note": "background keyed out"
+    },
+    {
      "abbr": "miaoh",
      "name": "Miami (OH) RedHawks",
      "short": "Miami OH",
@@ -6944,6 +6988,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 225×225, under 400px"
+    },
+    {
+     "abbr": "myvlst",
+     "name": "Mayville State Comets",
+     "short": "Mayville State Comets",
+     "color": "#2127de",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "nal",
@@ -8514,6 +8569,16 @@
      "source": null,
      "sourceUrl": null,
      "note": "placeholder image shared by 7 teams"
+    },
+    {
+     "abbr": "uccs",
+     "name": "Colorado-Colorado Springs Mountain Lions",
+     "short": "Colorado-Colorado Springs Mountain Lions",
+     "color": "#ceb576",
+     "logo": "/teams/cbb/uccs",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Colorado-Colorado Springs Mountain Lions-0efd4c4123.png"
     },
     {
      "abbr": "ucdv",
