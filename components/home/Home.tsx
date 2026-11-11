@@ -162,7 +162,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
           <div className="b-head"><p className="hm-eyebrow">Your desk</p><Insight id="desk-h" as="h2" text={d.insight.desk} fallback={["Your desk."]} size={52} /><p className="hm-plain"><b>In plain English:</b> your own corner: trades you copied, wallets you follow, and your pings.</p></div>
           <div className="s-cards">
             <Panel className="s-desk" testid="desk-copies">
-              <p className="b-label">Your copies</p>
+              <p className="b-label">Ledger</p>
               {d.copies && d.copies.list.length ? (
                 <ul className="s-lockrows">{d.copies.list.slice(0, 5).map(x => (
                   <li key={x.id}><span>{x.title} · <b>{x.outcome}</b> at {cents(x.price)}</span><span className="b-small">{x.result === "won" ? `Won ${signed(x.pnl ?? 0)}` : x.result === "lost" ? `Lost ${signed(x.pnl ?? 0)}` : x.result === "void" ? "Void" : d.copyNow[x.id] !== undefined ? <>Now {cents(d.copyNow[x.id]!)}{(() => { const m = Math.round((d.copyNow[x.id]! - x.price) * 100); return m ? <span className={m > 0 ? "s-up" : "s-down"}> {m > 0 ? "up" : "down"} {Math.abs(m)}¢</span> : null; })()}</> : "Open"}</span></li>

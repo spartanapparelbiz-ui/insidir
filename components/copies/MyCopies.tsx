@@ -95,7 +95,7 @@ export async function MyCopies({ db, viewer, now }: { db: Db | null; viewer: Vie
   return (
     <div data-testid="my-copies">
       <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="copies-result" labelledBy="mycp-h">
-        <div className="b-head"><Insight id="mycp-h" text={lead} fallback={["My copies."]} size={56} />
+        <div className="b-head"><Insight id="mycp-h" text={lead} fallback={["Copying wallets."]} size={56} />
           <p className="b-sub" data-m="lift">At ${size} a move, counting only moves shown after each copy began, bought at the price Insidir showed plus one point, held to settlement.</p></div>
         <Panel className="s-col s-col--wide"><ul className="s-lockrows">{pnl.map(p => <PnlLine key={`${p.copy.kind}:${p.copy.target}`} p={p} size={size} />)}</ul>
           <div className="b-ctas"><Pill href="/settings#copy-size" kind="ghost">Change your size</Pill><Pill href="/wallets" kind="ghost">Copy another wallet</Pill></div></Panel>

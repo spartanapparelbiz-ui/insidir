@@ -12,7 +12,7 @@ import { CopyLedger } from "@/components/copies/CopyLedger";
 import { myCopies } from "@/lib/copies/mine";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "My copies", robots: { index: false } };
+export const metadata: Metadata = { title: "Ledger", robots: { index: false } };
 
 export default async function CopiesPage() {
   const viewer = await requireMember("/copies");
@@ -21,8 +21,8 @@ export default async function CopiesPage() {
   return (
     <Frame member current="copies" testid="copies-page">
       <Stage first testid="copies-ledger" labelledBy="cl-h">
-        <div className="b-head"><Lines as="h1" id="cl-h" lines={["My copies."]} size={56} /></div>
-        {mine ? <CopyLedger list={mine.list} totals={mine.totals} /> : <p className="b-empty">Your copies couldn&apos;t load. Refresh to try again.</p>}
+        <div className="b-head"><Lines as="h1" id="cl-h" lines={["Ledger."]} size={56} /></div>
+        {mine ? <CopyLedger list={mine.list} totals={mine.totals} /> : <p className="b-empty">Your ledger couldn&apos;t load. Refresh to try again.</p>}
       </Stage>
       <MyCopies db={hasDatabase() ? getDb() : null} viewer={viewer} now={Date.now()} />
       <ScrollFx />
