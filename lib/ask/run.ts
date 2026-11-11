@@ -26,7 +26,7 @@ export const NOT_HAVE = "I don't have that.";
 export const ASK_EXAMPLES = [
   "Who's the best NFL wallet this month and what's he on today?",
   "Is anyone big against my Chargers trade?",
-  "Why did the Hegseth odds move?",
+  "Why did the Hegseth price move?",
 ] as const;
 
 const SYSTEM = `You are Ask Insidir. Answer using ONLY Insidir's read-only tools, which return tables of what large, proven Polymarket wallets trade, their settled records, the money on each side of a market, the asker's watched trades, and price history.

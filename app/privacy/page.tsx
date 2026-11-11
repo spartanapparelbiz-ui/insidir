@@ -13,7 +13,7 @@ export default function PrivacyPage() {
     <TrustPage path="/privacy" title="Privacy" updated="November 1, 2026"
       lead={`Insidir is operated by ${COMPANY.name}, ${COMPANY.place}, which decides what is kept and is responsible for it. This page says what we keep about you, why, who else sees it, and how to delete it. We don't sell your data and we don't use ad trackers.`}>
       <h2>The data we show</h2>
-      <p>Bets, prices and records come from public sources: Polymarket&apos;s public trade data and Kalshi&apos;s public market data. A Polymarket wallet is only ever shown by its short address; we never try to work out who is behind it.</p>
+      <p>Trades, prices and records come from public sources: Polymarket&apos;s public trade data and Kalshi&apos;s public market data. A Polymarket wallet is only ever shown by its short address; we never try to work out who is behind it.</p>
 
       <h2>What we keep about you</h2>
       <ul>
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
 
       <h2>Who else handles data</h2>
       <ul>
-        <li><strong>Whop</strong>: sign-in, payments and memberships.</li>
+        <li><strong>Our payment and sign-in provider</strong>: sign-in, payments and memberships.</li>
         <li><strong>OpenRouter</strong> and the AI model it routes to: writing the analyst's notes.</li>
         <li><strong>Your browser&apos;s push service</strong> (Apple, Google or Mozilla): delivering alerts you turned on.</li>
         <li><strong>Railway</strong>: hosting the site and the database.</li>

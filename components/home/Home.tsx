@@ -47,7 +47,7 @@ async function GapsStage({ now }: { now: number }) {
   const g = gaps[0]!;
   return (
     <Stage bg={{ kind: "photo", photo: PHOTOS.golf, dark: 0.6 }} id="prices" testid="home-gaps" labelledBy="gap-h">
-      <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={`${g.outcome} costs ${cents(g.kalshi)} on Kalshi and ${cents(g.polymarket)} on Polymarket.`} fallback={["Same trade,", "two prices."]} size={52} /><p className="hm-plain"><b>In plain English:</b> the same bet costs different amounts on Kalshi and Polymarket. Buying where it&apos;s cheaper means a bigger payout if you win.</p></div>
+      <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={`${g.outcome} costs ${cents(g.kalshi)} on Kalshi and ${cents(g.polymarket)} on Polymarket.`} fallback={["Same trade,", "two prices."]} size={52} /><p className="hm-plain"><b>In plain English:</b> the same position costs different amounts on Kalshi and Polymarket. Buying where it&apos;s cheaper means a bigger payout if you win.</p></div>
       <div className="s-cards" data-stagger="">
         {gaps.map(x => {
           const lo = Math.min(x.kalshi, x.polymarket), hi = Math.max(x.kalshi, x.polymarket), extra = 100 / lo - 100 / hi;
@@ -141,7 +141,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
 
         {d.board.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.baseball, dark: 0.7 }} id="board" testid="home-board" labelledBy="board-h">
-            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest trades of $1K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p><p className="hm-plain"><b>In plain English:</b> each row is one real bet: who placed it, what they bet on, the price they paid and the price now. Copy places the same bet; Verify shows it on the blockchain.</p></div>
+            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest trades of $1K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p><p className="hm-plain"><b>In plain English:</b> each row is one real trade: who placed it, what they traded, the price they paid and the price now. Copy opens the same market; Verify shows it on the blockchain.</p></div>
             {d.stream ? <div className="s-col s-col--wide"><Stream data={d.stream} /></div> : null}
             <LiveBoard initial={d.board.slice(0, 10)} now={d.now} />
             <div className="b-center"><div className="b-ctas"><Pill href="/board" kind="ghost">The full board</Pill></div>
@@ -179,7 +179,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
             <Panel className="s-desk" testid="desk-pings">
               <p className="b-label">Pings on this device</p>
               <PingsLink />
-              <p className="b-small">A ping within a minute of a $25K+ millionaire bet in your categories. At most 8 a day; quiet 11pm to 8am.</p>
+              <p className="b-small">A signal within a minute of a $25K+ trade by a $1M+ wallet in your categories. At most 8 a day; quiet 11pm to 8am.</p>
             </Panel>
           </div>
         </Stage>

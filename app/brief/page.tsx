@@ -84,7 +84,7 @@ export default async function BriefPage({ searchParams }: { searchParams: Promis
                 </li>
               ))}
             </ul>
-          ) : <p className="b-small">You aren&apos;t watching any bets yet. <a href="/watch">Watch a trade</a> and its overnight changes show up here.</p>}
+          ) : <p className="b-small">You aren&apos;t watching any positions yet. Add one and it shows here. <a href="/watch">Watch a trade</a> and its overnight changes show up here.</p>}
         </Stage>
       ) : null}
       <Stage testid="brief-foot" labelledBy="brief-foot-h">

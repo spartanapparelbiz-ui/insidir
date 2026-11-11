@@ -133,7 +133,7 @@ export function PingSetup({ variant, vapidKey = null, categories, onContinue }: 
         : <>This browser can&apos;t show pings. Open Insidir in Chrome, Safari, Edge or Firefox.</>;
       break;
     case "on":
-      sub = <>{phone ? "Pings show up on your phone like a text message, even when it's locked." : "Pings show up in the corner of your screen, even with this tab closed, as long as the browser is open."}</>;
+      sub = <>{phone ? "Pings show up on your phone like a text message, even when the screen is off." : "Pings show up in the corner of your screen, even with this tab closed, as long as the browser is open."}</>;
       cta = <button type="button" className="b-btn b-btn-lg b-ghost" onClick={ping} disabled={test === "sending"} data-testid="ping-test" {...m("settle", 0.9)}>{test === "sending" ? "Sending…" : "Send a test ping"}</button>;
       body = test === "sent" ? <p className="b-small b-ping-ok" role="status"><Check /> Sent. It should be on your screen now.</p>
         : test === "none" ? <p className="b-msg" role="status">This device isn&apos;t linked yet. Turn pings off and on in Account.</p>

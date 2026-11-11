@@ -13,7 +13,7 @@ import { PLANS, TRIAL } from "@/lib/plans";
 
 const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
 const KEYS: Record<string, string> = { rules: "Wins if", cost: "Costs and pays", read: "The read" };
-const ASKS = ["Who's the best NFL wallet this month?", "Is anyone big against my trade?", "Why did the odds move?"];
+const ASKS = ["Who's the best NFL wallet this month?", "Is anyone big against my trade?", "Why did the price move?"];
 
 async function sample(d: LandingData) {
   if (!hasDatabase()) return { briefing: null, brief: [] as string[][] };
@@ -46,7 +46,7 @@ export async function InsideStage({ d }: { d: LandingData }) {
       <div className="in-grid" data-testid="inside-tools">
         <article className="b-glass in-card in-card--wide" data-m="settle" style={card(0)}>
           <p className="in-k">Trade Briefing</p>
-          <h3 className="in-h">Before you bet, know what you&apos;re betting on.</h3>
+          <h3 className="in-h">Before you trade, know what you&apos;re trading.</h3>
           <p className="in-t">Paste any Polymarket or Kalshi link: what it needs to win, what it costs and pays, who&apos;s on each side and how they&apos;re playing it.</p>
           {s.briefing ? (
             <div className="in-sample">

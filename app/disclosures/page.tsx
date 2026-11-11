@@ -25,9 +25,6 @@ export default function DisclosuresPage() {
       <h2>Where you live matters</h2>
       <p>Whether you can use a prediction market or a sportsbook depends on where you live and your age. Polymarket and Kalshi each decide who can use them. If you tell us you&apos;re in the US, we only link to apps that work in the US. Know the rules where you are before you use any of them.</p>
 
-      <h2>Problem gambling</h2>
-      <p>Free, confidential help is available 24 hours a day. Outside the US, look for your country&apos;s problem-gambling helpline.</p>
-
       <h2>Who we are</h2>
       <p>Insidir is built by {COMPANY.name}, {COMPANY.place}. Questions: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
     </TrustPage>

@@ -35,7 +35,7 @@ export default function SecurityPage() {
       <ul>
         <li>Everything is served over HTTPS.</li>
         <li>The database is only reachable from our own services on our hosting provider.</li>
-        <li>Admin pages need a separate sign-in. Secrets live in the hosting provider&apos;s environment, never in the code.</li>
+        <li>Admin pages need a separate sign-in. Credentials live in the hosting provider&apos;s environment, never in the code.</li>
       </ul>
 
       <h2>Report a security issue</h2>

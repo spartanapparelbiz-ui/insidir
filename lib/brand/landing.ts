@@ -55,7 +55,7 @@ export interface LandingData {
   /** The live top Verified wallets (lib/verified/board.ts) and how many pass today, of how many checked. */
   verified: BoardWallet[];
   verifiedCount: { verified: number; checked: number };
-  /** "Flagged in N seconds": the median time from a $1M+ trade's first fill to Insidir seeing it, last 24 hours (20+
+  /** "Flagged in N seconds": the median time from a $1M+ trade's first fill to Insidir seeing it, trades of the last 24 hours (20+
    *  trades with a first-seen time, else null and the line isn't shown). */
   flagged: { seconds: number; n: number } | null;
 }
@@ -127,7 +127,7 @@ export const emptyLanding = (now: number): LandingData => ({
 /** The median seconds from a $1M+ trade's first fill to Insidir seeing it (seen_at − at), last 24 hours; null under 20. */
 export async function flaggedIn(db: Db, now: number): Promise<{ seconds: number; n: number } | null> {
   const r = await db.execute(sql`select percentile_cont(0.5) within group (order by extract(epoch from seen_at - at))::float8 as s, count(*)::int as n
-    from terminal.millionaire_bets where tier = 'millionaire' and seen_at is not null and seen_at > ${new Date(now - DAY)} and seen_at >= at`);
+    from terminal.millionaire_bets where tier = 'millionaire' and seen_at is not null and at > ${new Date(now - DAY)} and seen_at >= at`);
   const x = r.rows[0] as { s: number | null; n: number } | undefined;
   return x && x.n >= 20 && x.s !== null ? { seconds: Math.max(1, Math.round(x.s)), n: x.n } : null;
 }

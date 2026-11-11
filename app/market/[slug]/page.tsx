@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = h && h.total > 0
     ? "Proven $1M+ wallets on “" + title + "”, with the Kalshi price when Kalshi lists it. Every trade, live for members."
     : "“" + title + "”: the Kalshi price when Kalshi lists it, and every trade from wallets up $1M+.";
-  return { title: { absolute: `${title}: who's betting · Insidir` }, description, alternates: { canonical: marketPath(ref.id, ref.title) }, openGraph: { title, description } };
+  return { title: { absolute: `${title}: who's trading · Insidir` }, description, alternates: { canonical: marketPath(ref.id, ref.title) }, openGraph: { title, description } };
 }
 
 export default async function MarketPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -120,7 +120,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
 
       {gated ? (
         <Stage bg={{ kind: "globe", dark: 0.65 }} testid="market-briefing" labelledBy="briefing-h">
-          <div className="b-head"><Lines as="h2" id="briefing-h" lines={["Trade Briefing."]} size={48} /><p className="b-sub">Before you bet: what it takes to win, who&apos;s on each side, and what the money says.</p></div>
+          <div className="b-head"><Lines as="h2" id="briefing-h" lines={["Trade Briefing."]} size={48} /><p className="b-sub">Before you trade: what it takes to win, who&apos;s on each side, and what the money says.</p></div>
           <Panel className="s-col"><BetBriefing b={gated} /></Panel>
         </Stage>
       ) : null}

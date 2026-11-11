@@ -14,7 +14,7 @@ export default function TermsPage() {
       lead={`Insidir is operated by ${COMPANY.name}, ${COMPANY.place} (the operator: "we" and "us" on this page). By using insidir.com you agree to these terms. They're written to be read; if anything is unclear, write to us.`}>
       <h2>What Insidir is</h2>
       <p>{ADVICE} {DATA_COMPANY}</p>
-      <p>Insidir reads public data, the bets of the most profitable Polymarket wallets and the same markets on Kalshi, and shows it with each wallet&apos;s record. We don&apos;t place trades or bets, hold money, or hold positions for you, and nothing on the site is a recommendation. You decide what to do, and you do it yourself on each venue, under its own terms.</p>
+      <p>Insidir reads public data, the trades of the most profitable Polymarket wallets and the same markets on Kalshi, and shows it with each wallet&apos;s record. We don&apos;t place trades, hold funds, or hold positions for you, and nothing on the site is a recommendation. You decide what to do, and you do it yourself on each venue, under its own terms.</p>
 
       <h2>No promise of results</h2>
       <ul>
@@ -29,7 +29,7 @@ export default function TermsPage() {
 
       <h2>Your account and payment</h2>
       <ul>
-        <li>Payments are processed by our payment provider, Whop, whose terms also apply to payment.</li>
+        <li>Payments are processed by our payment provider, whose terms also apply to payment.</li>
         <li>Membership starts with {TRIAL_DAYS} for ${TRIAL.fee}, then $39 a month, renewing monthly until you cancel. If you cancel within the {TRIAL_DAYS}, you aren&apos;t charged the $39.</li>
         <li>Cancel anytime in <Link href="/settings#billing">Account</Link> (pick one reason). You keep access until the end of the period you paid for.</li>
         <li>Refunds follow the law where you live. Write to us if something went wrong and we&apos;ll make it right where we can.</li>

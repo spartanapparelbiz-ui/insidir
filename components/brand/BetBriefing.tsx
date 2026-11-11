@@ -18,7 +18,7 @@ export function BetBriefing({ b }: { b: GatedBriefing }) {
       ))}
       {b.locked ? (
         <div className="bb__lock" data-testid="briefing-locked">
-          <p className="b-small">Members get every line: who&apos;s on each side and their records, how they&apos;re playing it, and the honest read. Plus Watch my bet.</p>
+          <p className="b-small">Members get every line: who&apos;s on each side and their records, how they&apos;re playing it, and the honest read. Plus Watch my position.</p>
           <Pill href="/go" data-checkout="briefing">{GET_CTA}</Pill>
         </div>
       ) : null}

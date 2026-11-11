@@ -72,7 +72,7 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
   const intro = (
     <div className="b-head">
       <Lines as="h1" id="watch-h" lines={["Watch my trade."]} size={56} />
-      <p className="b-sub">Tell us what you hold. We watch the $1M+ money on that market and tell you, in plain words, what it means for your bet: when big money takes the other side, when a wallet on your side sells, when the price moves 5¢ or more, and when it&apos;s about to close.</p>
+      <p className="b-sub">Tell us what you hold. We watch the $1M+ money on that market and tell you, in plain words, what it means for your position: when big money takes the other side, when a wallet on your side sells, when the price moves 5¢ or more, and when it&apos;s about to close.</p>
     </div>
   );
   if (!member || !viewer.user || !hasDatabase()) {

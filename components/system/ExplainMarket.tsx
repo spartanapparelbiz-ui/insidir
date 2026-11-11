@@ -18,7 +18,7 @@ export function ExplainMarket({ marketId }: { marketId: string }) {
         <>
           <p className="s-explain__label"><span className="s-explain__spark" aria-hidden="true">✦</span> What the data shows</p>
           <p className="s-explain__text" data-testid="explain-text">{text}</p>
-          <p className="b-small">Written from Insidir&apos;s data on this market only. Information, not advice: it never says what to bet.</p>
+          <p className="b-small">Written from Insidir&apos;s data on this market only. Information, not advice: it never says what to trade.</p>
         </>
       ) : (
         <>

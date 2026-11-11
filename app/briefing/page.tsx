@@ -39,7 +39,7 @@ export default async function BriefingPage({ searchParams }: { searchParams: Pro
       <Stage bg={{ kind: "globe", dark: 0.6 }} first labelledBy="briefing-h">
         <div className="b-head">
           <Lines as="h1" id="briefing-h" lines={["Trade Briefing."]} size={56} />
-          <p className="b-sub">Paste a Polymarket or Kalshi link. Before you bet: what it takes to win, what it costs and pays, who&apos;s on each side, and what the money says.</p>
+          <p className="b-sub">Paste a Polymarket or Kalshi link. Before you trade: what it takes to win, what it costs and pays, who&apos;s on each side, and what the money says.</p>
         </div>
         <Panel className="s-col">
           <form className="bb-paste" method="get" action="/briefing" data-testid="briefing-form">

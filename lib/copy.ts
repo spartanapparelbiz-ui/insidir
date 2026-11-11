@@ -11,7 +11,7 @@ export const FOOTER = `${ADVICE} Past results don't predict future results. Not 
 /** What Insidir is and isn't, under every page and on /disclosures. */
 export const DATA_COMPANY = "Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.";
 /** The data disclaimer, last in every footer: what Insidir is, and isn't. */
-export const DISCLAIMER = "Disclaimer: Insidir is a research and data analytics tool. Content provided is strictly for informational purposes and does not constitute financial, trading, or wagering advice. Insidir is not a brokerage, sportsbook, or gambling operator and does not take custody of user funds.";
+export const DISCLAIMER = "Insidir is a research and data analytics tool. Content is for information only and is not financial or trading advice. Insidir is not a brokerage or exchange and does not take custody of user funds.";
 /** Who builds Insidir. */
 export const COMPANY = { name: "Aethric LLC", place: "Pompano Beach, FL", email: "hello@aethric.llc", founder: "Nicholas" } as const;
 
@@ -53,7 +53,7 @@ export function chargeLine(now: number): string {
 }
 
 /** How a lock is described everywhere. */
-export const LOCK_LINE = "Locks in a net P&L if both sides fill and both markets settle the same way.";
+export const LOCK_LINE = "Fixes a net P&L if both sides fill and both markets settle the same way.";
 
 /** Words that must never describe a deal (checked over every page by test/compliance.test.ts). The negated form
  *  "Not risk-free" and "aren't guaranteed" are allowed, and so is the FAQ question "Is this risk-free?". */

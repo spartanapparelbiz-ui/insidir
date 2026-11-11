@@ -103,7 +103,7 @@ export default async function AutopilotPage({ searchParams }: { searchParams: Pr
             right: agoText(m.matchedAt.getTime(), now),
           }))} /></Panel> : <Panel className="s-form"><p className="b-small" data-testid="ap-log-empty">Nothing yet. Matches and skips show here, newest first.</p></Panel>}
         </div>
-        <p className="b-small b-center">Backtests use the price when Insidir first saw each bet, plus 1¢, and hold to settlement; wallets count as proven only from what they had settled before. Kalshi&apos;s fees aren&apos;t taken off. Past results, not a promise. Insidir never places a bet or holds money.</p>
+        <p className="b-small b-center">Backtests use the price when we first saw each trade, plus 1¢, and hold to settlement; wallets count as proven only from what they had settled before. Kalshi&apos;s fees aren&apos;t taken off. Past results, not a promise. Insidir never places a trade or holds funds.</p>
         </section>
       </Stage>
     </Frame>

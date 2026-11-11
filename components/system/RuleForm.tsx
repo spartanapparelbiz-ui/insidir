@@ -58,7 +58,7 @@ export function RuleForm({ id, name = "", spec = DEFAULT_SPEC, testid = "rule-fo
       </fieldset>
 
       <fieldset className="s-opts"><legend className="b-label">Stake</legend>
-        <label className="s-form b-small">Per bet ($)<input type="number" name="perBet" min={1} step={1} className="s-input" defaultValue={spec.stake.perBet} /></label>
+        <label className="s-form b-small">Per trade ($)<input type="number" name="perBet" min={1} step={1} className="s-input" defaultValue={spec.stake.perBet} /></label>
         <label className="s-form b-small">Per day, at most ($)<input type="number" name="daily" min={1} step={1} className="s-input" defaultValue={spec.stake.daily} /></label>
         <label className="s-form b-small">Per week, at most ($)<input type="number" name="weekly" min={1} step={1} className="s-input" defaultValue={spec.stake.weekly} /></label>
       </fieldset>

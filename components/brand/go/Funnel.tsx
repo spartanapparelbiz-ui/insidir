@@ -218,7 +218,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
               </p>
             </div>
           ) : <p className="b-sub" {...m("lift", 0.58)}>Every big trade on Polymarket and Kalshi, from wallets that made $1M+.</p>}
-          <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => go("cats")} data-testid="go-next" {...st(0.9)}>Show me what they&apos;re betting<Arrow /></button></div>
+          <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => go("cats")} data-testid="go-next" {...st(0.9)}>Show me what they&apos;re trading<Arrow /></button></div>
         </GoStage>
       );
       break;
@@ -337,7 +337,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
                   {followed.has(w.wallet) ? "Following" : "Follow"}
                 </button>
               </div>
-            )) : <p className="b-empty">No millionaire wallet has bet in your categories this month yet. You&apos;ll see them on your board.</p>}
+            )) : <p className="b-empty">No $1M+ wallet has traded in your categories this month. New positions show here as they land. You&apos;ll see them on your board.</p>}
           </div>
           <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => { try { localStorage.removeItem(KEY); } catch { /* ok */ } location.assign(a.next ?? "/"); }} data-testid="go-next" {...st(1)}>Continue<Arrow /></button></div>
         </GoStage>

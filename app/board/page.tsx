@@ -104,7 +104,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
       <Stage testid="board-tape" labelledBy="tape-h">
         <div className="b-head">
           <h2 id="tape-h" className="ai-h">The tape. Every big move.</h2>
-          <p className="b-sub">New bets from wallets up $100K+, their exits, $10K+ trades from any Polymarket wallet, and $5K+ trades on Kalshi, newest first, with who&apos;s behind each and the big money in that market.</p>
+          <p className="b-sub">New positions from wallets up $100K+, their exits, $10K+ trades from any Polymarket wallet, and $5K+ trades on Kalshi, newest first, with who&apos;s behind each and the big money in that market.</p>
         </div>
         <Tape initial={[...tapeRows]} now={now} member={member} />
       </Stage>

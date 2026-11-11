@@ -67,7 +67,7 @@ export default async function PricingPage() {
       <Stage bg={{ kind: "photo", photo: slotPhoto("world"), dark: 0.55, priority: true }} first testid="pricing-hero" labelledBy="p-h">
         <div className="b-head">
           <Lines as="h1" id="p-h" lines={["See who's trading on Kalshi.", "Kalshi won't show you."]} size={56} />
-          <p className="b-sub" data-m="lift">Polymarket&apos;s bets are public. We watch its most profitable wallets and put the same market on Kalshi next to every bet.</p>
+          <p className="b-sub" data-m="lift">Polymarket&apos;s trades are public. We watch its most profitable wallets and put the same market on Kalshi next to every trade.</p>
         </div>
         <Panel className="s-col s-plan" testid="plan-card">
           <p className="b-label">Insidir</p>

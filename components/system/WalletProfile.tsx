@@ -113,7 +113,7 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
       ) : null}
 
       <Stage bg={{ kind: "globe", dark: 0.65 }} testid="wallet-today" labelledBy="w-t">
-        <div className="b-head"><Lines as="h2" id="w-t" lines={["Today's bets."]} size={48} />{paid ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
+        <div className="b-head"><Lines as="h2" id="w-t" lines={["Today's trades."]} size={48} />{paid ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
         {today.length ? <ul className="b-rows s-board" data-testid="wallet-today-rows">{today.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
           : <p className="b-empty b-center">No trades from this wallet since midnight ET{paid ? "" : " (an hour late)"}.</p>}
       </Stage>

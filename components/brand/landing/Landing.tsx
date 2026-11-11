@@ -73,13 +73,13 @@ function Free({ d }: { d: LandingData }) {
       <div className="b-head"><Lines id="free-h" lines={STAGES.free} size={64} /><p className="b-sub">A live sample, no account.</p></div>
       <div className="b-tiles3">
         <section className="b-glass b-pad b-tile3" data-testid="free-top-bet" data-m="settle" style={{ "--d": ".6s" } as CSSProperties}>
-          <h3 className="b-panel-h">Today&apos;s #1 millionaire bet</h3>
+          <h3 className="b-panel-h">Today&apos;s largest $1M+ position</h3>
           {t ? (
             <div style={{ display: "grid", gap: 12 }}>
               <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
               <p className="b-small">The biggest single trade since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
             </div>
-          ) : <p className="b-empty">Today&apos;s biggest bet shows here once a $1M+ wallet bets after midnight ET. Until then, the board beside it has the latest.</p>}
+          ) : <p className="b-empty">Today&apos;s largest position shows here once a $1M+ wallet trades after midnight ET. Until then, the board beside it has the latest.</p>}
         </section>
         <section className="b-glass b-pad b-tile3" data-testid="free-late" data-m="settle" style={{ "--d": ".72s" } as CSSProperties}>
           <h3 className="b-panel-h">The board, 60 minutes late</h3>

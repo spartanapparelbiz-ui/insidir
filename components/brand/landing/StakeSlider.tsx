@@ -19,7 +19,7 @@ export function StakeSlider({ r }: { r: StakeRecord }) {
         <span className="b-dmid b-num" data-testid="stake-value">${stake}</span>
       </label>
       <input id={id} className="b-range" type="range" min={10} max={500} step={10} value={stake} onChange={e => setStake(Number(e.target.value))}
-        aria-valuetext={`$${stake} a bet`} data-testid="stake-range" style={{ "--v": `${((stake - 10) / 490) * 100}%` } as React.CSSProperties} />
+        aria-valuetext={`$${stake} a trade`} data-testid="stake-range" style={{ "--v": `${((stake - 10) / 490) * 100}%` } as React.CSSProperties} />
       <div className="b-split">
         <div><span className="b-label">Put in</span><span className="b-big b-num" data-testid="stake-in">${inn.toLocaleString("en-US")}</span><span className="b-small">{r.n} settled bets</span></div>
         <div><span className="b-label">Would have made</span><span className={`b-big b-num ${net >= 0 ? "b-up" : "b-down"}`} data-testid="stake-net">{money(net)}</span><span className="b-small">{Math.round(r.roi * 100)}% return · {r.won} won, {r.lost} lost</span></div>

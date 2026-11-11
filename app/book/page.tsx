@@ -48,7 +48,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       <Stage first className="ap-stage" testid="book-head" labelledBy="bk-h">
         <div className="b-head">
           <h1 id="bk-h" className="b-h2 ap-h1" data-testid="book-head-line">{head}</h1>
-          <p className="b-sub">Every bet you placed from Insidir: open ones at Kalshi&apos;s price now, settled ones at your own price, losses included.</p>
+          <p className="b-sub">Every trade you placed from Insidir: open ones at Kalshi&apos;s price now, settled ones at your own price, losses included.</p>
           {notice ? <p className="b-msg" role="status" data-testid="book-notice">{notice}</p> : null}
         </div>
 
@@ -124,7 +124,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
               {months.map(d => <a key={ym(d)} className="b-btn b-btn-lg b-ghost" href={`/api/book/statement?month=${ym(d)}`} data-testid="book-statement" download>{MONTH.format(d)} statement (PDF)</a>)}
             </div>
           </Panel>
-          <p className="b-small b-center">Logged by you. Insidir never places a bet or holds money. Kalshi&apos;s fees aren&apos;t included. Past results, not a promise.</p>
+          <p className="b-small b-center">Logged by you. We never place a trade or hold funds. Kalshi&apos;s fees aren&apos;t included. Past results, not a promise.</p>
         </section>
       </Stage>
     </Frame>

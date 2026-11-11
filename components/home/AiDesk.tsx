@@ -13,7 +13,7 @@ import { Suspense } from "react";
 import { getDb } from "@/lib/db";
 import { homeBrief, homeBriefing } from "@/lib/home/data";
 
-const ASKS = ["Who's the best NFL wallet this month and what's he on today?", "Is anyone big against my trade?", "Why did the odds move?"];
+const ASKS = ["Who's the best NFL wallet this month and what's he on today?", "Is anyone big against my trade?", "Why did the price move?"];
 
 /** A card's placeholder while its slow part (a model or a venue) streams in: the same box, a quiet line. */
 const Loading = ({ label }: { label: string }) => <p className="b-small ai-loading" aria-live="polite"><span className="ai-loading__dot" aria-hidden="true" />{label}</p>;
@@ -85,7 +85,7 @@ export function AiDesk({ d, userId }: { d: Home; userId: string }) {
       <div className="b-head">
         <p className="hm-eyebrow">AI analyst</p>
         <h2 id="ai-h" className="ai-h">Your AI analyst.</h2>
-        <p className="b-sub">Follows every bet from wallets up $1M+ and tells you what it means for yours. Written from Insidir&apos;s data only, every number verified against it.</p>
+        <p className="b-sub">Follows every trade from wallets up $1M+ and tells you what it means for yours. Written from Insidir&apos;s data only, every number verified against it.</p>
       </div>
       {stats.length ? (
         <dl className="ai-strip" data-testid="ai-strip">

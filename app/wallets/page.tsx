@@ -68,7 +68,7 @@ export default async function Wallets() {
       ) : null}
       <Stage testid="wallets-board" labelledBy="board-h">
         <div className="b-head"><h2 id="board-h" className="b-h2">The leaderboard.</h2>
-          <p className="b-sub">Win rate against the average price paid: a wallet that wins 60% of bets it buys at 45¢ is picking well; one that wins 60% at 70¢ isn&apos;t.</p></div>
+          <p className="b-sub">Win rate against the average price paid: a wallet that wins 60% of positions it buys at 45¢ is picking well; one that wins 60% at 70¢ isn&apos;t.</p></div>
         {board?.rows.length ? <WalletBoard rows={board.rows} now={now} /> : <p className="b-empty">The watchlist refreshes hourly; it shows here once it has.</p>}
         <p className="b-small" style={{ marginTop: 16 }}>Short addresses only: Insidir never says who is behind a wallet. Information, not advice.</p>
       </Stage>

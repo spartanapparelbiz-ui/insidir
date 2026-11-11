@@ -112,7 +112,7 @@ export async function runWhopSetup(d: SetupDeps): Promise<SetupResult> {
     if (keep && !known) {
       // Its secret can't be read back from Whop, and we don't have it: replace it (delete, then create one).
       for (const w of ours) { const del = await call("DELETE", `/webhooks/${encodeURIComponent(str(w.id)!)}`); if (!del.ok) throw new Error(`couldn't replace the webhook (${why(del)})`); }
-      log("Whop webhook: the existing one's secret wasn't stored, so it was replaced.");
+      log("Whop webhook: the existing one's signing key wasn't stored, so it was replaced.");
       keep = null;
     } else if (ours.length > 1) {
       for (const w of ours.filter(w => w !== keep)) await call("DELETE", `/webhooks/${encodeURIComponent(str(w.id)!)}`);

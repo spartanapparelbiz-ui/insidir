@@ -36,7 +36,7 @@ export function briefEmail(b: Brief, appUrl: string, unsubscribe: string): { sub
   const text = [
     "The 5 biggest things the $1M+ money did overnight:", "",
     ...(b.items.length ? b.items.flatMap((it, i) => [`${i + 1}. ${it.lines[0]}`, `   ${it.lines[1]}`, `   ${appUrl}${it.href}`, ""]) : ["Nothing from $1M+ wallets overnight.", ""]),
-    ...(b.watched.length ? ["Your watched bets:", "", ...b.watched.flatMap(w => [w.lines[0], w.lines[1], ""])] : []),
+    ...(b.watched.length ? ["Your watched positions:", "", ...b.watched.flatMap(w => [w.lines[0], w.lines[1], ""])] : []),
     `The whole brief: ${link}`,
     "Information, not advice. Every position we've flagged, losses included: " + `${appUrl}/record`,
     `Stop these emails: ${unsubscribe}`,
