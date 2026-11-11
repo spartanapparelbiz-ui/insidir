@@ -113,12 +113,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   </form>
                 ) : null}
               </>
-            ) : <p className="b-small">Pings come with Insidir: within a minute of a $25K+ millionaire bet, or a new bet from a wallet you follow.</p>}
+            ) : <p className="b-small">Pings come with Insidir: within a minute of a $25K+ millionaire trade, or a new trade from a wallet you follow.</p>}
           </Panel>
 
           <Panel className="s-form">
             <h2 className="b-label">Location</h2>
-            <p className="b-small">We only link you to apps that work where you are: in the US, Kalshi only. Every bet shows either way.</p>
+            <p className="b-small">We only link you to apps that work where you are: in the US, Kalshi only. Every trade shows either way.</p>
             <LocationPill region={viewer.region} />
           </Panel>
 
@@ -178,7 +178,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             </form>
           </Panel>
         </div>
-        <p className="b-small b-center">Information, not advice. Insidir never places a bet or holds money.</p>
+        <p className="b-small b-center">Information, not advice. Insidir never places a trade or holds money.</p>
       </Stage>
     </Frame>
   );

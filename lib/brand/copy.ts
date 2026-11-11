@@ -17,27 +17,27 @@ export const HERO = {
 } as const;
 export const ASK_PLACEHOLDER = "Paste a Kalshi or Polymarket link, or type a market";
 export const PROBLEM = {
-  h1: ["You're not betting", "against the market."],
-  sub: "You're betting against the wallets that have made millions.",
+  h1: ["You're not trading", "against the market."],
+  sub: "You're trading against the wallets that have made millions.",
   rows: [
     ["You can't see who's on the other side.", "Millionaire money on every market, live."],
-    ["Big bets hit X after the price moved.", "A ping the second a millionaire bets."],
+    ["Big trades hit X after the price moved.", "A ping the second a millionaire trades."],
     ["Leaderboards show volume, not winners.", "Every wallet's real all-time profit."],
     ["You might be paying more than you need to.", "The better price, Kalshi vs. Polymarket."],
   ],
 } as const;
 /** How it works: three steps, one sentence each. */
 export const HOW = [
-  { t: "Follow a verified wallet.", d: "Wallets up $1M+ that pass four checks, rechecked daily: 50+ settled trades, profitable in 2 of the last 3 months, no single lucky trade, no hedging." },
+  { t: "Follow a verified wallet.", d: "Wallets up $1M+ that pass four tests, re-tested daily: 50+ settled trades, profitable in 2 of the last 3 months, no single lucky trade, no hedging." },
   { t: "Get your size when it trades.", d: "A push within seconds: the market, the side, the price on Kalshi and Polymarket, and your size, the same share of your bankroll as theirs." },
   { t: "Get pinged when it exits.", d: "When the wallet you copied sells, you hear right away, with your entry next to its exit, and one tap to the market." },
 ] as const;
 
 /** The demo's chapters (qa/record-site.ts → public/media/site-<id>-<desk|phone>.*), what each shows. */
 export const WATCH = [
-  { id: "board", t: "The board", url: "insidir.com/board", d: "Every millionaire bet with its side, live, then a copy ticket: their price and the price now." },
+  { id: "board", t: "The board", url: "insidir.com/board", d: "Every millionaire trade with its side, live, then a copy ticket: their price and the price now." },
   { id: "markets", t: "Every market", url: "insidir.com/markets", d: "Each category ranked by millionaire money, down to the game." },
-  { id: "record", t: "The record", url: "insidir.com/results", d: "How the millionaires' bets settled, by category. Losses included." },
+  { id: "record", t: "The record", url: "insidir.com/results", d: "How the millionaires' trades settled, by category. Losses included." },
 ] as const;
 export const START = `Start for $${TRIAL.fee}`;
 export const PAST = "Past results, not a promise.";
@@ -48,17 +48,17 @@ export const STAGES = {
   election: ["Election Day.", "Every race, live."],
   spotlight: ["One wallet.", "Every result."],
   stake: ["Your stake."],
-  gaps: ["Same bet.", "Two prices."],
+  gaps: ["Same trade.", "Two prices."],
   free: ["Free right now.", "No account."],
   members: ["Everything the", "millionaires do.", "As it happens."],
-  markets: ["Every market", "people bet on."],
+  markets: ["Every market", "people trade on."],
   pricing: ["One plan."],
   pricingSub: `$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/mo. Cancel anytime.`,
   faq: ["Questions."],
   why: ["Why Insidir."],
   how: ["How it works."],
   watch: ["See it work."],
-  watchSub: "What members see, recorded with live data: real bets, real money, nothing staged.",
+  watchSub: "What members see, recorded with live data: real trades, real money, nothing staged.",
   final: ["Who to copy, how much,", "and when to get out."],
 } as const;
 
@@ -66,7 +66,7 @@ export const STAGES = {
 /** Every question (/faq and /help); the landing shows five of them (FAQ). */
 export const FAQ_ALL: Array<{ id: string; q: string; a: string }> = [
   { id: "what", q: "What is Insidir?", a: "A copy trading system for Kalshi and Polymarket: who to copy (Verified wallets up $1M+), how much (your size, matched to theirs), and when to get out (a push when they sell)." },
-  { id: "verified", q: "What makes a wallet Verified?", a: "It's up $1M+ all time and passes four checks, rechecked every day: 50+ settled trades, profitable in at least 2 of the last 3 months, no single trade over 40% of its profit, and it doesn't regularly hold both sides of a market. Each wallet's page shows every check and its numbers." },
+  { id: "verified", q: "What makes a wallet Verified?", a: "It's up $1M+ all time and passes four tests, re-tested every day: 50+ settled trades, profitable in at least 2 of the last 3 months, no single trade over 40% of its profit, and it doesn't regularly hold both sides of a market. Each wallet's page shows every test and its numbers." },
   { id: "size", q: "How is my size worked out?", a: "From the wallet's trade as a share of its bankroll (the most it has held in open positions at once in 90 days): if it put in 2%, your size is 2% of the bankroll you set, never above your max per trade. It's a matched size, not advice." },
   { id: "kalshi", q: "Kalshi or Polymarket?", a: "Each alert shows the same side's price on both when both list the market, and marks the cheaper one. Copy opens that market on the cheaper app you can use (in the US, Kalshi). You confirm the trade in your own account." },
   { id: "place", q: "Do you place trades for me?", a: "Never. Insidir never places a trade, never asks for API keys, wallet keys or exchange logins, and never holds funds." },
@@ -85,17 +85,17 @@ export const faqLd = (): string => JSON.stringify({
 /** What members get, said once: the five rows on the landing, the five tabs of their home. */
 export const MEMBERS = [
   { k: "before", when: "Any time", tab: "Search", t: "Search any market, race or wallet, or paste a Polymarket or Kalshi link: who is on each side, and the price now." },
-  { k: "allday", when: "All day", tab: "Board", t: "The live board of every millionaire bet, and a ping the second one lands in your categories. Unusual bets flagged." },
+  { k: "allday", when: "All day", tab: "Board", t: "The live board of every millionaire trade, and a ping the second one lands in your categories. Unusual trades flagged." },
   { k: "morning", when: "Every morning", tab: "Brief", t: "The Daily Brief: the 3 markets with the most millionaire money today, and how yesterday's went." },
-  { k: "overtime", when: "Over time", tab: "Following", t: "Follow a wallet that's up millions and get pinged on every bet it makes. Every result public, losses included." },
+  { k: "overtime", when: "Over time", tab: "Following", t: "Follow a wallet that's up millions and get pinged on every trade it makes. Every result public, losses included." },
   { k: "nights", when: "Big nights", tab: "Live", t: "Election night and game nights: a live board pinned to the races and games that matter." },
 ] as const;
 
 /** What a member gets, said once. */
 export const MEMBER_GETS = [
   "A ping when a millionaire buys, adds, trims or sells out in your categories, with Kalshi's price beside it",
-  "Every millionaire bet, live, with the side and the price they paid",
+  "Every millionaire trade, live, with the side and the price they paid",
   "Every race: who the millionaires back, and where",
   "Every wallet's record, losses included",
-  "A copy ticket for any bet: their price, the price now, one tap to the market",
+  "A copy ticket for any trade: their price, the price now, one tap to the market",
 ] as const;

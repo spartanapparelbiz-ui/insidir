@@ -39,7 +39,7 @@ export function Constellation({ data, testid = "constellation" }: { data: Data; 
   const gold = new Set([...stars].sort((a, b) => b.money - a.money).slice(0, 3).map(s => s.wallet));
   const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`;
   return (
-    <figure className="s-const" data-testid={testid} role="img" aria-label={`${stars.length} millionaire wallets that bet today, joined by ${links.length} shared markets.`}>
+    <figure className="s-const" data-testid={testid} role="img" aria-label={`${stars.length} millionaire wallets that trade today, joined by ${links.length} shared markets.`}>
       <div className="s-const__sky">
         <svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
           {[0.33, 0.66, 0.99].map(k => <ellipse key={k} cx={CX} cy={CY} rx={k * (W / 2 - 40)} ry={k * (H / 2 - 30)} className="s-const__ring" />)}
@@ -51,7 +51,7 @@ export function Constellation({ data, testid = "constellation" }: { data: Data; 
             const p = pos.get(s.wallet)!;
             return (
               <a key={s.wallet} href={`/wallet/${s.wallet}`}>
-                <title>{`${s.short} · ${s.pnl !== null ? `${signed(s.pnl)} all-time · ` : ""}${dollars(s.money)} today on ${s.bets} ${s.bets === 1 ? "bet" : "bets"} · ${name(s.category)}`}</title>
+                <title>{`${s.short} · ${s.pnl !== null ? `${signed(s.pnl)} all-time · ` : ""}${dollars(s.money)} today on ${s.bets} ${s.bets === 1 ? "trade" : "trades"} · ${name(s.category)}`}</title>
                 <circle cx={p.x} cy={p.y} r={p.r} className={`s-const__star s-pop${gold.has(s.wallet) ? " s-const__star--gold" : ""}`} style={{ "--at": (i / stars.length).toFixed(2) } as CSSProperties} />
               </a>
             );

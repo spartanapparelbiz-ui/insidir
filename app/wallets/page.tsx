@@ -41,28 +41,28 @@ export default async function Wallets() {
     db ? constellation(db, midnightET(now)).catch(() => null) : Promise.resolve(null),
   ]);
   const s = board?.summary;
-  const skyLine = sky?.shared ? `${sky.shared.wallets} wallets up $1M+ bet ${sky.shared.title}${sky.shared.same ? ", all on the same side" : ", on both sides"}.` : null;
+  const skyLine = sky?.shared ? `${sky.shared.wallets} wallets up $1M+ trade ${sky.shared.title}${sky.shared.same ? ", all on the same side" : ", on both sides"}.` : null;
   return (
     <Frame member current="wallets" testid="wallets-page">
       <Stage first testid="wallets-band" labelledBy="wallets-h">
         <div className="b-head">
           <h1 id="wallets-h" className="b-h1">Who to copy.</h1>
-          <p className="b-sub" data-testid="verified-count">{vcount.checked ? `${vcount.verified} of ${vcount.checked} wallets up $1M+ pass every check today.` : "Every wallet up $1M+, checked daily."} Verified means {MIN_SETTLED}+ settled trades, profitable in 2 of the last 3 months, no single trade over {Math.round(MAX_ONE_SHARE * 100)}% of its profit, and no hedging. {PAST}</p>
+          <p className="b-sub" data-testid="verified-count">{vcount.checked ? `${vcount.verified} of ${vcount.checked} wallets up $1M+ pass every test today.` : "Every wallet up $1M+, reviewed daily."} Verified means {MIN_SETTLED}+ settled trades, profitable in 2 of the last 3 months, no single trade over {Math.round(MAX_ONE_SHARE * 100)}% of its profit, and no hedging. {PAST}</p>
         </div>
         <VerifiedBoard rows={vrows} member />
         {s ? (
           <div className={`b-stats ${s.proven > 0 ? "b-stats--4" : "b-stats--3"}`} data-testid="wallets-stats">
             <div className="b-stat"><span className="b-stat__n b-num">{s.wallets}</span><span className="b-small">wallets up $1M+ watched</span></div>
             {s.proven > 0 ? <div className="b-stat"><span className="b-stat__n b-num">{s.proven}</span><span className="b-small">proven: 30+ settled, real pickers</span></div> : null}
-            <div className="b-stat"><span className="b-stat__n b-num">{s.activeToday}</span><span className="b-small">bet in the last 24 hours</span></div>
-            <div className="b-stat"><span className="b-stat__n b-num">{dollars(s.weekMoney)}</span><span className="b-small">bet by millionaires this week</span></div>
+            <div className="b-stat"><span className="b-stat__n b-num">{s.activeToday}</span><span className="b-small">traded in the last 24 hours</span></div>
+            <div className="b-stat"><span className="b-stat__n b-num">{dollars(s.weekMoney)}</span><span className="b-small">traded by millionaires this week</span></div>
           </div>
         ) : null}
       </Stage>
       {cards.length ? (
         <Stage testid="wallets-active" labelledBy="active-h">
           <div className="b-head"><h2 id="active-h" className="b-h2">{walletsInsight(cards) ?? `Active ${today ? "today" : "in the last 24 hours"}.`}</h2>
-            <p className="b-sub">The millionaire wallets that bet {today ? "today" : "in the last 24 hours"}, by money bet.</p></div>
+            <p className="b-sub">The millionaire wallets that trade {today ? "today" : "in the last 24 hours"}, by money bet.</p></div>
           <WalletCards wallets={cards} today={today} biggest testid="desk-leaders" />
         </Stage>
       ) : null}
@@ -75,7 +75,7 @@ export default async function Wallets() {
       {sky && sky.stars.length >= 3 ? (
         <Stage testid="wallets-sky" labelledBy="sky-h">
           <div className="b-head"><Insight id="sky-h" as="h2" text={skyLine} fallback={["Where the money", "meets."]} size={52} />
-            <p className="b-sub">Every millionaire wallet that bet today, as a constellation. Tap a star for its wallet.</p></div>
+            <p className="b-sub">Every millionaire wallet that trade today, as a constellation. Tap a star for its wallet.</p></div>
           <Constellation data={sky} />
         </Stage>
       ) : null}

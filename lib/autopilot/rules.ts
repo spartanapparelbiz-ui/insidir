@@ -145,11 +145,11 @@ export function stakeLeft(spec: RuleSpec, spentToday: number, spentWeek: number)
 export function describe(spec: RuleSpec): string {
   const k = (n: number) => n >= 1e6 ? `$${+(n / 1e6).toFixed(1)}M` : `$${Math.round(n / 1000)}K`;
   const parts = [spec.wallets.from === "followed" ? `${spec.wallets.follow.length} followed ${spec.wallets.follow.length === 1 ? "wallet" : "wallets"}` : "Proven wallets",
-    `bets of ${k(spec.triggers.minBet)}+`];
+    `trades of ${k(spec.triggers.minBet)}+`];
   if (spec.triggers.firstEntry) parts.push("first entry");
   if (spec.triggers.consensus) parts.push("2+ wallets agree");
   const where = [...spec.markets.leagues.map(l => LEAGUES.find(x => x.slug === l)!.name), ...spec.markets.categories, ...spec.markets.races];
   if (where.length) parts.push(where.slice(0, 3).join(", ") + (where.length > 3 ? ` +${where.length - 3}` : ""));
-  parts.push(`up to ${c(spec.price.max)}`, `$${spec.stake.perBet} a bet`);
+  parts.push(`up to ${c(spec.price.max)}`, `$${spec.stake.perBet} a trade`);
   return parts.join(" · ");
 }

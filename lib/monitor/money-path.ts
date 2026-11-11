@@ -73,7 +73,7 @@ export async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
   })) return steps;
   if (!await run("market", async () => {
     const id = await marketToOpen(db, now);
-    must(id, "no millionaire bet in the last 3 days");
+    must(id, "no millionaire trade in the last 3 days");
     const page = await get(`/market/${encodeURIComponent(id!)}`);
     must(page.status === 200 && (await page.text()).includes('data-testid="market-page"'), `GET /market/${id} answered ${page.status} without the market`);
   })) return steps;

@@ -76,7 +76,7 @@ export async function MyCopies({ db, viewer, now }: { db: Db | null; viewer: Vie
       <div data-testid="my-copies">
         <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="copies-pick" labelledBy="pick-h">
           <div className="b-head"><Lines as="h1" id="pick-h" lines={["Pick a winner to copy"]} size={56} />
-            <p className="b-sub" data-m="lift">Every bet they make from then on shows up here, with the price they got and the price you can still get.</p></div>
+            <p className="b-sub" data-m="lift">Every trade they make from then on shows up here, with the price they got and the price you can still get.</p></div>
           <Panel className="s-col s-col--wide"><CopyPicker list={list} /></Panel>
         </Stage>
       </div>
@@ -105,7 +105,7 @@ export async function MyCopies({ db, viewer, now }: { db: Db | null; viewer: Vie
           {us ? <p className="b-sub">In the US, Open goes to the same market on Kalshi when there is one; otherwise the move is view only.</p> : null}</div>
         {moves.length ? <Panel className="s-col s-col--wide"><ol className="s-lockrows" data-stagger="">{moves.map(m => <MoveRow key={m.id} m={m} now={now} us={us} />)}</ol></Panel>
           : <p className="b-empty b-center" data-testid="copy-moves-empty">No new moves since you started copying. They show up here the moment Insidir sees them.</p>}
-        <p className="b-small b-center">Information, not advice. Insidir never places a bet or holds money.</p>
+        <p className="b-small b-center">Information, not advice. Insidir never places a trade or holds money.</p>
       </Stage>
       {main && field ? <Recap mine={main.week} field={field} label={main.copy.label} /> : null}
     </div>

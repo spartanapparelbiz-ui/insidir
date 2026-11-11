@@ -50,7 +50,7 @@ const quoted = (t: string) => `“${t.replace(/[“”"]/g, "")}”`;
 
 /** The two lines for one group, as a member or a visitor may see them. Pure. */
 export function itemLines(g: BriefGroup, f: Pick<WalletFacts, "tier" | "short" | "record" | "usualBet">, member: boolean): [string, string] {
-  const who = walletName(f), over = g.n > 1 ? ` over ${g.n} bets` : "";
+  const who = walletName(f), over = g.n > 1 ? ` over ${g.n} trades` : "";
   const usual = usualText(g.amount, f.usualBet);
   const record = f.record ? `Its settled ${catName(g.category)} record: ${f.record.line}.` : null;
   if (!member) {

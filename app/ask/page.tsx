@@ -12,7 +12,7 @@ import "../brief.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Ask Insidir",
-  description: "Ask about the $1M+ wallets, a market or your own bet. Answers come only from Insidir's data. Information, not advice.",
+  description: "Ask about the $1M+ wallets, a market or your own trade. Answers come only from Insidir's data. Information, not advice.",
   alternates: { canonical: "/ask" },
 };
 

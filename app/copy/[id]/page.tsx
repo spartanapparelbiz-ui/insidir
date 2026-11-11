@@ -23,7 +23,7 @@ import { agoText } from "@/lib/moves/copy";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Copy this bet", robots: { index: false } };
+export const metadata: Metadata = { title: "Copy this trade", robots: { index: false } };
 let poly: PolymarketClient | null = null;
 const cents = (p: number | null | undefined) => (p === null || p === undefined ? "" : `${Math.round(p * 100)}¢`);
 
@@ -45,7 +45,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
     <Frame member={member} current="board" testid="copy-page">
       <Stage bg={{ kind: "photo", photo: categoryPhoto(t.category), dark: 0.55, priority: true }} first testid="copy-ticket" labelledBy="copy-title">
         <div className="b-head">
-          <p className="b-label" data-m="lift">Copy this bet</p>
+          <p className="b-label" data-m="lift">Copy this trade</p>
           <Lines as="h1" id="copy-title" testid="copy-title" lines={[t.title]} size={t.title.length > 40 ? 40 : 56} />
           <p className="b-sub" data-m="lift">{t.short}{t.pnl !== null ? <>, <b>{signed(t.pnl)} all-time</b></> : null}, put {dollars(t.amount)} on it {agoText(t.at, now)}{t.record ? `. Their record: ${t.record.won} won, ${t.record.lost} lost` : ""}.</p>
         </div>
@@ -68,12 +68,12 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
           </Panel>
         ) : (
           <Panel className="s-col">
-            <p className="b-small" data-locked="copy">Members see which side they took and get the finished bet on Kalshi.</p>
+            <p className="b-small" data-locked="copy">Members see which side they took and get the finished trade on Kalshi.</p>
             <div className="b-ctas"><Pill href="/go" data-testid="copy-start" data-checkout="copy">Start for $1</Pill></div>
           </Panel>
         )}
         <p className="b-small b-center" style={{ marginTop: 12 }}><Verify v={verifyFor(t.verify, member, Boolean(t.settled))} marketId={t.marketId} polymarket={viewer.region === "non_us"} /></p>
-        <p className="b-small b-center">Information, not advice. Millionaires lose bets too. Insidir never places a bet or holds money.</p>
+        <p className="b-small b-center">Information, not advice. Millionaires lose trades too. Insidir never places a trade or holds money.</p>
       </Stage>
       <ScrollFx />
     </Frame>

@@ -11,7 +11,7 @@ import type { BetVerify } from "@/lib/millionaires/queries";
 export type Result = "won" | "lost" | "sold" | "void" | "open";
 export type Flag = "millionaire" | "pro" | "unusual" | "disagreement";
 export const FLAGS: readonly Flag[] = ["millionaire", "pro", "unusual", "disagreement"];
-export const FLAG_NAME: Record<Flag, string> = { millionaire: "Millionaire ($1M+)", pro: "Pro ($100K+)", unusual: "Unusual bet", disagreement: "Disagrees with the price" };
+export const FLAG_NAME: Record<Flag, string> = { millionaire: "Millionaire ($1M+)", pro: "Pro ($100K+)", unusual: "Unusual trade", disagreement: "Disagrees with the price" };
 export const TIER_NAME: Record<string, string> = { millionaire: "Millionaire", pro: "Pro", new: "New wallet" };
 export const RESULTS: readonly Result[] = ["won", "lost", "sold", "void", "open"];
 

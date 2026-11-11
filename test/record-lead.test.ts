@@ -21,6 +21,6 @@ describe("the record pages lead with", () => {
     const l = leadOf(report([row("all", "Baseline", 133, 144, -907), row("big", "Variants", 64, 54, 412), row("first", "Variants", 70, 60, 120),
       row("cat:golf", "Category", 90, 30, 2000), row("band:0.3", "Entry price on Kalshi", 80, 40, 1500)]))!;
     expect(l).toMatchObject({ key: "big", settled: 118, won: 64, net: 412, perBet: 25, days: 180 });
-    expect(leadLine({ ...l, name: "Bets of $50K+" })).toBe("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢.");
+    expect(leadLine({ ...l, name: "Trades of $50K+" })).toBe("“Trades of $50K+”: +$412 on $25 a trade, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢.");
   });
 });

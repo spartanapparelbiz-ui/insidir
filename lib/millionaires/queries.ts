@@ -323,10 +323,10 @@ export function proof(db: Db, now: number): Promise<Proof | null> {
   return memo("mil:proof", 5 * 60_000, async () => {
     const r = await db.execute(sql`select price, result from terminal.millionaire_bets where tier = 'millionaire' and result in ('won', 'lost')`);
     const mil = followRecord((r.rows as Row[]).map(x => ({ price: n(x.price), result: x.result as "won" | "lost" })));
-    if (mil.n >= MIN_SETTLED) return { kind: "millionaire", label: "millionaire bet", record: mil };
+    if (mil.n >= MIN_SETTLED) return { kind: "millionaire", label: "millionaire trade", record: mil };
     const all = await trackerFollowAll(db, now).catch(() => null);
     const shots = all?.get("underdog-hunters" as never)?.all;
-    if (shots && shots.n >= MIN_SETTLED) return { kind: "tracker", label: "Long Shots bet", record: shots };
+    if (shots && shots.n >= MIN_SETTLED) return { kind: "tracker", label: "Long Shots trade", record: shots };
     return null;
   });
 }

@@ -63,7 +63,7 @@ export default async function BriefPage({ searchParams }: { searchParams: Promis
               </li>
             ))}
           </ol>
-        ) : <p className="b-small" data-testid="brief-empty">No $1M+ wallet has bet since {brief ? etClock(brief.since) : "8 p.m."} ET last night yet.</p>}
+        ) : <p className="b-small" data-testid="brief-empty">No $1M+ wallet has trade since {brief ? etClock(brief.since) : "8 p.m."} ET last night yet.</p>}
         {!member ? (
           <div className="bf-cta">
             <a className="b-btn b-btn-lg b-primary" href="/go" data-testid="brief-join" data-unlock="brief">{GET_CTA}</a>
@@ -73,7 +73,7 @@ export default async function BriefPage({ searchParams }: { searchParams: Promis
       </Stage>
       {member ? (
         <Stage testid="brief-watched" labelledBy="brief-watched-h">
-          <h2 id="brief-watched-h" className="b-label">Your watched bets</h2>
+          <h2 id="brief-watched-h" className="b-label">Your watched trades</h2>
           {brief && brief.watched.length ? (
             <ul className="bf-list">
               {brief.watched.map(w => (
@@ -84,7 +84,7 @@ export default async function BriefPage({ searchParams }: { searchParams: Promis
                 </li>
               ))}
             </ul>
-          ) : <p className="b-small">You aren&apos;t watching any bets yet. <a href="/watch">Watch a bet</a> and its overnight changes show up here.</p>}
+          ) : <p className="b-small">You aren&apos;t watching any bets yet. <a href="/watch">Watch a trade</a> and its overnight changes show up here.</p>}
         </Stage>
       ) : null}
       <Stage testid="brief-foot" labelledBy="brief-foot-h">

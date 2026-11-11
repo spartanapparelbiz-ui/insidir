@@ -216,7 +216,7 @@ export function outcomeOf(m: Pick<Move, "outcome" | "outcomeSide" | "marketTitle
   return cap(plain(m, c));
 }
 
-/** A card's headline: the outcome for a bet; for a filing, what was bought and by whom. */
+/** A card's headline: the outcome for a trade; for a filing, what was bought and by whom. */
 export function headlineOf(m: Move): string {
   if (m.source === "sec" && m.detail) {
     const d = m.detail;

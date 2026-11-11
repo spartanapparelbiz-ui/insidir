@@ -31,7 +31,7 @@ import type { FactSection } from "./write";
 export const SECTION_KEYS = ["rules", "cost", "history", "who", "playing", "timing", "price_compare", "read"] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 export const SECTION_TITLES: Record<SectionKey, string> = {
-  rules: "What you're actually betting on",
+  rules: "What you're actually trading on",
   cost: "What it costs and what it pays",
   history: "How we got here",
   who: "Who's on each side",
@@ -111,7 +111,7 @@ export function costLine(price: number, label: string): string {
 }
 
 export function costSection(yes: number | null, labels: Labels, side: Side | null, result: Side | "void" | null, position?: UserPosition | null): string[] {
-  if (result) return [result === "void" ? "This market was voided: every bet was refunded." : `This market has settled: ${labels[result]} won. Each ${labels[result]} share paid $1.`];
+  if (result) return [result === "void" ? "This market was voided: every trade was refunded." : `This market has settled: ${labels[result]} won. Each ${labels[result]} share paid $1.`];
   if (yes === null || !(yes > 0 && yes < 1)) return ["There's no price on Polymarket for this market right now."];
   const px = { yes, no: 1 - yes };
   const order: Side[] = side ? [side, side === "yes" ? "no" : "yes"] : ["yes", "no"];
@@ -150,10 +150,10 @@ export interface SideMoney { dollars: number; wallets: number }
 export function holdingLine(h: Holding, f: WalletFacts | undefined, categoryName: string): string {
   const name = walletName({ tier: f?.tier ?? h.tier, short: f?.short ?? shortWallet(h.wallet) });
   const parts = [`${name}: ${dollars(h.dollars)} at ${cents(h.price)}.`];
-  parts.push(f?.record ? `${f.record.line.replace(/^(\d+–\d+)/, `$1 on ${categoryName}`)}.` : `No settled ${categoryName} bets yet.`);
+  parts.push(f?.record ? `${f.record.line.replace(/^(\d+–\d+)/, `$1 on ${categoryName}`)}.` : `No settled ${categoryName} trades yet.`);
   const x = sizeVsUsual(h.dollars, f?.usualBet ?? null);
-  if (x !== null && x >= 1.5) parts.push(`${x}× their usual bet.`);
-  else if (x !== null && x <= 0.5) parts.push(`Smaller than their usual bet.`);
+  if (x !== null && x >= 1.5) parts.push(`${x}× their usual trade.`);
+  else if (x !== null && x <= 0.5) parts.push(`Smaller than their usual trade.`);
   return parts.join(" ");
 }
 

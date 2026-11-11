@@ -1,6 +1,6 @@
 /* The daily Verified run (worker verified:check): every wallet up $1M+ on the watchlist, read from its public record
  * (lib/verified/read.ts), judged (checks.ts) and stored in terminal.wallet_verification. A wallet that was Verified and
- * no longer passes loses the badge (badge_lost_at), and each member who follows it gets a push saying which check it
+ * no longer passes loses the badge (badge_lost_at), and each member who follows it gets a push saying which test it
  * failed. A wallet whose read fails keeps yesterday's row. Server only. */
 import { sql } from "drizzle-orm";
 import type { Db } from "@/lib/db";

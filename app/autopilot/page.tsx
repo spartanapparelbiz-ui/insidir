@@ -45,7 +45,7 @@ export default async function AutopilotPage({ searchParams }: { searchParams: Pr
       <Stage first className="ap-stage" testid="autopilot-head" labelledBy="ap-h">
         <div className="b-head">
           <h1 id="ap-h" className="b-h2 ap-h1" data-testid="insight">{insight ?? "Autopilot."}</h1>
-          <p className="b-sub">Set a rule once. When a proven wallet bets the way it says, you get the finished Kalshi bet within seconds: the market, the side, a limit price and the number of contracts. You place it.</p>
+          <p className="b-sub">Set a rule once. When a proven wallet trades the way it says, you get the finished Kalshi trade within seconds: the market, the side, a limit price and the number of contracts. You place it.</p>
           {notice ? <p className="b-msg" role="status" data-testid="ap-notice">{notice}</p> : null}
         </div>
 

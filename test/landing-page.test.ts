@@ -31,32 +31,33 @@ const V2_UI = [
 ].filter(f => existsSync(join(ROOT, f)));
 
 describe("V2 landing page", () => {
-  it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home (the homepage, unlocked)", () => {
+  it("is one product in a scroll of stages: hero (with the live top five Verified), how it works, the contrast line, pricing, FAQ, final; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<HomePage d={d}");
-    // The hero, then everything below it in order (components/brand/landing/Landing.tsx Rest).
     expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
-    const order = ["<ElectionStage d={d} /> : null", "<InsideStage d={d} />", "<Pricing />", "<WhyStage />", "<HowStage />", "<WatchStage />", "<Free d={d} />", "<Proof d={d} />", "<FaqStage />", "<Final />"];
+    const order = ["<HowStage />", "<Contrast />", "<Pricing />", "<FaqStage />", "<Final />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
+    expect(landing).toContain("<TopVerified rows={d.verified} />");
     expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
-  it("the hero's words, its two CTAs (View Live Markets → /markets, Unlock Real-Time Alerts → the $1 checkout), and no stocks, crypto or Congress in the pitch", async () => {
+  it("the hero's words, the how-it-works steps, the contrast line, the price line from the trial constant, and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
-    expect(copy.HERO.h1).toEqual(["Real-Time Prediction Market", "& Sports Trading Intelligence."]);
-    expect(copy.HERO.sub).toBe("Track whale trades, arbitrage line mispricings across Polymarket & Kalshi, and catch volume spikes before odds shift.");
-    expect(copy.STAGES.final).toEqual(["Bet with the people", "who actually win."]);
-    expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
+    const { PLANS, TRIAL } = await import("@/lib/plans");
+    expect(copy.HERO.h1.join(" ")).toBe("Who to copy, how much, and when to get out.");
+    expect(copy.HERO.sub).toBe("Follow verified wallets up $1M+ on Kalshi and Polymarket. Insidir sizes each trade for you and pings you when they exit.");
+    expect(copy.HERO.contrast).toBe("Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell.");
+    expect(copy.HOW.map(h => h.t)).toEqual(["Follow a verified wallet.", "Get your size when it trades.", "Get pinged when it exits."]);
+    expect(copy.STAGES.pricingSub).toBe(`$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/mo. Cancel anytime.`);
+    expect(copy.STAGES.pricingSub).toBe("$1 for 3 days, then $39/mo. Cancel anytime.");
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing).toContain('<Pill href="/markets" delay={0.9} data-testid="hero-markets">{HERO.ctaMarkets}</Pill>');
-    expect(landing).toContain('<Pill href="/go?step=checkout" kind="ghost" className="b-hl" delay={0.97} data-testid="hero-start" data-checkout="hero">{HERO.ctaAlerts}</Pill>');
-    expect([copy.HERO.ctaMarkets, copy.HERO.ctaAlerts]).toEqual(["View Live Markets", "Unlock Real-Time Alerts"]);
-    // The onboarding's first question on the first screen: each chip opens /go at the next step with it answered.
-    expect(landing).toContain('href={`/go?step=checkout&cats=${c}`}');
-    expect(copy.HERO.ask).toBe("What do you bet on?");
+    expect(landing).toContain('<Pill href="/go?step=checkout" delay={0.9} data-testid="hero-start" data-checkout="hero">{HERO.cta}</Pill>');
+    expect(landing).toContain("{STAGES.pricingSub}");
+    const all = [...copy.HERO.h1, copy.HERO.sub, copy.HERO.contrast, ...copy.STAGES.final, ...copy.STAGES.pricing].join(" ");
+    expect(all).not.toMatch(/people who actually win|one bad bet|\bbet\b/i);
     const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);

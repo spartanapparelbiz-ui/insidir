@@ -16,7 +16,7 @@ import { isPaid } from "@/lib/plans";
 import "@/app/briefing.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Bet Briefing", description: "Paste a Polymarket or Kalshi link: what the bet needs to win, what it costs and pays, who's on each side and what the money says.", robots: { index: false } };
+export const metadata: Metadata = { title: "Trade Briefing", description: "Paste a Polymarket or Kalshi link: what the trade needs to win, what it costs and pays, who's on each side and what the money says.", robots: { index: false } };
 
 type Q = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
@@ -38,7 +38,7 @@ export default async function BriefingPage({ searchParams }: { searchParams: Pro
     <Frame member={member} current="markets" testid="briefing-page">
       <Stage bg={{ kind: "globe", dark: 0.6 }} first labelledBy="briefing-h">
         <div className="b-head">
-          <Lines as="h1" id="briefing-h" lines={["Bet Briefing."]} size={56} />
+          <Lines as="h1" id="briefing-h" lines={["Trade Briefing."]} size={56} />
           <p className="b-sub">Paste a Polymarket or Kalshi link. Before you bet: what it takes to win, what it costs and pays, who&apos;s on each side, and what the money says.</p>
         </div>
         <Panel className="s-col">

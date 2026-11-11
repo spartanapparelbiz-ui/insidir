@@ -1,7 +1,7 @@
 /* The Verified leaderboard (lib/verified/board.ts) and a wallet's check results.
  *   VerifiedBoard   Verified wallets first: total profit, 30 and 90-day profit, win rate, record by category, average
  *                   position as a share of its bankroll, its last 10 trades with results (losses as plain as wins), Follow
- *   VerifiedChecks  the four checks with pass or fail and the numbers behind each, so members see why
+ *   VerifiedChecks  the four tests with pass or fail and the numbers behind each, so members see why
  *   TopVerified     the homepage's live top five, names hidden (no address, no link) until signup
  * Server markup. Real numbers only; information, not financial advice. */
 import { FollowLink } from "@/components/desk/Act";
@@ -37,7 +37,7 @@ export function Last10({ rows }: { rows: BoardWallet["last10"] }) {
 export function VerifiedChecks({ w }: { w: BoardWallet }) {
   return (
     <div className="vb-checks" data-testid="verified-checks">
-      <p className="s-strong"><VerifiedBadge on={w.verified} /> {w.verified ? `Passes all four checks${w.verifiedSince ? `, Verified since ${ET.format(new Date(w.verifiedSince))}` : ""}.` : "Doesn't pass every check, so it isn't Verified."}</p>
+      <p className="s-strong"><VerifiedBadge on={w.verified} /> {w.verified ? `Passes all four tests${w.verifiedSince ? `, Verified since ${ET.format(new Date(w.verifiedSince))}` : ""}.` : "Doesn't pass every test, so it isn't Verified."}</p>
       <ul>
         {w.checks.map(c => (
           <li key={c.key} className={c.pass ? "vb-check vb-check--pass" : "vb-check vb-check--fail"} data-testid={`check-${c.key}`}>
@@ -46,13 +46,13 @@ export function VerifiedChecks({ w }: { w: BoardWallet }) {
           </li>
         ))}
       </ul>
-      <p className="b-small">Rechecked daily from its public Polymarket record (last {ET.format(new Date(w.checkedAt))}). A wallet that stops passing loses the badge and its followers are told.</p>
+      <p className="b-small">Re-tested daily from its public Polymarket record (last {ET.format(new Date(w.checkedAt))}). A wallet that stops passing loses the badge and its followers are told.</p>
     </div>
   );
 }
 
 export function VerifiedBoard({ rows, member }: { rows: BoardWallet[]; member: boolean }) {
-  if (!rows.length) return <p className="b-empty">The first daily check is running. Verified wallets show here as each one is read.</p>;
+  if (!rows.length) return <p className="b-empty">The first daily review is running. Verified wallets show here as each one is read.</p>;
   return (
     <ol className="vb" data-testid="verified-board">
       {rows.map((w, i) => (
@@ -71,7 +71,7 @@ export function VerifiedBoard({ rows, member }: { rows: BoardWallet[]; member: b
             <div><dt>Avg trade, of bankroll</dt><dd className="b-num">{w.avgSizePct !== null ? pctText(w.avgSizePct) : "Unknown"}</dd></div>
           </dl>
           {w.byCategory.length ? <p className="b-small vb-cats">By category: {w.byCategory.slice(0, 4).map(c => `${catName(c.category)} ${c.won}–${c.lost} (${signed(c.pnl)})`).join(" · ")}</p> : null}
-          <details className="vb-more"><summary className="b-small">Last 10 trades and the checks</summary><Last10 rows={w.last10} /><VerifiedChecks w={w} /></details>
+          <details className="vb-more"><summary className="b-small">Last 10 trades and the tests</summary><Last10 rows={w.last10} /><VerifiedChecks w={w} /></details>
         </li>
       ))}
     </ol>

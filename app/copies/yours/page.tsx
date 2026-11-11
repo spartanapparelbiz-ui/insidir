@@ -39,7 +39,7 @@ export default async function YourCopiesPage() {
             }))} />
           </Panel>
         ) : (
-          <Panel className="s-col"><p className="b-small" data-testid="copies-empty">Nothing copied yet. Select a bet on the board or open a ping, tap Copy, place it on Kalshi or Polymarket, then tap “I placed it”: it lands here and settles with the market.</p><div className="b-ctas"><Pill href="/board">The board</Pill></div></Panel>
+          <Panel className="s-col"><p className="b-small" data-testid="copies-empty">Nothing copied yet. Select a trade on the board or open a ping, tap Copy, place it on Kalshi or Polymarket, then tap “I placed it”: it lands here and settles with the market.</p><div className="b-ctas"><Pill href="/board">The board</Pill></div></Panel>
         )}
         <p className="b-small b-center">Logged by you; Insidir never places a bet or holds money. Past results, not a promise.</p>
       </Stage>

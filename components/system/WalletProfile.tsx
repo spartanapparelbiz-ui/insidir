@@ -94,7 +94,7 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
 
       {verdict ? (
           <Stage bg={{ kind: "globe", dark: 0.7 }} testid="wallet-verified" labelledBy="w-v">
-            <div className="b-head"><Lines as="h2" id="w-v" lines={[verdict.verified ? "Verified." : "Not verified."]} size={48} /><p className="b-sub">The four checks behind the badge, with the numbers.</p></div>
+            <div className="b-head"><Lines as="h2" id="w-v" lines={[verdict.verified ? "Verified." : "Not verified."]} size={48} /><p className="b-sub">The four tests behind the badge, with the numbers.</p></div>
             <Panel className="s-col s-col--wide"><VerifiedChecks w={verdict} /></Panel>
             <Panel className="s-col s-col--wide"><p className="b-label">Last 10 settled trades</p><Last10 rows={verdict.last10} /></Panel>
           </Stage>
@@ -115,7 +115,7 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
       <Stage bg={{ kind: "globe", dark: 0.65 }} testid="wallet-today" labelledBy="w-t">
         <div className="b-head"><Lines as="h2" id="w-t" lines={["Today's bets."]} size={48} />{paid ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
         {today.length ? <ul className="b-rows s-board" data-testid="wallet-today-rows">{today.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
-          : <p className="b-empty b-center">No bets from this wallet since midnight ET{paid ? "" : " (an hour late)"}.</p>}
+          : <p className="b-empty b-center">No trades from this wallet since midnight ET{paid ? "" : " (an hour late)"}.</p>}
       </Stage>
 
       {stats ? (

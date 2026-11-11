@@ -118,7 +118,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
               <label className="b-small">Daily summary push at<input type="time" name="at" defaultValue={user.settings.bookPushAt ?? ""} className="s-input ap-num" /></label>
               <button type="submit" className="b-btn b-btn-lg b-ghost">Save</button>
             </form>
-            <p className="b-small">{user.settings.bookPushAt ? `Every day at ${user.settings.bookPushAt}, your time. Clear the time to turn it off.` : "Off. Pick a time to get one push a day with your open bets and yesterday's results."}</p>
+            <p className="b-small">{user.settings.bookPushAt ? `Every day at ${user.settings.bookPushAt}, your time. Clear the time to turn it off.` : "Off. Pick a time to get one push a day with your open trades and yesterday's results."}</p>
             <div className="b-ctas">
               <a className="b-btn b-btn-lg b-ghost" href="/api/book/csv" data-testid="book-csv" download>Download CSV</a>
               {months.map(d => <a key={ym(d)} className="b-btn b-btn-lg b-ghost" href={`/api/book/statement?month=${ym(d)}`} data-testid="book-statement" download>{MONTH.format(d)} statement (PDF)</a>)}

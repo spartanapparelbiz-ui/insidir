@@ -56,7 +56,7 @@ function unblock(d: Device): string {
 }
 
 const HEAD: Record<St, readonly string[]> = {
-  off: ["Ping me when", "they bet."], error: ["Ping me when", "they bet."], unsupported: ["Pings need", "another browser."],
+  off: ["Ping me when", "they trade."], error: ["Ping me when", "they trade."], unsupported: ["Pings need", "another browser."],
   ios_needs_install: ["Add Insidir to", "your Home Screen."], denied: ["Pings are", "blocked."], on: ["Pings are on."], in_app: ["Open Insidir in", "your browser."],
 };
 

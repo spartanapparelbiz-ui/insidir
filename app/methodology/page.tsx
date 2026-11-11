@@ -19,7 +19,7 @@ import { shortWallet } from "@/lib/millionaires/watchlist";
 import { getDb, hasDatabase } from "@/lib/db";
 import { memo } from "@/lib/memo";
 
-export const metadata: Metadata = { title: "Methodology", description: "Where every Insidir number comes from: the watchlist, the bets, how a Polymarket market is matched to its Kalshi twin, the delays and the known limits." };
+export const metadata: Metadata = { title: "Methodology", description: "Where every Insidir number comes from: the watchlist, the trades, how a Polymarket market is matched to its Kalshi twin, the delays and the known limits." };
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function MethodologyPage() {
       lead="Every number on Insidir is computed from public records by the rules on this page. Nothing is typed in by hand.">
       <h2 id="sources">Where each number comes from</h2>
       <ul>
-        <li><strong>Bets</strong>: Polymarket trades, public on the Polygon blockchain, read from Polymarket&apos;s public data.</li>
+        <li><strong>Trades</strong>: Polymarket trades, public on the Polygon blockchain, read from Polymarket&apos;s public data.</li>
         <li><strong>Prices</strong>: each venue&apos;s own price and price history. Kalshi prices come from Kalshi&apos;s public market data.</li>
         <li><strong>Results</strong>: the market&apos;s official resolution on the venue.</li>
         <li><strong>Wallet profit</strong>: Polymarket&apos;s public all-time leaderboard, and each wallet&apos;s own settled positions.</li>
@@ -63,10 +63,10 @@ export default async function MethodologyPage() {
         </>
       ) : <p data-testid="proven-counts">The first screen is running; the list shows here once it has screened the wallets.</p>}
 
-      <h2 id="bets">What counts as a bet</h2>
+      <h2 id="bets">What counts as a trade</h2>
       <ul>
-        <li>A watchlist wallet&apos;s purchase of {dollars(BET_MIN)} or more on one side of one market. Purchases close together are one bet.</li>
-        <li>Each bet keeps the side, the size, the average price paid, the time, and the result once the market settles.</li>
+        <li>A watchlist wallet&apos;s purchase of {dollars(BET_MIN)} or more on one side of one market. Purchases close together are one trade.</li>
+        <li>Each trade keeps the side, the size, the average price paid, the time, and the result once the market settles.</li>
       </ul>
 
       <h2 id="twins">Kalshi twins</h2>
@@ -90,7 +90,7 @@ export default async function MethodologyPage() {
 
       <h2 id="delays">Delays</h2>
       <ul>
-        <li><strong>Members</strong> see every bet live: Polymarket is read every 15 seconds, so a bet usually shows within a minute.</li>
+        <li><strong>Members</strong> see every trade live: Polymarket is read every 15 seconds, so a trade usually shows within a minute.</li>
         <li><strong>Visitors</strong> see the board {late} minutes late, without the side.</li>
         <li>Every block of numbers says when it was read.</li>
       </ul>
@@ -103,12 +103,12 @@ export default async function MethodologyPage() {
       </ul>
 
       <h2 id="analyst-notes">Analyst notes</h2>
-      <p>Some bets carry a short note, at most 3 sentences. It describes the data; it never recommends, predicts or guesses who is behind a wallet. The writer sees only facts computed from Insidir&apos;s own data, and a note is published only if every number and name in it is in those facts. Notes are written by {analystModel()} at temperature 0, under rules version {NOTE_VERSION}; one that fails the check is replaced by a fixed template.</p>
+      <p>Some trades carry a short note, at most 3 sentences. It describes the data; it never recommends, predicts or guesses who is behind a wallet. The writer sees only facts computed from Insidir&apos;s own data, and a note is published only if every number and name in it is in those facts. Notes are written by {analystModel()} at temperature 0, under rules version {NOTE_VERSION}; one that fails the check is replaced by a fixed template.</p>
 
       <h2 id="limits">Known limits</h2>
       <ul>
         <li>A wallet is not a person. One trader can use several wallets, and we never try to work out who is behind one.</li>
-        <li>The price you get is not the price they paid: by the time you see a bet, the price may have moved.</li>
+        <li>The price you get is not the price they paid: by the time you see a trade, the price may have moved.</li>
         <li>It&apos;s a record of what happened, not advice. See <Link href="/disclosures">Disclosures</Link>.</li>
       </ul>
       <p>How we verify every number against its source: <Link href="/data">Our data</Link>. Live health of every source: <Link href="/status">Status</Link>.</p>

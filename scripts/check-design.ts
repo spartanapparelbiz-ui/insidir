@@ -10,7 +10,7 @@
  * Exit code 1 on any failure. */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { COMPANY, DATA_COMPANY, GAMBLER } from "../lib/copy";
+import { COMPANY, DATA_COMPANY, FOOTER } from "../lib/copy";
 import { DATA_PAGES, entityRoutes, PUBLIC } from "./routes";
 
 /** Classes of retired designs: the phone fan, the forest 404, the old onboarding, the dark hero, the film grain, the
@@ -59,7 +59,7 @@ async function pages(BASE: string) {
     const html = (await r.text()).replace(/&#x27;|&apos;/g, "'").replace(/&amp;/g, "&");
     // The words as a reader sees them: React's text separators and the tags around a link don't count.
     const words = html.replace(/<!-- -->/g, "").replace(/<[^>]+>/g, "");
-    for (const [what, text] of [["company line", `${COMPANY.name} · ${COMPANY.place} · ${COMPANY.email}`], ["what Insidir isn't", DATA_COMPANY], ["problem gambling", GAMBLER]] as const) {
+    for (const [what, text] of [["company line", `${COMPANY.name} · ${COMPANY.place} · ${COMPANY.email}`], ["what Insidir isn't", DATA_COMPANY], ["the legal line", FOOTER]] as const) {
       if (!words.includes(text)) fail.push(`${p}: footer missing ${what}`);
     }
     for (const c of LEGACY) if (new RegExp(`class="[^"]*\\b${c}`).test(html)) fail.push(`${p}: retired class ${c} in the page`);

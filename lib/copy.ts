@@ -3,26 +3,23 @@ import { TRIAL } from "./plans";
 /* Copy rules in one place. Never "guaranteed" or "risk-free" for anything we show. */
 
 /** Under every bet and market, at the top of the footer, and wherever data could be mistaken for a tip. */
-export const ADVICE = "Information, not financial or betting advice.";
+export const ADVICE = "Information, not financial advice.";
 
 /** On every page. */
-export const FOOTER =
-  `${ADVICE} Insidir shows public trading data and never recommends a trade or a bet. Big traders lose too. Past results don't predict future ones.`;
+export const FOOTER = `${ADVICE} Past results don't predict future results. Not a broker or exchange. Not affiliated with Kalshi or Polymarket.`;
 
 /** What Insidir is and isn't, under every page and on /disclosures. */
 export const DATA_COMPANY = "Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.";
 /** The data disclaimer, last in every footer: what Insidir is, and isn't. */
 export const DISCLAIMER = "Disclaimer: Insidir is a research and data analytics tool. Content provided is strictly for informational purposes and does not constitute financial, trading, or wagering advice. Insidir is not a brokerage, sportsbook, or gambling operator and does not take custody of user funds.";
-/** The problem-gambling line: the footer, every sports page and /disclosures. */
-export const GAMBLER = "Gambling problem? Call 1-800-GAMBLER.";
 /** Who builds Insidir. */
 export const COMPANY = { name: "Aethric LLC", place: "Pompano Beach, FL", email: "hello@aethric.llc", founder: "Nicholas" } as const;
 
 /** The thin bar above the nav, and the one paid call to action (docs/INSIDIR-V2.md §6). */
 /** What Insidir is, in one plain sentence: the first FAQ answer, the meta description and link previews. */
-export const WHAT_IS = "Every bet from Polymarket wallets up $1M+, live, with the side they took, and the same market on Kalshi where there is one.";
+export const WHAT_IS = "Every trade from Polymarket wallets up $1M+, live, with the side they took, and the same market on Kalshi where there is one.";
 /** The same thing as a title (the home page's <title>, the link preview headline). */
-export const WHAT_IS_TITLE = "Insidir: see which side the millionaires bet";
+export const WHAT_IS_TITLE = "Insidir: see which side the millionaires trade";
 /* The trial, said one way everywhere and always from lib/plans.ts TRIAL (it must match the Whop plan exactly, or
  * whop:setup keeps checkout shut). */
 /** "3 days". */
@@ -56,7 +53,7 @@ export const LOCK_LINE = "Locks in a net P&L if both sides fill and both markets
 
 /** Words that must never describe a deal (checked over every page by test/compliance.test.ts). The negated form
  *  "Not risk-free" and "aren't guaranteed" are allowed, and so is the FAQ question "Is this risk-free?". */
-export const BANNED = [/\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\beasy money\b/i, /\bsure thing\b/i, /\blocks?\b/i, /\bcan'?t lose\b/i, /\byou should (buy|bet|sell)\b/i];
+export const BANNED = [/\bguaranteed\b/i, /\brisk[- ]free\b/i, /\bfree money\b/i, /\beasy money\b/i, /\bsure thing\b/i, /\blocks?\b/i, /\bcan'?t lose\b/i, /\byou should (buy|trade|sell)\b/i];
 const NEGATED = /\b(not|aren'?t|isn'?t|never|no)\s+(\w+\s+)?(guaranteed|risk[- ]free)\b/gi;
 /** A reader's question we answer with "No" (the FAQ's "Is this risk-free?"). */
 const QUESTION = /\b(is|are) (this|it|these|deals?) (guaranteed|risk[- ]free)\?/gi;

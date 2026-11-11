@@ -41,7 +41,7 @@ function Hero({ d }: { d: Pick<LandingData, "verified" | "verifiedCount"> }) {
         <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
         <div className="lp-top" data-m="settle" style={{ "--d": ".7s" } as CSSProperties}>
           <p className="b-label">Live top {Math.min(5, d.verified.length) || 5} Verified wallets{d.verifiedCount.checked ? <> · {d.verifiedCount.verified} of {d.verifiedCount.checked} wallets up $1M+ pass today</> : null}</p>
-          {d.verified.length ? <TopVerified rows={d.verified} /> : <p className="b-small" data-testid="top-verified-empty">The daily check is running: the top Verified wallets show here as each one is read.</p>}
+          {d.verified.length ? <TopVerified rows={d.verified} /> : <p className="b-small" data-testid="top-verified-empty">The daily review is running: the top Verified wallets show here as each one is read.</p>}
           <p className="b-small">Names hidden until you sign up. Profit from each wallet&apos;s public Polymarket record.</p>
         </div>
         <div className="b-ctas">
@@ -72,7 +72,7 @@ function Free({ d }: { d: LandingData }) {
           {t ? (
             <div style={{ display: "grid", gap: 12 }}>
               <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
-              <p className="b-small">The biggest single bet since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
+              <p className="b-small">The biggest single trade since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
             </div>
           ) : <p className="b-empty">Today&apos;s biggest bet shows here once a $1M+ wallet bets after midnight ET. Until then, the board beside it has the latest.</p>}
         </section>
@@ -81,9 +81,9 @@ function Free({ d }: { d: LandingData }) {
           {late.length ? (
             <>
               <ul className="b-rows">{late.map(b => <li key={b.id}><BetRow bet={b} now={d.now} /></li>)}</ul>
-              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.pulse.all.countToday ? `${d.pulse.all.countToday.toLocaleString("en-US")} ${d.pulse.all.countToday === 1 ? "bet" : "bets"} from wallets up $100K+ today${d.pulse.countToday ? `, ${d.pulse.countToday.toLocaleString("en-US")} from $1M+` : ""}. ` : ""}Members see each one the second it lands.</p>
+              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.pulse.all.countToday ? `${d.pulse.all.countToday.toLocaleString("en-US")} ${d.pulse.all.countToday === 1 ? "trade" : "trades"} from wallets up $100K+ today${d.pulse.countToday ? `, ${d.pulse.countToday.toLocaleString("en-US")} from $1M+` : ""}. ` : ""}Members see each one the second it lands.</p>
             </>
-          ) : <p className="b-empty">No millionaire bets in the last day yet.</p>}
+          ) : <p className="b-empty">No millionaire trades in the last day yet.</p>}
           <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/board">The board</a>
         </section>
         <section className="b-glass b-pad b-tile3" data-testid="free-race" data-m="settle" style={{ "--d": ".84s" } as CSSProperties}>
@@ -95,8 +95,8 @@ function Free({ d }: { d: LandingData }) {
             </>
           ) : (
             <dl className="fr-nums" data-testid="free-numbers">
-              {d.pulse.today > 0 ? <div><dd className="b-num">{usd(d.pulse.today)}</dd><dt>bet by wallets up $1M+ in 24 hours</dt></div> : null}
-              {d.pulse.all.countToday > 0 ? <div><dd className="b-num">{d.pulse.all.countToday.toLocaleString("en-US")}</dd><dt>{d.pulse.all.countToday === 1 ? "bet" : "bets"} from $100K+ wallets since midnight ET{d.pulse.countToday > 0 ? `, ${d.pulse.countToday.toLocaleString("en-US")} from $1M+` : ""}</dt></div> : null}
+              {d.pulse.today > 0 ? <div><dd className="b-num">{usd(d.pulse.today)}</dd><dt>traded by wallets up $1M+ in 24 hours</dt></div> : null}
+              {d.pulse.all.countToday > 0 ? <div><dd className="b-num">{d.pulse.all.countToday.toLocaleString("en-US")}</dd><dt>{d.pulse.all.countToday === 1 ? "trade" : "trades"} from $100K+ wallets since midnight ET{d.pulse.countToday > 0 ? `, ${d.pulse.countToday.toLocaleString("en-US")} from $1M+` : ""}</dt></div> : null}
               {d.pulse.millionaires > 0 ? <div><dd className="b-num">{d.pulse.millionaires.toLocaleString("en-US")}</dd><dt>wallets up $1M+ watched</dt></div> : null}
             </dl>
           )}
@@ -181,7 +181,7 @@ export function Landing({ d }: { d: LandingData }) {
       {d.member ? null : <>
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
         <Intro lines={d.verifiedCount.checked ? [
-          `${d.verifiedCount.verified} of ${d.verifiedCount.checked} wallets up $1M+ pass every check today.`,
+          `${d.verifiedCount.verified} of ${d.verifiedCount.checked} wallets up $1M+ pass every test today.`,
           "Insidir tells you who to copy,",
           "how much, and when to get out.",
         ] : ["Who to copy,", "how much,", "and when to get out."]} />

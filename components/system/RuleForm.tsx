@@ -39,7 +39,7 @@ export function RuleForm({ id, name = "", spec = DEFAULT_SPEC, testid = "rule-fo
       </label>
 
       <fieldset className="s-opts"><legend className="b-label">When</legend>
-        <label className="s-form b-small">Their bet is at least
+        <label className="s-form b-small">Their trade is at least
           <select name="minBet" className="s-input" defaultValue={String(spec.triggers.minBet)}>
             {[...new Set([...BETS, spec.triggers.minBet])].sort((a, b) => a - b).map(v => <option key={v} value={v}>{k(v)}</option>)}
           </select>

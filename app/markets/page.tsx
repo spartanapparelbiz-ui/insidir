@@ -12,7 +12,7 @@ import { dollars } from "@/lib/money";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Markets", description: "Every market people bet on, with the millionaire money in each." };
+export const metadata: Metadata = { title: "Markets", description: "Every market people trade on, with the millionaire money in each." };
 
 export default async function Markets() {
   const viewer = await getViewer(), now = Date.now();
@@ -26,7 +26,7 @@ export default async function Markets() {
   return (
     <Frame member={isPaid(viewer.plan)} current="markets" testid="markets-page">
       <Stage first testid="markets-band" labelledBy="markets-h">
-        <div className="b-head"><Insight id="markets-h" text={insight} fallback={["Every market", "people bet on."]} size={56} /><p className="b-sub" data-m="lift">Every market people bet on, by the millionaire money in it {when}.</p></div>
+        <div className="b-head"><Insight id="markets-h" text={insight} fallback={["Every market", "people trade on."]} size={56} /><p className="b-sub" data-m="lift">Every market people trade on, by the millionaire money in it {when}.</p></div>
         <div className="b-grid">
           {order.map((c, i) => {
             const l = by.get(c.slug);

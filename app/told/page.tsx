@@ -73,7 +73,7 @@ export default async function ToldPage() {
                 );
               })}
             </ol>
-          ) : <p className="b-empty">Nothing yet. Watch a bet on <a href="/watch">Watch my bet</a> and every alert lands here.</p>}
+          ) : <p className="b-empty">Nothing yet. Watch a trade on <a href="/watch">Watch my trade</a> and every alert lands here.</p>}
           <p className="b-small" style={{ marginTop: 20 }}>&ldquo;Won&rdquo; and &ldquo;Lost&rdquo; are for the side the line was about, once its market settled. Past results don&apos;t predict future ones. Information, not advice.</p>
         </div>
       </Stage>

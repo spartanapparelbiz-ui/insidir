@@ -24,6 +24,7 @@ export default function TermsPage() {
       </ul>
 
       <h2>Who can use it</h2>
+      <p className="s-strong" data-testid="terms-18">18+ only.</p>
       <p>You must be 18 or older, and you confirm it before checkout (we keep that confirmation with your account). You must also be old enough to use prediction markets or sportsbooks where you live if you use them. It&apos;s up to you to confirm that each venue is legal and available to you, and to follow its rules.</p>
 
       <h2>Your account and payment</h2>

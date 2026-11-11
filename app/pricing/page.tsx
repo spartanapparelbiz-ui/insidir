@@ -17,12 +17,12 @@ import { pulse } from "@/lib/millionaires/queries";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `See who's betting on Kalshi. Kalshi won't show you. Every millionaire bet live, pings with the Kalshi price, every race, wallet records and copy tickets: $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month.` };
+export const metadata: Metadata = { title: "Pricing", description: `See who's trading on Kalshi. Kalshi won't show you. Every millionaire trade live, pings with the Kalshi price, every race, wallet records and copy tickets: $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month.` };
 
 
 const COMPARE: Array<[string, string, string]> = [
   ["The board", "60 minutes late", "Live"],
-  ["Which side they took", "—", "Every bet"],
+  ["Which side they took", "—", "Every trade"],
   ["Pings", "—", "Yes, with the Kalshi price"],
   ["Races", "One in full", "Every race"],
   ["Wallet records", "—", "Yes"],
@@ -58,7 +58,7 @@ export default async function PricingPage() {
   const w = await thisWeek(Date.now());
   const items = w ? [
     w.wallets ? { label: "Millionaire wallets watched", value: w.wallets.toLocaleString("en-US"), testid: "week-positions" } : null,
-    { label: "Millionaire bets today", value: w.today.toLocaleString("en-US"), testid: "week-bets" },
+    { label: "Millionaire trades today", value: w.today.toLocaleString("en-US"), testid: "week-bets" },
     { label: "Markets with a Kalshi twin", value: w.twins.toLocaleString("en-US"), testid: "week-twins" },
     w.audit ? { label: "Last accuracy audit", value: `${w.audit.ok} of ${w.audit.checked} matched`, testid: "week-check" } : null,
   ].filter(<T,>(x: T | null): x is T => x !== null) : [];
@@ -66,7 +66,7 @@ export default async function PricingPage() {
     <Frame member={member} current="account" testid="pricing-page">
       <Stage bg={{ kind: "photo", photo: slotPhoto("world"), dark: 0.55, priority: true }} first testid="pricing-hero" labelledBy="p-h">
         <div className="b-head">
-          <Lines as="h1" id="p-h" lines={["See who's betting on Kalshi.", "Kalshi won't show you."]} size={56} />
+          <Lines as="h1" id="p-h" lines={["See who's trading on Kalshi.", "Kalshi won't show you."]} size={56} />
           <p className="b-sub" data-m="lift">Polymarket&apos;s bets are public. We watch its most profitable wallets and put the same market on Kalshi next to every bet.</p>
         </div>
         <Panel className="s-col s-plan" testid="plan-card">

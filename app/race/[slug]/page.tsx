@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!r) return { title: "Race", robots: { index: false } };
   const name = cap(raceName(r.race));
   const lead = r.race.candidates.filter(c => c.price !== null).sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0];
-  const description = `${name}: ${lead ? `${lead.name} at ${Math.round((lead.price ?? 0) * 100)}¢, ` : ""}${dollars(r.race.total)} from wallets up $100K+, the Kalshi price, and every bet.`;
+  const description = `${name}: ${lead ? `${lead.name} at ${Math.round((lead.price ?? 0) * 100)}¢, ` : ""}${dollars(r.race.total)} from wallets up $100K+, the Kalshi price, and every trade.`;
   return { title: { absolute: `${name}: who the millionaires back · Insidir` }, description, alternates: { canonical: raceHref(r.race) }, openGraph: { title: name, description } };
 }
 
@@ -82,16 +82,16 @@ export default async function RacePage({ params }: { params: Promise<{ slug: str
             <div key={c.marketId} data-testid="race-candidate-kalshi">
               <p className="b-label">{c.name}</p>
               <KalshiFirst twin={twins.get(c.marketId) ?? null} yesLabel={c.name} noLabel={`Not ${c.name}`} polyYes={c.price} polyUrl={null} region={viewer.region} />
-              <p className="b-small"><a className="s-link" href={marketPath(c.marketId, c.name)} data-entity="market">Every bet on {c.name}</a></p>
+              <p className="b-small"><a className="s-link" href={marketPath(c.marketId, c.name)} data-entity="market">Every trade on {c.name}</a></p>
             </div>
           ))}
         </div>
       </Stage>
 
       <Stage bg={{ kind: "globe", dark: 0.7 }} testid="race-bets" labelledBy="race-b-h">
-        <div className="b-head"><Lines as="h2" id="race-b-h" lines={["Every bet."]} size={48} />{member ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
+        <div className="b-head"><Lines as="h2" id="race-b-h" lines={["Every trade."]} size={48} />{member ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
         {bets.length ? <ul className="b-rows s-board" data-testid="race-bet-rows">{bets.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
-          : <p className="b-empty b-center">{member ? "No bets yet." : "No bets older than an hour yet."}</p>}
+          : <p className="b-empty b-center">{member ? "No trades yet." : "No trades older than an hour yet."}</p>}
       </Stage>
 
       {others.length ? (
@@ -100,8 +100,8 @@ export default async function RacePage({ params }: { params: Promise<{ slug: str
           <Panel className="s-col"><RelatedLinks kind="race" items={others.map(o => ({ href: raceHref(o), title: cap(raceName(o)), sub: `${dollars(o.total)} from the watchlist` }))} /></Panel>
         </Stage>
       ) : null}
-      <p className="b-small b-center">Information, not advice. Millionaires lose bets too. Insidir never places a bet or holds money.</p>
-      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={name} path={raceHref(race)} description={`Who the wallets up $1M+ back in ${name}, the Kalshi price, and every bet.`} sources={["https://kalshi.com"]} />
+      <p className="b-small b-center">Information, not advice. Millionaires lose trades too. Insidir never places a trade or holds money.</p>
+      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={name} path={raceHref(race)} description={`Who the wallets up $1M+ back in ${name}, the Kalshi price, and every trade.`} sources={["https://kalshi.com"]} />
       <ScrollFx />
     </Frame>
   );

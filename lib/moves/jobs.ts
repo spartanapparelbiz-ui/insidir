@@ -172,7 +172,7 @@ export async function repairSwappedOnce(db: Db, perRun = 200): Promise<number> {
   const rows = (await db.execute(sql`select id, parts, hidden_reason from terminal.moves where parts is not null and jsonb_array_length(parts) > 1 and last_at < at limit ${perRun}`)).rows as Array<{ id: string; parts: FillPart[]; hidden_reason: string | null }>;
   for (const r of rows) {
     const parts = sortParts(r.parts), f = fromParts(parts);
-    const unhide = r.hidden_reason === "no matching fills at the source" || (r.hidden_reason ?? "").startsWith("Not a new bet") || (r.hidden_reason ?? "").startsWith("amount ");
+    const unhide = r.hidden_reason === "no matching fills at the source" || /^Not a new (bet|trade)/.test(r.hidden_reason ?? "") || (r.hidden_reason ?? "").startsWith("amount ");
     await db.update(moves).set({ amount: f.amount, avgPrice: f.avgPrice, at: new Date(f.at), lastAt: new Date(f.lastAt), fills: f.fills,
       sourceRefs: sql`${JSON.stringify(f.sourceRefs ?? [])}::jsonb`, parts: sql`${JSON.stringify(parts)}::jsonb`, realizedAt: null, pnl: null, soldShare: null,
       ...(unhide ? { hiddenAt: null, hiddenReason: null } : {}) }).where(eq(moves.id, r.id));

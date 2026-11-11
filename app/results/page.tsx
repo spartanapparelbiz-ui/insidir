@@ -25,7 +25,7 @@ import { REPORT_KEY, type RulesReport } from "@/lib/autopilot/report";
 import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "The record", description: "Following the pings on Kalshi, and how every settled millionaire bet did, losses included: won and lost, $100 on every one. Past results, not a promise." };
+export const metadata: Metadata = { title: "The record", description: "Following the pings on Kalshi, and how every settled millionaire trade did, losses included: won and lost, $100 on every one. Past results, not a promise." };
 
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 const DAYF = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -53,8 +53,8 @@ export default async function ResultsPage() {
     <Frame member={member} current="board" testid="results-page">
       <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6, priority: true }} first testid="results-own" labelledBy="ro-h">
         <div className="b-head">
-          <Lines as="h1" id="ro-h" lines={["How the millionaires' bets", "actually did."]} size={56} />
-          <p className="b-sub" data-m="lift">Every settled bet from a wallet up $1M+ in the last {rec?.days ?? 30} days, at the price they paid. Losses included.</p>
+          <Lines as="h1" id="ro-h" lines={["How the millionaires' trades", "actually did."]} size={56} />
+          <p className="b-sub" data-m="lift">Every settled trade from a wallet up $1M+ in the last {rec?.days ?? 30} days, at the price they paid. Losses included.</p>
         </div>
         <Panel className="s-col" testid="results-total">
           {rec && n ? (
@@ -65,7 +65,7 @@ export default async function ResultsPage() {
                 : <p className="b-small" data-testid="results-building">The ${STAKE}-a-bet line shows from {MIN_SETTLED} settled bets: {n} so far.</p>}
               <p className="b-small">It&apos;s the price they paid, not one you could have got. {PAST}</p>
             </>
-          ) : <p className="b-empty">No millionaire bet has settled in the last 30 days yet.</p>}
+          ) : <p className="b-empty">No millionaire trade has settled in the last 30 days yet.</p>}
         </Panel>
       </Stage>
 
@@ -74,7 +74,7 @@ export default async function ResultsPage() {
           <div className="b-head"><Lines as="h2" id="rc-h" lines={["By category."]} size={48} /></div>
           <Panel className="s-col s-prose">
             <table data-testid="results-by-category">
-              <thead><tr><th scope="col">Category</th><th scope="col">Record</th><th scope="col">${STAKE} a bet</th></tr></thead>
+              <thead><tr><th scope="col">Category</th><th scope="col">Record</th><th scope="col">${STAKE} a trade</th></tr></thead>
               <tbody>{rec.byCategory.map(c => <tr key={c.category}><th scope="row">{categoryInfo(c.category).name}</th><td>{tallyText(c)}</td><td className="b-num">{settledCount(c) >= MIN_SETTLED ? signed(c.back - c.staked) : `${settledCount(c)} of ${MIN_SETTLED}`}</td></tr>)}</tbody>
             </table>
           </Panel>
@@ -128,7 +128,7 @@ export default async function ResultsPage() {
           <div className="b-head"><Lines as="h2" id="rd-h" lines={["Day by day."]} size={48} /></div>
           <Panel className="s-col s-prose">
             <table data-testid="results-by-day">
-              <thead><tr><th scope="col">Day (ET)</th><th scope="col">Record</th><th scope="col">${STAKE} a bet</th></tr></thead>
+              <thead><tr><th scope="col">Day (ET)</th><th scope="col">Record</th><th scope="col">${STAKE} a trade</th></tr></thead>
               <tbody>{rec.byDay.slice(0, 7).map(d => <tr key={d.day}><th scope="row">{dayLabel(d.day)}</th><td>{tallyText(d)}</td><td className="b-num">{signed(d.back - d.staked)}</td></tr>)}</tbody>
             </table>
           </Panel>
@@ -139,7 +139,7 @@ export default async function ResultsPage() {
         <div className="b-head"><Lines as="h2" id="rl-h" lines={["The latest settled."]} size={48} /></div>
         {latest.length ? <ul className="b-rows s-board" data-testid="results-rows">{latest.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
           : <p className="b-empty b-center">Nothing settled yet.</p>}
-        <p className="b-center b-small" style={{ marginTop: 14 }}><a href="/board">Every bet on the board</a></p>
+        <p className="b-center b-small" style={{ marginTop: 14 }}><a href="/board">Every trade on the board</a></p>
         {member ? null : <div className="b-center"><div className="b-ctas"><Pill href="/go" data-checkout="results">Start for ${TRIAL.fee}</Pill></div></div>}
       </Stage>
     </Frame>

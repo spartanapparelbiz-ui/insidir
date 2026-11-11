@@ -36,21 +36,21 @@ describe.skipIf(!URL0)("/status sources", () => {
   afterAll(async () => { await pool?.end(); await admin?.query(`drop database if exists ${NAME}`); await admin?.end(); });
   beforeEach(async () => { await pool.query("truncate terminal.moves, terminal.worker_heartbeats"); });
 
-  it("a quiet stretch with a fresh poller is green; the note gives both the read and the latest bet", async () => {
+  it("a quiet stretch with a fresh poller is green; the note gives both the read and the latest trade", async () => {
     await bet("polymarket", 22 * MIN);
     await beat("moves:polymarket", 15_000);
     const s = (await readStatus(db, NOW)).sources.find(x => x.key === "polymarket")!;
     expect(s.light).toBe("green");
-    expect(s.note).toMatch(/^Read .* ago; latest bet 22 min ago$/);
+    expect(s.note).toMatch(/^Read .* ago; latest trade 22 min ago$/);
   });
 
-  it("a poller that stopped reading is not green, however recent the last bet", async () => {
+  it("a poller that stopped reading is not green, however recent the last trade", async () => {
     await bet("polymarket", MIN);
     await beat("moves:polymarket", 3 * 60 * MIN);
     expect((await readStatus(db, NOW)).sources.find(x => x.key === "polymarket")!.light).toBe("red");
   });
 
-  it("no poller beat yet: falls back to the newest stored bet", async () => {
+  it("no poller beat yet: falls back to the newest stored trade", async () => {
     await bet("kalshi", 5 * MIN);
     const s = (await readStatus(db, NOW)).sources.find(x => x.key === "kalshi")!;
     expect(s.light).toBe("green");

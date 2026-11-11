@@ -17,8 +17,8 @@ export default function PrivacyPage() {
 
       <h2>What we keep about you</h2>
       <ul>
-        <li><strong>Your account</strong>: email and your payment provider's account id, your plan and membership status, your US or outside-the-US answer, when you confirmed you are 18 or older, the answers you gave when you joined (categories, where you bet, your usual size), and the reason you gave if you cancel. We never have a password or card number for you.</li>
-        <li><strong>What you follow</strong>: wallets and markets, the bets you logged as copied, your ping settings, and push subscriptions for the devices where you turned pings on.</li>
+        <li><strong>Your account</strong>: email and your payment provider's account id, your plan and membership status, your US or outside-the-US answer, when you confirmed you are 18 or older, the answers you gave when you joined (categories, where you trade, your usual size), and the reason you gave if you cancel. We never have a password or card number for you.</li>
+        <li><strong>What you follow</strong>: wallets and markets, the trades you logged as copied, your ping settings, and push subscriptions for the devices where you turned pings on.</li>
                 <li><strong>Heads-ups</strong>: if you sign up to hear when a feature launches, your email and that feature.</li>
         <li><strong>Usage</strong>: first-party events (page viewed, checkout started) with a random visitor id from a cookie and, when you&apos;re signed in, your account id; which version of a page you saw; campaign tags (utm) of the link that brought you.</li>
       </ul>

@@ -70,7 +70,7 @@ describe.skipIf(!URL0)("millionaires, in Postgres", () => {
     expect((await pool.query("select count(*)::int n from terminal.watchlist")).rows[0].n).toBe(1);
   });
 
-  it("bets: upsert in place, visitors an hour late, live counts, money per tier and side, settle with the market", async () => {
+  it("trades: upsert in place, visitors an hour late, live counts, money per tier and side, settle with the market", async () => {
     await pool.query(`insert into terminal.watchlist values ('${W(1)}', 'millionaire', 2400000, now()), ('${W(2)}', 'millionaire', 1500000, now()), ('${W(3)}', 'pro', 300000, now()), ('${W(4)}', 'millionaire', 1100000, now())`);
     await saveBets(db, [bet("b1", { wallet: W(1), minsAgo: 10 }), bet("b2", { wallet: W(2), minsAgo: 90, amount: 20_000 }), bet("b3", { wallet: W(3), minsAgo: 30, tier: "pro", outcomeSide: "no", outcome: "No", amount: 8000 }),
       bet("b4", { wallet: W(4), minsAgo: 200, marketId: "0xm2", category: "politics", marketTitle: "Will the bill pass?", eventTitle: "Congress" })]);
@@ -119,7 +119,7 @@ describe.skipIf(!URL0)("millionaires, in Postgres", () => {
     await saveBets(db, Array.from({ length: 30 }, (_, i) => bet(`s${i}`, { wallet: W(1), minsAgo: 100 + i, marketId: `0xs${i}`, price: 0.49, result: i < 20 ? "won" : "lost" })));
     clearMemo();
     const p = await proof(db, NOW);
-    expect(p).toMatchObject({ kind: "millionaire", label: "millionaire bet", record: { n: 30, won: 20, lost: 10, staked: 3000 } });
+    expect(p).toMatchObject({ kind: "millionaire", label: "millionaire trade", record: { n: 30, won: 20, lost: 10, staked: 3000 } });
     expect(p!.record.net).toBeCloseTo(20 * (100 / 0.5) - 3000);
   });
 });

@@ -18,13 +18,20 @@ export interface MyCopy {
 export interface Totals { week: number; month: number; all: number; placed: number; open: number }
 
 const ET_PARTS = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short", hour: "2-digit", hourCycle: "h23", minute: "2-digit" });
-/** Midnight ET that started this week (Monday) and this month, as ms. Pure. */
+const etMidnight = (t: number): { at: number; day: number; dow: number } => {
+  const p = Object.fromEntries(ET_PARTS.formatToParts(new Date(t)).map(x => [x.type, x.value]));
+  let at = t - (Number(p.hour) * 60 + Number(p.minute)) * 60_000 - (t % 60_000);
+  // A 23- or 25-hour day (the clock change): land on the instant that reads 00:00.
+  const h = Number(Object.fromEntries(ET_PARTS.formatToParts(new Date(at)).map(x => [x.type, x.value])).hour);
+  if (h === 23) at += 3_600_000; else if (h === 1) at -= 3_600_000;
+  return { at, day: Number(p.day), dow: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(String(p.weekday)) };
+};
+/** Midnight ET that started this week (Monday) and this month, as ms (right across a clock change). Pure. */
 export function periodStarts(now: number): { week: number; month: number } {
-  const p = Object.fromEntries(ET_PARTS.formatToParts(new Date(now)).map(x => [x.type, x.value]));
-  const sinceMidnight = (Number(p.hour) * 60 + Number(p.minute)) * 60_000 + (now % 60_000);
-  const midnight = now - sinceMidnight;
-  const dow = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(String(p.weekday));
-  return { week: midnight - Math.max(0, dow) * 86_400_000, month: midnight - (Number(p.day) - 1) * 86_400_000 };
+  const today = etMidnight(now);
+  // Step back whole days to noon of the target day, then take that day's own midnight.
+  const at = (daysBack: number) => etMidnight(today.at - daysBack * 86_400_000 + 12 * 3_600_000).at;
+  return { week: at(Math.max(0, today.dow)), month: at(today.day - 1) };
 }
 
 /** A copy's value: settled at its P&L; open at the price now ((now − entry) / entry × amount). Pure. */

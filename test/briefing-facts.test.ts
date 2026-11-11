@@ -11,7 +11,7 @@ const NOW = Date.UTC(2026, 10, 9, 17); // Monday noon ET
 const labels = { yes: "Colts", no: "Cowboys" };
 const W1 = "0x7c3db723f1d4d8cb9c55009520aaaaaaaaaa5c6b", W2 = "0xab12000000000000000000000000000000009f00";
 
-describe("1. what you're actually betting on", () => {
+describe("1. what you're actually trading on", () => {
   const g = { description: "This market will resolve to \"Yes\" if the House votes to impeach.\n\nThe Senate doesn't need to convict. If he leaves office first, this market resolves to \"No\". Extra text here.", endDate: "2026-12-31T17:00:00Z", resolutionSource: "https://www.congress.gov/" };
   it("takes the rules' first sentences, then the deadline (ET) and the source; keeps the full text as a fact", () => {
     const r = rulesSection(g);
@@ -80,11 +80,11 @@ describe("4. who's on each side", () => {
   it("money and wallets per side; top wallets by tier and short address only, their record and size", () => {
     const lines = whoSection(labels, { yes: { dollars: 48_000, wallets: 1 }, no: { dollars: 0, wallets: 0 } }, holdings, facts, "Football");
     expect(lines[0]).toBe("Colts: 1 $1M+ wallet, $48K. Cowboys: 0 $1M+ wallets, $0.");
-    expect(lines[1]).toBe("On Colts: Millionaire 0x7c3d…5c6b: $48K at 62¢. 14–6 on Football, $100 on each: +$880. 3.2× their usual bet.");
-    expect(lines[2]).toBe("On Cowboys: Pro 0xab12…9f00: $9K at 40¢. No settled Football bets yet.");
+    expect(lines[1]).toBe("On Colts: Millionaire 0x7c3d…5c6b: $48K at 62¢. 14–6 on Football, $100 on each: +$880. 3.2× their usual trade.");
+    expect(lines[2]).toBe("On Cowboys: Pro 0xab12…9f00: $9K at 40¢. No settled Football trades yet.");
     for (const l of lines) expect(l).not.toMatch(/0x[0-9a-f]{10,}/i);
     // Without its facts, a wallet is still only its tier and short address.
-    expect(holdingLine(holdings[0]!, undefined, "Football")).toBe("Millionaire 0x7c3d…5c6b: $48K at 62¢. No settled Football bets yet.");
+    expect(holdingLine(holdings[0]!, undefined, "Football")).toBe("Millionaire 0x7c3d…5c6b: $48K at 62¢. No settled Football trades yet.");
   });
   it("visitors get the total only, no side", () => {
     expect(whoFree({ yes: { dollars: 48_000, wallets: 1 }, no: { dollars: 2_000, wallets: 1 } })).toBe("$50K from proven $1M+ wallets (2 positions). Members see which side it is on.");

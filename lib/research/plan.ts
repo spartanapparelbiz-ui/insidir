@@ -70,8 +70,8 @@ export function planFor(question: string, ctx: { wallet?: string | null } = {}):
     const about = /\b(?:on|about|for)\s+([a-z0-9 .'-]{3,40}?)(?:\s+markets?)?[?.]?$/i.exec(q)?.[1];
     return { tool: "find_markets", args: { query: about } };
   }
-  // Positions (the default when the question is about bets, positions, money, wallets or a league).
-  if (/\b(positions?|bets?|money|wagers?|whales?|trades?|largest|biggest)\b/i.test(q) || league || tracker) {
+  // Positions (the default when the question is about trades, positions, money, wallets or a league).
+  if (/\b(positions?|trades?|money|wagers?|whales?|trades?|largest|biggest)\b/i.test(q) || league || tracker) {
     const tab = league ? "sports" : /\bpolitic|election|fed|rates|crypto|bitcoin|prediction markets?\b/i.test(q) ? "markets" : /\bstocks?\b/i.test(q) ? "stocks" : undefined;
     return { tool: "find_positions", args: {
       tab, league, tracker: tracker && !/positions? from trackers/i.test(q) ? tracker : undefined, min_amount: min, since_hours: hours,

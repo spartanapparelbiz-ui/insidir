@@ -47,7 +47,7 @@ async function GapsStage({ now }: { now: number }) {
   const g = gaps[0]!;
   return (
     <Stage bg={{ kind: "photo", photo: PHOTOS.golf, dark: 0.6 }} id="prices" testid="home-gaps" labelledBy="gap-h">
-      <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={`${g.outcome} costs ${cents(g.kalshi)} on Kalshi and ${cents(g.polymarket)} on Polymarket.`} fallback={["Same bet,", "two prices."]} size={52} /><p className="hm-plain"><b>In plain English:</b> the same bet costs different amounts on Kalshi and Polymarket. Buying where it&apos;s cheaper means a bigger payout if you win.</p></div>
+      <div className="b-head"><p className="hm-eyebrow">Best price</p><Insight id="gap-h" as="h2" text={`${g.outcome} costs ${cents(g.kalshi)} on Kalshi and ${cents(g.polymarket)} on Polymarket.`} fallback={["Same trade,", "two prices."]} size={52} /><p className="hm-plain"><b>In plain English:</b> the same bet costs different amounts on Kalshi and Polymarket. Buying where it&apos;s cheaper means a bigger payout if you win.</p></div>
       <div className="s-cards" data-stagger="">
         {gaps.map(x => {
           const lo = Math.min(x.kalshi, x.polymarket), hi = Math.max(x.kalshi, x.polymarket), extra = 100 / lo - 100 / hi;
@@ -71,7 +71,7 @@ async function TapeStage({ now }: { now: number }) {
   const rows = await tape(getDb(), { now, member: true, limit: 40, kinds: MAIN_KINDS }).catch(() => []);
   return (
     <Stage id="tape" testid="home-tape" labelledBy="tape-h">
-      <div className="b-head"><p className="hm-eyebrow">The tape</p><h2 id="tape-h" className="ai-h">Every big move.</h2><p className="hm-plain"><b>In plain English:</b> each line is one big move: a $100K+ wallet betting or selling out, any Polymarket wallet trading $10K+, or a $5K+ Kalshi trade. Who did it, how big, which side, and how much big money is already in that market.</p></div>
+      <div className="b-head"><p className="hm-eyebrow">The tape</p><h2 id="tape-h" className="ai-h">Every big move.</h2><p className="hm-plain"><b>In plain English:</b> each line is one big move: a $100K+ wallet trading or selling out, any Polymarket wallet trading $10K+, or a $5K+ Kalshi trade. Who did it, how big, which side, and how much big money is already in that market.</p></div>
       <Tape initial={rows} now={now} member testid="home-tape-list" />
     </Stage>
   );
@@ -115,7 +115,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
         {d.disagree.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.6 }} id="disagree" testid="home-disagree" labelledBy="dis-h" className="s-pinstage">
             <div className="s-pin">
-              <div className="s-pin__head b-head"><p className="hm-eyebrow">Money vs the price</p><Insight id="dis-h" as="h2" text={d.insight.disagree} fallback={["Where they disagree", "with the price."]} size={52} /><p className="b-sub">The markets where millionaire money and the price disagree most.</p><p className="hm-plain"><b>In plain English:</b> the price is what the market thinks will happen. Here, the wallets that have made $1M+ are betting the other way. Either they know something, or they're wrong.</p></div>
+              <div className="s-pin__head b-head"><p className="hm-eyebrow">Money vs the price</p><Insight id="dis-h" as="h2" text={d.insight.disagree} fallback={["Where they disagree", "with the price."]} size={52} /><p className="b-sub">The markets where millionaire money and the price disagree most.</p><p className="hm-plain"><b>In plain English:</b> the price is what the market thinks will happen. Here, the wallets that have made $1M+ are trading the other way. Either they know something, or they're wrong.</p></div>
               <div className="s-pin__list">
                 {d.disagree.map(x => (
                   <Panel key={x.marketId} className="s-pin__card" testid="disagree-card">
@@ -141,7 +141,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
 
         {d.board.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.baseball, dark: 0.7 }} id="board" testid="home-board" labelledBy="board-h">
-            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest bets of $1K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p><p className="hm-plain"><b>In plain English:</b> each row is one real bet: who placed it, what they bet on, the price they paid and the price now. Copy places the same bet; Verify shows it on the blockchain.</p></div>
+            <div className="b-head"><p className="hm-eyebrow">Live board</p><Insight id="board-h" as="h2" text={d.insight.board} fallback={["The live board."]} size={52} /><p className="b-sub">The latest trades of $1K+ from wallets up $1M+, in the last 24 hours. Select one to copy it.</p><p className="hm-plain"><b>In plain English:</b> each row is one real bet: who placed it, what they bet on, the price they paid and the price now. Copy places the same bet; Verify shows it on the blockchain.</p></div>
             {d.stream ? <div className="s-col s-col--wide"><Stream data={d.stream} /></div> : null}
             <LiveBoard initial={d.board.slice(0, 10)} now={d.now} />
             <div className="b-center"><div className="b-ctas"><Pill href="/board" kind="ghost">The full board</Pill></div>
@@ -151,7 +151,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
 
         {d.wallets.length ? (
           <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55 }} id="wallets" testid="home-wallets" labelledBy="wal-h">
-            <div className="b-head"><p className="hm-eyebrow">Wallets</p><Insight id="wal-h" as="h2" text={d.insight.wallets} fallback={["Wallets worth following."]} size={52} /><p className="hm-plain"><b>In plain English:</b> these wallets have made the most money betting. Follow one and we ping you the moment it bets again.</p></div>
+            <div className="b-head"><p className="hm-eyebrow">Wallets</p><Insight id="wal-h" as="h2" text={d.insight.wallets} fallback={["Wallets worth following."]} size={52} /><p className="hm-plain"><b>In plain English:</b> these wallets have made the most money trading. Follow one and we ping you the moment it trades again.</p></div>
             <WalletCards wallets={d.wallets} today={Boolean(d.today)} />
           </Stage>
         ) : null}
@@ -159,7 +159,7 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
         <Suspense fallback={null}><GapsStage now={d.now} /></Suspense>
 
         <Stage bg={{ kind: "photo", photo: PHOTOS.hero, dark: 0.55 }} id="desk" testid="home-desk" labelledBy="desk-h">
-          <div className="b-head"><p className="hm-eyebrow">Your desk</p><Insight id="desk-h" as="h2" text={d.insight.desk} fallback={["Your desk."]} size={52} /><p className="hm-plain"><b>In plain English:</b> your own corner: bets you copied, wallets you follow, and your pings.</p></div>
+          <div className="b-head"><p className="hm-eyebrow">Your desk</p><Insight id="desk-h" as="h2" text={d.insight.desk} fallback={["Your desk."]} size={52} /><p className="hm-plain"><b>In plain English:</b> your own corner: trades you copied, wallets you follow, and your pings.</p></div>
           <div className="s-cards">
             <Panel className="s-desk" testid="desk-copies">
               <p className="b-label">Your copies</p>
@@ -167,13 +167,13 @@ export function HomePage({ d, search, userId }: { d: Home; search: boolean; user
                 <ul className="s-lockrows">{d.copies.list.slice(0, 5).map(x => (
                   <li key={x.id}><span>{x.title} · <b>{x.outcome}</b> at {cents(x.price)}</span><span className="b-small">{x.result === "won" ? `Won ${signed(x.pnl ?? 0)}` : x.result === "lost" ? `Lost ${signed(x.pnl ?? 0)}` : x.result === "void" ? "Void" : d.copyNow[x.id] !== undefined ? <>Now {cents(d.copyNow[x.id]!)}{(() => { const m = Math.round((d.copyNow[x.id]! - x.price) * 100); return m ? <span className={m > 0 ? "s-up" : "s-down"}> {m > 0 ? "up" : "down"} {Math.abs(m)}¢</span> : null; })()}</> : "Open"}</span></li>
                 ))}</ul>
-              ) : <p className="b-small">Copy a bet from the board and it shows here, with its result.</p>}
+              ) : <p className="b-small">Copy a trade from the board and it shows here, with its result.</p>}
               <Pill href="/copies/yours" kind="ghost">All your copies</Pill>
             </Panel>
             <Panel className="s-desk" testid="desk-follows">
               <p className="b-label">Wallets you follow</p>
               {d.desk.following ? <p className="s-big b-num">{d.desk.following}</p> : null}
-              <p className="b-small">{d.desk.following ? "We ping you when they bet." : "You don't follow a wallet yet. Follow one above and we ping you when it bets."}</p>
+              <p className="b-small">{d.desk.following ? "We ping you when they trade." : "You don't follow a wallet yet. Follow one above and we ping you when it trades."}</p>
               <Pill href="/wallets" kind="ghost">Wallets</Pill>
             </Panel>
             <Panel className="s-desk" testid="desk-pings">

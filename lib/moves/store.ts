@@ -120,7 +120,7 @@ export async function saveRealized(db: Db, id: string, r: Realized, now: Date): 
   if (r.ok) {
     await db.update(moves).set({ pnl: r.pnl, soldShare: r.soldShare, amount: Math.round(r.amount * 100) / 100, avgPrice: r.avgPrice, realizedAt: now }).where(eq(moves.id, id));
   } else if (r.reason === "not_a_buy") {
-    await db.update(moves).set({ realizedAt: now, hiddenAt: now, hiddenReason: "Not a new bet: the wallet was selling or closing a position" }).where(eq(moves.id, id));
+    await db.update(moves).set({ realizedAt: now, hiddenAt: now, hiddenReason: "Not a new trade: the wallet was selling or closing a position" }).where(eq(moves.id, id));
   } else {
     await db.update(moves).set({ realizedAt: now }).where(eq(moves.id, id));
   }

@@ -25,11 +25,11 @@ import { ASK_TOOL_DEFS, ASK_TOOLS, planAsk, type AskCtx } from "./tools";
 export const NOT_HAVE = "I don't have that.";
 export const ASK_EXAMPLES = [
   "Who's the best NFL wallet this month and what's he on today?",
-  "Is anyone big against my Chargers bet?",
+  "Is anyone big against my Chargers trade?",
   "Why did the Hegseth odds move?",
 ] as const;
 
-const SYSTEM = `You are Ask Insidir. Answer using ONLY Insidir's read-only tools, which return tables of what large, proven Polymarket wallets bet, their settled records, the money on each side of a market, the asker's watched bets, and price history.
+const SYSTEM = `You are Ask Insidir. Answer using ONLY Insidir's read-only tools, which return tables of what large, proven Polymarket wallets trade, their settled records, the money on each side of a market, the asker's watched trades, and price history.
 - Always call a tool first. The asker sees the rows as tables; you write 1 or 2 short, plain sentences about what they show.
 - Quote numbers exactly as the tool returned them. Never compute, estimate or invent a number.
 - If no tool returns the answer, reply exactly: ${NOT_HAVE}
@@ -79,7 +79,7 @@ export async function runAsk(db: Db, question: string, o: { now: number; member:
   if ("refuse" in plan && plan.refuse === "advice") return { ...base, text: NO_ADVICE, tables: [], origin: "refused", model: null, costUsd: 0 };
   if ("refuse" in plan && plan.refuse === "identity") return { ...base, text: NOT_HAVE, tables: [], origin: "refused", model: null, costUsd: 0 };
   if (o.useModel) {
-    const messages: ChatMessage[] = [{ role: "system", content: SYSTEM }, { role: "user", content: JSON.stringify({ question: q, asker: o.userId ? "a member with watched bets" : "a visitor" }) }];
+    const messages: ChatMessage[] = [{ role: "system", content: SYSTEM }, { role: "user", content: JSON.stringify({ question: q, asker: o.userId ? "a member with watched trades" : "a visitor" }) }];
     const tables: Table[] = [];
     let cost = 0, model: string | null = null;
     for (let round = 0; round < 3; round++) {

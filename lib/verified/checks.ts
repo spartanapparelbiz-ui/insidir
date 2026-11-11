@@ -1,4 +1,4 @@
-/* Verified wallets: who to copy. A wallet up $1M+ all time earns "Verified" only if it passes all four checks, each
+/* Verified wallets: who to copy. A wallet up $1M+ all time earns "Verified" only if it passes all four tests, each
  * from its public Polymarket record (lib/verified/read.ts), re-run daily (worker verified:check):
  *   settled        MIN_SETTLED or more settled (closed) positions
  *   months         profitable in at least 2 of the last 3 months (30-day blocks ending today, realized profit by the

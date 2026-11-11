@@ -61,8 +61,8 @@ export default async function BetPage({ params }: { params: Promise<{ id: string
       <Frame member={false} current="board" testid="bet-page">
         <Stage bg={{ kind: "photo", photo: categoryPhoto(t.category), dark: 0.55, priority: true }} first testid="bet-ticket" labelledBy="bet-h">
           <div className="b-head">
-            <Lines as="h1" id="bet-h" lines={["A bet from the last hour."]} size={56} />
-            <p className="b-sub" data-testid="bet-fresh">Visitors see bets 60 minutes late. Members see each one, and its side, the second it lands.</p>
+            <Lines as="h1" id="bet-h" lines={["A trade from the last hour."]} size={56} />
+            <p className="b-sub" data-testid="bet-fresh">Visitors see trades 60 minutes late. Members see each one, and its side, the second it lands.</p>
           </div>
           <div className="b-ctas"><Pill href="/go" data-testid="bet-start" data-checkout="bet">Start for $1</Pill><Pill href="/board" kind="ghost">The board</Pill></div>
         </Stage>
@@ -79,7 +79,7 @@ export default async function BetPage({ params }: { params: Promise<{ id: string
   const cat = categoryInfo(t.category);
   const trail = [["Board", "/board"], [t.title, market], [`${dollars(t.amount)} bet`, betPath(id)]] as const;
   const move = t.priceNow !== null ? t.priceNow - t.theirPrice : null;
-  const result = t.settled === "won" ? `${t.outcome} won: this bet won.` : t.settled === "lost" ? "This bet lost." : t.settled === "void" ? "Voided: refunded." : null;
+  const result = t.settled === "won" ? `${t.outcome} won: this trade won.` : t.settled === "lost" ? "This trade lost." : t.settled === "void" ? "Voided: refunded." : null;
   return (
     <Frame member={member} current="board" testid="bet-page">
       <Stage bg={{ kind: "photo", photo: categoryPhoto(t.category), dark: 0.55, priority: true }} first testid="bet-ticket" labelledBy="bet-h">
@@ -100,11 +100,11 @@ export default async function BetPage({ params }: { params: Promise<{ id: string
                 {move !== null && Math.abs(move) >= 0.005 ? <><br /><span className={`b-small ${move > 0 ? "s-up" : "s-down"}`}>{move > 0 ? "up" : "down"} {Math.round(Math.abs(move) * 100)}¢ since</span></> : null}</span>
             </div>
             {edge ? <EntryChart edge={edge} /> : null}
-            {t.decided ? <p className="b-msg" data-testid="bet-settled">{decidedText(t.decided, t.outcome)}.</p> : <div className="b-ctas"><Pill href={`/copy/${encodeURIComponent(id)}`} data-testid="bet-copy">Copy this bet</Pill></div>}
+            {t.decided ? <p className="b-msg" data-testid="bet-settled">{decidedText(t.decided, t.outcome)}.</p> : <div className="b-ctas"><Pill href={`/copy/${encodeURIComponent(id)}`} data-testid="bet-copy">Copy this trade</Pill></div>}
           </Panel>
         ) : (
           <Panel className="s-col" testid="bet-locked">
-            <p className="b-small" data-locked="side">Members see which side they took, their price, and the bet on Kalshi.</p>
+            <p className="b-small" data-locked="side">Members see which side they took, their price, and the trade on Kalshi.</p>
             <div className="b-ctas"><Pill href="/go" data-testid="bet-start" data-checkout="bet">Start for $1</Pill></div>
           </Panel>
         )}
@@ -112,16 +112,16 @@ export default async function BetPage({ params }: { params: Promise<{ id: string
         <div className="s-col">
           <KalshiFirst twin={twin} yesLabel={member ? t.outcome : "Yes"} noLabel="the other side" polyYes={member ? t.priceNow : null} polyUrl={null} region={viewer.region} result={result} testid="bet-kalshi" />
         </div>
-        <p className="b-small b-center">Information, not advice. Millionaires lose bets too. Insidir never places a bet or holds money.</p>
+        <p className="b-small b-center">Information, not advice. Millionaires lose trades too. Insidir never places a trade or holds money.</p>
       </Stage>
       <Stage bg={{ kind: "globe", dark: 0.7 }} testid="bet-related" labelledBy="bet-rel-h">
-        <div className="b-head"><Lines as="h2" id="bet-rel-h" lines={["The market, and this wallet's other bets."]} size={44} /></div>
+        <div className="b-head"><Lines as="h2" id="bet-rel-h" lines={["The market, and this wallet's other trades."]} size={44} /></div>
         <Panel className="s-col">
-          <RelatedLinks kind="market" items={[{ href: market, title: t.title, sub: "every bet on it" }]} testid="bet-market" />
+          <RelatedLinks kind="market" items={[{ href: market, title: t.title, sub: "every trade on it" }]} testid="bet-market" />
           <RelatedLinks kind="bet" items={(others.rows as Array<{ id: string; market_title: string; amount: number }>).map(o => ({ href: betPath(o.id), title: o.market_title, sub: dollars(Number(o.amount)) }))} testid="bet-others" />
         </Panel>
       </Stage>
-      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={`${dollars(t.amount)} on ${t.title}`} path={betPath(id)} description={`A bet from a wallet up ${t.tier === "millionaire" ? "$1M+" : "$100K+"} on "${t.title}".`} sources={["https://kalshi.com"]} />
+      <EntityLd trail={trail.map(([a, b]) => [a, b] as [string, string])} name={`${dollars(t.amount)} on ${t.title}`} path={betPath(id)} description={`A trade from a wallet up ${t.tier === "millionaire" ? "$1M+" : "$100K+"} on "${t.title}".`} sources={["https://kalshi.com"]} />
       <ScrollFx />
     </Frame>
   );

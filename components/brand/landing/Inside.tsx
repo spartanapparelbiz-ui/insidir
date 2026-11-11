@@ -13,7 +13,7 @@ import { PLANS, TRIAL } from "@/lib/plans";
 
 const within = <T,>(p: Promise<T>, ms: number, d: T): Promise<T> => Promise.race([p.catch(() => d), new Promise<T>(r => setTimeout(() => r(d), ms))]);
 const KEYS: Record<string, string> = { rules: "Wins if", cost: "Costs and pays", read: "The read" };
-const ASKS = ["Who's the best NFL wallet this month?", "Is anyone big against my bet?", "Why did the odds move?"];
+const ASKS = ["Who's the best NFL wallet this month?", "Is anyone big against my trade?", "Why did the odds move?"];
 
 async function sample(d: LandingData) {
   if (!hasDatabase()) return { briefing: null, brief: [] as string[][] };
@@ -41,11 +41,11 @@ export async function InsideStage({ d }: { d: LandingData }) {
       <div className="b-head">
         <p className="in-k in-k--lead" {...m("lift", 0.2)}>Not just data</p>
         <Lines id="inside-h" lines={["Your AI analyst."]} size={64} />
-        <p className="b-sub" {...m("lift", 0.4)}>It reads every $1M+ bet for you and tells you, in plain words, what it means for yours: before you bet, while you hold, and when it settles. Written from our data only, every number verified against it.</p>
+        <p className="b-sub" {...m("lift", 0.4)}>It reads every $1M+ trade for you and tells you, in plain words, what it means for yours: before you trade, while you hold, and when it settles. Written from our data only, every number verified against it.</p>
       </div>
       <div className="in-grid" data-testid="inside-tools">
         <article className="b-glass in-card in-card--wide" data-m="settle" style={card(0)}>
-          <p className="in-k">Bet Briefing</p>
+          <p className="in-k">Trade Briefing</p>
           <h3 className="in-h">Before you bet, know what you&apos;re betting on.</h3>
           <p className="in-t">Paste any Polymarket or Kalshi link: what it needs to win, what it costs and pays, who&apos;s on each side and how they&apos;re playing it.</p>
           {s.briefing ? (
@@ -58,11 +58,11 @@ export async function InsideStage({ d }: { d: LandingData }) {
         <article className="b-glass in-card" data-m="settle" style={card(1)}>
           <p className="in-k">Daily Brief</p>
           <h3 className="in-h">What the big money did overnight.</h3>
-          <p className="in-t">The five biggest moves by 8 AM, two lines each, and what changed on your bets.</p>
+          <p className="in-t">The five biggest moves by 8 AM, two lines each, and what changed on your trades.</p>
           {s.brief.length ? <div className="in-lines">{s.brief.map((l, i) => <p key={i}>{l[0]}<span>{l[1]}</span></p>)}</div> : null}
         </article>
         <article className="b-glass in-card" data-m="settle" style={card(2)}>
-          <p className="in-k">Watch my bet</p>
+          <p className="in-k">Watch my trade</p>
           <h3 className="in-h">An alert when it matters to you.</h3>
           <p className="in-t">Add your position. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you hear it, with what it means in dollars.</p>
         </article>

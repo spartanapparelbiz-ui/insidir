@@ -45,10 +45,10 @@ describe("alerts", () => {
       { wallet: W1, short: "0x000d…758e", amount: 30_000, price: 0.4, pnl: 3_400_000 },
       { wallet: W2, short: "0x7c3d…5c6b", amount: 18_000, price: 0.41, pnl: 5_100_000 },
     ], { won: 14, lost: 6 }, "Politics", 0.6)!;
-    expect(a.headline).toBe("2 wallets up $3M+ just bet No, $48K total. They're 14–6 on politics this month.");
+    expect(a.headline).toBe("2 wallets up $3M+ just trade No, $48K total. They're 14–6 on politics this month.");
     expect(a.meaning).toBe("That's money against your Yes. You're down $3 on your $100 on Yes at 62¢, with Yes at 60¢ now.");
     const one = oppositeAlert(held, "No", [{ wallet: W1, short: "0x000d…758e", amount: 25_000, price: 0.4, pnl: 1_200_000 }], null, null, null)!;
-    expect(one.headline).toBe("A wallet up $1M+ (0x000d…758e) just bet No, $25K total.");
+    expect(one.headline).toBe("A wallet up $1M+ (0x000d…758e) just trade No, $25K total.");
     expect(one.meaning).toContain("You hold $100 on Yes at 62¢: 161 shares that pay $161 if Yes wins.");
     expect(oppositeAlert(held, "No", [], null, null, 0.6)).toBeNull();
   });
@@ -65,7 +65,7 @@ describe("alerts", () => {
     expect(moveAlert(held, 0.62, 0.66, null)).toBeNull();
     const a = moveAlert(held, 0.62, 0.81, 3 * H)!;
     expect(a.headline).toBe(`Yes rose 19¢ in 3h: 62¢ → 81¢ on "Will the Chiefs win?".`);
-    expect(a.meaning).toBe("You're up $31 on your $100 on Yes at 62¢, with Yes at 81¢ now. That's +$31 on the bet so far.");
+    expect(a.meaning).toBe("You're up $31 on your $100 on Yes at 62¢, with Yes at 81¢ now. That's +$31 on the trade so far.");
     expect(moveAlert(held, 0.62, 0.62 - MOVE_MIN, null)!.headline).toContain("fell 5¢");
   });
   it("closing within 24 hours, never earlier", () => {
@@ -92,7 +92,7 @@ describe("settling and what happened", () => {
     expect(settledResult("no", "void")).toBe("void");
     expect(settledResult("yes", null)).toBeNull();
   });
-  it("who was right, what following each top wallet paid, the member's own bet and record", () => {
+  it("who was right, what following each top wallet paid, the member's own trade and record", () => {
     expect(hundredPays(0.25, "won")).toBe(400);
     expect(hundredPays(0.25, "lost")).toBe(0);
     expect(hundredPays(0.25, "void")).toBe(100);
@@ -118,7 +118,7 @@ describe("settling and what happened", () => {
   });
   it("a voided market gives the money back", () => {
     const h = whatHappened({ title: "T", result: "void", yesLabel: "Yes", noLabel: "No", money: { yes: { dollars: 0, wallets: 0 }, no: { dollars: 0, wallets: 0 } }, top: [], mine: { side: "no", price: 0.3, amount: 50, shares: 50 / 0.3 }, record: [] });
-    expect(h.result).toBe(`"T" was voided: every bet got its money back.`);
+    expect(h.result).toBe(`"T" was voided: every trade got its money back.`);
     expect(h.right).toBeNull();
     expect(h.mine).toBe("Your $50 on No at 30¢ came back: $50 back ($0).");
   });

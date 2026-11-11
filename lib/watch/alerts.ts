@@ -50,7 +50,7 @@ export function oppositeAlert(h: Held, otherLabel: string, bets: readonly Opposi
   const who = wallets.length === 1 ? `A wallet${floor ? ` up ${dollars(floor)}+` : ""} (${bets[0]!.short})` : `${plural(wallets.length, "wallet")}${floor ? ` up ${dollars(floor)}+` : ""}`;
   const rec = record && record.won + record.lost > 0
     ? ` ${wallets.length === 1 ? "It's" : "They're"} ${record.won}–${record.lost}${categoryName ? ` on ${categoryName.toLowerCase()}` : ""} this month.` : "";
-  const headline = `${who} just bet ${otherLabel}, ${dollars(total)} total.${rec}`;
+  const headline = `${who} just trade ${otherLabel}, ${dollars(total)} total.${rec}`;
   const meaning = `That's money against your ${h.sideLabel}. ${positionLine(h, priceNow)}`;
   return { kind: "opposite", headline, meaning, facts: { wallets: wallets.length, total: Math.round(total), upFloor: floor || null, won: record?.won ?? null, lost: record?.lost ?? null, priceNow } };
 }
@@ -81,7 +81,7 @@ export function moveAlert(h: Held, from: number, priceNow: number, sinceMs: numb
   const since = sinceMs !== null ? ` in ${shortSpan(sinceMs)}` : "";
   const headline = `${h.sideLabel} ${d > 0 ? "rose" : "fell"} ${cents(Math.abs(d))}${since}: ${cents(from)} → ${cents(priceNow)} on "${h.title}".`;
   const p = pnlNow(h.shares, h.amount, priceNow);
-  const meaning = `${positionLine(h, priceNow)} That's ${signed(p.pnl)} on the bet so far.`;
+  const meaning = `${positionLine(h, priceNow)} That's ${signed(p.pnl)} on the trade so far.`;
   return { kind: "move", headline, meaning, facts: { from, to: priceNow, move: Math.round(d * 100), pnl: Math.round(p.pnl) } };
 }
 

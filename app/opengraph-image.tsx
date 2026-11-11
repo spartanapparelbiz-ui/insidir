@@ -15,8 +15,8 @@ export default async function OpengraphImage() {
         <img src={top} width={1200} height={STRIP_H.site} style={{ display: "flex" }} />
         <div style={{ display: "flex", flexGrow: 1, flexDirection: "column", justifyContent: "space-between", padding: "40px 72px 56px" }}>
           <OgLogo height={56} />
-          <div style={{ display: "flex", flexDirection: "column", fontWeight: 700, fontSize: 76, lineHeight: 1.02, letterSpacing: -2 }}><span>You're betting</span><span style={{ color: OG.grey3 }}>against millionaires.</span></div>
-          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>See who's betting on Kalshi. Kalshi won't show you.</div>
+          <div style={{ display: "flex", flexDirection: "column", fontWeight: 700, fontSize: 76, lineHeight: 1.02, letterSpacing: -2 }}><span>You're trading</span><span style={{ color: OG.grey3 }}>against millionaires.</span></div>
+          <div style={{ display: "flex", fontSize: 28, color: OG.grey2, maxWidth: 940 }}>See who's trading on Kalshi. Kalshi won't show you.</div>
         </div>
       </div>
     ),

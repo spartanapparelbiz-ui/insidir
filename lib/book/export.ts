@@ -46,7 +46,7 @@ export async function statementPdf(o: { month: string; email: string | null; ent
   text("Insidir", M, 16, bold); y -= 22;
   text(`Statement - ${monthName}`, M, 12, bold); y -= 16;
   text(`${o.email ?? "Member"} - generated ${iso(o.generatedAt)}`, M, 9); y -= 24;
-  text(`${list.length} ${list.length === 1 ? "bet" : "bets"} placed or settled this month: ${s.won} won, ${s.lost} lost${s.void ? `, ${s.void} void` : ""}, ${s.open} open.`, M, 10); y -= 14;
+  text(`${list.length} ${list.length === 1 ? "trade" : "trades"} placed or settled this month: ${s.won} won, ${s.lost} lost${s.void ? `, ${s.void} void` : ""}, ${s.open} open.`, M, 10); y -= 14;
   text(`Settled net at your own prices: ${money(s.net)} on ${money(s.staked)} staked. Open: ${money(s.exposure)} at risk.`, M, 10); y -= 24;
   const cols: Array<[string, number]> = [["Date", M], ["Market", M + 62], ["Side", M + 292], ["Contracts", M + 330], ["Fill", M + 384], ["Cost", M + 418], ["Result", M + 466], ["P&L", M + 508]];
   const header = () => {

@@ -31,7 +31,7 @@ export function WhyStage() {
 
 export function HowStage() {
   return (
-    <Stage testid="how" labelledBy="how-h" className="b-stage--how">
+    <Stage id="how" testid="how" labelledBy="how-h" className="b-stage--how">
       <div className="b-head"><Lines id="how-h" lines={STAGES.how} size={64} /></div>
       <ol className="b-how" data-testid="how-steps">
         {HOW.map((s, i) => (
