@@ -30,11 +30,11 @@ export function rulesReport(rows: readonly BtRow[], now: number): RulesReport {
     const settled = result.won + result.lost;
     out.push({ key, group, name, result, settled, leads: settled >= LEAD_MIN_SETTLED && result.net > 0 });
   };
-  add("all", "Baseline", "Every proven-wallet bet of $1K+", spec());
+  add("all", "Baseline", "Every proven-wallet trade of $1K+", spec());
   for (const s of STARTERS) add(`starter:${s.key}`, "Starter rules", s.name, { ...s.spec, stake: { perBet: 25, daily: 1e9, weekly: 1e9 } });
   add("consensus", "Variants", "2+ proven wallets, same side, within 1h", spec({ triggers: { consensus: true } }));
   add("first", "Variants", "First entry only", spec({ triggers: { firstEntry: true } }));
-  add("big", "Variants", "Bets of $50K+", spec({ triggers: { minBet: 50_000 } }));
+  add("big", "Variants", "Trades of $50K+", spec({ triggers: { minBet: 50_000 } }));
   add("consensus-first", "Variants", "First entry, 2+ wallets agree", spec({ triggers: { consensus: true, firstEntry: true } }));
   for (const g of [3, 5, 8]) add(`guard:${g}`, "Too-late guard", `Skip if Kalshi is ${g}¢+ above their price`, spec({ price: { maxMoveCents: g } }));
   for (const [name, lo, hi] of BANDS) add(`band:${lo}`, "Entry price on Kalshi", name, spec(), (_r, e) => e >= lo && e < hi);

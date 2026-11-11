@@ -9,10 +9,10 @@ export const FEATURES = {
   feed: "Activity",
   records: "Trader records",
   follows: "Following traders and markets",
-  alerts_push: "Phone alerts",
-  alerts_email: "Email alerts",
+  alerts_push: "Phone signals",
+  alerts_email: "Email signals",
   daily_email: "The daily email",
-  custom_rules: "Custom alert rules",
+  custom_rules: "Custom signal rules",
   price_gaps: "Price gaps",
   crypto: "Crypto",
   stocks: "Stocks",
@@ -23,7 +23,7 @@ export const FEATURES = {
   companies: "Company reports",
   /** People (/people/[cik]): built from the Form 3, 4 and 5 database, so ready with `filings`. */
   people: "People",
-  watchlists: "Watchlists and alerts",
+  watchlists: "Watchlists and signals",
   journal: "Research journal",
   /** Autopilot (/autopilot, /t/[id], its worker matching and pushes) and every line built on its Kalshi backtests (the
    *  landing's record, the funnel's and paywall's record line, /results' rules table). Off until a lawyer has

@@ -44,9 +44,9 @@ export function LiveStrip({ initial }: { initial: Initial }) {
   return (
     <div className="hm-live" role="status" aria-live="off" data-testid="live-strip">
       <span className={`hm-live__k${ok ? "" : " hm-live__k--off"}`}><span className="hm-live__dot" aria-hidden="true" />{ok ? "LIVE" : "RECONNECTING"}</span>
-      {v.lastBetAt ? <span className={flash === "last" ? "hm-flash" : undefined}>Last big-wallet bet <b className="b-num">{age(clock - v.lastBetAt)}</b> ago</span> : null}
+      {v.lastBetAt ? <span className={flash === "last" ? "hm-flash" : undefined}>Last big-wallet trade <b className="b-num">{age(clock - v.lastBetAt)}</b> ago</span> : null}
       {v.money > 0 ? <span className={flash === "money" ? "hm-flash" : undefined}><b className="b-num">{dollars(v.money)}</b> from $100K+ wallets {v.window === "today" ? "today" : "in 24h"}</span> : null}
-      {v.bets > 0 ? <span><b className="b-num">{v.bets.toLocaleString("en-US")}</b> {v.bets === 1 ? "bet" : "bets"}</span> : null}
+      {v.bets > 0 ? <span><b className="b-num">{v.bets.toLocaleString("en-US")}</b> {v.bets === 1 ? "trade" : "trades"}</span> : null}
       <span className="hm-live__clock b-num">{ET.format(new Date(clock))} ET</span>
     </div>
   );

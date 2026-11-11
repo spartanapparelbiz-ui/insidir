@@ -45,7 +45,7 @@ export default async function AutopilotPage({ searchParams }: { searchParams: Pr
       <Stage first className="ap-stage" testid="autopilot-head" labelledBy="ap-h">
         <div className="b-head">
           <h1 id="ap-h" className="b-h2 ap-h1" data-testid="insight">{insight ?? "Autopilot."}</h1>
-          <p className="b-sub">Set a rule once. When a proven wallet bets the way it says, you get the finished Kalshi bet within seconds: the market, the side, a limit price and the number of contracts. You place it.</p>
+          <p className="b-sub">Set a rule once. When a proven wallet trades the way it says, you get the finished Kalshi trade within seconds: the market, the side, a limit price and the number of contracts. You place it.</p>
           {notice ? <p className="b-msg" role="status" data-testid="ap-notice">{notice}</p> : null}
         </div>
 
@@ -103,7 +103,7 @@ export default async function AutopilotPage({ searchParams }: { searchParams: Pr
             right: agoText(m.matchedAt.getTime(), now),
           }))} /></Panel> : <Panel className="s-form"><p className="b-small" data-testid="ap-log-empty">Nothing yet. Matches and skips show here, newest first.</p></Panel>}
         </div>
-        <p className="b-small b-center">Backtests use the price when Insidir first saw each bet, plus 1¢, and hold to settlement; wallets count as proven only from what they had settled before. Kalshi&apos;s fees aren&apos;t taken off. Past results, not a promise. Insidir never places a bet or holds money.</p>
+        <p className="b-small b-center">Backtests use the price when we first saw each trade, plus 1¢, and hold to settlement; wallets count as proven only from what they had settled before. Kalshi&apos;s fees aren&apos;t taken off. Past results, not a promise. Insidir never places a trade or holds funds.</p>
         </section>
       </Stage>
     </Frame>

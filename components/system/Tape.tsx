@@ -8,8 +8,8 @@ import { MAIN_KINDS, type TapeKind, type TapeRow } from "@/lib/tape";
 import { dollars } from "@/lib/money";
 import { DelayNotice } from "./DelayNotice";
 
-const FILTERS: Array<[string, readonly TapeKind[]]> = [["Everything", MAIN_KINDS], ["Big only", MAIN_KINDS], ["New bets", ["bet"]], ["Exits", ["trim", "exit"]], ["Any-wallet whales", ["whale"]], ["Kalshi", ["kalshi"]]];
-const KIND: Record<TapeKind, string> = { bet: "BET", trim: "TRIM", exit: "EXIT", whale: "WHALE", kalshi: "KALSHI" };
+const FILTERS: Array<[string, readonly TapeKind[]]> = [["Everything", MAIN_KINDS], ["Big only", MAIN_KINDS], ["New trades", ["bet"]], ["Exits", ["trim", "exit"]], ["Any-wallet whales", ["whale"]], ["Kalshi", ["kalshi"]]];
+const KIND: Record<TapeKind, string> = { bet: "BUY", trim: "TRIM", exit: "EXIT", whale: "WHALE", kalshi: "KALSHI" };
 const cents = (p: number) => `${Math.round(p * 100)}¢`;
 const ago = (ms: number) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`; };
 const tierName = (t: TapeRow["tier"]) => (t === "millionaire" ? "$1M+" : t === "pro" ? "$100K+" : t === "whale" ? "Whale" : "Kalshi");

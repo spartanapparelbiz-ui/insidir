@@ -93,7 +93,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
           </dl>
           <div className="sec-actions">
             <a className="sec-link" href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${co.cik}&owner=include&count=40`} target="_blank" rel="noopener noreferrer">Every filing on EDGAR ↗</a>
-            {isReady("watchlists") ? <WatchButton kind="company" cik={co.cik} label={`${co.name}${ticker ? ` (${ticker})` : ""}`} lists={lists.map(l => ({ id: l.id, name: l.name }))} /> : <SoonLine what="Watchlists and alerts" />}
+            {isReady("watchlists") ? <WatchButton kind="company" cik={co.cik} label={`${co.name}${ticker ? ` (${ticker})` : ""}`} lists={lists.map(l => ({ id: l.id, name: l.name }))} /> : <SoonLine what="Watchlists and signals" />}
           </div>
         </SecHead>
 

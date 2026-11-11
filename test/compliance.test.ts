@@ -1,5 +1,5 @@
 /* Copy rules over every source file that renders text: never "guaranteed"/"risk-free" (negations allowed),
- * never "bankroll", never a VPN mention, the footer disclaimer exists, and no fake-urgency patterns. */
+ * the bankroll only as the member's own number for sizing (it was banned until the copy-sizing rebuild of 2026-11-11), never a VPN mention, the footer disclaimer exists, and no fake-urgency patterns. */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -34,16 +34,17 @@ describe("copy compliance", () => {
     const bad = SOURCES.flatMap(p => bannedPhrases(texts(readFileSync(p, "utf8"))).map(b => `${p.replace(ROOT, "")}: ${b}`));
     expect(bad).toEqual([]);
   });
-  it("no bankroll, no VPN, no fake urgency", () => {
+  it("no VPN, no fake urgency, no countdowns; a bankroll only as the member's own number for sizing", () => {
     for (const p of SOURCES) {
       const t = texts(readFileSync(p, "utf8"));
-      expect(t, p).not.toMatch(/bankroll/i);
+      expect(t, p).not.toMatch(/bankroll (boost|builder|management system)|grow your bankroll|double your bankroll/i);
+      expect(t, p).not.toMatch(/\bcountdown\b|ends in \d|\d+ (people|users|members) (joined|signed up|are watching)/i);
       expect(t, p).not.toMatch(/\bvpn\b/i);
       expect(t, p).not.toMatch(/spots? left|only \d+ left|hurry|offer ends|limited time/i);
     }
   });
   it("the footer disclaimer is on every page", () => {
-    expect(FOOTER).toBe("Information, not financial or betting advice. Insidir shows public trading data and never recommends a trade or a bet. Big traders lose too. Past results don't predict future ones.");
+    expect(FOOTER).toBe("Information, not advice. Verified wallets lose trades too. 18+.");
     // Every visitor page is framed by components/brand/app/Frame.tsx (or carries the footer itself), and the footer says it.
     expect(readFileSync(join(ROOT, "components", "brand", "app", "Frame.tsx"), "utf8")).toContain("<BrandFoot");
     expect(readFileSync(join(ROOT, "components", "brand", "Nav.tsx"), "utf8")).toContain("{FOOTER}");

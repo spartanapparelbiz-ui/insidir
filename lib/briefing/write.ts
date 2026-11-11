@@ -49,7 +49,7 @@ export function checkSections(facts: readonly FactSection[], proposed: Record<st
 }
 
 const SYSTEM = `You write for Insidir, which shows what large, proven Polymarket wallets do. You get FACTS as JSON: sections, each with template lines that are already true.
-Rewrite each section's lines in plain words, like a smart friend explaining it to someone about to bet: short sentences, "wins if", "pays", "he usually bets".
+Rewrite each section's lines in plain words, like a smart friend explaining it to someone about to trade: short sentences, "wins if", "pays", "he usually trades".
 Rules:
 - Use ONLY numbers that appear in that section's facts, written exactly the same way ("76¢", "$131", "3.2×", "14–6"). Never compute a new number.
 - Never invent a reason why a price moved, a name, or anything not in the facts.

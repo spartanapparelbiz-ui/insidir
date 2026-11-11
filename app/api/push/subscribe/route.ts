@@ -24,7 +24,7 @@ async function readBody(req: NextRequest): Promise<Record<string, unknown>> {
 export async function POST(req: NextRequest) {
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
-  if (entitlements(user.plan).alertDelaySeconds === null) return NextResponse.json({ error: "Push alerts come with Insidir and Insidir Pro." }, { status: 403 });
+  if (entitlements(user.plan).alertDelaySeconds === null) return NextResponse.json({ error: "Push signals come with Insidir and Insidir Pro." }, { status: 403 });
   const body = await readBody(req);
   const endpoint = s(body.endpoint);
   const keys = typeof body.keys === "object" && body.keys !== null ? (body.keys as Record<string, unknown>) : {};

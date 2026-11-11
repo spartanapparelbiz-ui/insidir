@@ -56,8 +56,8 @@ function unblock(d: Device): string {
 }
 
 const HEAD: Record<St, readonly string[]> = {
-  off: ["Ping me when", "they bet."], error: ["Ping me when", "they bet."], unsupported: ["Pings need", "another browser."],
-  ios_needs_install: ["Add Insidir to", "your Home Screen."], denied: ["Pings are", "blocked."], on: ["Pings are on."], in_app: ["Open Insidir in", "your browser."],
+  off: ["Send me a signal", "when they trade."], error: ["Send me a signal", "when they trade."], unsupported: ["Signals need", "another browser."],
+  ios_needs_install: ["Add Insidir to", "your Home Screen."], denied: ["Signals are", "blocked."], on: ["Signals are on."], in_app: ["Open Insidir in", "your browser."],
 };
 
 export function PingSetup({ variant, vapidKey = null, categories, onContinue }: {
@@ -106,7 +106,7 @@ export function PingSetup({ variant, vapidKey = null, categories, onContinue }: 
     case "off":
     case "error":
       sub = <>A ping the moment a $1M+ wallet opens a $25K+ position{categories ? ` in ${categories}` : " in your categories"}, with one tap to the market. At most 8 a day, never 11pm–8am.</>;
-      cta = <button type="button" className="b-btn b-btn-lg b-primary" onClick={turnOn} disabled={busy} data-testid="ping-on" {...m("settle", 0.9)}>{busy ? "Waiting for your answer…" : "Turn on pings"}<Arrow /></button>;
+      cta = <button type="button" className="b-btn b-btn-lg b-primary" onClick={turnOn} disabled={busy} data-testid="ping-on" {...m("settle", 0.9)}>{busy ? "Waiting for your answer…" : "Turn on signals"}<Arrow /></button>;
       body = st === "error"
         ? <p className="b-msg" role="alert">Pings didn&apos;t turn on. Try again.</p>
         : <p className="b-small" {...m("quiet", 0.95)}>{phone ? "Your phone will ask. Tap Allow." : "Your browser will ask. Click Allow."}</p>;
@@ -116,7 +116,7 @@ export function PingSetup({ variant, vapidKey = null, categories, onContinue }: 
       body = <Steps items={[
         { icon: <ShareIcon />, title: "Tap Share", note: "In Safari it's at the bottom of the screen. In Chrome it's next to the address bar." },
         { icon: <AddIcon />, title: "Tap Add to Home Screen", note: "Scroll down the list if you don't see it, then tap Add." },
-        { icon: <img src="/icons/icon-192.png" alt="" width={24} height={24} />, title: "Open Insidir from your Home Screen", note: "Sign in if it asks, then go to Account and tap Turn on pings." },
+        { icon: <img src="/icons/icon-192.png" alt="" width={24} height={24} />, title: "Open Insidir from your Home Screen", note: "Sign in if it asks, then go to Account and tap Turn on signals." },
       ]} />;
       break;
     case "in_app":
@@ -125,7 +125,7 @@ export function PingSetup({ variant, vapidKey = null, categories, onContinue }: 
       break;
     case "denied":
       sub = <>This {phone ? "phone" : "browser"} has pings from Insidir turned off.</>;
-      body = <p className="b-glass b-pad b-ping-note" {...m("settle", 0.6)} data-testid="ping-unblock">{unblock(dev)}</p>;
+      body = <p className="b-glass b-pad b-signal-note" {...m("settle", 0.6)} data-testid="ping-unblock">{unblock(dev)}</p>;
       break;
     case "unsupported":
       sub = dev.os === "ios" && isStandalone()
@@ -133,9 +133,9 @@ export function PingSetup({ variant, vapidKey = null, categories, onContinue }: 
         : <>This browser can&apos;t show pings. Open Insidir in Chrome, Safari, Edge or Firefox.</>;
       break;
     case "on":
-      sub = <>{phone ? "Pings show up on your phone like a text message, even when it's locked." : "Pings show up in the corner of your screen, even with this tab closed, as long as the browser is open."}</>;
-      cta = <button type="button" className="b-btn b-btn-lg b-ghost" onClick={ping} disabled={test === "sending"} data-testid="ping-test" {...m("settle", 0.9)}>{test === "sending" ? "Sending…" : "Send a test ping"}</button>;
-      body = test === "sent" ? <p className="b-small b-ping-ok" role="status"><Check /> Sent. It should be on your screen now.</p>
+      sub = <>{phone ? "Signals show up on your phone like a text message, even when the screen is off." : "Signals show up in the corner of your screen, even with this tab closed, as long as the browser is open."}</>;
+      cta = <button type="button" className="b-btn b-btn-lg b-ghost" onClick={ping} disabled={test === "sending"} data-testid="ping-test" {...m("settle", 0.9)}>{test === "sending" ? "Sending…" : "Send a test signal"}</button>;
+      body = test === "sent" ? <p className="b-small b-signal-ok" role="status"><Check /> Sent. It should be on your screen now.</p>
         : test === "none" ? <p className="b-msg" role="status">This device isn&apos;t linked yet. Turn pings off and on in Account.</p>
         : test === "wait" ? <p className="b-small" role="status">One test at a time. Try again in a few seconds.</p>
         : test === "error" ? <p className="b-msg" role="alert">The test didn&apos;t send. Try again.</p> : null;
@@ -149,7 +149,7 @@ export function PingSetup({ variant, vapidKey = null, categories, onContinue }: 
     : null;
 
   return (
-    <div className={`b-ping b-ping--${variant}`} data-testid="ping-setup" data-state={st} data-os={dev.os}>
+    <div className={`b-signal b-signal--${variant}`} data-testid="ping-setup" data-state={st} data-os={dev.os}>
       {variant === "stage" ? <Lines as="h1" lines={HEAD[st]} size={64} /> : <p className="s-strong">{HEAD[st].join(" ")}</p>}
       <p className={variant === "stage" ? "b-sub" : "b-small"} {...m("lift", 0.58)}>{sub}</p>
       {body}

@@ -13,7 +13,7 @@ import { Suspense } from "react";
 import { getDb } from "@/lib/db";
 import { homeBrief, homeBriefing } from "@/lib/home/data";
 
-const ASKS = ["Who's the best NFL wallet this month and what's he on today?", "Is anyone big against my bet?", "Why did the odds move?"];
+const ASKS = ["Who's the best NFL wallet this month and what's he on today?", "Is anyone big against my trade?", "Why did the price move?"];
 
 /** A card's placeholder while its slow part (a model or a venue) streams in: the same box, a quiet line. */
 const Loading = ({ label }: { label: string }) => <p className="b-small ai-loading" aria-live="polite"><span className="ai-loading__dot" aria-hidden="true" />{label}</p>;
@@ -31,16 +31,16 @@ async function BriefCards({ userId, now, watching }: { userId: string; now: numb
               <li key={i.key}><a href={i.href}><b>{i.lines[0]}</b><span>{i.lines[1]}</span></a></li>
             ))}
           </ol>
-        ) : <p className="b-small">Nothing big from the $1M+ wallets since 8 PM ET last night yet. The brief fills as they bet.</p>}
+        ) : <p className="b-small">Nothing big from the $1M+ wallets since 8 PM ET last night yet. The brief fills as they trade.</p>}
         <p className="ai-src">Source: Polymarket public trades and Polygon transactions, since 8 PM ET.</p>
         <Pill href="/brief" kind="ghost">The full brief</Pill>
       </Panel>
       <Panel className="ai-card" testid="ai-watch">
-        <div className="ai-card__top"><p className="b-label">Watch my bet</p>{watching ? <span className="ai-tag">{watching} watched</span> : null}</div>
+        <div className="ai-card__top"><p className="b-label">Watch my trade</p>{watching ? <span className="ai-tag">{watching} watched</span> : null}</div>
         {b && b.watched.length ? (
           <ul className="ai-watch">{b.watched.slice(0, 3).map(w => <li key={w.id}><a href={w.href}><b>{w.title}</b><span>{w.lines[0]}</span><span>{w.lines[1]}</span></a></li>)}</ul>
-        ) : <p className="b-small">Add your bet or your public Polymarket address. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you get an alert with what it means for your bet in dollars.</p>}
-        <Pill href="/watch" kind="ghost">{watching ? "Your watched bets" : "Add a bet"}</Pill>
+        ) : <p className="b-small">Add your trade or your public Polymarket address. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you get a signal with what it means for your trade in dollars.</p>}
+        <Pill href="/watch" kind="ghost">{watching ? "Your watched trades" : "Add a trade"}</Pill>
       </Panel>
     </>
   );
@@ -50,7 +50,7 @@ function BriefLoading({ watching }: { watching: number }) {
   return (
     <>
       <Panel className="ai-card ai-card--wide" testid="ai-brief"><div className="ai-card__top"><p className="b-label">Today&apos;s brief</p></div><Loading label="Reading the overnight $1M+ money…" /></Panel>
-      <Panel className="ai-card" testid="ai-watch"><div className="ai-card__top"><p className="b-label">Watch my bet</p>{watching ? <span className="ai-tag">{watching} watched</span> : null}</div><Loading label="Reading your watched bets…" /></Panel>
+      <Panel className="ai-card" testid="ai-watch"><div className="ai-card__top"><p className="b-label">Watch my trade</p>{watching ? <span className="ai-tag">{watching} watched</span> : null}</div><Loading label="Reading your watched trades…" /></Panel>
     </>
   );
 }
@@ -73,11 +73,11 @@ export function AiDesk({ d, userId }: { d: Home; userId: string }) {
   const money = d.today?.money ?? d.day?.money ?? 0, bets = d.today?.bets ?? d.day?.bets ?? 0;
   const top = d.ai.topCategory && isCategory(d.ai.topCategory) ? categoryInfo(d.ai.topCategory).name : null;
   const stats = [
-    money > 0 ? { v: dollars(money), k: `bet by wallets up $100K+ ${span}` } : null,
+    money > 0 ? { v: dollars(money), k: `traded by wallets up $100K+ ${span}` } : null,
     d.ai.day1m.money > 0 ? { v: dollars(d.ai.day1m.money), k: "of it from wallets up $1M+, 24 hours" } : null,
-    bets > 0 ? { v: bets.toLocaleString("en-US"), k: `bets of $1K+ ${span}` } : null,
+    bets > 0 ? { v: bets.toLocaleString("en-US"), k: `trades of $1K+ ${span}` } : null,
     d.today?.wallets ? { v: d.today.wallets.toLocaleString("en-US"), k: "wallets active today" } : null,
-    d.ai.markets > 0 ? { v: d.ai.markets.toLocaleString("en-US"), k: "markets they bet, 24 hours" } : null,
+    d.ai.markets > 0 ? { v: d.ai.markets.toLocaleString("en-US"), k: "markets they trade, 24 hours" } : null,
     top ? { v: top, k: "where the most money went" } : null,
   ].filter((x): x is { v: string; k: string } => x !== null);
   return (
@@ -85,7 +85,7 @@ export function AiDesk({ d, userId }: { d: Home; userId: string }) {
       <div className="b-head">
         <p className="hm-eyebrow">AI analyst</p>
         <h2 id="ai-h" className="ai-h">Your AI analyst.</h2>
-        <p className="b-sub">Follows every bet from wallets up $1M+ and tells you what it means for yours. Written from Insidir&apos;s data only, every number verified against it.</p>
+        <p className="b-sub">Follows every trade from wallets up $1M+ and tells you what it means for yours. Written from Insidir&apos;s data only, every number verified against it.</p>
       </div>
       {stats.length ? (
         <dl className="ai-strip" data-testid="ai-strip">
@@ -96,7 +96,7 @@ export function AiDesk({ d, userId }: { d: Home; userId: string }) {
       <div className="ai-grid">
         <Suspense fallback={<BriefLoading watching={d.ai.watching} />}><BriefCards userId={userId} now={d.now} watching={d.ai.watching} /></Suspense>
         <Panel className="ai-card" testid="ai-briefing">
-          <div className="ai-card__top"><p className="b-label">Bet Briefing</p></div>
+          <div className="ai-card__top"><p className="b-label">Trade Briefing</p></div>
           <p className="b-small">Paste a Polymarket or Kalshi link: what it needs to win, what it costs and pays, who&apos;s on each side and what the money says.</p>
           <form className="ai-form" method="get" action="/briefing">
             <input name="url" type="url" inputMode="url" placeholder="Paste any market link" aria-label="Market link" required />
@@ -106,7 +106,7 @@ export function AiDesk({ d, userId }: { d: Home; userId: string }) {
         </Panel>
         <Panel className="ai-card ai-card--ask" testid="ai-ask">
           <p className="b-label">Ask Insidir</p>
-          <p className="b-small">Ask about a wallet, a market or your bet. Answers come only from our data, with the rows behind them.</p>
+          <p className="b-small">Ask about a wallet, a market or your trade. Answers come only from our data, with the rows behind them.</p>
           <form className="ai-form" method="get" action="/ask">
             <input name="q" type="text" placeholder="Ask anything" aria-label="Your question" required />
             <button type="submit">Ask</button>

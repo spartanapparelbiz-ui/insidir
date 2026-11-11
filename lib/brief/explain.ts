@@ -27,9 +27,9 @@ const tradable = (p: number | null | undefined): p is number => typeof p === "nu
 export function usualText(amount: number, usual: number | null | undefined): string | null {
   if (!usual || usual <= 0 || !(amount > 0)) return null;
   const x = Math.round((amount / usual) * 10) / 10;
-  if (x >= 1.5) return `${x}× this wallet's usual bet`;
-  if (x >= 0.7) return "about this wallet's usual bet";
-  return "smaller than this wallet's usual bet";
+  if (x >= 1.5) return `${x}× this wallet's usual trade`;
+  if (x >= 0.7) return "about this wallet's usual trade";
+  return "smaller than this wallet's usual trade";
 }
 
 /** "if Yes wins", "if Lakers win" (a team's plural name), "if Over wins". */
@@ -45,8 +45,8 @@ export function betExplain(b: ExplainInput): string | null {
   const usual = usualText(b.amount, b.usual);
   // A visitor: no side, no price of the side.
   if (!b.outcome || !b.side) {
-    if (usual) return `A ${dollars(b.amount)} bet, ${usual.replace(" bet", "")}.`;
-    if (b.pnl && b.pnl > 0) return `A ${dollars(b.amount)} bet from a wallet up ${dollars(b.pnl)}.`;
+    if (usual) return `A ${dollars(b.amount)} trade, ${usual.replace(" trade", "")}.`;
+    if (b.pnl && b.pnl > 0) return `A ${dollars(b.amount)} trade from a wallet up ${dollars(b.pnl)}.`;
     return null;
   }
   if (b.result === "won" || b.result === "lost") {

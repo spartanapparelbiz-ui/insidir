@@ -7,7 +7,7 @@ import type { MarketPair, Opportunity, Plan, Region, Safety, Venue, VMarket, Wha
 
 export const terminal = pgSchema("terminal");
 
-/** User settings. No bankroll: size filters are plain numbers the user sets. */
+/** User settings. The copy bankroll and max trade (copy) are numbers the member sets; Insidir never reads their accounts. */
 export interface UserSettings {
   /** What they want to follow, from onboarding (lib/picks.ts): the feed opens filtered to it. */
   picks?: { tabs: string[]; leagues: string[]; topics: string[] } | null;
@@ -60,6 +60,9 @@ export interface UserSettings {
   remindBeforeCharge?: boolean;
   /** The Book's daily summary push (/book), at this local time ("HH:MM"); null or unset = off. */
   bookPushAt?: string | null;
+  /** Copy sizing (lib/copies/sizing.ts): the member's bankroll and the most they'll put on one trade, in dollars; and
+   *  the price drop below their entry, in cents, that sends a push (null: off). Set at onboarding, editable in Account. */
+  copy?: { bankroll: number; maxTrade: number; dropCents: number | null } | null;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -1108,6 +1111,8 @@ export const millionaireBets = terminal.table("millionaire_bets", {
   kalshiUrl: text("kalshi_url"),
   /** When the source data was last fetched from the venue. */
   fetchedAt: timestamp("fetched_at", { withTimezone: true }),
+  /** When Insidir first saw it (default now() on insert; null on rows from before it was kept). */
+  seenAt: timestamp("seen_at", { withTimezone: true }).defaultNow(),
   /** The source response: each fill's Data API trade, slimmed (lib/moves/sources.ts slimTrade), by fill id. Rows from
    *  before 0046 hold what was kept then ({ backfill: "moves.parts", parts }). Server only: never sent to a browser. */
   raw: jsonb("raw").$type<Record<string, unknown>>(),
@@ -1181,7 +1186,39 @@ export const betCopies = terminal.table("bet_copies", {
   result: text("result").$type<"won" | "lost" | "void">(),
   pnl: doublePrecision("pnl"),
   settledAt: timestamp("settled_at", { withTimezone: true }),
-}, t => [uniqueIndex("bet_copies_user_bet").on(t.userId, t.betId)]);
+  /** copied: they tapped Copy; placed / skipped: what they marked. Only placed copies count in their totals. */
+  status: text("status").$type<"copied" | "placed" | "skipped">().notNull().default("placed"),
+  /** The wallet they copied, and its size: exit and price-drop pushes find copies by wallet and market. */
+  wallet: text("wallet"),
+  theirAmount: doublePrecision("their_amount"),
+  exitPingedAt: timestamp("exit_pinged_at", { withTimezone: true }),
+  dropPingedAt: timestamp("drop_pinged_at", { withTimezone: true }),
+}, t => [uniqueIndex("bet_copies_user_bet").on(t.userId, t.betId), index("bet_copies_wallet_market_idx").on(t.wallet, t.marketId)]);
+
+/** Each $1M+ wallet's Verified checks (lib/verified), re-run daily: the verdict, each check's numbers (shown on its
+ *  page), its months, 30 and 90-day realized profit, record (90 days), by category, the bankroll estimate and its
+ *  average position as a share of it, and its last 10 settled positions. verified_since / badge_lost_at: when the
+ *  badge came and went (followers are told when it goes). */
+export const walletVerification = terminal.table("wallet_verification", {
+  wallet: text("wallet").primaryKey(),
+  verified: boolean("verified").notNull(),
+  checks: jsonb("checks").$type<Array<{ key: string; pass: boolean; label: string; detail: string }>>().notNull(),
+  months: jsonb("months").$type<number[]>().notNull(),
+  pnl: doublePrecision("pnl").notNull(),
+  pnl30: doublePrecision("pnl30").notNull(),
+  pnl90: doublePrecision("pnl90").notNull(),
+  won: integer("won").notNull(),
+  lost: integer("lost").notNull(),
+  byCategory: jsonb("by_category").$type<Array<{ category: string; won: number; lost: number; pnl: number }>>().notNull(),
+  bankroll: doublePrecision("bankroll"),
+  avgSize: doublePrecision("avg_size"),
+  avgSizePct: doublePrecision("avg_size_pct"),
+  hedgeShare: doublePrecision("hedge_share").notNull(),
+  last10: jsonb("last10").$type<Array<{ title: string; outcome: string | null; moneyIn: number; pnl: number; at: number; category: string }>>().notNull(),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+  verifiedSince: timestamp("verified_since", { withTimezone: true }),
+  badgeLostAt: timestamp("badge_lost_at", { withTimezone: true }),
+}, t => [index("wallet_verification_verified_idx").on(t.verified)]);
 
 /** Market twins (drizzle/0037_market_twins.sql, lib/twins): a Polymarket market and its Kalshi twin. `verdict` is the
  *  machine's (candidate / review); `status` is the person's (pending / approved / denied). Only approved twins are used. */

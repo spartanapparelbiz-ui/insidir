@@ -20,7 +20,7 @@ export type RowMotion = "new" | "tick" | "closing" | "gone" | null;
 /** A locked value: a bar with a lock, never a loading skeleton. The value itself was never sent. */
 export function LockBar({ w = 56 }: { w?: number }) {
   return (
-    <span className="lockbar" role="img" aria-label="Locked: members only" style={{ width: w }}>
+    <span className="lockbar" role="img" aria-label="Members only" style={{ width: w }}>
       <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M3.5 5.5V4a2.5 2.5 0 0 1 5 0v1.5M2.5 5.5h7v5h-7z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
     </span>
   );

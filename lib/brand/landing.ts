@@ -3,6 +3,8 @@
  * sides. Then live previews of what members get (a verdict and prices, board rows and a ping, the Daily Brief's top 3,
  * a followed wallet's last results, tonight's biggest race or game). Anything without data comes back empty and its
  * tile says so or steps aside: no number is ever made up. Server only. */
+import { sql } from "drizzle-orm";
+import { verifiedBoard, verifiedCount, type BoardWallet } from "@/lib/verified/board";
 import type { Db } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import type { CategorySlug } from "@/lib/brand/categories";
@@ -50,7 +52,20 @@ export interface LandingData {
   lead: BoardBet[];
   stake: StakeRecord | null;
   gaps: PriceGap[];
+  /** The live top Verified wallets (lib/verified/board.ts) and how many pass today, of how many checked. */
+  verified: BoardWallet[];
+  verifiedCount: { verified: number; checked: number };
+  /** "Flagged in N seconds": the median time from a $1M+ trade's first fill to Insidir seeing it, trades of the last 24 hours (20+
+   *  trades with a first-seen time, else null and the line isn't shown). */
+  flagged: { seconds: number; n: number } | null;
+  /** The homepage's stats row, each from a live query; null when that query failed or has nothing to count yet
+   *  (the stat is then hidden, never a placeholder). */
+  stats: { tracked: number | null; verified: number | null; signals24h: number | null };
+  /** The product frames: settled $1M+ trades only (a side is public once its market settles), newest first. */
+  settled: SettledTrade[];
 }
+
+export interface SettledTrade { id: string; wallet: string; verified: boolean; pnl: number | null; title: string; outcome: string; amount: number; price: number; at: number; settledAt: number; result: "won" | "lost" }
 
 
 export const milDollars = (m: MarketMoney): number => m.millionaire.yes.dollars + m.millionaire.no.dollars;
@@ -89,11 +104,12 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
     // Your stake runs on the leading rule only: the best of many trackers was a pick after the fact.
     Promise.resolve(pr ? { n: pr.settled, won: pr.won, lost: pr.lost, staked: pr.settled * pr.perBet, net: pr.net, roi: pr.roi, stake: pr.perBet } : null),
     Promise.resolve([] as PriceGap[]),
-    safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
+    safe(recentBets(db, { now, limit: 8, member, tier: "millionaire", delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
     electionDay(now) ? Promise.resolve(null) : safe(electionBoard(db, now, false), null),
   ]);
+  const [settled, stats, verified, verifiedN, flagged] = await Promise.all([safe(settledTrades(db, 6), [] as SettledTrade[]),homeStats(db, now).catch(() => ({ tracked: null, verified: null, signals24h: null })),safe(verifiedBoard(db, { limit: 5, verifiedOnly: true }), [] as BoardWallet[]), safe(verifiedCount(db), { verified: 0, checked: 0 }), safe(flaggedIn(db, now), null)]);
   return {
-    pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
+    settled, stats, verified, verifiedCount: verifiedN, flagged, pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
     now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, record: pr, bestPrice: best,
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
     brief: pool.slice(0, 3),
@@ -112,4 +128,38 @@ export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, topBet: null, race: null, top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, record: null, bestPrice: null,
   pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
+  verified: [], verifiedCount: { verified: 0, checked: 0 }, flagged: null, stats: { tracked: null, verified: null, signals24h: null }, settled: [],
 });
+
+/** The newest settled (won or lost) trades by $1M+ wallets, with the wallet's profit and Verified state. */
+export async function settledTrades(db: Db, limit: number): Promise<SettledTrade[]> {
+  const r = await db.execute(sql`select b.id, b.wallet, b.market_title, b.outcome, b.amount::float8 as amount, b.price::float8 as price, b.at, b.settled_at, b.result,
+      w.pnl::float8 as pnl, coalesce(v.verified, false) as verified
+    from terminal.millionaire_bets b left join terminal.watchlist w on w.wallet = b.wallet left join terminal.wallet_verification v on v.wallet = b.wallet
+    where b.tier = 'millionaire' and b.result in ('won', 'lost') and b.settled_at is not null order by b.settled_at desc limit ${limit}`);
+  return (r.rows as Array<Record<string, unknown>>).map(x => ({
+    id: String(x.id), wallet: String(x.wallet), verified: x.verified === true, pnl: x.pnl === null ? null : Number(x.pnl), title: String(x.market_title), outcome: String(x.outcome),
+    amount: Number(x.amount), price: Number(x.price), at: new Date(String(x.at)).getTime(), settledAt: new Date(String(x.settled_at)).getTime(), result: x.result === "won" ? "won" : "lost",
+  }));
+}
+
+/** Wallets tracked (the watchlist's $1M+ wallets), wallets verified (of those checked; null before the first check), and
+ *  signals sent in the last 24 hours (pushes: followed-wallet entries, exits, price drops and $1M+ position signals). */
+export async function homeStats(db: Db, now: number): Promise<LandingData["stats"]> {
+  const r = await db.execute(sql`select
+      (select count(*)::int from terminal.watchlist where pnl >= 1000000) as tracked,
+      (select count(*) filter (where verified)::int from terminal.wallet_verification) as verified,
+      (select count(*)::int from terminal.wallet_verification) as checked,
+      (select count(*)::int from terminal.alerts_sent where channel = 'push' and sent_at > ${new Date(now - DAY)}
+        and (opp_id like 'mil:%' or opp_id like 'copy:%' or opp_id like 'exit:%' or opp_id like 'drop:%')) as signals`);
+  const x = r.rows[0] as { tracked: number; verified: number; checked: number; signals: number };
+  return { tracked: x.tracked > 0 ? x.tracked : null, verified: x.checked > 0 ? x.verified : null, signals24h: x.signals };
+}
+
+/** The median seconds from a $1M+ trade's first fill to Insidir seeing it (seen_at − at), last 24 hours; null under 20. */
+export async function flaggedIn(db: Db, now: number): Promise<{ seconds: number; n: number } | null> {
+  const r = await db.execute(sql`select percentile_cont(0.5) within group (order by extract(epoch from seen_at - at))::float8 as s, count(*)::int as n
+    from terminal.millionaire_bets where tier = 'millionaire' and seen_at is not null and at > ${new Date(now - DAY)} and seen_at >= at`);
+  const x = r.rows[0] as { s: number | null; n: number } | undefined;
+  return x && x.n >= 20 && x.s !== null ? { seconds: Math.max(1, Math.round(x.s)), n: x.n } : null;
+}

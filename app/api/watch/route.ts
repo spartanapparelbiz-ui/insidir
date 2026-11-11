@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
     ? NextResponse.json(r, { status: r.error ? (status === 200 ? 400 : status) : 200 })
     : NextResponse.redirect(new URL(`/watch?${new URLSearchParams(r.error ? { error: r.error } : { ok: r.ok ?? "Done." })}${r.id ? `#${r.id}` : ""}`, appUrl()), 303);
   const viewer = await memberOrNull();
-  if (!viewer?.user) return done({ error: `Watching your bets is for members. ${GET_CTA}.` }, 401);
+  if (!viewer?.user) return done({ error: `Watching your trades is for members. ${GET_CTA}.` }, 401);
   const b = await body(req), db = getDb(), userId = viewer.user.id;
   if (b.action === "add") {
     const side = b.side === "no" ? "no" : b.side === "yes" ? "yes" : null;
     const cents = Number(b.price), amount = Number(String(b.amount ?? "").replace(/[$,\s]/g, ""));
-    if (!side) return done({ error: "Pick the side you bet." });
+    if (!side) return done({ error: "Pick the side you trade." });
     const r = await addManual(db, userId, { market: b.market ?? "", side, price: cents > 1 ? cents / 100 : cents, amount });
     return "error" in r ? done({ error: r.error }) : done({ ok: "Watching it. We'll tell you when big money moves on it.", id: r.id });
   }

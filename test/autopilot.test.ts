@@ -70,7 +70,7 @@ describe("rules, pure", () => {
     expect(stakeLeft(spec({ stake: { perBet: 25, daily: 60, weekly: 300 } }), 50, 100)).toBe(10);
   });
   it("says each rule in one line, and parses the form", () => {
-    expect(describeRule(STARTERS[2]!.spec)).toBe("Proven wallets · bets of $25K+ · first entry · NBA, NFL, NHL · up to 80¢ · $25 a bet");
+    expect(describeRule(STARTERS[2]!.spec)).toBe("Proven wallets · trades of $25K+ · first entry · NBA, NFL, NHL · up to 80¢ · $25 a trade");
     const f = new FormData();
     for (const [k, v] of [["from", "proven"], ["minBet", "50000"], ["leagues", "nba"], ["leagues", "nhl"], ["consensus", "on"], ["maxCents", "70"], ["maxMoveCents", "3"], ["perBet", "40"], ["daily", "80"], ["weekly", "200"], ["races", "Lakers, Heat"]]) f.append(k!, v!);
     const s = specFromForm(f);
@@ -87,7 +87,7 @@ describe("backtest, pure", () => {
   // Kalshi's ask defaults to the market's price then.
   const row = (o: Partial<BtRow>): BtRow => ({ id: "m", wallet: W, marketId: M, side: "yes", category: "basketball", url: URL_NBA, title: "Heat vs. Lakers", eventTitle: "Heat vs. Lakers", outcome: "Heat",
     amount: 60_000, theirPrice: 0.5, seenPrice: 0.5, at: NOW - 10 * 24 * H, result: "won", provenThen: true, settledThen: 40, firstEntry: true, ...o, kalshiAsk: o.kalshiAsk !== undefined ? o.kalshiAsk : o.seenPrice ?? 0.5 });
-  it("counts agreement only from earlier bets, by wallets proven then", () => {
+  it("counts agreement only from earlier trades, by wallets proven then", () => {
     const rows = [row({ id: "a", at: 0 }), row({ id: "b", wallet: W2, at: H / 2 }), row({ id: "c", wallet: "0x3", at: H / 2 + 1, provenThen: false }), row({ id: "d", wallet: W2, at: 3 * H })];
     expect(sameSideCounts(rows)).toEqual([1, 2, 2, 1]);
   });
@@ -109,7 +109,7 @@ describe("backtest, pure", () => {
     expect(b.curve.map(c => c[1])).toEqual([25, 0.2]);
     const capped = backtest(spec({ stake: { perBet: 25, daily: 25, weekly: 25 } }), rows, NOW);
     expect(capped.capped).toBeGreaterThan(0);
-    expect(backtestLine(b)).toBe("Last 180 days (records start Oct 14): 3 bets: 1 won, 1 lost, 1 open. Net +$0.20 on $49.80 staked (+0%). Worst drop −$24.80.");
+    expect(backtestLine(b)).toBe("Last 180 days (records start Oct 14): 3 trades: 1 won, 1 lost, 1 open. Net +$0.20 on $49.80 staked (+0%). Worst drop −$24.80.");
     expect(backtestLine(null)).toMatch(/running/);
     expect(specKey(spec())).toBe(specKey(spec({ quiet: { start: "22:00", end: "07:00" } })));
   });
@@ -126,8 +126,8 @@ describe("paper portfolio and pushes, pure", () => {
     expect(p).toMatchObject({ matches: 3, won: 1, lost: 1, open: 1 });
     expect(paperLine(p)).toBe("Paper portfolio: 3 matches · 1 won, 1 lost · 1 open. Net −$10.14 on $49.14.");
     expect(sentAfter(6_200)).toBe("Sent 6s after the trade");
-    expect(matchPush({ id: 7, ruleName: "Big bets", outcome: "Heat", side: "yes", contracts: 40, limit: 0.62, theirPrice: 0.61, amount: 60_000, latencyMs: 6_000 }, "https://insidir.com"))
-      .toEqual({ title: "Autopilot · Big bets", url: "https://insidir.com/t/7", body: "Heat (Yes) on Kalshi: 40 at 62¢ limit. A proven wallet put $60K on it at 61¢. Sent 6s after the trade." });
+    expect(matchPush({ id: 7, ruleName: "Big trades", outcome: "Heat", side: "yes", contracts: 40, limit: 0.62, theirPrice: 0.61, amount: 60_000, latencyMs: 6_000 }, "https://insidir.com"))
+      .toEqual({ title: "Autopilot · Big trades", url: "https://insidir.com/t/7", body: "Heat (Yes) on Kalshi: 40 at 62¢ limit. A proven wallet put $60K on it at 61¢. Sent 6s after the trade." });
     expect(exitPush({ id: 7, outcome: "Heat", kind: "exit", sold: 1, bid: 0.7 }, "https://insidir.com").body).toBe("The wallet behind your Heat match sold out. Kalshi's bid: 70¢.");
   });
 });
@@ -155,7 +155,7 @@ describe.skipIf(!URL0)("the engine in Postgres", () => {
     await db.insert(schema.watchlist).values([{ wallet: W, tier: "millionaire", pnl: 2_400_000, refreshedAt: new Date(now), settled: 40 }, { wallet: W2, tier: "millionaire", pnl: 1_800_000, refreshedAt: new Date(now), settled: 35 }]);
     await db.insert(schema.marketTwins).values({ polymarketId: M, kalshiId: "KXNBAGAME-26NOV04MIALAL-MIA", kalshiUrl: "https://kalshi.com/markets/kxnbagame/x", polymarketTitle: "Heat vs. Lakers",
       kalshiTitle: "Miami wins", kind: "winner", verdict: "candidate", status: "approved", confidence: 0.99, checks: { event: true, outcome: true, line: true, rules: true, close: true } });
-    const [rule] = await db.insert(schema.autopilotRules).values({ userId: "usr_a", name: "Big bets", spec: spec({ triggers: { minBet: 50_000 }, stake: { perBet: 25 } }) }).returning();
+    const [rule] = await db.insert(schema.autopilotRules).values({ userId: "usr_a", name: "Big trades", spec: spec({ triggers: { minBet: 50_000 }, stake: { perBet: 25 } }) }).returning();
     const ev = (o: Partial<typeof schema.positionEvents.$inferInsert>) => ({ id: "pm:1", wallet: W, tier: "millionaire" as const, marketId: M, outcomeSide: "yes" as const, outcome: "Heat", marketTitle: "Heat vs. Lakers",
       eventTitle: "Heat vs. Lakers", category: "basketball", url: URL_NBA, kind: "open" as const, amount: 60_000, price: 0.61, shares: 60_000 / 0.61, heldAfter: 60_000 / 0.61, at: new Date(tradeAt), lastAt: new Date(tradeAt), ...o });
     await db.insert(schema.positionEvents).values([ev({}), ev({ id: "pm:2", wallet: W2, price: 0.6, amount: 80_000, at: new Date(tradeAt - 1000), lastAt: new Date(tradeAt - 1000) })]);

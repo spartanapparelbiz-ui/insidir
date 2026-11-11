@@ -40,7 +40,11 @@ test("pay first: /go opens the checkout signed out → pay → Whop sign-in → 
   await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
   await expect(page).toHaveURL(/\/go\?step=unlocked/, { timeout: 20_000 });
   await page.getByTestId("go-signin").click();
-  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "push", { timeout: 25_000 });
+  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "bankroll", { timeout: 25_000 });
+  await page.getByTestId("go-bankroll-input").fill("1000");
+  await page.getByTestId("go-max-input").fill("50");
+  await page.getByTestId("go-next").click();
+  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "push", { timeout: 15_000 });
   await page.getByTestId("ping-next").click();
   await page.getByTestId("go-next").click();
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });
@@ -56,23 +60,18 @@ test("pay first: /go opens the checkout signed out → pay → Whop sign-in → 
   if (visitor) expect(made.visitor_id).toBe(visitor);
   await page.screenshot({ path: `qa/screenshots/checkout-landed-${w}.png` });
 
-  // Cancel: one reason is required; then Whop cancels at the end of the period and they keep access.
+  // Cancel: one click in Account, no reason needed; Whop cancels it immediately, access ends here at once, confirmed on screen.
   await page.goto("/settings");
   // Change card opens the Insidir membership's own page on Whop (its manage_url), not Whop's list of every order.
   await expect(page.getByTestId("manage-subscription")).toHaveAttribute("href", /\/manage$/);
-  await page.getByText("Cancel subscription").click();
-  const cancel = page.getByTestId("cancel-form");
-  await cancel.getByRole("button", { name: "Cancel at the end of this period" }).click();
-  await expect(page).toHaveURL(/\/settings$/); // the browser won't send it without a reason
-  const direct = await page.request.post("/api/billing/cancel", { form: {}, maxRedirects: 0 });
-  expect(direct.headers().location).toContain("/settings?cancel=reason");
-  expect(await q("select 1 from terminal.cancel_reasons where user_id = $1", [made.id])).toHaveLength(0);
-  await cancel.getByLabel("Too expensive").check();
-  await cancel.getByRole("button", { name: "Cancel at the end of this period" }).click();
-  await expect(page.getByText("Cancelled. You keep access until the end of the period you paid for.")).toBeVisible();
-  expect(await q("select reason from terminal.cancel_reasons where user_id = $1", [made.id])).toEqual([{ reason: "price" }]);
-  const after = await (await whop("/__state")).json() as { memberships: Array<{ user: { email: string }; cancel_at_period_end: boolean }> };
-  expect(after.memberships.find(m => m.user.email === email)!.cancel_at_period_end).toBe(true);
+  await page.screenshot({ path: `qa/screenshots/cancel-before-${w}.png` });
+  await page.getByTestId("cancel-now").click();
+  await expect(page.getByText("Cancelled. Your subscription has ended and you won't be charged again.")).toBeVisible();
+  await page.screenshot({ path: `qa/screenshots/cancel-done-${w}.png` });
+  expect(await q("select 1 from terminal.cancel_reasons where user_id = $1", [made.id])).toHaveLength(0); // no reason asked
+  const after = await (await whop("/__state")).json() as { memberships: Array<{ user: { email: string }; status: string }> };
+  expect(after.memberships.find(m => m.user.email === email)!.status).toBe("canceled");
+  expect((await q<{ plan: string }>("select plan from terminal.users where id = $1", [made.id]))[0]!.plan).toBe("free");
   await expect(page.getByTestId("cancel-form")).toHaveCount(0);
 
   // Sign out: members only. /login has one Continue, and it comes back to where they were going.

@@ -11,26 +11,26 @@ const NOW = Date.UTC(2026, 10, 9, 14); // 9 a.m. ET, Monday Nov 9
 
 describe("the explanation line", () => {
   const bet = { outcome: "Yes", side: "yes" as const, amount: 48_000, priceThen: 0.5, priceNow: 0.52, result: null, usual: 15_000 };
-  it("a member's open bet: what $100 pays now, and how big it is for this wallet", () => {
-    expect(betExplain(bet)).toBe("At 52¢ now: $100 pays $192 if Yes wins. 3.2× this wallet's usual bet.");
+  it("a member's open trade: what $100 pays now, and how big it is for this wallet", () => {
+    expect(betExplain(bet)).toBe("At 52¢ now: $100 pays $192 if Yes wins. 3.2× this wallet's usual trade.");
     expect(betExplain({ ...bet, outcome: "Lakers", usual: null })).toBe("At 52¢ now: $100 pays $192 if Lakers win.");
     expect(winsIf("Player A")).toBe("if Player A wins");
-    expect(betExplain({ ...bet, priceNow: null })).toBe("At 50¢: $100 pays $200 if Yes wins. 3.2× this wallet's usual bet.");
+    expect(betExplain({ ...bet, priceNow: null })).toBe("At 50¢: $100 pays $200 if Yes wins. 3.2× this wallet's usual trade.");
   });
-  it("a settled bet says what it paid, losses included", () => {
+  it("a settled trade says what it paid, losses included", () => {
     expect(betExplain({ ...bet, result: "won" })).toBe("It won: $100 at 50¢ paid $200.");
     expect(betExplain({ ...bet, result: "lost" })).toBe("It lost: $100 at 50¢ paid $0.");
   });
   it("a visitor's line never carries the side or the side's price", () => {
     const v = betExplain({ ...bet, outcome: null, side: null, priceThen: null, priceNow: null })!;
-    expect(v).toBe("A $48K bet, 3.2× this wallet's usual.");
+    expect(v).toBe("A $48K trade, 3.2× this wallet's usual.");
     expect(v).not.toMatch(/Yes|No|¢/);
-    expect(betExplain({ outcome: null, side: null, amount: 48_000, priceThen: null, priceNow: null, result: null, pnl: 2_400_000 })).toBe("A $48K bet from a wallet up $2.4M.");
+    expect(betExplain({ outcome: null, side: null, amount: 48_000, priceThen: null, priceNow: null, result: null, pnl: 2_400_000 })).toBe("A $48K trade from a wallet up $2.4M.");
     expect(betExplain({ outcome: null, side: null, amount: 48_000, priceThen: null, priceNow: null, result: null })).toBeNull();
   });
   it("usual size and wins-if words", () => {
-    expect(usualText(30_000, 30_000)).toBe("about this wallet's usual bet");
-    expect(usualText(5_000, 30_000)).toBe("smaller than this wallet's usual bet");
+    expect(usualText(30_000, 30_000)).toBe("about this wallet's usual trade");
+    expect(usualText(5_000, 30_000)).toBe("smaller than this wallet's usual trade");
     expect(usualText(5_000, null)).toBeNull();
     expect(winsIf("no")).toBe("if No wins");
   });
@@ -39,7 +39,7 @@ describe("the explanation line", () => {
     const plain = pingMessage(b, 0.61, "https://insidir.com");
     const explained = pingMessageExplained(b, 0.61, "https://insidir.com");
     expect(explained.body.startsWith(plain.body)).toBe(true);
-    expect(explained.body.slice(plain.body.length)).toBe(" What it means: at 61¢, $100 pays $163 if Republicans win; 3× this wallet's usual bet.");
+    expect(explained.body.slice(plain.body.length)).toBe(" What it means: at 61¢, $100 pays $163 if Republicans win; 3× this wallet's usual trade.");
     expect(pingExplain({ ...b, kind: "exit" }, null)).toBe("What it means: money that was on Republicans is leaving at 60¢.");
   });
 });
@@ -53,16 +53,16 @@ describe("the Daily Brief", () => {
   });
   it("a member's item: what happened, then what it means, with the side", () => {
     const [l1, l2] = itemLines(g, f, true);
-    expect(l1).toBe("Millionaire 0x7c3d…5c6b put $412K on No in “Fed cuts in December?” at 31¢ over 3 bets.");
-    expect(l2).toBe("At 34¢ now, $100 pays $294 if No wins (up 3¢ since they bought); 4.1× this wallet's usual bet. Its settled Markets record: 14–6, $100 on each: +$880.");
+    expect(l1).toBe("Millionaire 0x7c3d…5c6b put $412K on No in “Fed cuts in December?” at 31¢ over 3 trades.");
+    expect(l2).toBe("At 34¢ now, $100 pays $294 if No wins (up 3¢ since they bought); 4.1× this wallet's usual trade. Its settled Markets record: 14–6, $100 on each: +$880.");
   });
   it("a visitor's item has no side and no price", () => {
     const lines = itemLines(g, f, false);
-    expect(lines[0]).toBe("Millionaire 0x7c3d…5c6b put $412K on “Fed cuts in December?” over 3 bets. Members see the side.");
+    expect(lines[0]).toBe("Millionaire 0x7c3d…5c6b put $412K on “Fed cuts in December?” over 3 trades. Members see the side.");
     expect(lines.join(" ")).not.toMatch(/\bNo\b|¢/);
     expect(itemLines(g, { ...f, usualBet: null, record: null }, false)[1]).toBe("This wallet is up $1.6M all-time.");
   });
-  it("a watched bet: its value now and the $1M+ money with and against it", () => {
+  it("a watched trade: its value now and the $1M+ money with and against it", () => {
     expect(watchedLines({ id: "w", marketId: "m", title: "Chargers win?", side: "yes", outcome: "Yes", price: 0.5, amount: 100, shares: 200, priceNow: 0.6, against: 48_000, with: 0 }))
       .toEqual(["Your $100 on Yes in “Chargers win?”: in at 50¢, now 60¢.", "It's worth $120 (+$20). Overnight, $1M+ wallets put $48K against you."]);
   });
@@ -85,7 +85,7 @@ describe("Ask Insidir", () => {
   const t = (rows: string[][]): Table => ({ tool: "x", title: "Best $1M+ wallets", columns: ["Wallet", "Settled W–L", "$100 on each"], numeric: [], rows: rows.map(r => r.map(text => ({ text }))), sources: [], at: 0, live: true });
   it("routes the example questions to its tools", () => {
     expect(planAsk("Who's the best NFL wallet this month and what's he on today?")).toEqual({ tool: "best_wallets", args: { category: "football", days: 30 } });
-    expect(planAsk("Is anyone big against my Chargers bet?")).toEqual({ tool: "against_my_bet", args: { market: "chargers" } });
+    expect(planAsk("Is anyone big against my Chargers trade?")).toEqual({ tool: "against_my_bet", args: { market: "chargers" } });
     expect(planAsk("Why did the Hegseth odds move?")).toEqual({ tool: "price_moves", args: { market: "hegseth" } });
     expect(planAsk("What's the weather like?")).toBeNull();
     expect(categoryFromWords("best NBA wallet")).toBe("basketball");
@@ -101,7 +101,7 @@ describe("Ask Insidir", () => {
     const rows = [t([["Millionaire 0x7c3d…5c6b", "14–6", "+$880"]])];
     expect(askAnswerOk("Millionaire 0x7c3d…5c6b is 14–6, +$880 on $100 each.", rows)).toBe(true);
     expect(askAnswerOk("It is 15–6.", rows)).toBe(false);
-    expect(askAnswerOk("You should bet on it.", rows)).toBe(false);
+    expect(askAnswerOk("You should traded on it.", rows)).toBe(false);
     expect(askAnswerOk("It will likely win.", rows)).toBe(false);
   });
 });

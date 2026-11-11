@@ -6,7 +6,7 @@ import { Faq } from "@/components/brand/Faq";
 import { COMPANY } from "@/lib/copy";
 import { FAQ_ALL } from "@/lib/brand/copy";
 
-export const metadata: Metadata = { title: "FAQ", description: "What Insidir is, how Kalshi fits, where the data comes from, how pings work, and how billing and cancelling work." };
+export const metadata: Metadata = { title: "FAQ", description: "What Insidir is, how Kalshi fits, where the data comes from, how signals work, and how billing and cancelling work." };
 
 export default function FaqPage() {
   const ld = JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ_ALL.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });

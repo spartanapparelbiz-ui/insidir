@@ -69,11 +69,11 @@ describe.skipIf(!URL0)("the product checks", () => {
     expect((await pool.query("select count(*)::int n from terminal.push_subscriptions where user_id = $1", [MONITOR_USER])).rows[0].n).toBe(0);
   }, 60_000);
 
-  it("stale data fails freshness and the bet poller", async () => {
+  it("stale data fails freshness and the trade poller", async () => {
     await beats(6 * 60_000);
     const steps = await runProduct(db, { base: B, f: site, yesAsk: async () => 0.62, sleep: async () => { await engine(); } });
     expect(steps.find(s => s.step === "fresh-bets")).toMatchObject({ ok: false, detail: expect.stringMatching(/last read Polymarket 3\d\ds ago/) });
-    expect(steps.find(s => s.step === "freshness")).toMatchObject({ ok: false, detail: expect.stringContaining("Trades (Polymarket bets) (6 min)") });
+    expect(steps.find(s => s.step === "freshness")).toMatchObject({ ok: false, detail: expect.stringContaining("Trades (Polymarket trades) (6 min)") });
   }, 60_000);
 
   it("no engine: no match within 10 seconds", async () => {

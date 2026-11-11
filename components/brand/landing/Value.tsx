@@ -33,18 +33,18 @@ export function PulseStage({ d }: { d: LandingData }) {
           <span className="b-label">Millionaire money today</span>
           {p.today > 0
             ? <p className="b-dbig b-num" data-count={Math.round(p.today)} data-fmt="usd">{dollars(p.today)}</p>
-            : <p className="b-empty">No millionaire money yet today. It shows the second a $1M+ wallet bets.</p>}
-          <span className="b-small">Bet by wallets up $1M+ since midnight ET.</span>
+            : <p className="b-empty">No millionaire money yet today. It shows the second a $1M+ wallet trades.</p>}
+          <span className="b-small">Traded by wallets up $1M+ since midnight ET.</span>
         </section>
         <section className="b-dcard b-glass" data-slot="1" data-testid="pulse-biggest">
-          <span className="b-label">Biggest bet today</span>
+          <span className="b-label">Biggest trade today</span>
           {b ? (
             <div style={{ display: "grid", gap: 8 }}>
               <p className="b-dmid b-num" data-count={Math.round(b.amount)} data-fmt="usd">{dollars(b.amount)}</p>
               <span className="b-dtitle">{b.title}</span>
               <span className="b-row__meta"><TierBadge tier={b.tier} />{b.pnl !== null ? <span>{signedDollars(b.pnl)} wallet</span> : null}<Side outcome={b.outcome} side={b.side} /></span>
             </div>
-          ) : <p className="b-empty">No millionaire bet yet today.</p>}
+          ) : <p className="b-empty">No millionaire trade yet today.</p>}
         </section>
         <section className="b-dcard b-glass" data-slot="2" data-testid="pulse-hottest">
           <span className="b-label">Hottest market</span>
@@ -76,14 +76,14 @@ export function PulseStage({ d }: { d: LandingData }) {
           ) : <p className="b-empty">No market right now where millionaire money and the price disagree. When 70%+ of it sits on a side priced 50¢ or less, it shows here.</p>}
         </section>
         <section className="b-dcard b-glass" data-slot="4" data-testid="pulse-unusual">
-          <span className="b-label">Unusual bet of the day</span>
+          <span className="b-label">Unusual trade of the day</span>
           {u ? (
             <div style={{ display: "grid", gap: 8 }}>
               <p className="b-dmid"><span className="b-num">{dollars(u.amount)}</span> at <span className="b-num">{cents(u.price)}</span></p>
               <span className="b-dtitle">{u.title}</span>
               <span className="b-small">A new wallet, a long shot: <span className="b-side">{u.outcome}</span></span>
             </div>
-          ) : <p className="b-empty">No unusual bet today yet: a new wallet betting $1K+ at 25¢ or less shows here.</p>}
+          ) : <p className="b-empty">No unusual trade today yet: a new wallet trading $1K+ at 25¢ or less shows here.</p>}
         </section>
       </div>
       <div className="b-center" style={{ marginTop: 22 }}><div className="b-ctas"><Pill href="/go?step=checkout" data-testid="pulse-start" data-checkout="pulse">Start for $1</Pill></div></div>
@@ -109,7 +109,7 @@ export function ElectionStage({ d }: { d: LandingData }) {
 export function BoardLeadStage({ d }: { d: LandingData }) {
   return (
     <Stage testid="lead-board" labelledBy="lead-h">
-      <div className="b-head"><Lines id="lead-h" lines={["Every millionaire bet."]} size={60} />
+      <div className="b-head"><Lines id="lead-h" lines={["Every millionaire trade."]} size={60} />
         {d.member ? null : <p className="b-sub">Live now: <b className="b-num">{d.pulse.countToday}</b> today. Here 60 minutes late; members see each one the second it lands.</p>}</div>
       <LiveFeed initial={{ now: d.now, pulse: d.pulse, bets: d.lead }} n={8} board copy={d.member} />
       <div className="b-center" style={{ marginTop: 18 }}><div className="b-ctas">{d.member ? <Pill href="/board" kind="ghost">The whole board</Pill> : <Pill href="/go?step=checkout" data-testid="lead-start" data-checkout="lead">Start for $1</Pill>}</div></div>
@@ -142,10 +142,10 @@ export function MembersStage({ d }: { d: LandingData }) {
         <div className="b-ph__row"><span>{t.m.noLabel}</span><b className="b-num">{t.m.millionaire.no.dollars ? dollars(t.m.millionaire.no.dollars) : "no money yet"}</b></div>
       </div>
     ) : <div className="b-ph"><span className="b-ph__small">A market shows here once one has millionaire money.</span></div>,
-    // The live board, a ping sliding in
+    // The live board, a signal sliding in
     <div className="b-ph" data-testid="screen-board" key="board">
       <span className="b-ph__label"><span className="b-dot" aria-hidden="true" /> Live board</span>
-      {d.board.length ? d.board.slice(0, 3).map(b => <div key={b.id} className="b-ph__row"><span>{b.title}</span><b className="b-num">{dollars(b.amount)}</b></div>) : <span className="b-ph__small">No millionaire bet in the last hours.</span>}
+      {d.board.length ? d.board.slice(0, 3).map(b => <div key={b.id} className="b-ph__row"><span>{b.title}</span><b className="b-num">{dollars(b.amount)}</b></div>) : <span className="b-ph__small">No millionaire trade in the last hours.</span>}
       {d.biggest ? <div className="b-ph__ping" data-testid="screen-ping"><b>Insidir</b><span>A {d.biggest.pnl !== null ? `${signedDollars(d.biggest.pnl)} ` : ""}wallet just bet {dollars(d.biggest.amount)} on {d.biggest.title}</span></div> : null}
     </div>,
     // The Daily Brief
@@ -162,7 +162,7 @@ export function MembersStage({ d }: { d: LandingData }) {
           <span className="b-ph__big b-up b-num">{signedDollars(d.wallet.pnl)}</span>
           <span className="b-ph__pills">{d.wallet.results.slice(0, 5).map((r, i) => <span key={i} className="b-ph__pill" style={{ color: r.result === "won" ? "var(--up)" : r.result === "lost" ? "var(--down)" : undefined }}>{r.result === "won" ? "Won" : r.result === "lost" ? "Lost" : "Void"}</span>)}</span>
         </>
-      ) : <span className="b-ph__small">Follow a wallet up millions: its bets land here.</span>}
+      ) : <span className="b-ph__small">Follow a wallet up millions: its trades land here.</span>}
     </div>,
     // Big nights
     <div className="b-ph" data-testid="screen-live" key="live">
@@ -251,7 +251,7 @@ export function GapsStage({ d }: { d: LandingData }) {
         {d.gaps.map((g, i) => (
           <li key={i} className="b-glass b-pad" data-testid="gap-row" style={{ display: "grid", gap: 10, alignContent: "start" }}>
             <span className="b-dtitle">{g.title}</span>
-            <span className="b-small">Same bet: <b className="b-num" style={{ color: "#fff" }}>{cents(g.kalshi)}</b> on Kalshi, <b className="b-num" style={{ color: "#fff" }}>{cents(g.polymarket)}</b> on Polymarket</span>
+            <span className="b-small">Same trade: <b className="b-num" style={{ color: "#fff" }}>{cents(g.kalshi)}</b> on Kalshi, <b className="b-num" style={{ color: "#fff" }}>{cents(g.polymarket)}</b> on Polymarket</span>
             <div className="b-gap">
               <div className="b-gap__row"><span>Kalshi</span><span className="b-bar b-bar--dim"><span data-bar={g.kalshi.toFixed(3)} style={{ transform: `scaleX(${g.kalshi})` }} /></span></div>
               <div className="b-gap__row"><span>Polymarket</span><span className="b-bar b-bar--dim"><span data-bar={g.polymarket.toFixed(3)} style={{ transform: `scaleX(${g.polymarket})` }} /></span></div>

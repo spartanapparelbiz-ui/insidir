@@ -18,7 +18,7 @@ export const CHANGELOG: ChangeDay[] = [
   { date: "2026-10-29", items: [
     "Trackers first: live portfolios of large positions that fit one rule, each with a public record.",
     "Real logos for leagues, teams and companies on cards and trackers.",
-    "Check my bet: upload a slip and see where the big money and proven traders are on every leg.",
+    "Check my trade: upload a slip and see where the big money and proven traders are on every leg.",
     "Splits: where proven traders and the crowd disagree, with a public scorecard.",
     "A light redesign, one money format and aligned figures everywhere.",
   ] },

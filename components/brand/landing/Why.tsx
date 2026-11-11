@@ -3,7 +3,7 @@
  *   How it works: three steps.
  *   See it work: the demo player (./Demo.tsx), recordings of the live site, big. */
 import type { CSSProperties } from "react";
-import { HOW, PROBLEM, STAGES } from "@/lib/brand/copy";
+import { HOW, PROBLEM, STAGES, GET } from "@/lib/brand/copy";
 import { slotPhoto } from "@/lib/brand/images";
 import { Lines, m } from "../Bits";
 import { Stage } from "../Stage";
@@ -31,7 +31,7 @@ export function WhyStage() {
 
 export function HowStage() {
   return (
-    <Stage testid="how" labelledBy="how-h" className="b-stage--how">
+    <Stage id="how" testid="how" labelledBy="how-h" className="b-stage--how">
       <div className="b-head"><Lines id="how-h" lines={STAGES.how} size={64} /></div>
       <ol className="b-how" data-testid="how-steps">
         {HOW.map((s, i) => (
@@ -54,6 +54,23 @@ export function WatchStage() {
         <p className="b-sub" {...m("lift", 0.4)}>{STAGES.watchSub}</p>
       </div>
       <Demo />
+    </Stage>
+  );
+}
+
+/** What you get: Signals, Sizing, Exit signals, Ledger, one sentence each. */
+export function GetStage() {
+  return (
+    <Stage id="get" testid="get" labelledBy="get-h" className="b-stage--how">
+      <div className="b-head"><Lines id="get-h" lines={STAGES.get} size={64} /></div>
+      <ul className="b-how" data-testid="get-list">
+        {GET.map((g, i) => (
+          <li key={g.t} className="b-how__step" data-m="settle" style={{ "--d": `${0.45 + i * 0.08}s` } as CSSProperties}>
+            <h3 className="b-how__t">{g.t}</h3>
+            <p className="b-how__d">{g.d}</p>
+          </li>
+        ))}
+      </ul>
     </Stage>
   );
 }

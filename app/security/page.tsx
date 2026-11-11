@@ -22,10 +22,10 @@ export default function SecurityPage() {
 
       <h2>What we keep, and for how long</h2>
       <ul>
-        <li><strong>While you have an account</strong>: your email and your payment provider's account id, your plan, your region answer, the trackers, traders and markets you follow, your alert settings and push subscriptions.</li>
+        <li><strong>While you have an account</strong>: your email and your payment provider's account id, your plan, your region answer, the trackers, traders and markets you follow, your signal settings and push subscriptions.</li>
         <li><strong>Your searches</strong> are sent to an AI model through OpenRouter to read the legs, then thrown away: we never store the image. We keep the legs we matched so you can see your history.</li>
         <li><strong>Usage events</strong> (pages viewed, checkout started) are tied to a random visitor id and, when you&apos;re signed in, your account id. We use them to improve Insidir and don&apos;t sell or share them.</li>
-        <li><strong>When you delete your account</strong>, your account, sessions, follows, alerts, push subscriptions and logged copies are removed at once. Usage events stay, without your account id.</li>
+        <li><strong>When you delete your account</strong>, your account, sessions, follows, signals, push subscriptions and logged copies are removed at once. Usage events stay, without your account id.</li>
       </ul>
 
       <h2>Delete your account</h2>
@@ -35,7 +35,7 @@ export default function SecurityPage() {
       <ul>
         <li>Everything is served over HTTPS.</li>
         <li>The database is only reachable from our own services on our hosting provider.</li>
-        <li>Admin pages need a separate sign-in. Secrets live in the hosting provider&apos;s environment, never in the code.</li>
+        <li>Admin pages need a separate sign-in. Credentials live in the hosting provider&apos;s environment, never in the code.</li>
       </ul>
 
       <h2>Report a security issue</h2>

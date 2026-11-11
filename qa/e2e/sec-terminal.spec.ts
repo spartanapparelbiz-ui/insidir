@@ -16,8 +16,6 @@ test("/sec: the terminal's own page, every module listed, the price as the plan 
   await expect(page.getByText("No AI summaries, no price targets, nothing simulated.")).toBeVisible();
   await expect(page.getByTestId("sec-modules")).toContainText("the price chart is coming soon");
   await expect(page.getByTestId("sec-start")).toHaveAttribute("href", "/go");
-  // In the bar on desktop, in the burger menu on a phone.
-  await expect(page.locator('#b-menu a[href="/sec"], .b-nav-links a[href="/sec"]').first()).toHaveText("SEC terminal");
   await noHorizontalScroll(page);
 });
 

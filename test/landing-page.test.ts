@@ -31,35 +31,29 @@ const V2_UI = [
 ].filter(f => existsSync(join(ROOT, f)));
 
 describe("V2 landing page", () => {
-  it("is a scroll of stages: hero, election day (then the board), the pulse, free right now, what members get, wallet spotlight, your stake, price gaps, markets, proof, pricing, FAQ, final; members get their home (the homepage, unlocked)", () => {
+  it("is a product page: hero with the live window, stats, how it works, the product, pricing, footer; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<HomePage d={d}");
-    // The hero, then everything below it in order (components/brand/landing/Landing.tsx Rest).
-    expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
-    const order = ["<ElectionStage d={d} /> : null", "<InsideStage d={d} />", "<Pricing />", "<WhyStage />", "<HowStage />", "<WatchStage />", "<Free d={d} />", "<Proof d={d} />", "<FaqStage />", "<Final />"];
+    const order = ['data-testid="hero"', "<LiveWindow", "<Stats s={d.stats} />", "<How />", "<Product settled={d.settled} />", "<Pricing />", "<Footer />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
+    // No intro splash, no photos, no category chips, no second hero button, no scroll animations.
+    const code = landing.replace(/\/\*[\s\S]*?\*\//g, " ");
+    expect(code).not.toMatch(/Intro|INTRO_SCRIPT|photo|heropick|ScrollFx|ScrollReveal|StageMotion|StickyStart|kind="ghost"/);
     expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
-  it("the hero's words, its two CTAs (View Live Markets → /markets, Unlock Real-Time Alerts → the $1 checkout), and no stocks, crypto or Congress in the pitch", async () => {
+  it("the hero's words, the button and the line under it, and how it works", async () => {
     const copy = await import("@/lib/brand/copy");
-    expect(copy.HERO.h1).toEqual(["Real-Time Prediction Market", "& Sports Trading Intelligence."]);
-    expect(copy.HERO.sub).toBe("Track whale trades, arbitrage line mispricings across Polymarket & Kalshi, and catch volume spikes before odds shift.");
-    expect(copy.STAGES.final).toEqual(["Bet with the people", "who actually win."]);
-    expect(copy.STAGES.pricing).toEqual(["Less than", "one bad bet."]);
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing).toContain('<Pill href="/markets" delay={0.9} data-testid="hero-markets">{HERO.ctaMarkets}</Pill>');
-    expect(landing).toContain('<Pill href="/go?step=checkout" kind="ghost" className="b-hl" delay={0.97} data-testid="hero-start" data-checkout="hero">{HERO.ctaAlerts}</Pill>');
-    expect([copy.HERO.ctaMarkets, copy.HERO.ctaAlerts]).toEqual(["View Live Markets", "Unlock Real-Time Alerts"]);
-    // The onboarding's first question on the first screen: each chip opens /go at the next step with it answered.
-    expect(landing).toContain('href={`/go?step=checkout&cats=${c}`}');
-    expect(copy.HERO.ask).toBe("What do you bet on?");
-    const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
-    expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
-    expect(bannedPhrases(pitch)).toEqual([]);
+    expect(landing).toContain(">Prediction market intelligence<");
+    expect(landing).toContain(">The intelligence layer for prediction markets.<");
+    expect(landing).toContain("We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.");
+    expect(landing).toContain("const UNDER = `Then $${PLANS.insidir.price}/mo. Cancel in one click.`;");
+    expect(landing.match(/className="lx-btn"/g)).toHaveLength(2); // the hero's and the pricing card's
+    expect(copy.HOW.map(h => `${h.t} ${h.d}`)).toEqual(["Track. Every wallet up $1M+, every position, live.", "Verify. Only wallets that pass our published criteria.", "Signal. Who moved, how much to size, and when they exit."]);
     expect(GET_CTA).toBe("Try 3 days for $1");
   });
 
@@ -112,7 +106,9 @@ describe("design system", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
-    const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e", "#1a1a1a", "#f2c35b", "#0b0b0b"];
+    const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e", "#1a1a1a", "#f2c35b", "#0b0b0b",
+      // The homepage (2026-11-11): near-black, white text, grey secondary, #222 borders, a panel and its dots.
+      "#0a0a0b", "#fafafa", "#a1a1aa", "#222", "#111113", "#2a2a2e"];
     const brand = read("app/brand.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     for (const c of new Set(brand.match(/#[0-9a-f]{3,8}\b/g))) expect(spec, c).toContain(c);
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css" && f !== "app/brand.css")) {
@@ -121,14 +117,15 @@ describe("design system", () => {
     }
   });
 
-  it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and no monospace)", () => {
-    const layout = read("app/layout.tsx");
+  it("fonts, self-hosted: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's, Inter and JetBrains Mono on the homepage", () => {
+    const layout = read("app/layout.tsx"), fonts = read("lib/brand/fonts.ts");
     expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
-    expect(read("lib/brand/fonts.ts")).toMatch(/plus-jakarta-sans-latin\.woff2/);
+    expect(fonts).toMatch(/plus-jakarta-sans-latin\.woff2/);
+    expect(fonts).toMatch(/inter-latin\.woff2/);
+    expect(fonts).toMatch(/jetbrains-mono-latin\.woff2/);
     expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
-      const src = read(f);
-      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
+      expect(read(f), f).not.toMatch(/General Sans|fontshare|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S|fonts\.googleapis/);
     }
   });
 

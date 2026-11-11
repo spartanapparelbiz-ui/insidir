@@ -11,7 +11,7 @@ export const SEC_MODULES: ReadonlyArray<{ name: string; line: string; href: stri
   { name: "SEC filings", line: "A searchable Form 4 database, each row linked to the original filing on sec.gov", href: "/filings", feature: "filings" },
   { name: "Insider activity", line: "Open-market buys and sells by officers and directors, kept separate from option exercises and stock grants", href: "/insiders", feature: "filings" },
   { name: "People", line: "Officers, directors and 10% owners, across every board they sit on", href: "/insiders", feature: "people" },
-  { name: "Watchlists and alerts", line: "Save tickers and get an in-app alert within minutes of a filing reaching EDGAR", href: "/watchlists", feature: "watchlists" },
+  { name: "Watchlists and signals", line: "Save tickers and get an in-app signal within minutes of a filing reaching EDGAR", href: "/watchlists", feature: "watchlists" },
   { name: "Research journal", line: "Tag companies Researching, Watching or Passed, with private notes next to the filings", href: "/journal", feature: "journal" },
 ];
 export const SEC_PROMISE = "Every number comes from an official SEC filing. No AI summaries, no price targets, nothing simulated.";

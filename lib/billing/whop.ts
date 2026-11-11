@@ -126,7 +126,7 @@ export async function fetchMembership(id: string): Promise<MembershipLite | null
 export async function cancelMembership(id: string, reason: string): Promise<boolean> {
   const res = await fetch(`${WHOP_API}/memberships/${encodeURIComponent(id)}/cancel`, {
     method: "POST", headers: { ...apiHeaders(), "Content-Type": "application/json" }, signal: AbortSignal.timeout(10_000),
-    body: JSON.stringify({ cancel_at_period_end: true, reason: reason.slice(0, 500) }),
+    body: JSON.stringify({ cancellation_mode: "immediate", reason: reason.slice(0, 500) }),
   });
   return res.ok;
 }

@@ -48,6 +48,22 @@ export async function seedMillionaires(db: Db, now: number): Promise<void> {
   for (const [id, p] of [[MIL_MARKETS.nfl, 0.51], [MIL_MARKETS.pol, 0.66], [MIL_MARKETS.soc, 0.44]] as const) {
     await db.execute(sql`insert into terminal.market_info (source, market_id, yes_price, closed, updated_at) values ('polymarket', ${id}, ${p}, false, ${new Date(now)}) on conflict do nothing`);
   }
+  // The Verified checks (lib/verified), as the daily run stores them: wallets 1–3 pass, wallet 4 fails the months test.
+  // Test data: the numbers are fixtures, not real wallets.
+  await db.execute(sql`truncate terminal.wallet_verification`);
+  for (const [n, verified, pnl, bankroll] of [[1, true, 3_100_000, 1_000_000], [2, true, 2_400_000, 800_000], [3, true, 1_500_000, 500_000], [4, false, 1_200_000, 400_000]] as const) {
+    const checks = [
+      { key: "settled", pass: true, label: "50+ settled trades", detail: "50+ settled." },
+      { key: "months", pass: verified, label: "Profitable in 2 of the last 3 months", detail: verified ? "Last 30 days $40,000, 30–60 days $25,000, 60–90 days −$5,000: 2 of 3 profitable." : "Last 30 days −$12,000, 30–60 days $8,000, 60–90 days −$3,000: 1 of 3 profitable." },
+      { key: "concentration", pass: true, label: "No single trade over 40% of its profit", detail: "Its biggest win, $310,000, is 10% of its all-time profit." },
+      { key: "hedging", pass: true, label: "Not hedging (both sides of a market)", detail: "Held both sides in 1 of 40 markets in 90 days (3%; under 20% passes)." },
+    ];
+    const last10 = Array.from({ length: 10 }, (_, i) => ({ title: `E2E fixture: settled market ${i}`, outcome: "Yes", moneyIn: 10_000, pnl: i < 7 ? 12_000 : -10_000, at: now - (i + 1) * DAY, category: "football" }));
+    await db.execute(sql`insert into terminal.wallet_verification (wallet, verified, checks, months, pnl, pnl30, pnl90, won, lost, by_category, bankroll, avg_size, avg_size_pct, hedge_share, last10, checked_at, verified_since)
+      values (${MW(n)}, ${verified}, ${JSON.stringify(checks)}::jsonb, ${JSON.stringify(verified ? [40_000, 25_000, -5_000] : [-12_000, 8_000, -3_000])}::jsonb, ${pnl}, ${verified ? 40_000 : -12_000}, ${verified ? 60_000 : -7_000},
+        ${verified ? 28 : 12}, ${verified ? 12 : 18}, ${JSON.stringify([{ category: "football", won: 20, lost: 8, pnl: 50_000 }, { category: "tennis", won: 8, lost: 4, pnl: 10_000 }])}::jsonb,
+        ${bankroll}, ${bankroll * 0.02}, 0.02, 0.03, ${JSON.stringify(last10)}::jsonb, ${new Date(now)}, ${verified ? new Date(now - 5 * DAY) : null})`);
+  }
   // The rules report (lib/autopilot/report.ts): following every bet loses; one rule is positive over 100+ settled and
   // leads /go, the paywall and the landing; one is positive under 100 settled and may not.
   const res = (won: number, lost: number, net: number) => ({ days: 180, from: now - 180 * DAY, to: now, bets: won + lost, won, lost, void: 0, open: 0, staked: (won + lost) * 25, net,

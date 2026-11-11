@@ -1,211 +1,166 @@
-/* The landing: a scrolling page of stages in the hero spec's language, one story told simply. Each stage is a
- * full-viewport black stage with one background that never animates; its foreground performs once as it enters
- * (components/brand/StageMotion.tsx).
- *   Hero (the globe) · [Election Day board, Nov 3–4 ET only] · Why Insidir (the problem) · How it works (three steps) ·
- *   See it work (recordings of the live site, ./Demo.tsx) · Free right now (a live sample, no account) · The record ·
- *   Pricing · FAQ · Final (the globe again, the footer inside). Stages: ./Why.tsx, ./Value.tsx; scroll motion: ./ScrollFx.tsx.
- * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
-import { electionDay } from "@/lib/brand/pulse";
-import { TRIAL } from "@/lib/plans";
-import type { CSSProperties } from "react";
-import { category as categoryInfo } from "@/lib/brand/categories";
-import { FAQ, HERO, PAST, STAGES, faqLd } from "@/lib/brand/copy";
-import { slotPhoto } from "@/lib/brand/images";
-import type { LandingData } from "@/lib/brand/landing";
-import { Lines, m, Pill } from "../Bits";
-import { BetRow } from "../BetRow";
-import { Faq } from "../Faq";
-import { HeroLine } from "../HeroLine";
-import { BrandFoot, BrandNav } from "../Nav";
-import { PayMoments } from "../PayMoments";
-import { Stage } from "../Stage";
-import { StageMotion } from "../StageMotion";
+/* The homepage (visitors): a product page in the manner of Mercury, Ramp and Linear. Solid near-black, Inter for words,
+ * JetBrains Mono for numbers, addresses and times, one accent (the brand's gold) on the button and live numbers only,
+ * 1px #222 borders, 12px radii, no photos, no shadows, no scroll animations (150ms fades only).
+ *   Hero      label, "The intelligence layer for prediction markets.", the sub, Start for $1, the price line, and the
+ *             product itself: the Live feed in a framed window (six real rows; sides hidden for visitors)
+ *   Stats     three live numbers (lib/brand/landing.ts homeStats); a number that isn't there is left out
+ *   How       Track, Verify, Signal
+ *   Product   two framed real screens, alternating with their captions: a signal (the newest settled $1M+ trade, as
+ *             its signal read) and the ledger (the last six settled $1M+ trades, wins and losses)
+ *   Pricing   one card
+ *   Footer    Methodology, Terms, Privacy, contact, the disclaimer
+ * Every number comes from a live query; nothing is invented. Members get their home instead (app/page.tsx). */
 import { ViewAs } from "@/components/ViewAs";
-import { ScrollFx } from "./ScrollFx";
-import { ScrollReveal } from "../ScrollReveal";
-import { Intro, INTRO_SCRIPT } from "./Intro";
-import { dollars as usd } from "@/lib/money";
-import { StickyStart } from "./StickyStart";
-import { RaceRow } from "./ElectionLive";
-import { HowStage, WatchStage, WhyStage } from "./Why";
-import { InsideStage } from "./Inside";
-import { ElectionStage } from "./Value";
+import { HOW } from "@/lib/brand/copy";
+import type { LandingData, SettledTrade } from "@/lib/brand/landing";
+import { COMPANY, DATA_COMPANY, FOOTER } from "@/lib/copy";
+import { shortWallet } from "@/lib/millionaires/watchlist";
+import { dollars } from "@/lib/money";
+import { PLANS, TRIAL } from "@/lib/plans";
+import { Mark } from "../Bits";
+import { LiveWindow } from "./LiveWindow";
 
-function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
+const cents = (p: number) => `${Math.round(p * 100)}¢`;
+const DAY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" });
+const START = `Start for $${TRIAL.fee}`;
+const UNDER = `Then $${PLANS.insidir.price}/mo. Cancel in one click.`;
+
+function Nav() {
   return (
-    <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
-      <BrandNav motion startHref="/go?step=checkout" election={electionDay(Date.now())} />
-      <div className="b-hero-inner">
-        <a className="b-offer" href="/go?step=checkout" data-checkout="hero-offer" data-testid="hero-offer" data-m="settle" style={{ "--d": ".1s" } as CSSProperties}><b>{`$${TRIAL.fee} for ${TRIAL.days} days`}</b><span>Your AI analyst included</span></a>
-        <Lines as="h1" id="hero-h" lines={HERO.h1} />
-        <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
-        <HeroLine initial={d.pulse} />
-        {/* Onboarding starts here: the funnel's first question (/go's "What do you bet on?"), answered in one tap. */}
-        <div className="b-heropick" data-m="settle" style={{ "--d": ".8s" } as CSSProperties} data-testid="hero-pick">
-          <span className="b-heropick__q">{HERO.ask}</span>
-          <div className="b-heropick__row">
-            {HERO.picks.map(c => <a key={c} className="b-heropick__chip" href={`/go?step=checkout&cats=${c}`} data-testid="hero-chip" data-checkout="hero-pick">{categoryInfo(c).name}</a>)}
-            <a className="b-heropick__chip b-heropick__chip--more" href="/go?step=checkout" data-testid="hero-chip-more">More</a>
-          </div>
-        </div>
-        <div className="b-ctas">
-          <Pill href="/markets" delay={0.9} data-testid="hero-markets">{HERO.ctaMarkets}</Pill>
-          <Pill href="/go?step=checkout" kind="ghost" className="b-hl" delay={0.97} data-testid="hero-start" data-checkout="hero">{HERO.ctaAlerts}</Pill>
-        </div>
-        <p className="b-hero-terms" data-m="quiet" style={{ "--d": "1.05s" } as CSSProperties} data-testid="hero-terms">{STAGES.pricingSub} Apple Pay, Google Pay or card.</p>
-      </div>
-    </Stage>
+    <header className="lx-nav">
+      <a className="lx-logo" href="/" aria-label="Insidir home"><Mark /><span>Insidir</span></a>
+      <nav aria-label="Primary" className="lx-nav__links">
+        <a href="/methodology">Methodology</a>
+        <a href="#pricing">Pricing</a>
+        <a href="/login">Log in</a>
+      </nav>
+    </header>
   );
 }
 
-function Free({ d }: { d: LandingData }) {
-  const t = d.topBet, late = d.lead.slice(0, 4);
+function Stats({ s }: { s: LandingData["stats"] }) {
+  const all: Array<[number | null, string, string]> = [
+    [s.tracked, "Tracked", "Wallets up $1M+ we track"],
+    [s.verified, "Verified", "Wallets passing every criterion today"],
+    [s.signals24h, "Signals", "Signals sent in the last 24 hours"],
+  ];
+  const items = all.filter((x): x is [number, string, string] => x[0] !== null);
+  if (!items.length) return null;
   return (
-    <Stage id="free" bg={{ kind: "photo", photo: slotPhoto("free"), dark: 0.66 }} testid="free" labelledBy="free-h">
-      <div className="b-head"><Lines id="free-h" lines={STAGES.free} size={64} /><p className="b-sub">A live sample, no account.</p></div>
-      <div className="b-tiles3">
-        <section className="b-glass b-pad b-tile3" data-testid="free-top-bet" data-m="settle" style={{ "--d": ".6s" } as CSSProperties}>
-          <h3 className="b-panel-h">Today&apos;s #1 millionaire bet</h3>
-          {t ? (
-            <div style={{ display: "grid", gap: 12 }}>
-              <ul className="b-rows"><li data-free="bet" style={{ cursor: "pointer" }}><BetRow bet={t} now={d.now} /></li></ul>
-              <p className="b-small">The biggest single bet since midnight ET from a wallet up $1M+, side and price included. Information, not advice.</p>
-            </div>
-          ) : <p className="b-empty">Today&apos;s biggest bet shows here once a $1M+ wallet bets after midnight ET. Until then, the board beside it has the latest.</p>}
-        </section>
-        <section className="b-glass b-pad b-tile3" data-testid="free-late" data-m="settle" style={{ "--d": ".72s" } as CSSProperties}>
-          <h3 className="b-panel-h">The board, 60 minutes late</h3>
-          {late.length ? (
-            <>
-              <ul className="b-rows">{late.map(b => <li key={b.id}><BetRow bet={b} now={d.now} /></li>)}</ul>
-              <p className="b-small" style={{ marginTop: 12 }} data-testid="free-more">{d.pulse.all.countToday ? `${d.pulse.all.countToday.toLocaleString("en-US")} ${d.pulse.all.countToday === 1 ? "bet" : "bets"} from wallets up $100K+ today${d.pulse.countToday ? `, ${d.pulse.countToday.toLocaleString("en-US")} from $1M+` : ""}. ` : ""}Members see each one the second it lands.</p>
-            </>
-          ) : <p className="b-empty">No millionaire bets in the last day yet.</p>}
-          <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/board">The board</a>
-        </section>
-        <section className="b-glass b-pad b-tile3" data-testid="free-race" data-m="settle" style={{ "--d": ".84s" } as CSSProperties}>
-          <h3 className="b-panel-h">{d.race ? "One race in full" : "Today in numbers"}</h3>
-          {d.race ? (
-            <>
-              <ul className="b-rows"><RaceRow r={d.race} /></ul>
-              <p className="b-small" style={{ marginTop: 12 }}>The race with the most watchlist money this week, whole: every side and the price now.</p>
-            </>
-          ) : (
-            <dl className="fr-nums" data-testid="free-numbers">
-              {d.pulse.today > 0 ? <div><dd className="b-num">{usd(d.pulse.today)}</dd><dt>bet by wallets up $1M+ in 24 hours</dt></div> : null}
-              {d.pulse.all.countToday > 0 ? <div><dd className="b-num">{d.pulse.all.countToday.toLocaleString("en-US")}</dd><dt>{d.pulse.all.countToday === 1 ? "bet" : "bets"} from $100K+ wallets since midnight ET{d.pulse.countToday > 0 ? `, ${d.pulse.countToday.toLocaleString("en-US")} from $1M+` : ""}</dt></div> : null}
-              {d.pulse.millionaires > 0 ? <div><dd className="b-num">{d.pulse.millionaires.toLocaleString("en-US")}</dd><dt>wallets up $1M+ watched</dt></div> : null}
-            </dl>
-          )}
-          <a className="b-btn b-panel-pill" style={{ justifySelf: "start", marginTop: 12 }} href="/election">Every race</a>
-        </section>
-      </div>
-    </Stage>
+    <section className="lx-section lx-stats" aria-label="Live numbers" data-testid="hero-stats">
+      {items.map(([n, k, t]) => <div key={k} title={t}><span className="lx-mono lx-accent lx-stat">{n.toLocaleString("en-US")}</span><span className="lx-label">{k}</span></div>)}
+    </section>
   );
 }
 
-/** The record: the leading rule from the Kalshi backtest (positive over 100+ settled at Kalshi's ask + 1¢), or nothing. */
-function Proof({ d }: { d: LandingData }) {
-  if (!d.record) return null;
-  const r = d.record, net = `${r.net >= 0 ? "+" : "−"}$${Math.abs(Math.round(r.net)).toLocaleString("en-US")}`;
+function How() {
   return (
-    <Stage bg={{ kind: "photo", photo: slotPhoto("space") }} testid="proof" label="The record">
-      <div className="b-center">
-        <p className="b-giant b-num" data-testid="proof-net"><span className="ln"><span className="ln-i">{net}</span></span></p>
-        <p className="b-sub" {...m("lift", 0.5)}>“{r.name}” on Kalshi · ${r.perBet} a bet · {r.won} won of {r.settled.toLocaleString("en-US")} settled · {r.days} days</p>
-        <p className="b-small" style={{ marginTop: 8 }}><a href="/results">Every rule we tested, losses included</a></p>
-        <p className="b-small" style={{ marginTop: 14 }} {...m("quiet", 0.8)}>{PAST}</p>
+    <section id="how" className="lx-section" aria-labelledby="how-h" data-testid="how">
+      <h2 id="how-h" className="lx-h2">How it works</h2>
+      <ol className="lx-cols">
+        {HOW.map((h, i) => <li key={h.t} className="lx-card"><span className="lx-mono lx-dim">0{i + 1}</span><h3>{h.t.replace(/\.$/, "")}</h3><p>{h.d}</p></li>)}
+      </ol>
+    </section>
+  );
+}
+
+function Who({ t }: { t: SettledTrade }) {
+  return <>{t.verified ? "Verified " : ""}<span className="lx-mono">{shortWallet(t.wallet)}</span></>;
+}
+
+function SignalScreen({ t }: { t: SettledTrade }) {
+  const result = Math.round(((t.result === "won" ? 1 : 0) - t.price) / t.price * 100);
+  return (
+    <div className="lx-window lx-shot" data-testid="product-signal">
+      <div className="lx-window__bar"><span className="lx-dots" aria-hidden="true"><i /><i /><i /></span><span className="lx-window__title">Signal</span><span className="lx-window__meta lx-mono">{DAY.format(new Date(t.at))}</span></div>
+      <div className="lx-signal">
+        <p className="lx-signal__line"><Who t={t} />{t.pnl !== null && t.pnl > 0 ? <>, up <span className="lx-mono">{dollars(t.pnl)}</span></> : null}, opened <span className="lx-mono lx-accent">{dollars(t.amount)}</span> on {t.outcome} in “{t.title}” at <span className="lx-mono">{cents(t.price)}</span>.</p>
+        <dl className="lx-kv">
+          <div><dt>Entry</dt><dd className="lx-mono">{cents(t.price)}</dd></div>
+          <div><dt>Settled</dt><dd className="lx-mono">{DAY.format(new Date(t.settledAt))}</dd></div>
+          <div><dt>Result</dt><dd className="lx-mono">{t.result === "won" ? "Won" : "Lost"} {result >= 0 ? "+" : "−"}{Math.abs(result)}%</dd></div>
+        </dl>
       </div>
-    </Stage>
+    </div>
+  );
+}
+
+function LedgerScreen({ rows }: { rows: SettledTrade[] }) {
+  return (
+    <div className="lx-window lx-shot" data-testid="product-ledger">
+      <div className="lx-window__bar"><span className="lx-dots" aria-hidden="true"><i /><i /><i /></span><span className="lx-window__title">Ledger</span><span className="lx-window__meta lx-mono">settled · $1M+ wallets</span></div>
+      <table className="lx-feed lx-feed--ledger">
+        <thead><tr><th scope="col">Settled</th><th scope="col">Position</th><th scope="col" className="lx-r">Entry</th><th scope="col" className="lx-r">Result</th></tr></thead>
+        <tbody>{rows.map(t => {
+          const r = Math.round(((t.result === "won" ? 1 : 0) - t.price) / t.price * 100);
+          return <tr key={t.id}><td className="lx-mono lx-dim">{DAY.format(new Date(t.settledAt))}</td><td className="lx-market">{t.outcome} · {t.title}</td><td className="lx-mono lx-r">{cents(t.price)}</td><td className="lx-mono lx-r">{r >= 0 ? "+" : "−"}{Math.abs(r)}%</td></tr>;
+        })}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function Product({ settled }: { settled: SettledTrade[] }) {
+  if (!settled.length) return null;
+  return (
+    <section className="lx-section" aria-labelledby="product-h" data-testid="product">
+      <h2 id="product-h" className="lx-h2">The product</h2>
+      <div className="lx-row">
+        <SignalScreen t={settled[0]!} />
+        <p className="lx-caption"><b>Signals.</b> A push within seconds when a wallet you follow opens a position.<br />With the market, the price and your sizing.</p>
+      </div>
+      <div className="lx-row lx-row--flip">
+        <LedgerScreen rows={settled.slice(0, 6)} />
+        <p className="lx-caption"><b>Ledger.</b> Every position you copy, with entry, price and result.<br />Shown here: the last six settled $1M+ positions, losses included.</p>
+      </div>
+    </section>
   );
 }
 
 function Pricing() {
   return (
-    <Stage id="pricing" bg={{ kind: "photo", photo: slotPhoto("world") }} testid="pricing" labelledBy="price-h">
-      <div className="b-center">
-        <Lines id="price-h" lines={STAGES.pricing} size={72} />
-        <p className="b-sub" {...m("lift", 0.58)} data-testid="price-line">{STAGES.pricingSub}</p>
-        <div className="b-ctas"><Pill href="/go?step=checkout" delay={0.9} data-testid="pricing-cta" data-checkout="pricing">Start for $1</Pill></div>
+    <section id="pricing" className="lx-section" aria-labelledby="price-h" data-testid="pricing">
+      <div className="lx-card lx-price">
+        <h2 id="price-h" className="lx-h2">Pricing</h2>
+        <p className="lx-price__n"><span className="lx-mono">${TRIAL.fee}</span> for {TRIAL.days} days, then <span className="lx-mono">${PLANS.insidir.price}</span>/mo.</p>
+        <p className="lx-sub">Signals, sizing, exit signals and the ledger. Cancel in one click.</p>
+        <a className="lx-btn" href="/go?step=checkout" data-checkout="pricing" data-unlock="pricing" data-testid="pricing-cta">{START}</a>
       </div>
-    </Stage>
+    </section>
   );
 }
 
-function FaqStage() {
+function Footer() {
   return (
-    <Stage id="faq" bg={{ kind: "photo", photo: slotPhoto("faq"), dark: 0.7 }} testid="faq" labelledBy="faq-h">
-      <div className="b-head"><Lines id="faq-h" lines={STAGES.faq} size={64} /></div>
-      <Faq items={FAQ} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd() }} />
-    </Stage>
+    <footer className="lx-foot" data-testid="brand-foot">
+      <nav aria-label="Footer" className="lx-foot__links">
+        <a href="/methodology">Methodology</a><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>
+      </nav>
+      <p className="lx-foot__legal">{FOOTER} {DATA_COMPANY} {COMPANY.name}, {COMPANY.place}.</p>
+    </footer>
   );
 }
 
-function Final() {
-  return (
-    <Stage bg={{ kind: "globe", dark: 0.2 }} testid="final-cta" labelledBy="final-h" after={<BrandFoot />}>
-      <div className="b-center">
-        <Lines id="final-h" lines={STAGES.final} />
-        <div className="b-ctas">
-          <Pill href="/go?step=checkout" delay={0.9} data-testid="final-start" data-checkout="final">Start for $1</Pill>
-          <Pill href="/board" kind="ghost" delay={0.97}>See the board</Pill>
-        </div>
-      </div>
-    </Stage>
-  );
-}
-
-/** Everything below the hero, from the full landing data. */
-function Rest({ d }: { d: LandingData }) {
-  return (
-    <>
-      {/* Election Day (Nov 3–4 ET only) leads; otherwise the story: why, how, see it, try it free, the record. */}
-      {d.election ? <ElectionStage d={d} /> : null}
-      {/* Lead with what members pay for: the AI analyst, then the offer; the proof follows. */}
-      <InsideStage d={d} />
-      <Pricing />
-      <WhyStage />
-      <HowStage />
-      <WatchStage />
-      <Free d={d} />
-      <Proof d={d} />
-      <FaqStage />
-      <Final />
-      {d.member ? null : <StickyStart />}
-      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
-    </>
-  );
-}
-
-/** The landing: the hero, then every stage, in one response. */
 export function Landing({ d }: { d: LandingData }) {
   return (
     <>
-    <ViewAs />
-    <main className="b-root" data-testid="landing">
-      {d.member ? null : <>
-        <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
-        <Intro lines={d.pulse.today >= 100_000 ? [
-          `${usd(d.pulse.today)} bet in the last 24 hours`,
-          "by wallets that have made $1M+.",
-          "Now you see every bet, before the game.",
-        ] : d.pulse.millionaires > 0 ? [
-          `${d.pulse.millionaires.toLocaleString("en-US")} wallets have made $1M+ betting.`,
-          "We watch every bet they make.",
-          "Now you see them too, before the game.",
-        ] : [
-          "Some wallets have made $1M+ betting.",
-          "We watch every bet they make.",
-          "Now you see them too, before the game.",
-        ]} />
-      </>}
-      <Hero d={d} />
-      <Rest d={d} />
-      <StageMotion />
-      <ScrollFx />
-      <ScrollReveal />
-    </main>
+      <ViewAs />
+      <main className="lx" data-testid="landing">
+        <Nav />
+        <section className="lx-hero" aria-labelledby="hero-h" data-testid="hero">
+          <p className="lx-label">Prediction market intelligence</p>
+          <h1 id="hero-h" className="lx-h1">The intelligence layer for prediction markets.</h1>
+          <p className="lx-sub lx-hero__sub" data-testid="hero-sub">We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.</p>
+          <a className="lx-btn" href="/go?step=checkout" data-checkout="hero" data-unlock="hero" data-testid="hero-start">{START}</a>
+          <p className="lx-small" data-testid="hero-terms">{UNDER}</p>
+          <div className="lx-hero__window"><LiveWindow initial={d.lead.slice(0, 6)} now={d.now} /></div>
+        </section>
+        <Stats s={d.stats} />
+        <How />
+        <Product settled={d.settled} />
+        <Pricing />
+        <Footer />
+      </main>
     </>
   );
 }

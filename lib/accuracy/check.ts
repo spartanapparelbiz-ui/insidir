@@ -210,7 +210,7 @@ export async function checkMoves(db: Db, src: Sources, n: number): Promise<Array
     });
     // A Polymarket position off in size or start: the source wins. Rebuilt from it, then checked again. Never for a
     // move hidden as a sell (realize), which has no buy to rebuild from.
-    const sell = String(r.hidden_reason ?? "").startsWith("Not a new bet");
+    const sell = /^Not a new (bet|trade)/.test(String(r.hidden_reason ?? "")); // older rows say "bet"
     if (res.status === "mismatch" && m.source === "polymarket" && m.wallet && !sell && rebuildable(res.problems)) {
       const was = res.problems;
       const again = await line(base, async () => { const fixed = await rebuildPoly(db, src.poly, m); return fixed ? checkPoly(src.poly, fixed) : ["no matching fills at the source"]; });

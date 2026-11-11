@@ -9,9 +9,9 @@ const DAYF = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", 
 export function backtestLine(b: Backtest | null): string {
   if (!b) return "Backtest running: it shows here within the hour.";
   const settled = b.won + b.lost;
-  if (!b.bets) return `No bets in the last ${b.days} days would have matched this rule.`;
+  if (!b.bets) return `No trades in the last ${b.days} days would have matched this rule.`;
   const since = b.from !== null && b.to - b.from < (b.days - 7) * 86_400_000 ? ` (records start ${DAYF.format(new Date(b.from))})` : "";
-  const head = `Last ${b.days} days${since}: ${b.bets} ${b.bets === 1 ? "bet" : "bets"}`;
+  const head = `Last ${b.days} days${since}: ${b.bets} ${b.bets === 1 ? "trade" : "trades"}`;
   if (!settled) return `${head}, none settled yet.`;
   const roi = b.roi !== null ? ` (${b.roi >= 0 ? "+" : "−"}${Math.abs(Math.round(b.roi * 100))}%)` : "";
   return `${head}: ${b.won} won, ${b.lost} lost${b.open ? `, ${b.open} open` : ""}. Net ${signed(b.net)} on ${usd(b.staked)} staked${roi}. Worst drop ${b.maxDrawdown ? `−${usd(b.maxDrawdown)}` : "$0"}.`;

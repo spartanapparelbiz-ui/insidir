@@ -26,7 +26,7 @@ import { Tape } from "@/components/system/Tape";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "The board: millionaire bets, live", description: "Every bet of $1K+ by Polymarket wallets with $1M+ in all-time profit, as it happens." };
+export const metadata: Metadata = { title: "Live: positions from wallets up $100K+", description: "Every trade of $1K+ by Polymarket wallets up $100K+ in all-time profit, as it happens." };
 
 const EMPTY_PULSE = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, all: { count: 0, window: "hour" as const, today: 0, sinceMidnight: 0, countToday: 0 } };
 const href = (c: CategorySlug | null, t: "all" | "1m" | "pro") => { const p = new URLSearchParams(); if (c) p.set("cat", c); if (t !== "all") p.set("tier", t); const s = p.toString(); return `/board${s ? `?${s}` : ""}`; };
@@ -52,17 +52,17 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   // Every number follows the filter (pulse is computed for the category).
   const a = pl.all;
   const stats = pro ? "" : oneM ? [
-    pl.sinceMidnight > 0 ? `${dollars(pl.sinceMidnight)} bet by millionaires${where} today` : null,
-    pl.countToday > 0 ? `${pl.countToday} millionaire ${pl.countToday === 1 ? "bet" : "bets"}${where} today` : null,
+    pl.sinceMidnight > 0 ? `${dollars(pl.sinceMidnight)} traded by millionaires${where} today` : null,
+    pl.countToday > 0 ? `${pl.countToday} millionaire ${pl.countToday === 1 ? "trade" : "trades"}${where} today` : null,
     !cat && pl.millionaires > 0 ? `${pl.millionaires} ${pl.millionaires === 1 ? "wallet" : "wallets"} up $1M+ watched` : null,
   ].filter(Boolean).join(" · ") : [
-    a.sinceMidnight > 0 ? `${dollars(a.sinceMidnight)} bet by wallets up $100K+${where} today${pl.sinceMidnight > 0 ? ` (${dollars(pl.sinceMidnight)} from $1M+)` : ""}` : null,
-    a.countToday > 0 ? `${a.countToday} ${a.countToday === 1 ? "bet" : "bets"}${where} today${pl.countToday > 0 ? ` (${pl.countToday} from $1M+)` : ""}` : null,
+    a.sinceMidnight > 0 ? `${dollars(a.sinceMidnight)} traded by wallets up $100K+${where} today${pl.sinceMidnight > 0 ? ` (${dollars(pl.sinceMidnight)} from $1M+)` : ""}` : null,
+    a.countToday > 0 ? `${a.countToday} ${a.countToday === 1 ? "trade" : "trades"}${where} today${pl.countToday > 0 ? ` (${pl.countToday} from $1M+)` : ""}` : null,
     !cat && pl.wallets > 0 ? `${pl.wallets.toLocaleString("en-US")} wallets watched, ${pl.millionaires} up $1M+` : null,
   ].filter(Boolean).join(" · ");
   // One headline, two lines at most: the computed sentence when it fits, else "The board: Golf".
   const computed = member && !pro ? boardInsight(bets.filter(b => b.tier === "millionaire")) : null;
-  const title = `The board${cat ? `: ${categoryInfo(cat).name}` : ""}${pro ? `${cat ? ", $100K–$1M" : ": $100K–$1M"}` : oneM ? `${cat ? ", $1M+" : ": $1M+"}` : ""}.`;
+  const title = `Live${cat ? `: ${categoryInfo(cat).name}` : ""}${pro ? `${cat ? ", $100K–$1M" : ": $100K–$1M"}` : oneM ? `${cat ? ", $1M+" : ": $1M+"}` : ""}.`;
   const headline = computed && headlineLines(computed).length <= 2 ? computed : null;
   const photo = cat ? categoryPhoto(cat) : PHOTOS.baseball;
   return (
@@ -70,7 +70,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
       <Stage bg={{ kind: "photo", photo, dark: 0.6, priority: true }} first testid="board-band" labelledBy="board-h">
         <div className="b-head">
           <Insight id="board-h" text={headline} fallback={[title]} size={60} />
-          <p className="b-sub" data-m="lift">Every bet of $1K+ from {who}{where}, {member ? "live" : "60 minutes late"}.</p>
+          <p className="b-sub" data-m="lift">Every trade of $1K+ from {who}{where}, {member ? "live" : "60 minutes late"}.</p>
           {stats ? <p className="b-small b-center" data-testid="board-stats" data-m="lift">{stats}</p> : null}
         </div>
         {member ? (
@@ -82,10 +82,10 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
           <div className="s-board">
             <Panel className="b-delay" testid="board-delay">
               <p className="s-strong"><span className="b-dot" aria-hidden="true" /> {a.countToday > 0
-                ? <>Live now: <span className="b-num" data-testid="board-live-count">{a.countToday}</span> {a.countToday === 1 ? "bet" : "bets"} from wallets up $100K+{where} today{pl.countToday > 0 ? <>, <span className="b-num">{pl.countToday}</span> from $1M+</> : null}{a.window === "hour" && a.count > 0 ? <>; <span className="b-num">{a.count}</span> in the last hour</> : null}.</>
+                ? <>Live now: <span className="b-num" data-testid="board-live-count">{a.countToday}</span> {a.countToday === 1 ? "trade" : "trades"} from wallets up $100K+{where} today{pl.countToday > 0 ? <>, <span className="b-num">{pl.countToday}</span> from $1M+</> : null}{a.window === "hour" && a.count > 0 ? <>; <span className="b-num">{a.count}</span> in the last hour</> : null}.</>
                 : a.window === "hour" && a.count > 0
-                  ? <>Live now: <span className="b-num" data-testid="board-live-count">{a.count}</span> {a.count === 1 ? "bet" : "bets"} from wallets up $100K+{where} in the last hour.</>
-                  : <>No bet from a watched wallet{where} yet today (since midnight ET).</>}</p>
+                  ? <>Live now: <span className="b-num" data-testid="board-live-count">{a.count}</span> {a.count === 1 ? "trade" : "trades"} from wallets up $100K+{where} in the last hour.</>
+                  : <>No trade from a watched wallet{where} yet today (since midnight ET).</>}</p>
               <p className="b-small">You&apos;re seeing them 60 minutes late. Members see every one the second it lands, with its side.</p>
               <div className="b-ctas"><Pill href="/go" data-testid="board-start" data-checkout="board">Start for $1</Pill></div>
             </Panel>
@@ -104,7 +104,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
       <Stage testid="board-tape" labelledBy="tape-h">
         <div className="b-head">
           <h2 id="tape-h" className="ai-h">The tape. Every big move.</h2>
-          <p className="b-sub">New bets from wallets up $100K+, their exits, $10K+ trades from any Polymarket wallet, and $5K+ trades on Kalshi, newest first, with who&apos;s behind each and the big money in that market.</p>
+          <p className="b-sub">New positions from wallets up $100K+, their exits, $10K+ trades from any Polymarket wallet, and $5K+ trades on Kalshi, newest first, with who&apos;s behind each and the big money in that market.</p>
         </div>
         <Tape initial={[...tapeRows]} now={now} member={member} />
       </Stage>

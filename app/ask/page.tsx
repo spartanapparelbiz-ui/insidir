@@ -12,7 +12,7 @@ import "../brief.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Ask Insidir",
-  description: "Ask about the $1M+ wallets, a market or your own bet. Answers come only from Insidir's data. Information, not advice.",
+  description: "Ask about the $1M+ wallets, a market or your own trade. Answers come only from Insidir's data. Information, not advice.",
   alternates: { canonical: "/ask" },
 };
 
@@ -24,7 +24,7 @@ export default async function AskPage() {
       <Stage first testid="ask-hero" labelledBy="ask-h">
         <div className="b-head">
           <Lines as="h1" id="ask-h" lines={["Ask Insidir."]} size={56} />
-          <p className="b-sub">Ask about the $1M+ wallets, a market or your own bet. Answers come only from our data, with the rows behind them. If we don&apos;t have it, we say so.</p>
+          <p className="b-sub">Ask about the $1M+ wallets, a market or your own position. Answers come only from our data, with the rows behind them. If we don&apos;t have it, we say so.</p>
         </div>
         <AskBox examples={ASK_EXAMPLES} member={member} />
         <p className="bf-foot">Information, not advice. We show what moved and when, never why. {member ? "" : "Visitors see the board 60 minutes late, without open sides. "}<a href="/record">Every position we&apos;ve flagged, losses included</a>.</p>

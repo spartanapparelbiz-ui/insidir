@@ -27,7 +27,7 @@ export function AskBox({ examples, member }: { examples: readonly string[]; memb
   return (
     <div data-testid="ask-box">
       <form className="ask-form" onSubmit={submit}>
-        <input className="s-input" name="q" value={q} onChange={e => setQ(e.target.value)} maxLength={300} placeholder="Ask about the wallets, a market or your bet" aria-label="Your question" data-testid="ask-input" />
+        <input className="s-input" name="q" value={q} onChange={e => setQ(e.target.value)} maxLength={300} placeholder="Ask about the wallets, a market or your trade" aria-label="Your question" data-testid="ask-input" />
         <button type="submit" className="b-btn b-primary" disabled={busy} data-testid="ask-submit">{busy ? "Looking…" : "Ask"}</button>
       </form>
       <div className="ask-try">

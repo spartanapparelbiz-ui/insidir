@@ -25,7 +25,7 @@ const outcomeOf = (side: "yes" | "no", result: "yes" | "no" | "void"): "won" | "
 
 export function whatHappened(x: HappenedInput): Happened {
   const label = (s: "yes" | "no") => (s === "yes" ? x.yesLabel : x.noLabel);
-  const result = x.result === "void" ? `"${x.title}" was voided: every bet got its money back.` : `"${x.title}" settled ${label(x.result)}.`;
+  const result = x.result === "void" ? `"${x.title}" was voided: every trade got its money back.` : `"${x.title}" settled ${label(x.result)}.`;
   let right: string | null = null;
   const total = x.money.yes.dollars + x.money.no.dollars;
   if (total > 0 && x.result !== "void") {

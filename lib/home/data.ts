@@ -90,7 +90,7 @@ export function boardInsight(bets: readonly BoardBet[]): string | null {
 export function walletsInsight(wallets: readonly WalletCard[]): string | null {
   const rate = (w: WalletCard) => w.last10!.made / (w.last10!.made + w.last10!.lost);
   const best = [...wallets].filter(w => w.last10 && w.last10.made + w.last10.lost >= 5).sort((a, b) => rate(b) - rate(a))[0];
-  return best ? `${best.short} made money on ${best.last10!.made} of its last ${best.last10!.made + best.last10!.lost} closed bets.` : null;
+  return best ? `${best.short} made money on ${best.last10!.made} of its last ${best.last10!.made + best.last10!.lost} closed trades.` : null;
 }
 
 /** Wallets worth following: those that bet today (else in the last 24 hours), with their last 10 closed. */
@@ -155,7 +155,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     now, today, top: top ? { bet: top, edge, art: art && !(logosOff() && SPORTS.has(top.category)) ? art : null } : null,
     copyNow, day, stream, disagree: dis, election: el ? { day: el, insight: raceInsight(el) } : null, board: flow.slice(0, 24), wallets, desk, copies,
     insight: {
-      hero: today ? `Wallets up $100K+ bet ${dollars(today.money)} today.` : day ? `Wallets up $100K+ bet ${dollars(day.money)} in the last 24 hours.` : null,
+      hero: today ? `Wallets up $100K+ traded ${dollars(today.money)} today.` : day ? `Wallets up $100K+ traded ${dollars(day.money)} in the last 24 hours.` : null,
       disagree: dis[0] ? `Millionaires are ${pct(dis[0].share)} on ${dis[0].outcome}. The price says ${c(dis[0].price)}.` : null,
       board: boardInsight(live),
       wallets: walletsInsight(wallets),

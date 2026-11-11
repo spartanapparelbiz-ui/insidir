@@ -18,7 +18,7 @@ export default async function DataPage() {
   const now = Date.now();
   const status = hasDatabase() ? await readStatus(getDb(), now).catch(() => null) : null as Status | null;
   return (
-    <TrustPage path="/data" title="Our data" lead="Every bet, amount and record on Insidir comes from a public record.">
+    <TrustPage path="/data" title="Our data" lead="Every trade, amount and record on Insidir comes from a public record.">
       {status ? <>
         <h2>Freshness, live</h2>
         <ul className="stat__list" data-testid="data-fresh">
@@ -35,20 +35,20 @@ export default async function DataPage() {
 
       <h2>How late it can be</h2>
       <ul>
-        <li><strong>Members</strong>: we read Polymarket every 15 seconds, so a bet usually shows within a minute.</li>
-        <li><strong>Visitors</strong>: the board shows bets {Math.round(VISITOR_DELAY_MS / 60_000)} minutes after they happen, without the side.</li>
+        <li><strong>Members</strong>: we read Polymarket every 15 seconds, so a trade usually shows within a minute.</li>
+        <li><strong>Visitors</strong>: the board shows trades {Math.round(VISITOR_DELAY_MS / 60_000)} minutes after they happen, without the side.</li>
         <li>When a source is more than 5 minutes behind, the board says &ldquo;Catching up&rdquo; with the time of the last update, instead of &ldquo;Live&rdquo;.</li>
       </ul>
 
       <h2>What it can&apos;t tell you</h2>
       <ul>
         <li><strong>A wallet is not a person.</strong> One trader can use several wallets, and a record covers that one wallet only. We never try to work out who is behind a wallet.</li>
-        <li><strong>The price you get is not theirs.</strong> By the time you see a bet, the price may have moved. Every bet page shows their price against the price now.</li>
-        <li><strong>It&apos;s a record of what happened, not advice.</strong> Millionaires lose bets too: <Link href="/results">the record</Link> shows every settled result, losses included.</li>
+        <li><strong>The price you get is not theirs.</strong> By the time you see a trade, the price may have moved. Every trade page shows their price against the price now.</li>
+        <li><strong>It&apos;s a record of what happened, not advice.</strong> Millionaires lose trades too: <Link href="/results">the record</Link> shows every settled result, losses included.</li>
       </ul>
 
       <h2 id="checks">How we verify it</h2>
-      <p>Every hour we re-read random bets and wallet numbers from their sources. Anything that doesn&apos;t match is hidden until it does. Spotted something wrong? Write to <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
+      <p>Every hour we re-read random trades and wallet numbers from their sources. Anything that doesn&apos;t match is hidden until it does. Spotted something wrong? Write to <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
       {status?.checks.length ? <>
         <h3>The latest verifications</h3>
         <ul className="stat__list" data-testid="data-checks">

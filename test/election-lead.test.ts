@@ -15,7 +15,7 @@ describe("the election headline", () => {
   it("Florida: a No on Byron Donalds is money against Donalds, never money on David Jolly", () => {
     const d = day(race("Florida Governor Election Winner", [cand("Byron Donalds", 0, 5_900, 0.66, "R"), cand("David Jolly", 0, 0, 0.34, "D")]));
     const lead = raceLead(d)!;
-    expect(lead.headline).toBe("Millionaires bet $5.9K against Byron Donalds.");
+    expect(lead.headline).toBe("Millionaires traded $5.9K against Donalds.");
     expect(lead.headline).not.toMatch(/Jolly/);
     expect(lead.side).toBe("against");
     expect(lead.candidate.name).toBe("Byron Donalds");
@@ -25,12 +25,12 @@ describe("the election headline", () => {
 
   it("names the largest single position, Yes or No, in that candidate's own market", () => {
     const d = day(race("Texas Senate Election Winner", [cand("Ken Paxton", 30_000, 0, 0.28), cand("James Talarico", 0, 24_000, 0.73)]));
-    expect(raceLead(d)!.headline).toBe("Millionaires bet $30K on Ken Paxton.");
+    expect(raceLead(d)!.headline).toBe("Millionaires traded $30K on Ken Paxton.");
   });
 
   it("control of a chamber reads as a party, and only when no head-to-head race has money", () => {
     const control = race("Which party will win the House in 2026?", [cand("Democratic Party", 48_000, 0, 0.95, "D"), cand("Republican Party", 0, 0, 0.06, "R")], "control");
-    expect(raceLead(day(control))!.headline).toBe("Millionaires bet $48K on Democrats to win the House.");
+    expect(raceLead(day(control))!.headline).toBe("Millionaires traded $48K on Democrats to win the House.");
     expect(raceLead(day(control, race("Ohio Governor Election Winner", [cand("Amy Acton", 1_000, 0)])))!.candidate.name).toBe("Amy Acton");
   });
 

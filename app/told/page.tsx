@@ -13,7 +13,7 @@ import { isPaid } from "@/lib/plans";
 import "../watch.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "What we told you", description: "Every briefing and alert Insidir showed you, and how it turned out, losses included.", robots: { index: false } };
+export const metadata: Metadata = { title: "What we told you", description: "Every briefing and signal Insidir showed you, and how it turned out, losses included.", robots: { index: false } };
 
 const KIND: Record<string, string> = { briefing: "Briefing", alert: "Alert", brief: "Brief" };
 const RESULT: Record<string, string> = { won: "Won", lost: "Lost", void: "Void", open: "Open" };
@@ -27,7 +27,7 @@ export default async function ToldPage() {
   const head = (
     <div className="b-head">
       <Lines as="h1" id="told-h" lines={["What we told you."]} size={56} />
-      <p className="b-sub">Every briefing and alert we showed you, and how it turned out once the market settled. Losses included.</p>
+      <p className="b-sub">Every briefing and signal we showed you, and how it turned out once the market settled. Losses included.</p>
     </div>
   );
   if (!member || !viewer.user || !hasDatabase()) {
@@ -73,7 +73,7 @@ export default async function ToldPage() {
                 );
               })}
             </ol>
-          ) : <p className="b-empty">Nothing yet. Watch a bet on <a href="/watch">Watch my bet</a> and every alert lands here.</p>}
+          ) : <p className="b-empty">Nothing yet. Watch a trade on <a href="/watch">Watch my trade</a> and every signal lands here.</p>}
           <p className="b-small" style={{ marginTop: 20 }}>&ldquo;Won&rdquo; and &ldquo;Lost&rdquo; are for the side the line was about, once its market settled. Past results don&apos;t predict future ones. Information, not advice.</p>
         </div>
       </Stage>

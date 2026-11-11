@@ -30,7 +30,7 @@ export function WalletBoard({ rows, now }: { rows: LeaderRow[]; now: number }) {
     <div className="s-wb" data-testid="wallet-board">
       <div className="s-wb__bar">
         <div className="s-wb__chips" role="group" aria-label="Show">
-          {([["all", "All"], ["proven", "Proven"], ["active", "Bet this week"]] as const).map(([k, l]) => (
+          {([["all", "All"], ["proven", "Proven"], ["active", "Trade this week"]] as const).map(([k, l]) => (
             <button key={k} type="button" className="s-wb__chip" aria-pressed={filter === k} onClick={() => { setFilter(k); setShown(40); }} data-testid="wb-filter">{l} <span>{counts[k]}</span></button>
           ))}
         </div>
@@ -39,11 +39,11 @@ export function WalletBoard({ rows, now }: { rows: LeaderRow[]; now: number }) {
             <option value="pnl">All-time profit</option>
             <option value="rate">Win rate</option>
             <option value="week">Money this week</option>
-            <option value="last">Latest bet</option>
+            <option value="last">Latest trade</option>
           </select>
         </label>
       </div>
-      <div className="s-wb__head" aria-hidden="true"><span>#</span><span>Wallet</span><span>All-time</span><span>Record</span><span>This week</span><span>Latest bet</span><span /></div>
+      <div className="s-wb__head" aria-hidden="true"><span>#</span><span>Wallet</span><span>All-time</span><span>Record</span><span>This week</span><span>Latest trade</span><span /></div>
       {list.length ? (
         <ol className="s-wb__rows">
           {list.slice(0, shown).map((r, i) => {
@@ -53,8 +53,8 @@ export function WalletBoard({ rows, now }: { rows: LeaderRow[]; now: number }) {
                 <span className="s-wb__rank b-num">{i + 1}</span>
                 <a className="s-wb__who" href={`/wallet/${r.wallet}`}>
                   <b className="b-num">{short(r.wallet)}</b>
-                  {r.proven ? <span className="s-wb__tag s-wb__tag--ok" title="30+ settled bets; not a market maker, high-frequency or arbitrage wallet">Proven</span>
-                    : r.exclusion ? <span className="s-wb__tag" title="Why Insidir doesn't ping on it">{r.exclusion}</span> : null}
+                  {r.proven ? <span className="s-wb__tag s-wb__tag--ok" title="30+ settled trades; not a market maker, high-frequency or arbitrage wallet">Proven</span>
+                    : r.exclusion ? <span className="s-wb__tag" title="Why Insidir doesn't signal on it">{r.exclusion}</span> : null}
                 </a>
                 <span className="s-wb__pnl b-num" data-label="All-time"><b>+{dollars(r.pnl)}</b></span>
                 <span className="s-wb__rec" data-label="Record">
@@ -67,9 +67,9 @@ export function WalletBoard({ rows, now }: { rows: LeaderRow[]; now: number }) {
                   ) : <span>No settled record yet</span>}
                 </span>
                 <span className="s-wb__week" data-label="This week">
-                  {r.weekBets ? <><b className="b-num">{dollars(r.week)}</b><span>{r.weekBets} {r.weekBets === 1 ? "bet" : "bets"}{catName(r.topCategory) ? ` · mostly ${catName(r.topCategory)}` : ""}</span></> : <span>No $1K+ bet</span>}
+                  {r.weekBets ? <><b className="b-num">{dollars(r.week)}</b><span>{r.weekBets} {r.weekBets === 1 ? "trade" : "trades"}{catName(r.topCategory) ? ` · mostly ${catName(r.topCategory)}` : ""}</span></> : <span>No $1K+ trade</span>}
                 </span>
-                <span className="s-wb__last" data-label="Latest bet">
+                <span className="s-wb__last" data-label="Latest trade">
                   {r.last ? <><b>{r.last.title}</b><span className="b-num">{dollars(r.last.amount)} · {agoShort(r.last.at, now)}</span></> : <span>None seen yet</span>}
                 </span>
                 <span className="s-wb__act"><FollowLink wallet={r.wallet} initial={r.followed} short /></span>

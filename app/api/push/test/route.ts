@@ -15,7 +15,7 @@ const GAP_MS = 20_000;
 const last = new Map<string, number>();
 
 const TEST_PING = {
-  title: "Pings are on",
+  title: "Signals are on",
   body: "This is a test. When a millionaire opens a large position in your categories, it shows up here within a minute.",
   url: "/",
 } as const;
@@ -23,7 +23,7 @@ const TEST_PING = {
 export async function POST(req: NextRequest) {
   const user = await userForToken(req.cookies.get(SESSION_COOKIE)?.value).catch(() => null);
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
-  if (entitlements(user.plan).alertDelaySeconds === null) return NextResponse.json({ error: "Pings come with Insidir." }, { status: 403 });
+  if (entitlements(user.plan).alertDelaySeconds === null) return NextResponse.json({ error: "Signals come with Insidir." }, { status: 403 });
   const now = Date.now();
   if (now - (last.get(user.id) ?? 0) < GAP_MS) return NextResponse.json({ error: "One test at a time. Try again in a few seconds." }, { status: 429 });
   last.set(user.id, now);

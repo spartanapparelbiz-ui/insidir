@@ -42,7 +42,7 @@ export function categoryFromWords(q: string): CategorySlug | null {
   return WORDS.find(([re]) => re.test(q))?.[1] ?? null;
 }
 
-const STOP = new Set("why did does do the a an odds price prices move moved moving go went jump jumped drop dropped fall fell rise rose market markets on of for in about to is was what happened with my bet bets position anyone big against someone wallets wallet money is are any there who other side opposite".split(" "));
+const STOP = new Set("why did does do the a an odds price prices move moved moving go went jump jumped drop dropped fall fell rise rose market markets on of for in about to is was what happened with my trade trades position anyone big against someone wallets wallet money is are any there who other side opposite".split(" "));
 /** The words that name the market in a question ("Why did the Hegseth odds move?" → "hegseth"). Pure. */
 export function subjectOf(q: string): string {
   return q.toLowerCase().replace(/[^a-z0-9' -]/g, " ").split(/\s+/).filter(w => w.length > 1 && !STOP.has(w)).slice(0, 4).join(" ");
@@ -110,8 +110,8 @@ async function bestWallets(c: AskCtx, a: Args): Promise<Table> {
       { text: onText, ...(on[0] ? { href: marketPath(String(on[0].market_id), String(on[0].market_title)) } : {}) },
     ];
   });
-  return table(c, "best_wallets", `Best $1M+ wallets in ${label}, ${days >= 3650 ? "all time" : `last ${days} days`}, by $100 on each settled bet`,
-    ["Wallet", "Settled W–L", "$100 on each", "On today"], [1, 2], rows, `Wallets with 3+ settled bets. Past results don't predict future ones.`);
+  return table(c, "best_wallets", `Best $1M+ wallets in ${label}, ${days >= 3650 ? "all time" : `last ${days} days`}, by $100 on each settled trade`,
+    ["Wallet", "Settled W–L", "$100 on each", "On today"], [1, 2], rows, `Wallets with 3+ settled trades. Past results don't predict future ones.`);
 }
 
 async function againstMyBet(c: AskCtx, a: Args): Promise<Table> {
@@ -134,8 +134,8 @@ async function againstMyBet(c: AskCtx, a: Args): Promise<Table> {
           { text: `${dollars(Number(x.amount))} on ${x.outcome}` }, { text: new Date(x.at).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " ET" }]);
       }
     }
-    return table(c, "against_my_bet", "Big wallets on the other side of your watched bets", ["Your bet", "Wallet", "Against you", "Latest"], [], rows,
-      rows.length ? undefined : "No $1M+ or $100K+ wallet holds the other side of your watched bets.");
+    return table(c, "against_my_bet", "Big wallets on the other side of your watched trades", ["Your trade", "Wallet", "Against you", "Latest"], [], rows,
+      rows.length ? undefined : "No $1M+ or $100K+ wallet holds the other side of your watched trades.");
   }
   // No watched bet matches: the market by its words, both sides (a visitor: money only, no side).
   const markets = words ? await findMarkets(c.db, words, c.until, 1) : [];
@@ -147,8 +147,8 @@ async function againstMyBet(c: AskCtx, a: Args): Promise<Table> {
         { text: c.member ? `${dollars(Number(x.amount))} on ${x.outcome}` : `${dollars(Number(x.amount))} (side for members)` }, { text: "Open" }]);
     }
   }
-  return table(c, "against_my_bet", c.userId ? "You aren't watching a bet on that: the big money on the market" : "The big money on the market", ["Market", "Wallets", "Money", "Status"], [], rows,
-    c.userId ? "Watch the bet (/watch) to see who's against it." : "Members can watch a bet and see who's against it.");
+  return table(c, "against_my_bet", c.userId ? "You aren't watching a trade on that: the big money on the market" : "The big money on the market", ["Market", "Wallets", "Money", "Status"], [], rows,
+    c.userId ? "Watch the trade (/watch) to see who's against it." : "Members can watch a trade and see who's against it.");
 }
 
 let clients: { polymarket: PolymarketClient; kalshi: KalshiClient } | null = null;
@@ -195,7 +195,7 @@ async function priceMovesTool(c: AskCtx, a: Args): Promise<Table> {
 export const ASK_TOOLS: Record<string, (c: AskCtx, a: Args) => Promise<Table>> = { best_wallets: bestWallets, against_my_bet: againstMyBet, price_moves: priceMovesTool };
 
 export const ASK_TOOL_DEFS: ToolDef[] = [
-  { type: "function", function: { name: "best_wallets", description: "The best $1M+ wallets in a category over a number of days, by settled record ($100 on each bet), and what each is on today. Categories: football (NFL, college), basketball (NBA), baseball, hockey, soccer, tennis, golf, racing, esports, elections, politics, markets (crypto, Fed), weather, oil, tech, culture, world.", parameters: { type: "object", additionalProperties: false, properties: { category: { type: "string" }, days: { type: "number" } } } } },
-  { type: "function", function: { name: "against_my_bet", description: "Big wallets on the other side of the asker's watched bets, optionally only bets whose market or side matches these words.", parameters: { type: "object", additionalProperties: false, properties: { market: { type: "string" } } } } },
+  { type: "function", function: { name: "best_wallets", description: "The best $1M+ wallets in a category over a number of days, by settled record ($100 on each trade), and what each is on today. Categories: football (NFL, college), basketball (NBA), baseball, hockey, soccer, tennis, golf, racing, esports, elections, politics, markets (crypto, Fed), weather, oil, tech, culture, world.", parameters: { type: "object", additionalProperties: false, properties: { category: { type: "string" }, days: { type: "number" } } } } },
+  { type: "function", function: { name: "against_my_bet", description: "Big wallets on the other side of the asker's watched trades, optionally only trades whose market or side matches these words.", parameters: { type: "object", additionalProperties: false, properties: { market: { type: "string" } } } } },
   { type: "function", function: { name: "price_moves", description: "A market's price 1, 7 and 30 days ago and its biggest moves with exact times. It never says why a price moved.", parameters: { type: "object", additionalProperties: false, required: ["market"], properties: { market: { type: "string", description: "Words from the market's title" } } } } },
 ];

@@ -24,8 +24,8 @@ import { BrandFoot } from "../Nav";
 type WhopCheckout = { checkout: { create: (o: Record<string, unknown>) => { create: (k: "checkout", p?: Record<string, unknown>) => { mount: (sel: string | HTMLElement) => void } } } };
 declare global { interface Window { WhopElements?: (o?: Record<string, unknown>) => WhopCheckout } }
 
-export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "follow" | "push";
-const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
+export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "bankroll" | "follow" | "push";
+const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "bankroll", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
  * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
 /** The steps with the picture side (a photo and a live bet beside the question). */
@@ -82,6 +82,31 @@ function Checkout({ elementsUrl, ageConfirmed }: { elementsUrl: string; ageConfi
       <div ref={box} className="b-glass" style={{ overflow: "hidden", padding: 8, background: "#fff", color: "#000", minHeight: state === "ready" ? 320 : 0 }} hidden={state !== "ready"} data-testid="go-checkout-frame" />
       <p className="b-small">Apple Pay, Google Pay or card · Secure checkout · Cancel anytime in Account</p>
     </div>
+  );
+}
+
+/** Your size, set once: the bankroll and the most on one trade (POST /api/settings; both editable in Account). */
+function BankrollStep({ onDone }: { onDone: () => void }) {
+  const [bankroll, setBankroll] = useState(""), [max, setMax] = useState(""), [err, setErr] = useState<string | null>(null), [busy, setBusy] = useState(false);
+  const pct = Number(bankroll) > 0 && Number(max) > 0 ? Math.round((Number(max) / Number(bankroll)) * 1000) / 10 : null;
+  const save = async () => {
+    setBusy(true); setErr(null);
+    const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ copyBankroll: bankroll, copyMax: max }) }).catch(() => null);
+    const j = r ? await r.json().catch(() => ({})) as { errors?: string[] } : null;
+    setBusy(false);
+    if (r?.ok && !j?.errors?.length) onDone(); else setErr(j?.errors?.[0] ?? "That didn't save. Try again.");
+  };
+  return (
+    <>
+      <div className="b-head"><Lines as="h1" lines={["Sizing."]} size={56} /><p className="b-sub">Each signal matches the wallet: if it puts in 2% of its bankroll, your size is 2% of yours. A matched size, not advice.</p></div>
+      <div className="b-col">
+        <label className="b-glass b-pad go-field" htmlFor="go-bankroll">Your bankroll<span className="b-amount"><span aria-hidden="true">$</span><input id="go-bankroll" inputMode="decimal" value={bankroll} onChange={e => setBankroll(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="2000" data-testid="go-bankroll-input" /></span></label>
+        <label className="b-glass b-pad go-field" htmlFor="go-max">Max per trade<span className="b-amount"><span aria-hidden="true">$</span><input id="go-max" inputMode="decimal" value={max} onChange={e => setMax(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="100" data-testid="go-max-input" /></span></label>
+        <p className="b-small">{pct !== null ? `Your sizing never goes over $${Number(max).toLocaleString("en-US")} (${pct}% of your bankroll). ` : ""}You can change both anytime in Account. Insidir never sees or touches your accounts.</p>
+        {err ? <p className="b-msg" role="alert">{err}</p> : null}
+      </div>
+      <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" disabled={busy || !Number(bankroll) || !Number(max)} onClick={() => void save()} data-testid="go-next">Save<Arrow /></button></div>
+    </>
   );
 }
 
@@ -168,7 +193,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     if (step !== "save") return;
     const s = load();
     void fetch("/api/go/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) })
-      .then(r => { if (r.ok) { void fetchData(s.cats); go("push", "replace"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
+      .then(r => { if (r.ok) { void fetchData(s.cats); go("bankroll", "replace"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const progress = (ORDER.indexOf(step) + 1) / ORDER.length;
@@ -184,23 +209,23 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     case "hook":
       body = (
         <GoStage testid="go-hook">
-          <Lines as="h1" lines={["Bet with the", "millionaires"]} />
+          <Lines as="h1" lines={["Trade with the", "millionaires"]} />
           {hook ? (
             <div className="b-glass b-pad"  {...st(0.6, { marginTop: 26, maxWidth: 560, width: "100%", textAlign: "left", display: "grid", gap: 8 })} data-testid="go-hook-bet">
-              <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "bet" : "bets"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
+              <span className="b-label" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "trade" : "trades"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
               <p style={{ margin: 0, fontSize: 18, fontWeight: 500, letterSpacing: "-0.3px", lineHeight: 1.35 }}>
                 A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : "$1M+ "}wallet just bet <span className="b-num">{dollars(hook.amount)}</span> on {hook.title}.
               </p>
             </div>
-          ) : <p className="b-sub" {...m("lift", 0.58)}>Every big bet on Polymarket and Kalshi, from wallets that made $1M+.</p>}
-          <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => go("cats")} data-testid="go-next" {...st(0.9)}>Show me what they&apos;re betting<Arrow /></button></div>
+          ) : <p className="b-sub" {...m("lift", 0.58)}>Every big trade on Polymarket and Kalshi, from wallets that made $1M+.</p>}
+          <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => go("cats")} data-testid="go-next" {...st(0.9)}>Show me what they&apos;re trading<Arrow /></button></div>
         </GoStage>
       );
       break;
     case "cats":
       body = (
         <GoStage testid="go-cats">
-          <div className="b-head"><Lines as="h1" lines={["What do you", "bet on?"]} size={64} /></div>
+          <div className="b-head"><Lines as="h1" lines={["What do you", "trade?"]} size={64} /></div>
           <div className="b-tiles" role="group" aria-label="Categories">
             {CATEGORIES.map((c, i) => {
               const on = a.cats.includes(c.slug);
@@ -223,7 +248,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       const list = step === "where" ? WHERE.map(([k, l]) => [k, l] as const) : SIZES.map(([k, l]) => [k, l] as const);
       body = (
         <GoStage testid={`go-${step}`}>
-          <div className="b-head"><Lines as="h1" lines={step === "where" ? ["Where do", "you bet?"] : ["Normal", "bet size?"]} size={64} /></div>
+          <div className="b-head"><Lines as="h1" lines={step === "where" ? ["Where do", "you trade?"] : ["Normal", "trade size?"]} size={64} /></div>
           <div className="b-answers">
             {list.map(([k, l], i) => (
               <button key={k} type="button" className="b-btn b-btn-lg b-ghost" data-testid="go-answer" data-value={k} {...st(0.5 + i * 0.07)}
@@ -237,7 +262,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     case "building": {
       const lines = [
         `Reading ${d.build.wallets.toLocaleString("en-US")} millionaire wallets`,
-        `${cats.reduce((s, c) => s + (d.build.perCat[c] ?? 0), 0)} bets in ${names(cats.length ? cats : [])} today`,
+        `${cats.reduce((s, c) => s + (d.build.perCat[c] ?? 0), 0)} trades in ${names(cats.length ? cats : [])} today`,
         a.where === "kalshi" || a.where === "sportsbook" ? "Pricing on Kalshi" : "Pricing on Kalshi and Polymarket",
       ];
       body = (
@@ -254,7 +279,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
       const waiting = unlocked && !d.paid;
       body = (
         <GoStage testid={unlocked ? "go-unlocked" : "go-aha"}>
-          <div className="b-head"><Lines as="h1" lines={unlocked ? ["You're in."] : ["Where they're", "betting now."]} size={64} /></div>
+          <div className="b-head"><Lines as="h1" lines={unlocked ? ["You're in."] : ["Where they're", "trading now."]} size={64} /></div>
           {waiting ? <p className="b-sub" role="status" data-testid="go-confirming">Confirming your payment…</p> : d.aha.cards.length ? <AhaCards cards={d.aha.cards} more={d.aha.more} /> : <p className="b-empty">No millionaire money in {firstCat} in the last week yet.</p>}
           {lead && !unlocked ? <p className="b-small" style={{ marginTop: 16 }} {...m("quiet", 1)} data-testid="go-record">{lead} Past results, not a promise. <a href="/results">Every rule we tested</a>.</p> : null}
           <div className="b-ctas">
@@ -283,11 +308,11 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
           <div className="b-head"><Lines as="h1" lines={["Start for $1."]} size={56} /></div>
           <div className="b-glass b-pad go-get" {...st(0.3, { width: "100%", maxWidth: 480, textAlign: "left" })} data-testid="go-get">
             <ul className="go-get__list">
-              <li>Every bet from wallets up $100K+, live, with the side they took</li>
-              <li>Your AI analyst: what each big bet means, in plain English</li>
-              <li>Exits, whales and the full tape, the moment they land</li>
+              <li>Who to copy: Verified wallets up $1M+, every test shown</li>
+              <li>How much: your size on every signal, matched to your bankroll</li>
+              <li>When to get out: a push the moment the wallet you copied sells</li>
             </ul>
-            <p className="b-small" data-testid="go-price">${TRIAL.fee} today, then ${PLANS.insidir.price}/month from {chargeDate(now)}. Cancel anytime. 18+ only.</p>
+            <p className="b-small" data-testid="go-price">${TRIAL.fee} for {TRIAL.days} days, then ${PLANS.insidir.price}/mo from {chargeDate(now)}. Cancel anytime. <b>18+ only.</b></p>
           </div>
           <Checkout elementsUrl={elementsUrl} ageConfirmed={ageConfirmed} />
         </GoStage>
@@ -312,11 +337,14 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
                   {followed.has(w.wallet) ? "Following" : "Follow"}
                 </button>
               </div>
-            )) : <p className="b-empty">No millionaire wallet has bet in your categories this month yet. You&apos;ll see them on your board.</p>}
+            )) : <p className="b-empty">No $1M+ wallet has traded in your categories this month. New positions show here as they land. You&apos;ll see them on your board.</p>}
           </div>
           <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => { try { localStorage.removeItem(KEY); } catch { /* ok */ } location.assign(a.next ?? "/"); }} data-testid="go-next" {...st(1)}>Continue<Arrow /></button></div>
         </GoStage>
       );
+      break;
+    case "bankroll":
+      body = <GoStage testid="go-bankroll"><BankrollStep onDone={() => go("push")} /></GoStage>;
       break;
     case "push":
       body = (
@@ -345,9 +373,9 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
             <div className="b-go-art__frame">
               <BrandPicture src={artPhoto.src} fill priority sizes="(max-width: 900px) 100vw, 50vw" style={{ objectPosition: artPhoto.pos }} />
               <div className="b-go-art__card">
-                <span className="b-go-art__live"><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "bet" : "bets"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
+                <span className="b-go-art__live"><span className="b-dot" aria-hidden="true" /> Live · {d.pulse.count} millionaire {d.pulse.count === 1 ? "trade" : "trades"} {d.pulse.window === "hour" ? "in the last hour" : "today"}</span>
                 {hook && step !== "hook" ? <p className="b-go-art__bet">A {hook.pnl !== null ? `${signedDollars(hook.pnl)} ` : "$1M+ "}wallet just bet <b className="b-num">{dollars(hook.amount)}</b> on {hook.title}.</p>
-                  : <p className="b-go-art__bet">Every bet of $1K+ from wallets up $1M+, the second it lands.</p>}
+                  : <p className="b-go-art__bet">Every trade of $1K+ from wallets up $1M+, the second it lands.</p>}
                 {cats.length ? <span className="b-go-art__picks">Your feed: {names(cats)}</span> : null}
               </div>
             </div>

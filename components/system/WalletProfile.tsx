@@ -29,6 +29,8 @@ import { NOT_ENOUGH, perf } from "@/lib/stats";
 import { countsToRecord } from "@/lib/trust";
 import { Bars, Rows, SeriesChart, StatTiles } from "./Figures";
 import { Insight, Lines, Panel, Pill, Stage } from "./index";
+import { walletVerdict } from "@/lib/verified/board";
+import { Last10, VerifiedChecks } from "./VerifiedBoard";
 
 export const PAGE_SIZE = 20;
 const DATE = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
@@ -67,6 +69,8 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
   const held = positions?.length ? positions.reduce((t, p) => t + p.value, 0) : 0;
 
   const lead = stats ? `${name} made money on ${stats.won.toLocaleString("en-US")} of ${stats.resolved.toLocaleString("en-US")} resolved markets.` : null;
+  // Who to copy: the Verified checks and why, the last 10 settled trades (lib/verified), for members.
+  const verdict = db && paid ? await walletVerdict(db, wallet, viewer.user?.id).catch(() => null) : null;
   return (
     <>
       <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="wallet-hero" labelledBy="w-h">
@@ -88,6 +92,14 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
         ) : stats ? null : <p className="b-empty">{NOT_ENOUGH}: we show a record once a wallet has 20 resolved markets{s && s.resolved ? ` (this one has ${s.resolved})` : ""}.</p>}
       </Stage>
 
+      {verdict ? (
+          <Stage bg={{ kind: "globe", dark: 0.7 }} testid="wallet-verified" labelledBy="w-v">
+            <div className="b-head"><Lines as="h2" id="w-v" lines={[verdict.verified ? "Verified." : "Not verified."]} size={48} /><p className="b-sub">The four tests behind the badge, with the numbers.</p></div>
+            <Panel className="s-col s-col--wide"><VerifiedChecks w={verdict} /></Panel>
+            <Panel className="s-col s-col--wide"><p className="b-label">Last 10 settled trades</p><Last10 rows={verdict.last10} /></Panel>
+          </Stage>
+        ) : null}
+
       {paid && last10.n ? (
         <Stage bg={{ kind: "photo", photo: PHOTOS.markets, dark: 0.65 }} testid="wallet-lately" labelledBy="w-l">
           <div className="b-head"><Lines as="h2" id="w-l" lines={["Lately, losses included."]} size={48} /></div>
@@ -101,9 +113,9 @@ export async function WalletProfile({ db, wallet, viewer, now, page = 1 }: { db:
       ) : null}
 
       <Stage bg={{ kind: "globe", dark: 0.65 }} testid="wallet-today" labelledBy="w-t">
-        <div className="b-head"><Lines as="h2" id="w-t" lines={["Today's bets."]} size={48} />{paid ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
+        <div className="b-head"><Lines as="h2" id="w-t" lines={["Today's trades."]} size={48} />{paid ? null : <p className="b-sub">60 minutes late, without the side. Members see each one live.</p>}</div>
         {today.length ? <ul className="b-rows s-board" data-testid="wallet-today-rows">{today.map(b => <li key={b.id} data-entity="bet"><BetRow polymarket={viewer.region === "non_us"} bet={b} now={now} href={betPath(b.id)} /></li>)}</ul>
-          : <p className="b-empty b-center">No bets from this wallet since midnight ET{paid ? "" : " (an hour late)"}.</p>}
+          : <p className="b-empty b-center">No trades from this wallet since midnight ET{paid ? "" : " (an hour late)"}.</p>}
       </Stage>
 
       {stats ? (

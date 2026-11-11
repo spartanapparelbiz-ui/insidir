@@ -6,14 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Arrow, Logo } from "./Bits";
 import { ThemeToggle } from "./ThemeToggle";
-import { COMPANY, DATA_COMPANY, DISCLAIMER, GAMBLER, FOOTER } from "@/lib/copy";
+import { COMPANY, DATA_COMPANY, DISCLAIMER, FOOTER } from "@/lib/copy";
 
 /** The hero's entrance for the nav (the spec's timeline): logo .46s, links .54s + .045s each, Log in .68s, Start .73s. */
 const q = (on: boolean, kind: "quiet" | "settle", d: number) => (on ? { "data-m": kind, style: { "--d": `${d}s` } as CSSProperties } : {});
 
-const LINKS: Array<[string, string]> = [["Markets", "/markets"], ["Board", "/board"], ["SEC terminal", "/sec"], ["Record", "/record"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
+const LINKS: Array<[string, string]> = [["How it works", "/#how"], ["Live", "/board"], ["Methodology", "/methodology"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]];
 /** Members: the same bar, their places. No sidebar anywhere. */
-const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Brief", "/brief"], ["Watch", "/watch"], ["Ask", "/ask"], ["Autopilot", "/autopilot"], ["Book", "/book"], ["Board", "/board"], ["Wallets", "/wallets"], ["Markets", "/markets"], ["Record", "/record"], ["SEC", "/sec"]];
+const MEMBER_LINKS: Array<[string, string]> = [["Home", "/"], ["Verified", "/wallets"], ["Ledger", "/copies"], ["Live", "/board"], ["Markets", "/markets"], ["Methodology", "/methodology"], ["Autopilot", "/autopilot"]];
 
 export function BrandNav({ fixed = false, startHref = "/go", member = false, motion = false, election = false, start = true, autopilot = false }: { autopilot?: boolean; fixed?: boolean; startHref?: string; member?: boolean; motion?: boolean;
   /** The Start for $1 pill (off on /login, which has its own way in). */
@@ -66,20 +66,20 @@ export function BrandNav({ fixed = false, startHref = "/go", member = false, mot
 }
 
 /** The footer, in --ink-muted at 11.5u: the links, who builds Insidir and how to reach a person, what Insidir is not,
- *  the problem-gambling line, and "Information, not financial or betting advice. Operated by Aethric LLC." Set inside
+ *  and "Information, not financial advice. Past results don't predict future results. Not a broker or exchange. Not
+ *  affiliated with Kalshi or Polymarket." Set inside
  *  the bottom of the final stage on the landing (`inline` false), at the end of every other brand page. */
 export function BrandFoot({ inline = false }: { inline?: boolean }) {
   return (
     <footer className={`b-foot${inline ? " b-foot--inline" : ""}`} data-testid="brand-foot">
       <nav aria-label="Footer">
-        {[["Markets", "/markets"], ["Board", "/board"], ["Record", "/record"], ["Results", "/results"], ["Daily Brief", "/brief"], ["Bet Briefing", "/briefing"], ["Ask Insidir", "/ask"], ["FAQ", "/faq"], ["Methodology", "/methodology"], ["Our data", "/data"], ["Status", "/status"], ["Security", "/security"],
+        {[["Live", "/board"], ["Markets", "/markets"], ["Record", "/record"], ["Results", "/results"], ["Daily Brief", "/brief"], ["Trade Briefing", "/briefing"], ["Ask Insidir", "/ask"], ["FAQ", "/faq"], ["Methodology", "/methodology"], ["Our data", "/data"], ["Status", "/status"], ["Security", "/security"],
           ["Disclosures", "/disclosures"], ["Terms", "/terms"], ["Privacy", "/privacy"], ["Credits", "/credits"], ["Changelog", "/changelog"]].map(([t, h]) => <a key={t} href={h}>{t}</a>)}
       </nav>
       <div className="b-foot__legal">
         <span>{COMPANY.name} · {COMPANY.place} · <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span>
         <span>{DATA_COMPANY}</span>
-        <span>{GAMBLER}</span>
-        <span>{FOOTER} Operated by Aethric LLC.</span>
+        <span data-testid="footer-legal">{FOOTER} Operated by Aethric LLC.</span>
         <span className="b-foot__disclaimer" data-testid="footer-disclaimer">{DISCLAIMER}</span>
       </div>
     </footer>

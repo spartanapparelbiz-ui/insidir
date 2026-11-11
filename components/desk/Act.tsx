@@ -39,7 +39,7 @@ export function PingsLink() {
     return () => window.removeEventListener("insidir:push", read);
   }, []);
   if (st === null || st === "unsupported") return null;
-  if (st === "on") return <span className="b-dim" data-testid="desk-pings">Pings on</span>;
+  if (st === "on") return <span className="b-dim" data-testid="desk-pings">Signals on</span>;
   const tap = async () => {
     if (st === "ios_needs_install" || st === "denied") { location.href = "/settings#alerts"; return; }
     setBusy(true);
@@ -47,5 +47,5 @@ export function PingsLink() {
     setSt(k ? await enablePush(k).catch(() => "error" as const) : "error");
     setBusy(false); window.dispatchEvent(new Event("insidir:push"));
   };
-  return <button type="button" className="s-link" onClick={tap} disabled={busy} data-testid="desk-pings">{st === "error" ? "Try pings again" : "Turn on pings"}</button>;
+  return <button type="button" className="s-link" onClick={tap} disabled={busy} data-testid="desk-pings">{st === "error" ? "Try signals again" : "Turn on signals"}</button>;
 }

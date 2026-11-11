@@ -92,15 +92,17 @@ test("free access: Whop sign-in makes the account; a full member with no payment
   await expect(page.getByTestId("free-access")).toContainText("Free access");
 });
 
-test("Start for $1 in the nav on public pages, home included (the brand nav's pill → /go), but not /login; no old offer bars", async ({ page }) => {
+test("Start for $1 in the nav on public pages (the brand nav's pill → /go), but not /login; the homepage's one Start for $1 is in its hero; no old offer bars", async ({ page }) => {
   for (const path of ["/", "/board", "/markets", "/results", "/pricing", "/faq", "/login"]) {
     await page.goto(path);
     await expect(page.getByTestId("sticky-cta"), path).toHaveCount(0);
     await expect(page.locator(".trialbar"), path).toHaveCount(0);
   }
   await page.goto("/");
+  await expect(page.getByTestId("nav-start")).toHaveCount(0);
+  await expect(page.getByTestId("hero-start")).toHaveText("Start for $1");
+  await page.goto("/board");
   await expect(page.getByTestId("nav-start")).toHaveText("Start for $1");
-  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", /^\/go(\?step=checkout)?$/);
   expect(Math.round((await page.getByTestId("nav-start").boundingBox())!.height)).toBeGreaterThanOrEqual(28);
   await page.goto("/pricing");
   await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go");

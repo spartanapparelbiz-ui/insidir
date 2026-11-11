@@ -36,7 +36,7 @@ export function briefEmail(b: Brief, appUrl: string, unsubscribe: string): { sub
   const text = [
     "The 5 biggest things the $1M+ money did overnight:", "",
     ...(b.items.length ? b.items.flatMap((it, i) => [`${i + 1}. ${it.lines[0]}`, `   ${it.lines[1]}`, `   ${appUrl}${it.href}`, ""]) : ["Nothing from $1M+ wallets overnight.", ""]),
-    ...(b.watched.length ? ["Your watched bets:", "", ...b.watched.flatMap(w => [w.lines[0], w.lines[1], ""])] : []),
+    ...(b.watched.length ? ["Your watched positions:", "", ...b.watched.flatMap(w => [w.lines[0], w.lines[1], ""])] : []),
     `The whole brief: ${link}`,
     "Information, not advice. Every position we've flagged, losses included: " + `${appUrl}/record`,
     `Stop these emails: ${unsubscribe}`,
@@ -45,7 +45,7 @@ export function briefEmail(b: Brief, appUrl: string, unsubscribe: string): { sub
   const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.45;max-width:560px">
 <p><strong>The 5 biggest things the $1M+ money did overnight</strong></p>
 <ol style="padding-left:18px">${b.items.length ? b.items.map(it => li(it.lines[0], it.lines[1], `${appUrl}${it.href}`)).join("") : "<li>Nothing from $1M+ wallets overnight.</li>"}</ol>
-${b.watched.length ? `<p><strong>Your watched bets</strong></p><ul style="padding-left:18px">${b.watched.map(w => li(w.lines[0], w.lines[1], `${appUrl}${w.href}`)).join("")}</ul>` : ""}
+${b.watched.length ? `<p><strong>Your watched trades</strong></p><ul style="padding-left:18px">${b.watched.map(w => li(w.lines[0], w.lines[1], `${appUrl}${w.href}`)).join("")}</ul>` : ""}
 <p><a href="${esc(link)}">Open the whole brief</a></p>
 <p style="color:#666;font-size:13px">Information, not advice. <a href="${esc(`${appUrl}/record`)}">Every position we've flagged, losses included</a>.<br><a href="${esc(unsubscribe)}">Stop these emails</a></p>
 </div>`;

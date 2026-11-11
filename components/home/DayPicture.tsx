@@ -18,18 +18,18 @@ export function plainDay(d: Home): string[] {
   const out: string[] = [];
   const money = d.today?.money ?? d.day?.money ?? 0, bets = d.today?.bets ?? d.day?.bets ?? 0;
   const span = d.today ? "Today" : "In the last 24 hours";
-  if (money > 0) out.push(`${span}, wallets that have already made $100K or more betting put ${dollars(money)} on ${bets.toLocaleString("en-US")} bets${d.ai.markets ? ` across ${d.ai.markets} markets` : ""}${d.ai.day1m.money > 0 ? `; ${dollars(d.ai.day1m.money)} of it came from wallets up over $1 million` : ""}.`);
+  if (money > 0) out.push(`${span}, wallets that have already made $100K or more trading put ${dollars(money)} on ${bets.toLocaleString("en-US")} trades${d.ai.markets ? ` across ${d.ai.markets} markets` : ""}${d.ai.day1m.money > 0 ? `; ${dollars(d.ai.day1m.money)} of it came from wallets up over $1 million` : ""}.`);
   const cats = d.ai.cats;
   const total = cats.reduce((s, b) => s + b.total, 0);
   if (cats.length > 1 && total > 0) out.push(`Most of it went to ${catName(cats[0]!.category)}: ${dollars(cats[0]!.total)}, about ${pct(cats[0]!.total / total)} of the money.`);
   const big = [...d.board].sort((a, b) => b.amount - a.amount)[0];
   if (big) {
     const x = big.usual && big.usual > 0 ? big.amount / big.usual : null;
-    out.push(`The biggest single bet was ${dollars(big.amount)}${big.outcome ? ` on ${big.outcome}` : ""} in “${big.title}”.` +
-      (x && x >= 2 ? ` That's ${x.toFixed(1)}× what this wallet usually bets, which usually means it's more sure than normal.` : x ? " That's about this wallet's normal size." : ""));
+    out.push(`The biggest single trade was ${dollars(big.amount)}${big.outcome ? ` on ${big.outcome}` : ""} in “${big.title}”.` +
+      (x && x >= 2 ? ` That's ${x.toFixed(1)}× what this wallet usually trades, which usually means it's more sure than normal.` : x ? " That's about this wallet's normal size." : ""));
   }
   const g = d.disagree[0];
-  if (g) out.push(`On “${g.title}”, ${pct(g.share)} of their money is on ${g.outcome}, but the price is only ${cents(g.price)}. The price says ${g.outcome} probably loses; the big wallets are betting it wins.`);
+  if (g) out.push(`On “${g.title}”, ${pct(g.share)} of their money is on ${g.outcome}, but the price is only ${cents(g.price)}. The price says ${g.outcome} probably loses; the big wallets are trading it wins.`);
   if (out.length) out.push("This tells you what the big money is doing. It's information, not advice: they lose too.");
   return out;
 }

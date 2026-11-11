@@ -29,12 +29,12 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
   const [open, setOpen] = useState<Open>(null);
   const t0 = useRef(Date.now());
   const panel = useRef<HTMLDivElement>(null), back = useRef<HTMLElement | null>(null);
-  const bets = `${ctx.count} millionaire ${ctx.count === 1 ? "bet" : "bets"} from ${ctx.window === "hour" ? "the last hour" : "today"}`;
+  const bets = `${ctx.count} millionaire ${ctx.count === 1 ? "trade" : "trades"} from ${ctx.window === "hour" ? "the last hour" : "today"}`;
   const afterRead = `See the side on all ${bets}. $${TRIAL.fee} for ${TRIAL.days} days.`;
   // After a free tile (a check, the #1 market, a free bet): name what they just saw.
   const free = ctx.today
-    ? `That was 1 of ${ctx.today} millionaire bets today. See them all live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`
-    : `See every millionaire bet live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`;
+    ? `That was 1 of ${ctx.today} millionaire trades today. See them all live, with a signal when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`
+    : `See every millionaire trade live, with a signal when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`;
 
   const show = useCallback((o: NonNullable<Open>, automatic: boolean) => {
     if (automatic) {
@@ -64,10 +64,10 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
     };
     const onExit = (e: MouseEvent) => {
       if (e.relatedTarget || e.clientY > 0 || window.innerWidth < 768) return;
-      show({ kind: "exit", headline: ctx.biggest ? `Before you go: today's biggest millionaire bet is ${dollars(ctx.biggest.amount)} on ${ctx.biggest.title}. See the side for $${TRIAL.fee}.` : `Before you go: see every millionaire bet with its side for $${TRIAL.fee}.` }, true);
+      show({ kind: "exit", headline: ctx.biggest ? `Before you go: today's biggest millionaire trade is ${dollars(ctx.biggest.amount)} on ${ctx.biggest.title}. See the side for $${TRIAL.fee}.` : `Before you go: see every millionaire trade with its side for $${TRIAL.fee}.` }, true);
     };
     // The second check (the free one is used): always opens, it's their own tap.
-    const onLimit = (e: Event) => { e.preventDefault(); show({ kind: "limit", headline: `You've used your free check. Check every bet for $${TRIAL.fee} for ${TRIAL.days} days.` }, false); };
+    const onLimit = (e: Event) => { e.preventDefault(); show({ kind: "limit", headline: `You've used your free check. Check every trade for $${TRIAL.fee} for ${TRIAL.days} days.` }, false); };
     window.addEventListener("insidir:paywall", onLimit);
     window.addEventListener("insidir:free-used", onFreeUsed);
     window.addEventListener("insidir:aha-done", onAha);

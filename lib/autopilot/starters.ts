@@ -9,11 +9,11 @@ const spec = (o: { wallets?: Partial<RuleSpec["wallets"]>; markets?: Partial<Rul
 });
 
 export const STARTERS: readonly Starter[] = [
-  { key: "big-bets", name: "Big bets", blurb: "Any proven wallet putting $50K+ on one side, while Kalshi is within 5¢ of their price.",
+  { key: "big-bets", name: "Big trades", blurb: "Any proven wallet putting $50K+ on one side, while Kalshi is within 5¢ of their price.",
     spec: spec({ triggers: { minBet: 50_000 }, price: { max: 0.85, maxMoveCents: 5 } }) },
   { key: "consensus", name: "Two agree", blurb: "Two or more proven wallets on the same side within an hour, $10K+ each.",
     spec: spec({ triggers: { minBet: 10_000, consensus: true }, price: { max: 0.85, maxMoveCents: 5 } }) },
-  { key: "games-first-in", name: "Tonight's games, first in", blurb: "A proven wallet's first $25K+ bet on an NBA, NFL or NHL game.",
+  { key: "games-first-in", name: "Tonight's games, first in", blurb: "A proven wallet's first $25K+ trade on an NBA, NFL or NHL game.",
     spec: spec({ markets: { leagues: ["nba", "nfl", "nhl"] }, triggers: { minBet: 25_000, firstEntry: true }, price: { max: 0.8, maxMoveCents: 4 } }) },
 ];
 

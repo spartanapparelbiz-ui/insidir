@@ -51,7 +51,7 @@ export function BetRow({ bet, now, href, className = "", settle, copyHref, polym
         <span className={`b-row__size b-num${gold ? " b-gold" : ""}`}>{dollars(bet.amount)}{n > 1 ? " total" : ""}</span>
         <span className="b-small">{agoShort(bet.at, now)}</span>
         {bet.outcome && decision(bet) ? <span className="b-small" data-testid="bet-decided">{decidedText(decision(bet)!, bet.outcome)}</span> : null}
-        {copyHref ? <a className="b-btn b-panel-pill b-copy" href={copyHref} data-testid="bet-copy" aria-label={`Copy this bet: ${bet.title}`}>Copy</a> : null}
+        {copyHref ? <a className="b-btn b-panel-pill b-copy" href={copyHref} data-testid="bet-copy" aria-label={`Copy this trade: ${bet.title}`}>Copy</a> : null}
       </span>
       {bet.verify ? <Verify v={bet.verify} marketId={bet.marketId} polymarket={polymarket} /> : null}
     </div>

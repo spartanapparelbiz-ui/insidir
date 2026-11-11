@@ -93,7 +93,7 @@ export function raceLead(d: ElectionDay): RaceLead | null {
   const control = a.r.kind === "control";
   const full = control ? partyName(a.c.name) : a.c.name, last = full.split(/\s+/).at(-1)!;
   const amount = dollarsShort(a.dollars);
-  const make = (who: string, tail: string) => `Millionaires bet ${amount} ${a.side} ${who}${tail}.`;
+  const make = (who: string, tail: string) => `Millionaires traded ${amount} ${a.side} ${who}${tail}.`;
   const tail = control && a.side === "on" ? ` to win ${raceName(a.r)}` : "";
   // Two lines at most: the full name if it fits, else the last name, else without the chamber.
   let headline = make(full, tail);

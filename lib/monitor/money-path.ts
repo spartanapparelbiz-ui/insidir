@@ -73,7 +73,7 @@ export async function runMoneyPath(db: Db, d: MonitorDeps): Promise<Step[]> {
   })) return steps;
   if (!await run("market", async () => {
     const id = await marketToOpen(db, now);
-    must(id, "no millionaire bet in the last 3 days");
+    must(id, "no millionaire trade in the last 3 days");
     const page = await get(`/market/${encodeURIComponent(id!)}`);
     must(page.status === 200 && (await page.text()).includes('data-testid="market-page"'), `GET /market/${id} answered ${page.status} without the market`);
   })) return steps;
@@ -116,7 +116,7 @@ export async function moneyPathOnce(db: Db, d: MonitorDeps): Promise<{ ok: boole
       ? { title: `Live test failing: ${failed!.step}`, body: (failed!.detail ?? "no detail").slice(0, 180), url: status }
       : { title: "Live tests passing again", body: `Every step passed: ${steps.map(s => `${s.step} ${s.ms} ms`).join(", ")}.`, url: status }).catch(() => "failed" as const);
     if (notified === "no_subscription") d.log?.(`money path: ${breaks ? "failing" : "recovered"}; no owner device subscribed to push (FREE_ACCESS_EMAILS), shown on /status only`);
-    else if (notified === "failed") d.log?.("money path: the push alert didn't go through; shown on /status");
+    else if (notified === "failed") d.log?.("money path: the push signal didn't go through; shown on /status");
   }
   await db.insert(monitorRuns).values({ at: new Date(now), ok, failedStep: failed?.step ?? null, detail: failed?.detail ?? null, ms: Date.now() - t0, steps, notified: notified === "sent" });
   return { ok, steps, notified };

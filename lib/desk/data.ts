@@ -34,9 +34,9 @@ export async function kpis(db: Db, now: number): Promise<Kpi[]> {
   const series = (k: "money" | "bets" | "wallets" | "biggest") => Array.from({ length: hours }, (_, h) => Number(r.find(x => x.h === h)?.[k] ?? 0));
   const out: Kpi[] = [];
   if (tot.money > 0) out.push({ key: "money", value: tot.money, series: series("money"), label: "$100K+ wallets' money today" });
-  if (tot.bets > 0) out.push({ key: "bets", value: tot.bets, series: series("bets"), label: tot.bets === 1 ? "Bet from $100K+ wallets today" : "Bets from $100K+ wallets today" });
+  if (tot.bets > 0) out.push({ key: "bets", value: tot.bets, series: series("bets"), label: tot.bets === 1 ? "Trade from $100K+ wallets today" : "Trades from $100K+ wallets today" });
   if (tot.wallets > 0) out.push({ key: "wallets", value: tot.wallets, series: series("wallets"), label: tot.wallets === 1 ? "$100K+ wallet active" : "$100K+ wallets active" });
-  if (big) out.push({ key: "biggest", value: big.amount, series: series("biggest"), label: "Biggest bet", detail: `${big.outcome} · ${big.market_title}` });
+  if (big) out.push({ key: "biggest", value: big.amount, series: series("biggest"), label: "Biggest trade", detail: `${big.outcome} · ${big.market_title}` });
   return out;
 }
 

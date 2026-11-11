@@ -21,8 +21,8 @@ import "../watch.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Watch my bet",
-  description: "Tell Insidir what you hold. It watches the $1M+ money on that market and tells you, in plain words, what it means for your bet.",
+  title: "Watch my trade",
+  description: "Tell Insidir what you hold. It watches the $1M+ money on that market and tells you, in plain words, what it means for your trade.",
   robots: { index: false },
 };
 
@@ -71,8 +71,8 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
   const ok = typeof q.ok === "string" ? q.ok.slice(0, 200) : null, error = typeof q.error === "string" ? q.error.slice(0, 200) : null;
   const intro = (
     <div className="b-head">
-      <Lines as="h1" id="watch-h" lines={["Watch my bet."]} size={56} />
-      <p className="b-sub">Tell us what you hold. We watch the $1M+ money on that market and tell you, in plain words, what it means for your bet: when big money takes the other side, when a wallet on your side sells, when the price moves 5¢ or more, and when it&apos;s about to close.</p>
+      <Lines as="h1" id="watch-h" lines={["Watch my trade."]} size={56} />
+      <p className="b-sub">Tell us what you hold. We watch the $1M+ money on that market and tell you, in plain words, what it means for your position: when big money takes the other side, when a wallet on your side sells, when the price moves 5¢ or more, and when it&apos;s about to close.</p>
     </div>
   );
   if (!member || !viewer.user || !hasDatabase()) {
@@ -81,7 +81,7 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
         <Stage first testid="watch-hero" labelledBy="watch-h">
           {intro}
           <div className="b-ctas" style={{ marginTop: 24 }}><Pill href="/go" data-testid="watch-join" data-checkout="watch">{GET_CTA}</Pill></div>
-          <p className="b-small" style={{ marginTop: 16 }}>Members only. Alerts arrive within minutes of the trade we see. Information, not advice.</p>
+          <p className="b-small" style={{ marginTop: 16 }}>Members only. Signals arrive within minutes of the trade we see. Information, not advice.</p>
         </Stage>
       </Frame>
     );
@@ -104,7 +104,7 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
           <div className="w-forms">
             <form className="w-form" method="post" action="/api/watch" data-testid="watch-add">
               <input type="hidden" name="action" value="add" />
-              <h3>Add a bet</h3>
+              <h3>Add a trade</h3>
               <label className="w-field"><span className="b-small">Market (its Polymarket or Insidir link)</span><input name="market" required placeholder="polymarket.com/event/…" /></label>
               <div className="w-row2">
                 <label className="w-field"><span className="b-small">Side</span><select name="side" defaultValue="yes"><option value="yes">Yes</option><option value="no">No</option></select></label>
@@ -132,9 +132,9 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
                 alerts={told.filter(t => t.watch_id === b.id).slice(0, 3).map(t => ({ headline: t.headline, body: t.body, at: new Date(t.created_at).getTime() }))} />
             ))}
           </ol>
-          {!bets.length ? <p className="b-empty">Nothing watched yet. Add a bet or paste your address above.</p> : null}
+          {!bets.length ? <p className="b-empty">Nothing watched yet. Add a trade or paste your address above.</p> : null}
           <p className="b-small" style={{ marginTop: 20 }}>
-            Every alert we send is kept, with how it turned out: <a href="/told" data-testid="watch-told-link">What we told you</a>. A wallet is only ever its tier and short address. Alerts arrive within minutes. Information, not advice.
+            Every signal we send is kept, with how it turned out: <a href="/told" data-testid="watch-told-link">What we told you</a>. A wallet is only ever its tier and short address. Signals arrive within minutes. Information, not advice.
           </p>
         </div>
       </Stage>

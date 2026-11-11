@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as { question?: unknown } | null;
   const question = typeof body?.question === "string" ? body.question.trim().slice(0, 300) : "";
-  if (question.length < 3) return NextResponse.json({ error: "Ask a question about the markets, wallets or your bets." }, { status: 400 });
+  if (question.length < 3) return NextResponse.json({ error: "Ask a question about the markets, wallets or your trades." }, { status: 400 });
   if (!hasDatabase()) return NextResponse.json({ error: "Not available right now." }, { status: 503 });
   const viewer = await getViewer();
   const member = isPaid(viewer.plan) && Boolean(viewer.user);

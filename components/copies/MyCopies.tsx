@@ -76,7 +76,7 @@ export async function MyCopies({ db, viewer, now }: { db: Db | null; viewer: Vie
       <div data-testid="my-copies">
         <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="copies-pick" labelledBy="pick-h">
           <div className="b-head"><Lines as="h1" id="pick-h" lines={["Pick a winner to copy"]} size={56} />
-            <p className="b-sub" data-m="lift">Every bet they make from then on shows up here, with the price they got and the price you can still get.</p></div>
+            <p className="b-sub" data-m="lift">Every trade they make from then on shows up here, with the price they got and the price you can still get.</p></div>
           <Panel className="s-col s-col--wide"><CopyPicker list={list} /></Panel>
         </Stage>
       </div>
@@ -91,11 +91,11 @@ export async function MyCopies({ db, viewer, now }: { db: Db | null; viewer: Vie
   const main = pnl[0];
   const net = pnl.reduce((t, p) => t + p.total.net, 0);
   const since = pnl.length ? Math.min(...pnl.map(p => p.copy.since)) : null;
-  const lead = pnl.length && Math.round(net) !== 0 && since ? `My copies are ${net > 0 ? "up" : "down"} ${dollars(Math.abs(net))} since ${DAY.format(since)}.` : null;
+  const lead = pnl.length && Math.round(net) !== 0 && since ? `Ledger are ${net > 0 ? "up" : "down"} ${dollars(Math.abs(net))} since ${DAY.format(since)}.` : null;
   return (
     <div data-testid="my-copies">
       <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="copies-result" labelledBy="mycp-h">
-        <div className="b-head"><Insight id="mycp-h" text={lead} fallback={["My copies."]} size={56} />
+        <div className="b-head"><Insight id="mycp-h" text={lead} fallback={["Copying wallets."]} size={56} />
           <p className="b-sub" data-m="lift">At ${size} a move, counting only moves shown after each copy began, bought at the price Insidir showed plus one point, held to settlement.</p></div>
         <Panel className="s-col s-col--wide"><ul className="s-lockrows">{pnl.map(p => <PnlLine key={`${p.copy.kind}:${p.copy.target}`} p={p} size={size} />)}</ul>
           <div className="b-ctas"><Pill href="/settings#copy-size" kind="ghost">Change your size</Pill><Pill href="/wallets" kind="ghost">Copy another wallet</Pill></div></Panel>
@@ -105,7 +105,7 @@ export async function MyCopies({ db, viewer, now }: { db: Db | null; viewer: Vie
           {us ? <p className="b-sub">In the US, Open goes to the same market on Kalshi when there is one; otherwise the move is view only.</p> : null}</div>
         {moves.length ? <Panel className="s-col s-col--wide"><ol className="s-lockrows" data-stagger="">{moves.map(m => <MoveRow key={m.id} m={m} now={now} us={us} />)}</ol></Panel>
           : <p className="b-empty b-center" data-testid="copy-moves-empty">No new moves since you started copying. They show up here the moment Insidir sees them.</p>}
-        <p className="b-small b-center">Information, not advice. Insidir never places a bet or holds money.</p>
+        <p className="b-small b-center">Information, not advice. Insidir never places a trade or holds money.</p>
       </Stage>
       {main && field ? <Recap mine={main.week} field={field} label={main.copy.label} /> : null}
     </div>

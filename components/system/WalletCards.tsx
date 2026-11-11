@@ -22,7 +22,7 @@ export function WalletCards({ wallets, today, biggest = false, testid }: { walle
               <span className="b-small">Last {w.last10.made + w.last10.lost} closed: {w.last10.made} made money, {w.last10.lost} lost</span>
             </p>
           ) : null}
-          <p className="b-small">{today ? "Today" : "Last 24 hours"}: {dollars(w.todayDollars)} across {w.todayBets} {w.todayBets === 1 ? "bet" : "bets"}</p>
+          <p className="b-small">{today ? "Today" : "Last 24 hours"}: {dollars(w.todayDollars)} across {w.todayBets} {w.todayBets === 1 ? "trade" : "trades"}</p>
           {biggest && w.biggest ? <p className="b-small">Biggest: {dollars(w.biggest.dollars)} on {w.biggest.title}</p> : null}
           <FollowLink wallet={w.wallet} initial={w.followed} />
         </Panel>

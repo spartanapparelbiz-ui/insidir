@@ -16,108 +16,31 @@ import { MW } from "./seed-millionaires";
 const post = (path: string, body: unknown) => fetch(`http://localhost:${WHOP_PORT}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 const closed = { name: "insidir_pay_closed", value: "1", url: "http://localhost:3100" };
 
-test("landing: the story (why, how, the demo), then value (free tiles); sides locked only where they're members'", async ({ page, context }) => {
+test("homepage: hero with the live window, three live numbers, Track / Verify / Signal, two real screens, one pricing card, the footer", async ({ page, context }) => {
   test.setTimeout(60_000);
   await context.addCookies([closed]);
   await page.goto("/");
-  // Election Day (Nov 3–4 ET only) leads when it's on; the rest is one story, in order.
-  const order = ["hero", "inside", "pricing", "why", "how", "watch", "free", "proof", "faq", "final-cta"];
+  const order = ["hero", "live-window", "hero-stats", "how", "product", "pricing", "brand-foot"];
   const ys = [];
   for (const id of order) { const el = page.getByTestId(id); await expect(el, id).toHaveCount(1); ys.push((await el.boundingBox())!.y); }
   expect([...ys].sort((a, b) => a - b)).toEqual(ys);
-  await expect(page.getByTestId("hero").getByRole("heading", { level: 1 })).toHaveText("Real-Time Prediction Market & Sports Trading Intelligence.");
-  await expect(page.getByTestId("hero-sub")).toHaveText("Track whale trades, arbitrage line mispricings across Polymarket & Kalshi, and catch volume spikes before odds shift.");
-  // Today's real total since midnight ET: every watched wallet's (up $100K+) fixture bets of the last 90 minutes ($320K: the six
-  // Millionaire bets' $299K and the Pro bets') once they all
-  // fall after midnight. Within 95 minutes of midnight ET only part of them do: then today's part, or the last 24 hours
-  // while today is still under $100K.
-  const etMinutes = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()); return Number(p.find(x => x.type === "hour")!.value) * 60 + Number(p.find(x => x.type === "minute")!.value); })();
-  if (etMinutes > 95) {
-    await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", "320000");
-    await expect(page.getByTestId("hero-line")).toHaveText("Wallets up $100K+ bet $320K today. Which side were you on?", { timeout: 5_000 });
-  } else {
-    await expect(page.getByTestId("hero-total")).toHaveAttribute("data-amount", /^[1-9]\d*$/);
-    await expect(page.getByTestId("hero-line")).toHaveText(/^Wallets up \$100K\+ bet \$\d+K (today|in the last 24 hours)\. Which side were you on\?$/, { timeout: 5_000 });
-  }
-  await expect(page.getByTestId("hero-markets")).toHaveAttribute("href", "/markets");
-  await expect(page.getByTestId("hero-markets")).toHaveText("View Live Markets");
-  await expect(page.getByTestId("hero-start")).toHaveText("Unlock Real-Time Alerts");
-  await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go?step=checkout");
-  // The first onboarding question on the first screen: a chip opens the $1 checkout with that answer kept.
-  await expect(page.getByTestId("hero-chip")).toHaveCount(6);
-  await expect(page.getByTestId("hero-chip").first()).toHaveAttribute("href", "/go?step=checkout&cats=football");
-  // Why Insidir: four rows; How it works: three steps; See it work: the demo, three chapters of real recordings.
-  await expect(page.getByTestId("why-rows").locator("li")).toHaveCount(4);
-  await expect(page.getByTestId("how-steps").locator("li")).toHaveCount(3);
-  await expect(page.getByTestId("demo-tab")).toHaveCount(3);
-  const src = await page.getByTestId("demo-video").locator("source").first().getAttribute("src");
-  expect((await page.request.get(src!)).status()).toBe(200);
+  // Three live numbers from the seeded database: 4 wallets up $1M+ tracked, 3 verified, signals sent in 24 hours.
+  const stats = page.getByTestId("hero-stats");
+  await expect(stats).toContainText("4Tracked");
+  await expect(stats).toContainText("3Verified");
+  await expect(stats).toContainText(/\d+Signals/);
+  await expect(page.getByTestId("how").locator("li")).toHaveCount(3);
+  await expect(page.getByTestId("how")).toContainText("Track");
+  await expect(page.getByTestId("how")).toContainText("Every wallet up $1M+, every position, live.");
+  // The two screens are real: the newest settled fixture trade as its signal read, and the settled ledger with a loss.
+  await expect(page.getByTestId("product-signal")).toContainText(/opened \$10K on Yes in “E2E fixture: settled market \d+” at 45¢\./);
+  await expect(page.getByTestId("product-ledger").locator("tbody tr")).toHaveCount(6);
+  await expect(page.getByTestId("pricing")).toContainText("$1 for 3 days, then $39/mo.");
+  await expect(page.getByTestId("pricing-cta")).toHaveText("Start for $1");
+  await expect(page.getByTestId("brand-foot")).toContainText("Information, not advice. Verified wallets lose trades too. 18+.");
+  await expect(page.getByTestId("brand-foot")).not.toContainText("GAMBLER");
   await page.screenshot({ path: shotName("brand-hero", page) });
-
-  // Free right now, a live sample: today's #1 millionaire bet whole (side included), the board 60 minutes late, one race.
-  const free = page.getByTestId("free");
-  await free.scrollIntoViewIfNeeded();
-  await expect(free.getByRole("heading", { level: 2 })).toHaveText("Free right now. No account.");
-  const top = page.getByTestId("free-top-bet");
-  if (etMinutes > 95) {
-    await expect(top.getByTestId("bet-row")).toHaveCount(1);
-    await expect(top.locator("[data-locked]")).toHaveCount(0);
-  }
-  await expect(top).not.toContainText(/\bNone\b/);
-  // 60 minutes late: only the fixture bets older than an hour, never the newer ones.
-  const late = page.getByTestId("free-late");
-  for (const row of await late.getByTestId("bet-row").all()) await expect(row).not.toContainText(/\b([1-5]?\d)m ago\b/);
-  await expect(page.getByTestId("free-race")).toBeVisible();
-  await page.screenshot({ path: shotName("brand-free", page) });
-
-  // A tap on a free bet: the pop-up names what they just saw.
-  await top.getByTestId("bet-row").first().click();
-  const sheet = page.getByTestId("pay-sheet");
-  await expect(sheet).toHaveAttribute("data-kind", "free");
-  await expect(sheet.getByTestId("paywall-headline")).toHaveText(etMinutes > 95 ? "That was 1 of 6 millionaire bets today. See them all live, with a ping when the next one lands. $1 for 3 days."
-    : /^That was 1 of \d+ millionaire bets? today\. See them all live, with a ping when the next one lands\. \$1 for 3 days\.$/);
-  await expect(sheet.getByTestId("paywall-price")).toContainText("$1 today, then $39/month from");
-  await page.screenshot({ path: shotName("brand-popup", page) });
-  await page.keyboard.press("Escape");
-  await expect(sheet).toHaveCount(0);
-
-  // The record is the leading rule from the Kalshi backtest (positive over 100+ settled), never "every bet".
-  await expect(page.getByTestId("proof-net")).toHaveText("+$412");
-  await expect(page.getByTestId("proof")).toContainText("“Bets of $50K+” on Kalshi · $25 a bet · 64 won of 118 settled · 180 days");
-  await expect(page.getByTestId("proof")).not.toContainText("on every");
-  await expect(page.getByTestId("pricing")).toContainText("Less than one bad bet.");
-  await expect(page.getByTestId("pricing")).toContainText("$1 for three days, then $39 a month.");
-  await expect(page.getByTestId("final-cta").getByRole("heading")).toHaveText("Bet with the people who actually win.");
-  await expect(page.getByTestId("brand-foot")).toContainText("Gambling problem? Call 1-800-GAMBLER.");
   await noHorizontalScroll(page);
-});
-
-
-
-test("the free live sample: today's #1 millionaire bet whole, the board 60 minutes late, one race in full", async ({ page }) => {
-  await page.goto("/#free");
-  const top = page.getByTestId("free-top-bet");
-  await expect(top).toBeVisible();
-  // Whole: the side is shown (a visitor's board rows lock it).
-  await expect(top.locator(".s-lockside, [data-locked=side]")).toHaveCount(0);
-  await expect(page.getByTestId("free-late")).toContainText("Members see each one the second it lands.");
-  await expect(page.getByTestId("free-late").getByRole("link", { name: "The board" })).toHaveAttribute("href", "/board");
-  await expect(page.getByTestId("free-race").getByRole("link", { name: "Every race" })).toHaveAttribute("href", "/election");
-  await page.screenshot({ path: shotName("brand-free-sample", page) });
-});
-
-test("search (⌘K): markets by words, a pasted Polymarket link opens that market's page, a wallet by its address", async ({ page, context }) => {
-  await signIn(context, "insidir");
-  const words = await (await page.request.get("/api/search?q=tennis%20match%20100")).json() as { go: string | null; hits: Array<{ href: string; kind: string }> };
-  expect(words.hits.map(h => h.href)).toContain("/market/0xe2etennis100");
-  const link = await (await page.request.get(`/api/search?q=${encodeURIComponent("https://polymarket.com/event/e2e-tennis-100")}`)).json() as { go: string | null };
-  expect(link.go === null || link.go.startsWith("/market/")).toBe(true);
-  const w = await (await page.request.get("/api/search?q=0xe2e00000000000000000000000000000000000aa")).json() as { go: string | null };
-  expect(w.go).toBe("/wallet/0xe2e00000000000000000000000000000000000aa");
-  await page.goto("/?search=1");
-  await page.getByLabel("Search markets, races and wallets, or paste a link").fill("tennis match 100");
-  await page.getByLabel("Search markets, races and wallets, or paste a link").press("Enter");
-  await expect(page.getByTestId("desk-search-result").locator('a[href="/market/0xe2etennis100"]')).toBeVisible();
 });
 
 test("/go: one question per screen, the aha, paywall, the mock checkout, unlocked, sign in, saved, follow, push, home", async ({ page }) => {
@@ -141,18 +64,18 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await page.locator('[data-testid=go-answer][data-value=kalshi]').click();
   await expect(go).toHaveAttribute("data-step", "building");
   await expect(page.getByTestId("go-ticks")).toContainText("Reading 6 millionaire wallets");
-  await expect(page.getByTestId("go-ticks")).toContainText("bets in Football and Politics today");
+  await expect(page.getByTestId("go-ticks")).toContainText("trades in Football and Politics today");
   await expect(go).toHaveAttribute("data-step", "aha", { timeout: 10_000 });
   // One market whole; the others with one total and the side never sent.
   await expect(page.getByTestId("aha-open")).toHaveCount(1);
   await expect(page.getByTestId("aha-locked")).toHaveCount(1);
   await expect(page.getByTestId("aha-locked").locator("[data-locked=split]")).toHaveCount(1); // the side drawn from nothing
-  await expect(page.getByTestId("go-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise. Every rule we tested.");
+  await expect(page.getByTestId("go-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a trade, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise. Every rule we tested.");
   await expect(page.getByTestId("go-aha")).not.toContainText("on every");
   await page.screenshot({ path: shotName("go-6-aha", page), fullPage: true });
   await page.getByTestId("go-next").click();
   await expect(page.getByTestId("paywall-headline")).toHaveText("See which side they took in Football and Politics.");
-  await expect(page.getByTestId("paywall-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise.");
+  await expect(page.getByTestId("paywall-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a trade, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise.");
   await expect(page.getByTestId("paywall-timeline")).toContainText("Today $1");
   await expect(page.getByTestId("paywall-remind")).toBeChecked();
   // The panel fades in (st 0.3s + its own transition): capture it settled, not mid-entrance.
@@ -174,8 +97,13 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("aha-open")).toHaveCount(2);
   await page.screenshot({ path: shotName("go-9-unlocked", page), fullPage: true });
   await page.getByTestId("go-signin").click();
-  // Right after paying and signing in: the ping opt-in, then follow a millionaire.
-  await expect(go).toHaveAttribute("data-step", "push", { timeout: 25_000 });
+  // Right after paying and signing in: sizing (bankroll and max per trade), the signal opt-in, then follow a wallet.
+  await expect(go).toHaveAttribute("data-step", "bankroll", { timeout: 25_000 });
+  await page.getByTestId("go-bankroll-input").fill("2000");
+  await page.getByTestId("go-max-input").fill("100");
+  await page.screenshot({ path: shotName("go-9b-sizing", page) });
+  await page.getByTestId("go-next").click();
+  await expect(go).toHaveAttribute("data-step", "push", { timeout: 15_000 });
   await page.screenshot({ path: shotName("go-10-push", page) });
   await page.getByTestId("ping-next").click();
   await expect(go).toHaveAttribute("data-step", "follow");
@@ -197,7 +125,7 @@ test("a member's home is the homepage, unlocked: stages with computed headlines,
   await page.goto("/");
   await expect(page.locator('[data-home="stages"]')).toBeVisible();
   // The hero: a computed headline about today's (or the last 24 hours') millionaire money, on the homepage's stage.
-  await expect(page.getByTestId("home-hero").getByRole("heading", { level: 1 })).toHaveText(/^Wallets up \$100K\+ bet \$[\d.]+[KM] (today|in the last 24 hours)\.$/);
+  await expect(page.getByTestId("home-hero").getByRole("heading", { level: 1 })).toHaveText(/^Wallets up \$100K\+ traded \$[\d.]+[KM] (today|in the last 24 hours)\.$/);
   // Today's #1 open position: $85K on the Chiefs (now 51¢); every millionaire entry on that side, $85K + $20K, at an
   // average 47¢; then Copy at the price now and Follow.
   const t = page.getByTestId("home-ticket");

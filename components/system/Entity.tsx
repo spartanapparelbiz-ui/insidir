@@ -45,7 +45,7 @@ export function KalshiFirst({ twin, yesLabel, noLabel, polyYes, polyUrl, region,
           ))}</ul>
         </div>
       ) : <p className="b-small" data-testid="no-twin">No Kalshi twin for this market. It shows here once Kalshi lists the same market and we have matched it.</p>}
-      <p className="b-small" data-testid="poly-price">On Polymarket, where the wallets bet: {polyYes !== null ? <><b className="b-num">{cents(polyYes)}</b> {yesLabel}</> : "no price yet"}
+      <p className="b-small" data-testid="poly-price">On Polymarket, where the wallets trade: {polyYes !== null ? <><b className="b-num">{cents(polyYes)}</b> {yesLabel}</> : "no price yet"}
         {region === "non_us" && polyUrl ? <> · <a className="s-link" href={polyUrl} target="_blank" rel="noopener noreferrer">See it on Polymarket</a></> : null}</p>
     </Panel>
   );
