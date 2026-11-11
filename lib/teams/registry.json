@@ -4917,7 +4917,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 7 teams"
+     "note": "placeholder image shared by 8 teams"
     },
     {
      "abbr": "chim",
@@ -4928,7 +4928,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 7 teams"
+     "note": "placeholder image shared by 8 teams"
     },
     {
      "abbr": "chist",
@@ -5464,6 +5464,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_elon_60000130.png"
     },
     {
+     "abbr": "embrid",
+     "name": "Embry Riddle Eagles",
+     "short": "Embry Riddle Eagles",
+     "color": "#e8c25c",
+     "logo": "/teams/cbb/embrid",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Embry Riddle Eagles-fe022207dc.png"
+    },
+    {
      "abbr": "emich",
      "name": "Eastern Michigan Eagles",
      "short": "E Michigan",
@@ -5698,6 +5708,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Framingham State Rams-c5623a7f6d.png"
+    },
+    {
+     "abbr": "ftlaud",
+     "name": "Fort Lauderdale Eagles",
+     "short": "Fort Lauderdale Eagles",
+     "color": "#e4b944",
+     "logo": "/teams/cbb/ftlaud",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Fort Lauderdale Eagles-09c75fc7a0.png"
     },
     {
      "abbr": "furman",
@@ -6528,6 +6548,28 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Lincoln (MO) Blue Tigers-a123805ed0.png"
     },
     {
+     "abbr": "lure",
+     "name": "Life Running Eagles",
+     "short": "Life Running Eagles",
+     "color": "#9ec14e",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
+    },
+    {
+     "abbr": "lynd",
+     "name": "Vermont State-Lyndon Hornets",
+     "short": "Vermont State-Lyndon Hornets",
+     "color": "#e4bf44",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "macal",
      "name": "Macalester Scots",
      "short": "Macalester Scots",
@@ -6537,6 +6579,17 @@
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Macalester Scots-60e52d0570.jpg",
      "note": "background keyed out"
+    },
+    {
+     "abbr": "maina",
+     "name": "Maine-Augusta Moose",
+     "short": "Maine-Augusta Moose",
+     "color": "#6d441c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 400×380, under 400px"
     },
     {
      "abbr": "maine",
@@ -6825,7 +6878,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 7 teams"
+     "note": "placeholder image shared by 8 teams"
     },
     {
      "abbr": "monm",
@@ -7526,6 +7579,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_pacfc_60000339.png"
     },
     {
+     "abbr": "paci",
+     "name": "Pacific Union Pioneers",
+     "short": "Pacific Union Pioneers",
+     "color": "#164b99",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 8 teams"
+    },
+    {
      "abbr": "pain",
      "name": "Paine Lions",
      "short": "Paine Lions",
@@ -8101,7 +8165,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 7 teams"
+     "note": "placeholder image shared by 8 teams"
     },
     {
      "abbr": "soumis",
@@ -8124,6 +8188,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_south_60000305.png"
     },
     {
+     "abbr": "sphil",
+     "name": "Spring Hill Badgers",
+     "short": "Spring Hill Badgers",
+     "color": "#692ba5",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "stan",
      "name": "Stanford Cardinal",
      "short": "Stanford",
@@ -8142,7 +8217,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 7 teams"
+     "note": "placeholder image shared by 8 teams"
     },
     {
      "abbr": "stbon",
@@ -8274,6 +8349,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 231×218, under 400px"
+    },
+    {
+     "abbr": "sunypo",
+     "name": "SUNY Potsdam Bears",
+     "short": "SUNY Potsdam Bears",
+     "color": "#981b36",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 492×380, under 400px"
     },
     {
      "abbr": "sutah",
@@ -8568,7 +8654,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 7 teams"
+     "note": "placeholder image shared by 8 teams"
     },
     {
      "abbr": "uccs",
@@ -8922,7 +9008,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 7 teams"
+     "note": "placeholder image shared by 8 teams"
     },
     {
      "abbr": "wag",
@@ -9057,6 +9143,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_will_60000322.png"
+    },
+    {
+     "abbr": "wilson",
+     "name": "Wilson Phoenix",
+     "short": "Wilson Phoenix",
+     "color": "#144b8a",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 342×342, under 400px"
     },
     {
      "abbr": "winth",
