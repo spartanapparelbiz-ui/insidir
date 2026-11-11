@@ -31,42 +31,29 @@ const V2_UI = [
 ].filter(f => existsSync(join(ROOT, f)));
 
 describe("V2 landing page", () => {
-  it("is one product in a scroll of stages: hero (with the live top five Verified), how it works, the contrast line, pricing, FAQ, final; members get their home", () => {
+  it("is a product page: hero with the live window, stats, how it works, the product, pricing, footer; members get their home", () => {
     const src = read("app/page.tsx"), landing = read("components/brand/landing/Landing.tsx");
     expect(src).toContain("<Landing d={d} />");
     expect(src).toContain("<HomePage d={d}");
-    expect(landing.indexOf("<Hero d={d} />")).toBeLessThan(landing.indexOf("<Rest d={d} />"));
-    const order = ["<HowStage />", "<Contrast />", "<Pricing />", "<FaqStage />", "<Final />"];
+    const order = ['data-testid="hero"', "<LiveWindow", "<Stats s={d.stats} />", "<How />", "<Product settled={d.settled} />", "<Pricing />", "<Footer />"];
     const at = order.map(m => landing.indexOf(m));
     for (const [i, m] of order.entries()) expect(at[i], m).toBeGreaterThan(-1);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
-    expect(landing).toContain("<TopVerified rows={d.verified} />");
+    // No intro splash, no photos, no category chips, no second hero button, no scroll animations.
+    const code = landing.replace(/\/\*[\s\S]*?\*\//g, " ");
+    expect(code).not.toMatch(/Intro|INTRO_SCRIPT|photo|heropick|ScrollFx|ScrollReveal|StageMotion|StickyStart|kind="ghost"/);
     expect(read("components/home/Home.tsx")).toContain('testid="member-home"');
   });
 
-  it("the hero's words, the how-it-works steps, the contrast line, the price line from the trial constant, and no stocks, crypto or Congress in the pitch", async () => {
+  it("the hero's words, the button and the line under it, and how it works", async () => {
     const copy = await import("@/lib/brand/copy");
-    const { PLANS, TRIAL } = await import("@/lib/plans");
-    expect(copy.HERO.h1.join(" ")).toBe("The intelligence layer for prediction markets.");
-    expect(copy.HERO.sub).toBe("We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.");
-    expect(copy.HERO.pitch).toBe("Who to copy, how much, and when to get out.");
-    expect(copy.HERO.proof.map(([t]) => t)).toEqual(["Verified", "Live signals", "Public track record"]);
-    expect(copy.HERO.contrast).toBe("Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell.");
-    expect(copy.HOW.map(h => `${h.t} ${h.d}`)).toEqual(["Track. Every wallet up $1M+, every position, live.", "Verify. Only wallets that pass our published criteria.", "Signal. Who moved, how much to size, and when they exit."]);
-    expect(copy.GET.map(g => g.t)).toEqual(["Signals", "Sizing", "Exit signals", "Ledger"]);
-    expect(copy.STAGES.under).toBe("Then $39/mo. Cancel in one click.");
-    expect(copy.STAGES.pricingSub).toBe(`$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/mo. Cancel anytime.`);
-    expect(copy.STAGES.pricingSub).toBe("$1 for 3 days, then $39/mo. Cancel anytime.");
     const landing = read("components/brand/landing/Landing.tsx");
-    expect(landing).toContain('<Pill href="/go?step=checkout" delay={0.9} data-testid="hero-start" data-checkout="hero">{HERO.cta}</Pill>');
-    expect(landing).toContain("{STAGES.pricingSub}");
-    const all = [...copy.HERO.h1, copy.HERO.sub, copy.HERO.contrast, ...copy.STAGES.final, ...copy.STAGES.pricing].join(" ");
-    expect(all).not.toMatch(/people who actually win|one bad bet|\bbet\b/i);
-    // The voice: no hype words anywhere in the pitch.
-    expect(bannedPhrases("POV: the insane secret to this cheat code")).toHaveLength(4);
-    const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
-    expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
-    expect(bannedPhrases(pitch)).toEqual([]);
+    expect(landing).toContain(">Prediction market intelligence<");
+    expect(landing).toContain(">The intelligence layer for prediction markets.<");
+    expect(landing).toContain("We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.");
+    expect(landing).toContain("const UNDER = `Then $${PLANS.insidir.price}/mo. Cancel in one click.`;");
+    expect(landing.match(/className="lx-btn"/g)).toHaveLength(2); // the hero's and the pricing card's
+    expect(copy.HOW.map(h => `${h.t} ${h.d}`)).toEqual(["Track. Every wallet up $1M+, every position, live.", "Verify. Only wallets that pass our published criteria.", "Signal. Who moved, how much to size, and when they exit."]);
     expect(GET_CTA).toBe("Try 3 days for $1");
   });
 
@@ -119,7 +106,9 @@ describe("design system", () => {
     const tokens = read("app/tokens.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     const palette = ["#0b0b12", "#ffffff", "#f7f7f8", "#ececf0", "#eaeaee", "#6b6b73", "#b4b4bb", "#2a2a33", "#0f7a45", "#c4321f"];
     expect([...new Set(tokens.match(/#[0-9a-f]{3,8}\b/g))].sort()).toEqual([...palette].sort());
-    const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e", "#1a1a1a", "#f2c35b", "#0b0b0b"];
+    const spec = ["#ffffff", "#ededed", "#181818", "#fdfdfd", "#050505", "#a78bfa", "#3dd68c", "#ff6b6b", "#000", "#fff", "#e8e8e8", "#d9d9d9", "#f6f6f6", "#232323", "#5b5b5b", "#111", "#e6e6e6", "#f0f0f0", "#ffd6a8", "#f5c451", "#c8952c", "#b8c2cf", "#4c8dff", "#ff4d5e", "#1a1a1a", "#f2c35b", "#0b0b0b",
+      // The homepage (2026-11-11): near-black, white text, grey secondary, #222 borders, a panel and its dots.
+      "#0a0a0b", "#fafafa", "#a1a1aa", "#222", "#111113", "#2a2a2e"];
     const brand = read("app/brand.css").replace(/\/\*[\s\S]*?\*\//g, " ").toLowerCase();
     for (const c of new Set(brand.match(/#[0-9a-f]{3,8}\b/g))) expect(spec, c).toContain(c);
     for (const f of tree("app").concat(tree("components")).filter(f => f.endsWith(".css") && f !== "app/tokens.css" && f !== "app/brand.css")) {
@@ -128,14 +117,15 @@ describe("design system", () => {
     }
   });
 
-  it("two fonts: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's (and no monospace)", () => {
-    const layout = read("app/layout.tsx");
+  it("fonts, self-hosted: Schibsted Grotesk on older pages, Plus Jakarta Sans on the brand's, Inter and JetBrains Mono on the homepage", () => {
+    const layout = read("app/layout.tsx"), fonts = read("lib/brand/fonts.ts");
     expect(layout).toMatch(/schibsted-grotesk-latin\.woff2/);
-    expect(read("lib/brand/fonts.ts")).toMatch(/plus-jakarta-sans-latin\.woff2/);
+    expect(fonts).toMatch(/plus-jakarta-sans-latin\.woff2/);
+    expect(fonts).toMatch(/inter-latin\.woff2/);
+    expect(fonts).toMatch(/jetbrains-mono-latin\.woff2/);
     expect(read("app/tokens.css")).toMatch(/--serif: var\(--sans\)/);
     for (const f of [...tree("app"), ...tree("components"), ...tree("lib")]) {
-      const src = read(f);
-      expect(src, f).not.toMatch(/General Sans|fontshare|JetBrains|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S/);
+      expect(read(f), f).not.toMatch(/General Sans|fontshare|Satoshi|Geist_Mono|GeistMono|Instrument Serif|Instrument Sans|Instrument_S|fonts\.googleapis/);
     }
   });
 

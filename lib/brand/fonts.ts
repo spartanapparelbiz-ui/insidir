@@ -7,4 +7,10 @@ import localFont from "next/font/local";
 export const jakarta = localFont({ src: "../../app/fonts/plus-jakarta-sans-latin.woff2", weight: "200 800", variable: "--b-font", display: "block" });
 
 
-export const brandFontClasses = jakarta.variable;
+
+/** The homepage (components/brand/landing/Landing.tsx): Inter for words, JetBrains Mono for numbers, wallet addresses
+ *  and timestamps. Both SIL OFL, self-hosted from app/fonts. Inter is preloaded (the headline); the mono isn't. */
+export const inter = localFont({ src: "../../app/fonts/inter-latin.woff2", weight: "400 700", variable: "--lx-sans", display: "swap" });
+export const mono = localFont({ src: "../../app/fonts/jetbrains-mono-latin.woff2", weight: "400 600", variable: "--lx-mono", display: "swap", preload: false });
+
+export const brandFontClasses = `${jakarta.variable} ${inter.variable} ${mono.variable}`;
