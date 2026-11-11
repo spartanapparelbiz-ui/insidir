@@ -45,10 +45,10 @@ describe("alerts", () => {
       { wallet: W1, short: "0x000d…758e", amount: 30_000, price: 0.4, pnl: 3_400_000 },
       { wallet: W2, short: "0x7c3d…5c6b", amount: 18_000, price: 0.41, pnl: 5_100_000 },
     ], { won: 14, lost: 6 }, "Politics", 0.6)!;
-    expect(a.headline).toBe("2 wallets up $3M+ just trade No, $48K total. They're 14–6 on politics this month.");
+    expect(a.headline).toBe("2 wallets up $3M+ just traded No, $48K total. They're 14–6 on politics this month.");
     expect(a.meaning).toBe("That's money against your Yes. You're down $3 on your $100 on Yes at 62¢, with Yes at 60¢ now.");
     const one = oppositeAlert(held, "No", [{ wallet: W1, short: "0x000d…758e", amount: 25_000, price: 0.4, pnl: 1_200_000 }], null, null, null)!;
-    expect(one.headline).toBe("A wallet up $1M+ (0x000d…758e) just trade No, $25K total.");
+    expect(one.headline).toBe("A wallet up $1M+ (0x000d…758e) just traded No, $25K total.");
     expect(one.meaning).toContain("You hold $100 on Yes at 62¢: 161 shares that pay $161 if Yes wins.");
     expect(oppositeAlert(held, "No", [], null, null, 0.6)).toBeNull();
   });

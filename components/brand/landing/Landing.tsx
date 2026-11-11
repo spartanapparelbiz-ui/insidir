@@ -65,7 +65,7 @@ function How() {
 }
 
 function Who({ t }: { t: SettledTrade }) {
-  return <span className="lx-mono">{t.verified ? "Verified " : ""}{shortWallet(t.wallet)}</span>;
+  return <>{t.verified ? "Verified " : ""}<span className="lx-mono">{shortWallet(t.wallet)}</span></>;
 }
 
 function SignalScreen({ t }: { t: SettledTrade }) {
@@ -89,7 +89,7 @@ function LedgerScreen({ rows }: { rows: SettledTrade[] }) {
   return (
     <div className="lx-window lx-shot" data-testid="product-ledger">
       <div className="lx-window__bar"><span className="lx-dots" aria-hidden="true"><i /><i /><i /></span><span className="lx-window__title">Ledger</span><span className="lx-window__meta lx-mono">settled · $1M+ wallets</span></div>
-      <table className="lx-feed">
+      <table className="lx-feed lx-feed--ledger">
         <thead><tr><th scope="col">Settled</th><th scope="col">Position</th><th scope="col" className="lx-r">Entry</th><th scope="col" className="lx-r">Result</th></tr></thead>
         <tbody>{rows.map(t => {
           const r = Math.round(((t.result === "won" ? 1 : 0) - t.price) / t.price * 100);

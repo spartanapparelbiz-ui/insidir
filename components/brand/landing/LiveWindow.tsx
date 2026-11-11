@@ -32,16 +32,16 @@ export function LiveWindow({ initial, now: now0 }: { initial: BoardBet[]; now: n
       <div className="lx-window__bar">
         <span className="lx-dots" aria-hidden="true"><i /><i /><i /></span>
         <span className="lx-window__title">Live</span>
-        <span className="lx-window__meta lx-mono">60 min delayed · sides for members</span>
+        <span className="lx-window__meta lx-mono">60 min delayed<span className="lx-hide-s"> · sides for members</span></span>
       </div>
       {rows.length ? (
-        <table className="lx-feed">
-          <thead><tr><th scope="col">Time</th><th scope="col">Wallet</th><th scope="col">Market</th><th scope="col" className="lx-r">Size</th><th scope="col" className="lx-r lx-hide-s">Price</th><th scope="col" className="lx-r">Side</th></tr></thead>
+        <table className="lx-feed lx-feed--live">
+          <thead><tr><th scope="col">Time</th><th scope="col" className="lx-hide-s">Wallet</th><th scope="col">Market</th><th scope="col" className="lx-r">Size</th><th scope="col" className="lx-r lx-hide-s">Price</th><th scope="col" className="lx-r">Side</th></tr></thead>
           <tbody>
             {rows.map(b => (
               <tr key={b.id} className={fresh.has(b.id) ? "lx-new" : undefined} data-testid="live-window-row">
                 <td className="lx-mono lx-dim">{ago(now - b.at)}</td>
-                <td className="lx-mono">{b.short}</td>
+                <td className="lx-mono lx-hide-s">{b.short}</td>
                 <td className="lx-market">{b.title}</td>
                 <td className="lx-mono lx-r lx-accent">{dollars(b.amount)}</td>
                 <td className="lx-mono lx-r lx-dim lx-hide-s">{b.outcome ? cents(b.priceThen) : "—"}</td>

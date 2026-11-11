@@ -4,7 +4,8 @@
  * block, so the headline reveal never plays against invisible text. */
 import localFont from "next/font/local";
 
-export const jakarta = localFont({ src: "../../app/fonts/plus-jakarta-sans-latin.woff2", weight: "200 800", variable: "--b-font", display: "block" });
+// Not preloaded (2026-11-11): the homepage uses Inter; preloading Jakarta there delayed its headline.
+export const jakarta = localFont({ src: "../../app/fonts/plus-jakarta-sans-latin.woff2", weight: "200 800", variable: "--b-font", display: "block", preload: false });
 
 
 

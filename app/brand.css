@@ -1913,7 +1913,7 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
 .lx-mono { font-family: var(--lx-mono), ui-monospace, monospace; font-variant-numeric: tabular-nums; letter-spacing: 0; }
 .lx-dim { color: var(--lx-dim); }
 .lx-accent { color: var(--lx-accent); }
-.lx-r { text-align: right; }
+.lx-r, .lx-feed .lx-r { text-align: right; }
 .lx-nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .lx-logo { display: inline-flex; align-items: center; gap: 8px; color: var(--lx-fg); text-decoration: none; font-weight: 600; font-size: 16px; }
 .lx-logo svg { width: 20px; height: 20px; }
@@ -1944,7 +1944,7 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
 .lx-feed td { padding: 12px 16px; border-bottom: 1px solid var(--lx-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lx-feed tr:last-child td { border-bottom: 0; }
 .lx-feed th:nth-child(1), .lx-feed td:nth-child(1) { width: 88px; }
-.lx-feed th:nth-child(2), .lx-feed td:nth-child(2) { width: 132px; }
+.lx-feed--live th:nth-child(2), .lx-feed--live td:nth-child(2) { width: 132px; }
 .lx-feed th.lx-r, .lx-feed td.lx-r { width: 104px; }
 .lx-market { color: var(--lx-fg); }
 .lx-chip { display: inline-block; padding: 2px 8px; border: 1px solid var(--lx-line); border-radius: 6px; color: var(--lx-dim); font-size: 12px; }
@@ -1995,9 +1995,11 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
   .lx-stat { font-size: 28px; }
   .lx-hide-s { display: none; }
   .lx-feed th, .lx-feed td { padding: 12px 8px; }
-  .lx-feed th:nth-child(1), .lx-feed td:nth-child(1) { width: 56px; }
-  .lx-feed th:nth-child(2), .lx-feed td:nth-child(2) { width: 104px; }
-  .lx-feed th.lx-r, .lx-feed td.lx-r { width: 76px; }
+  .lx-feed th:nth-child(1), .lx-feed td:nth-child(1) { width: 72px; }
+  .lx-feed--live th:nth-child(2), .lx-feed--live td:nth-child(2) { width: auto; }
+  .lx-feed th.lx-r, .lx-feed td.lx-r { width: 64px; }
+  .lx-feed td.lx-r:last-child, .lx-feed th.lx-r:last-child { width: 100px; }
+  .lx-feed--ledger td.lx-r:last-child, .lx-feed--ledger th.lx-r:last-child { width: 68px; }
   .lx-kv { grid-template-columns: repeat(3, minmax(0, auto)); }
   .lx-price { padding: 32px 24px; }
 }
