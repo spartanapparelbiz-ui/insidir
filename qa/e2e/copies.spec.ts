@@ -27,7 +27,7 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
   await q("update terminal.users set settings = settings - 'copySize' where id = 'user_e2e_insidir'");
   await signIn(context, "insidir");
   await page.goto("/copies");
-  await expect(page.getByRole("heading", { level: 1, name: "My copies" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Ledger." })).toBeVisible();
   const pnl = page.getByTestId("copy-pnl");
   await expect(pnl.getByTestId("copy-line")).toHaveText("Copying 0xe2…dd · $0 this week");
   await expect(pnl.getByTestId("copy-total")).toHaveText("−$10");
@@ -54,14 +54,7 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
   expect(img.headers()["content-type"]).toBe("image/png");
   await page.screenshot({ path: shotName("my-copies-us", page), fullPage: true });
 
-  // $50 a move from Settings: the same settled loss is now −$50.
-  await page.goto("/settings");
-  await page.getByTestId("copy-size").getByLabel("$50 a move").check();
-  await page.getByTestId("copy-size").getByRole("button", { name: "Save size" }).click();
-  await expect(page).toHaveURL(/\/settings\?saved=1/);
-  await page.goto("/copies");
-  await expect(page.getByTestId("copy-total")).toHaveText("−$50");
-  await expect(page.getByTestId("copy-pnl")).toContainText("at $50 a move");
+  // (The $10/$50/$100 per-move setting was replaced by Sizing in Account: bankroll and max per trade, qa/e2e/copy.spec.ts.)
   // The wallet's page shows it followed; nothing names who is behind it on My copies.
   await expect(page.getByTestId("my-copies")).not.toContainText("E2E-Follow");
   await page.goto(`/wallet/${W}`);

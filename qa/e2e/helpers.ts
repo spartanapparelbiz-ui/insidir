@@ -74,12 +74,15 @@ export async function noHorizontalScroll(page: Page): Promise<void> {
 
 export async function footerOk(page: Page): Promise<void> {
   const footer = page.locator("footer").last();
-  await expect(footer).toContainText("Aethric LLC · Pompano Beach, FL · hello@aethric.llc");
-  await expect(footer).toContainText("Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.");
-  await expect(footer).toContainText("Gambling problem? Call 1-800-GAMBLER.");
-  await expect(footer).toContainText("Information, not financial or betting advice.");
+  await expect(footer).toContainText("Insidir is a data company. We are not a broker, exchange or investment adviser, and we aren't affiliated with Kalshi, Polymarket or the SEC.");
+  await expect(footer).toContainText("Information, not advice. Verified wallets lose trades too. 18+.");
+  await expect(footer).not.toContainText("GAMBLER");
   await expect(footer.locator('a[href="mailto:hello@aethric.llc"]')).toHaveCount(1);
-  for (const href of ["/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog"]) await expect(footer.locator(`a[href="${href}"]`), href).toHaveCount(1);
+  // The homepage's footer (components/brand/landing/Landing.tsx) has four links; every other page's has them all.
+  const home = await footer.evaluate(f => f.classList.contains("lx-foot"));
+  const links = home ? ["/methodology", "/terms", "/privacy"] : ["/methodology", "/data", "/status", "/security", "/disclosures", "/terms", "/privacy", "/credits", "/changelog"];
+  for (const href of links) await expect(footer.locator(`a[href="${href}"]`), href).toHaveCount(1);
+  if (!home) await expect(footer).toContainText("Aethric LLC · Pompano Beach, FL · hello@aethric.llc");
 }
 
 export const shotName = (name: string, page: Page): string => `qa/screenshots/${name}-${page.viewportSize()!.width}.png`;

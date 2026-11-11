@@ -39,7 +39,7 @@ export function HeroLine({ initial }: { initial: Pulse }) {
 
   return (
     <p className="b-sub" data-m="lift" style={{ "--d": ".58s" } as CSSProperties} data-testid="hero-line" aria-live="polite">
-      Wallets up $100K+ trade <span className="b-num" style={{ fontWeight: 500, color: "#fff" }} data-testid="hero-total" data-amount={Math.round(t.amount)}>{dollars(shown)}</span> {t.window === "today" ? "today" : "in the last 24 hours"}.<br />{" "}Which side were you on?
+      Wallets up $100K+ traded <span className="b-num" style={{ fontWeight: 500, color: "#fff" }} data-testid="hero-total" data-amount={Math.round(t.amount)}>{dollars(shown)}</span> {t.window === "today" ? "today" : "in the last 24 hours"}.<br />{" "}Which side were you on?
     </p>
   );
 }

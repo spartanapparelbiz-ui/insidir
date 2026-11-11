@@ -3,35 +3,39 @@
 import { expect, test } from "@playwright/test";
 import { captureBodies, q, signIn } from "./helpers";
 
-test("landing: final on first paint, the hero's words and its CTAs, the nav, no stocks, no pop-up on arrival, no visitor bar", async ({ page }) => {
+test("landing: final on first paint, the hero's words, one button, the live window, the nav, no stocks, no pop-up on arrival", async ({ page }) => {
   const html = await (await page.request.get("/")).text();
-  expect(html).toContain("Real-Time Prediction Market");
-  expect(html).toContain("&amp; Sports Trading Intelligence.");
+  expect(html).toContain("The intelligence layer for prediction markets.");
+  expect(html).not.toMatch(/intro-on|INTRO/);
   await page.goto("/");
-  const h1 = page.getByRole("heading", { level: 1 });
-  await expect(h1).toHaveText(/Real-Time Prediction Market\s*& Sports Trading Intelligence\./);
-  await expect(page.getByTestId("hero-line")).toContainText("Wallets up $100K+ bet");
-  // The nav: Markets, Board, Record, Pricing, FAQ; Log in; Start for $1 → /go.
-  const links = (await page.locator(".b-nav-links a").allInnerTexts()).map(t => t.trim());
-  // Election Day leads the nav on Nov 3–4 ET (lib/brand/pulse.ts electionDay), then drops out.
-  if (page.viewportSize()!.width > 1160) expect(links.filter((t, i) => !(i === 0 && t === "Election Day"))).toEqual(["Markets", "Board", "SEC terminal", "Record", "Pricing", "FAQ"]);
-  await expect(page.getByTestId("nav-start")).toHaveAttribute("href", "/go?step=checkout");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The intelligence layer for prediction markets.");
+  await expect(page.getByText("Prediction market intelligence", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("hero-sub")).toHaveText("We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.");
+  await expect(page.getByTestId("hero-start")).toHaveText("Start for $1");
+  await expect(page.getByTestId("hero-start")).toHaveAttribute("href", "/go?step=checkout");
+  await expect(page.getByTestId("hero-terms")).toHaveText("Then $39/mo. Cancel in one click.");
+  await expect(page.getByTestId("hero").locator("a.lx-btn")).toHaveCount(1); // one button in the hero
+  // The live window: real fixture rows, no side for a visitor.
+  const rows = page.getByTestId("live-window-row");
+  expect(await rows.count()).toBeGreaterThan(0);
+  expect(await rows.count()).toBeLessThanOrEqual(6);
+  await expect(page.getByTestId("live-window")).not.toContainText(/Player A|Chiefs|Bills/);
+  // The nav: Methodology, Pricing, Log in.
+  if (page.viewportSize()!.width > 640) expect((await page.locator(".lx-nav__links a").allInnerTexts()).map(t => t.trim())).toEqual(["Methodology", "Pricing", "Log in"]);
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
-  // The pitch (the footer's "isn't affiliated with … the SEC" aside).
   const text = await page.evaluate(() => { const m = document.querySelector("main")!.cloneNode(true) as HTMLElement; m.querySelectorAll("footer").forEach(f => f.remove()); return m.innerText; });
-  expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress)\b/i);
+  expect(text).not.toMatch(/\b(stocks?|crypto|SEC|CEO|insider stock|Congress|bets?|odds)\b/i);
   expect(text).not.toMatch(/guaranteed|risk-free/i);
   await page.waitForTimeout(1500);
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByTestId("late-bar")).toHaveCount(0);
-  // Weights above 600: only the wordmark (the hero spec's 800).
-  expect(await page.evaluate(() => [...document.querySelectorAll("body *")].filter(e => Number(getComputedStyle(e).fontWeight) > 600 && !e.closest(".b-logo")).length)).toBe(0);
+  // No photos on the homepage, and nothing wider than the screen.
+  expect(await page.locator("main img").count()).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
 test("?ref= is kept for attribution only: the same home page, the ref and UTM cookies set; the retired stock pages are 301s", async ({ page, context }) => {
   await page.goto("/?ref=insidirfinance");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Real-Time Prediction Market\s*& Sports Trading Intelligence\./);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The intelligence layer for prediction markets.");
   const cookies = await context.cookies();
   expect(cookies.find(c => c.name === "insidir_ref")?.value).toBe("insidirfinance");
   expect(JSON.parse(decodeURIComponent(cookies.find(c => c.name === "insidir_utm")!.value))).toMatchObject({ utm_source: "insidirfinance", utm_medium: "ref" });
@@ -108,7 +112,7 @@ test("home: no zero trader box or 0 won · 0 lost; the pricing page's one plan c
 test("the record is public and honest: won and lost, the $100 line only from 30 settled, by category and by day; /pricing's live week numbers", async ({ page }) => {
   expect((await page.goto("/results"))?.status()).toBe(200);
   // First, following the pings on Kalshi: a tally, or what it's waiting for; never a made-up number.
-  await expect(page.getByTestId("results-kalshi")).toContainText(/won, \d+ lost|ping/);
+  await expect(page.getByTestId("results-kalshi")).toContainText(/won, \d+ lost|signal/);
   const total = page.getByTestId("results-total");
   await expect(total).toBeVisible();
   await expect(total).toContainText(/won, \d+ lost|No millionaire bet has settled/);

@@ -40,7 +40,11 @@ test("pay first: /go opens the checkout signed out → pay → Whop sign-in → 
   await form.getByRole("button", { name: "Pay $1 (test mode)" }).click();
   await expect(page).toHaveURL(/\/go\?step=unlocked/, { timeout: 20_000 });
   await page.getByTestId("go-signin").click();
-  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "push", { timeout: 25_000 });
+  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "bankroll", { timeout: 25_000 });
+  await page.getByTestId("go-bankroll-input").fill("1000");
+  await page.getByTestId("go-max-input").fill("50");
+  await page.getByTestId("go-next").click();
+  await expect(page.getByTestId("go")).toHaveAttribute("data-step", "push", { timeout: 15_000 });
   await page.getByTestId("ping-next").click();
   await page.getByTestId("go-next").click();
   await expect(page.getByTestId("member-home")).toBeVisible({ timeout: 15_000 });

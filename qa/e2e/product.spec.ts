@@ -143,14 +143,16 @@ test("one-tap copy: Copy on the board opens the ticket; Open on the venue; I pla
     await expect(page.getByTestId("copy-their")).toHaveText("60¢");
     await expect(page.getByTestId("copy-now")).toHaveText("62¢");
     await expect(page.getByTestId("copy-ticket")).toContainText("+$3.1M all-time");
-    await expect(page.getByTestId("copy-open")).toHaveText("Open on Polymarket");
+    await expect(page.getByTestId("copy-open")).toHaveText("Copy this trade on Polymarket");
     await expect(page.getByTestId("copy-open")).toHaveAttribute("href", `https://polymarket.com/event/${market}`);
-    await expect(page.getByTestId("copy-amount")).toHaveValue("10"); // the default from Account
+    await expect(page.getByTestId("copy-amount")).toHaveValue("10"); // no bankroll set: the default
     await page.getByTestId("copy-amount").fill("50");
+    const [tab] = await Promise.all([context.waitForEvent("page"), page.getByTestId("copy-open").click()]);
+    await tab.close();
     await page.getByTestId("copy-placed").click();
-    await expect(page.getByTestId("copy-logged")).toContainText("your Book");
-    const row = (await q<{ amount: number; price: number; venue: string; result: string | null }>("select amount, price, venue, result from terminal.bet_copies where bet_id = $1", [id]))[0]!;
-    expect(row).toEqual({ amount: 50, price: 0.62, venue: "polymarket", result: null });
+    await expect(page.getByTestId("copy-logged")).toContainText("Marked placed in Ledger");
+    const row = (await q<{ amount: number; price: number; venue: string; result: string | null; status: string }>("select amount, price, venue, result, status from terminal.bet_copies where bet_id = $1", [id]))[0]!;
+    expect(row).toEqual({ amount: 50, price: 0.62, venue: "polymarket", result: null, status: "placed" });
     await page.goto("/copies/yours");
     await expect(page.getByTestId("your-copy").first()).toHaveAttribute("data-result", "open");
     // The market settles against them: the copy loses its whole amount, and it's shown.
@@ -164,7 +166,7 @@ test("one-tap copy: Copy on the board opens the ticket; Open on the venue; I pla
     await context.clearCookies();
     await signIn(context, "insidir");
     await page.goto(`/copy/${encodeURIComponent(id)}`);
-    await expect(page.getByTestId("copy-view-only")).toContainText("Kalshi only");
+    await expect(page.getByTestId("copy-view-only")).toContainText("view-only");
     expect(await page.content()).not.toContain("polymarket.com/event");
     // Visitors: no side, no ticket; Start for $1.
     await context.clearCookies();
@@ -223,7 +225,7 @@ test("pings: the worker pushes a $1M+ wallet's $25K+ bet in the member's categor
     const ravens = payloads.filter(p => p.url.endsWith(encodeURIComponent(id)));
     expect(ravens.length, log).toBe(1);
     // The ping's text is unchanged; one "what it means" sentence follows it (lib/brief/explain.ts).
-    expect(ravens[0]!.body).toBe("A +$3.1M wallet just put $120K on Ravens in Ravens vs. Steelers at 60¢ (now 61¢). Copy? What it means: at 61¢, $100 pays $163 if Ravens win; 12× this wallet's usual bet.");
+    expect(ravens[0]!.body).toBe("A +$3.1M wallet just put $120K on Ravens in Ravens vs. Steelers at 60¢ (now 61¢). Copy? What it means: at 61¢, $100 pays $163 if Ravens win; 12× this wallet's usual trade.");
     expect(ravens[0]!.url).toBe(`${APP_URL}/copy/${encodeURIComponent(id)}`);
     expect(payloads.some(p => p.url.endsWith(encodeURIComponent(small)))).toBe(false); // under $25K: no ping
     expect((await q("select 1 from terminal.alerts_sent where user_id = $1 and opp_id = $2", [ins.id, `mil:${id}`])).length).toBe(1);

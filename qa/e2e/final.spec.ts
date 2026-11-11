@@ -56,7 +56,7 @@ test("content is visible at rest: a full-page screenshot with no scrolling shows
     const r = h.getBoundingClientRect();
     return { text: (h.textContent ?? "").trim().slice(0, 40), o, x: r.x, y: r.y + scrollY, w: r.width, h: r.height };
   }));
-  expect(heads.length).toBeGreaterThan(6);
+  expect(heads.length).toBeGreaterThanOrEqual(4); // the H1, How it works, The product, Pricing
   for (const hd of heads) {
     expect(hd.o, `${hd.text}: opacity`).toBeGreaterThan(0.99);
     expect(lightIn({ x: hd.x, y: hd.y, w: hd.w, h: hd.h }), `${hd.text}: drawn`).toBeGreaterThan(0.02);
@@ -158,7 +158,7 @@ test("/go: the progress bar counts the steps, Back works on every step before pa
   await page.goto("/go?utm_source=final&utm_campaign=pass");
   const bar = page.getByTestId("go-progress");
   await expect(bar).toHaveAttribute("aria-valuenow", "1");
-  await expect(bar).toHaveAttribute("aria-valuemax", "12");
+  await expect(bar).toHaveAttribute("aria-valuemax", "13");
   await expect(page.getByTestId("go-back")).toHaveAttribute("href", "/");
   await page.getByTestId("go-next").click();
   await expect(page).toHaveURL(/step=cats&utm_source=final&utm_campaign=pass/);
@@ -188,7 +188,7 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   test.skip(info.project.name !== "desktop-1440", "the timing rules are the same at every width");
   test.setTimeout(90_000);
   await page.clock.install();
-  await page.goto("/");
+  await page.goto("/board"); // the homepage has no pop-ups since 2026-11-11; Live does
   await page.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true); // hydrated: the pop-up listens
   const sheet = page.getByTestId("pay-sheet");
   // The free check's verdict fires the automatic pop-up 2.5 s later, but not inside the first 15 s on the page.
@@ -223,7 +223,7 @@ test("pop-ups: never in the first 15 s, once a session; Esc, a tap outside and C
   await context.clearCookies();
   const p2 = await context.newPage();
   await p2.clock.install();
-  await p2.goto("/");
+  await p2.goto("/board");
   await p2.waitForFunction(() => (window as unknown as { __bmOK?: boolean }).__bmOK === true);
   await p2.clock.runFor(16_000);
   await p2.evaluate(() => window.dispatchEvent(new Event("insidir:free-used")));
@@ -252,7 +252,8 @@ test("share and install: brackets-mark icons, the manifest, a rendered OG image,
   const st = await sharp(await og.body()).stats();
   expect(st.channels[0]!.stdev, "the OG image isn't blank").toBeGreaterThan(20);
   const home = await (await request.get("/")).text();
-  expect(home).toMatch(/<title>Insidir: see which side the millionaires bet<\/title>/);
+  expect(home).toMatch(/<title>Insidir: the intelligence layer for prediction markets<\/title>/);
+  expect(home).not.toMatch(/\b(bet|bets|odds|sports trading)\b/i);
   expect(home).toContain('rel="icon" href="/icons/favicon.svg"');
   expect(home).toMatch(/property="og:image"/);
   const robots = await (await request.get("/robots.txt")).text();

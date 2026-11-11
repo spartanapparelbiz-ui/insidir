@@ -41,7 +41,7 @@ export default async function Wallets() {
     db ? constellation(db, midnightET(now)).catch(() => null) : Promise.resolve(null),
   ]);
   const s = board?.summary;
-  const skyLine = sky?.shared ? `${sky.shared.wallets} wallets up $1M+ trade ${sky.shared.title}${sky.shared.same ? ", all on the same side" : ", on both sides"}.` : null;
+  const skyLine = sky?.shared ? `${sky.shared.wallets} wallets up $1M+ traded ${sky.shared.title}${sky.shared.same ? ", all on the same side" : ", on both sides"}.` : null;
   return (
     <Frame member current="wallets" testid="wallets-page">
       <Stage first testid="wallets-band" labelledBy="wallets-h">

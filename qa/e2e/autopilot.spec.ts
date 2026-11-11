@@ -43,7 +43,7 @@ test("starters with backtests turn on in one tap; a built rule reads back in one
   await signIn(context, "insidir");
   await page.goto("/autopilot");
   await expect(page.getByTestId("ap-starter")).toHaveCount(3);
-  await expect(page.getByTestId("ap-backtest").first()).toHaveText("Last 180 days: 41 bets: 23 won, 17 lost, 1 open. Net +$212 on $1,020 staked (+21%). Worst drop −$140.");
+  await expect(page.getByTestId("ap-backtest").first()).toHaveText("Last 180 days: 41 trades: 23 won, 17 lost, 1 open. Net +$212 on $1,020 staked (+21%). Worst drop −$140.");
   await noHorizontalScroll(page);
   await page.screenshot({ path: shotName("autopilot", page), fullPage: true });
 

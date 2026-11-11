@@ -75,8 +75,8 @@ test("push: subscribe from a tap, worker sends a real encrypted alert, service w
     const pushes = JSON.parse(readFileSync(join(OUT, "pushes.json"), "utf8")) as Array<{ path: string; headers: Record<string, string>; body: string }>;
     const open = (p: { body: string }) => JSON.parse(ece.decrypt(Buffer.from(p.body, "base64"), { version: "aes128gcm", privateKey: ecdh, authSecret: auth }).toString("utf8")) as { url: string; title: string };
     const all = pushes.slice(before).filter(p => endpoint.endsWith(p.path));
-    expect(all.filter(p => open(p).title === "Pings are on").length).toBe(1);
-    const mine = all.filter(p => open(p).title !== "Pings are on");
+    expect(all.filter(p => open(p).title === "Signals are on").length).toBe(1);
+    const mine = all.filter(p => open(p).title !== "Signals are on");
     // A deal alert, and possibly a millionaire ping (a seeded $25K+ bet from a $1M+ wallet, all categories): one deal.
     const deals = mine.filter(p => open(p).url.includes("/api/alerts/opened"));
     expect(deals.length, log).toBe(1);

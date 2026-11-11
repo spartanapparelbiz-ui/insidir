@@ -155,7 +155,7 @@ export async function homeData(db: Db, userId: string, settings: { alertPush?: b
     now, today, top: top ? { bet: top, edge, art: art && !(logosOff() && SPORTS.has(top.category)) ? art : null } : null,
     copyNow, day, stream, disagree: dis, election: el ? { day: el, insight: raceInsight(el) } : null, board: flow.slice(0, 24), wallets, desk, copies,
     insight: {
-      hero: today ? `Wallets up $100K+ trade ${dollars(today.money)} today.` : day ? `Wallets up $100K+ trade ${dollars(day.money)} in the last 24 hours.` : null,
+      hero: today ? `Wallets up $100K+ traded ${dollars(today.money)} today.` : day ? `Wallets up $100K+ traded ${dollars(day.money)} in the last 24 hours.` : null,
       disagree: dis[0] ? `Millionaires are ${pct(dis[0].share)} on ${dis[0].outcome}. The price says ${c(dis[0].price)}.` : null,
       board: boardInsight(live),
       wallets: walletsInsight(wallets),

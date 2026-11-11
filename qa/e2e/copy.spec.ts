@@ -39,7 +39,7 @@ function runWorker(ms: number): Promise<string> {
 test("copy trading: bankroll, follow, entry push with your size, Copy opens the market, placed, exit push", async ({ page, context, browserName }) => {
   test.skip(browserName !== "chromium");
   test.setTimeout(150_000);
-  const w = page.viewportSize()!.width, u = E2E_USERS.insidir!, wallet = MW(2), betId = `e2e:copy-${w}`, sellId = `ps:e2e-copy-${w}`;
+  const w = page.viewportSize()!.width, u = E2E_USERS.insidir!, wallet = MW(2), betId = `e2e:cflow-${w}`, sellId = `ps:e2e-cflow-${w}`;
   await q("delete from terminal.alerts_sent where user_id = $1", [u.id]);
   await q("delete from terminal.push_subscriptions where user_id = $1", [u.id]);
   await q("delete from terminal.follows where user_id = $1", [u.id]);
@@ -91,7 +91,7 @@ test("copy trading: bankroll, follow, entry push with your size, Copy opens the 
 
   // 3. The push opens the copy ticket.
   await page.goto(new URL(entry!.url).pathname);
-  await expect(page.getByTestId("copy-size")).toContainText("They put in 2%. Your size: $40.");
+  await expect(page.getByTestId("copy-size")).toContainText("They put in 2%. Sizing: $40.");
   await expect(page.getByTestId("copy-size")).toContainText("Matched size, not advice.");
   await expect(page.getByTestId("copy-amount")).toHaveValue("40");
   await expect(page.getByTestId("copy-cheaper")).toHaveCount(1);
@@ -127,4 +127,10 @@ test("copy trading: bankroll, follow, entry push with your size, Copy opens the 
   expect(go.headers().location).toMatch(/^https:\/\/kalshi\.com\//);
   await page.goto("/copies");
   await expect(page.getByTestId("copy-row").first()).toContainText("it sold");
+  // Leave the board as it was for the other specs.
+  await q("delete from terminal.bet_copies where user_id = $1", [u.id]);
+  await q("delete from terminal.millionaire_bets where id = $1", [betId]);
+  await q("delete from terminal.position_events where id = $1", [sellId]);
+  await q("delete from terminal.follows where user_id = $1", [u.id]);
+  await q("delete from terminal.push_subscriptions where user_id = $1", [u.id]);
 });
