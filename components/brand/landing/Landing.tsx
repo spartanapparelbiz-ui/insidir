@@ -1,5 +1,7 @@
 /* The landing: one product, a copy trading system for Kalshi and Polymarket, in a scroll of stages.
- *   Hero      "Who to copy, how much, and when to get out." · the subhead · the live top five Verified wallets with real
+ *   Hero      "The intelligence layer for prediction markets." · "We track every Polymarket wallet up $1M+, verify which ones
+ *             are consistently good, and tell you the moment they move." · Verified wallets / Live signals / Public track
+ *             record · "Who to copy, how much, and when to get out." over the live top five Verified wallets with real
  *             profit (no names or addresses until signup) · Start for $1 · the price line from lib/plans.ts
  *   How       Follow a verified wallet · Get your size when it trades · Get pinged when it exits
  *   Contrast  "Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell."
@@ -32,14 +34,17 @@ import { HowStage, WatchStage, WhyStage } from "./Why";
 import { InsideStage } from "./Inside";
 import { ElectionStage } from "./Value";
 
-function Hero({ d }: { d: Pick<LandingData, "verified" | "verifiedCount"> }) {
+function Hero({ d }: { d: Pick<LandingData, "verified" | "verifiedCount" | "flagged"> }) {
   return (
     <Stage bg={{ kind: "globe", dark: 0.15 }} inner={false} testid="hero" labelledBy="hero-h" first>
       <BrandNav motion startHref="/go?step=checkout" />
       <div className="b-hero-inner">
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
+        <ul className="lp-proof" data-m="lift" data-testid="hero-proof">{HERO.proof.map(([t, h]) => <li key={t}><a href={h}>{t}</a></li>)}</ul>
+        {d.flagged ? <p className="b-small" data-testid="hero-flagged">$1M+ trades flagged in a median of {d.flagged.seconds} seconds (last 24 hours, {d.flagged.n.toLocaleString("en-US")} trades).</p> : null}
         <div className="lp-top" data-m="settle" style={{ "--d": ".7s" } as CSSProperties}>
+          <p className="lp-pitch" data-testid="hero-pitch">{HERO.pitch}</p>
           <p className="b-label">Live top {Math.min(5, d.verified.length) || 5} Verified wallets{d.verifiedCount.checked ? <> · {d.verifiedCount.verified} of {d.verifiedCount.checked} wallets up $1M+ pass today</> : null}</p>
           {d.verified.length ? <TopVerified rows={d.verified} /> : <p className="b-small" data-testid="top-verified-empty">The daily review is running: the top Verified wallets show here as each one is read.</p>}
           <p className="b-small">Names hidden until you sign up. Profit from each wallet&apos;s public Polymarket record.</p>
@@ -182,9 +187,9 @@ export function Landing({ d }: { d: LandingData }) {
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
         <Intro lines={d.verifiedCount.checked ? [
           `${d.verifiedCount.verified} of ${d.verifiedCount.checked} wallets up $1M+ pass every test today.`,
-          "Insidir tells you who to copy,",
+          "We tell you who to copy,",
           "how much, and when to get out.",
-        ] : ["Who to copy,", "how much,", "and when to get out."]} />
+        ] : ["The intelligence layer", "for prediction markets."]} />
       </>}
       <Hero d={d} />
       <Rest d={d} />

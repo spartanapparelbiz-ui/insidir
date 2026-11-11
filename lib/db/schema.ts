@@ -1111,6 +1111,8 @@ export const millionaireBets = terminal.table("millionaire_bets", {
   kalshiUrl: text("kalshi_url"),
   /** When the source data was last fetched from the venue. */
   fetchedAt: timestamp("fetched_at", { withTimezone: true }),
+  /** When Insidir first saw it (default now() on insert; null on rows from before it was kept). */
+  seenAt: timestamp("seen_at", { withTimezone: true }).defaultNow(),
   /** The source response: each fill's Data API trade, slimmed (lib/moves/sources.ts slimTrade), by fill id. Rows from
    *  before 0046 hold what was kept then ({ backfill: "moves.parts", parts }). Server only: never sent to a browser. */
   raw: jsonb("raw").$type<Record<string, unknown>>(),

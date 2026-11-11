@@ -6,8 +6,12 @@ import { PLANS, TRIAL } from "@/lib/plans";
 /** The product in one line. */
 export const ONE_LINE = "Who to copy, how much, and when to get out.";
 export const HERO = {
-  h1: ["Who to copy, how much,", "and when to get out."],
-  sub: "Follow verified wallets up $1M+ on Kalshi and Polymarket. Insidir sizes each trade for you and pings you when they exit.",
+  h1: ["The intelligence layer", "for prediction markets."],
+  sub: "We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.",
+  /** The product, said as what you get: over the live top five. */
+  pitch: "Who to copy, how much, and when to get out.",
+  /** The three proof points (the bio's second line), each linking to where it's shown. */
+  proof: [["Verified wallets", "/wallets"], ["Live signals", "/board"], ["Public track record", "/record"]] as const,
   /** The one contrast line, under the top five. */
   contrast: "Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell.",
   cta: `Start for $${TRIAL.fee}`,
@@ -59,13 +63,13 @@ export const STAGES = {
   how: ["How it works."],
   watch: ["See it work."],
   watchSub: "What members see, recorded with live data: real trades, real money, nothing staged.",
-  final: ["Who to copy, how much,", "and when to get out."],
+  final: ["The intelligence layer", "for prediction markets."],
 } as const;
 
 /** Five questions, one sentence each. */
 /** Every question (/faq and /help); the landing shows five of them (FAQ). */
 export const FAQ_ALL: Array<{ id: string; q: string; a: string }> = [
-  { id: "what", q: "What is Insidir?", a: "A copy trading system for Kalshi and Polymarket: who to copy (Verified wallets up $1M+), how much (your size, matched to theirs), and when to get out (a push when they sell)." },
+  { id: "what", q: "What is Insidir?", a: "We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move: who to copy, your size, and a push when they sell." },
   { id: "verified", q: "What makes a wallet Verified?", a: "It's up $1M+ all time and passes four tests, re-tested every day: 50+ settled trades, profitable in at least 2 of the last 3 months, no single trade over 40% of its profit, and it doesn't regularly hold both sides of a market. Each wallet's page shows every test and its numbers." },
   { id: "size", q: "How is my size worked out?", a: "From the wallet's trade as a share of its bankroll (the most it has held in open positions at once in 90 days): if it put in 2%, your size is 2% of the bankroll you set, never above your max per trade. It's a matched size, not advice." },
   { id: "kalshi", q: "Kalshi or Polymarket?", a: "Each alert shows the same side's price on both when both list the market, and marks the cheaper one. Copy opens that market on the cheaper app you can use (in the US, Kalshi). You confirm the trade in your own account." },

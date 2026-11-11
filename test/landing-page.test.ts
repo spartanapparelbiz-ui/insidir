@@ -47,8 +47,10 @@ describe("V2 landing page", () => {
   it("the hero's words, the how-it-works steps, the contrast line, the price line from the trial constant, and no stocks, crypto or Congress in the pitch", async () => {
     const copy = await import("@/lib/brand/copy");
     const { PLANS, TRIAL } = await import("@/lib/plans");
-    expect(copy.HERO.h1.join(" ")).toBe("Who to copy, how much, and when to get out.");
-    expect(copy.HERO.sub).toBe("Follow verified wallets up $1M+ on Kalshi and Polymarket. Insidir sizes each trade for you and pings you when they exit.");
+    expect(copy.HERO.h1.join(" ")).toBe("The intelligence layer for prediction markets.");
+    expect(copy.HERO.sub).toBe("We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.");
+    expect(copy.HERO.pitch).toBe("Who to copy, how much, and when to get out.");
+    expect(copy.HERO.proof.map(([t]) => t)).toEqual(["Verified wallets", "Live signals", "Public track record"]);
     expect(copy.HERO.contrast).toBe("Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell.");
     expect(copy.HOW.map(h => h.t)).toEqual(["Follow a verified wallet.", "Get your size when it trades.", "Get pinged when it exits."]);
     expect(copy.STAGES.pricingSub).toBe(`$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/mo. Cancel anytime.`);
@@ -58,6 +60,8 @@ describe("V2 landing page", () => {
     expect(landing).toContain("{STAGES.pricingSub}");
     const all = [...copy.HERO.h1, copy.HERO.sub, copy.HERO.contrast, ...copy.STAGES.final, ...copy.STAGES.pricing].join(" ");
     expect(all).not.toMatch(/people who actually win|one bad bet|\bbet\b/i);
+    // The voice: no hype words anywhere in the pitch.
+    expect(bannedPhrases("POV: the insane secret to this cheat code")).toHaveLength(4);
     const pitch = [...copy.HERO.h1, ...copy.PROBLEM.rows.flat(), ...copy.MEMBERS.map(x => x.t), ...copy.FAQ.flatMap(f => [f.q, f.a])].join(" ");
     expect(pitch).not.toMatch(/\b(stocks?|crypto|SEC|CEO|Congress)\b/i);
     expect(bannedPhrases(pitch)).toEqual([]);

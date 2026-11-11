@@ -1892,3 +1892,8 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
   .cl-row .cl-px { display: none; }
   .cl-row .cl-mark { grid-column: 1 / -1; }
 }
+.lp-proof { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 14px 0 0; padding: 0; font-size: 13px; letter-spacing: .02em; }
+.lp-proof li + li::before { content: "·"; margin-right: 18px; color: var(--dim); }
+.lp-proof a { color: var(--ink-muted); text-decoration: none; }
+.lp-proof a:hover { color: var(--ink); }
+.lp-pitch { margin: 0; font-size: clamp(18px, 2.2vw, 22px); font-weight: 500; letter-spacing: -.01em; }

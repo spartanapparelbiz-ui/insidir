@@ -29,3 +29,7 @@ ALTER TABLE "terminal"."bet_copies" ADD COLUMN IF NOT EXISTS "drop_pinged_at" ti
 CREATE INDEX IF NOT EXISTS "bet_copies_wallet_market_idx" ON "terminal"."bet_copies" ("wallet", "market_id");
 -- Earlier copies came from "I placed it": they're placed; fill in the wallet from the bet.
 UPDATE "terminal"."bet_copies" c SET "wallet" = b."wallet", "their_amount" = b."amount" FROM "terminal"."millionaire_bets" b WHERE b."id" = c."bet_id" AND c."wallet" IS NULL;
+-- When Insidir first saw each trade ("flagged in N seconds" on the landing: the median of seen_at − at, last 24 hours).
+-- Older rows stay null: their first-seen time wasn't kept, and no number is made up for them.
+ALTER TABLE "terminal"."millionaire_bets" ADD COLUMN IF NOT EXISTS "seen_at" timestamp with time zone;
+ALTER TABLE "terminal"."millionaire_bets" ALTER COLUMN "seen_at" SET DEFAULT now();
