@@ -149,11 +149,13 @@ export async function homeStats(db: Db, now: number): Promise<LandingData["stats
   const r = await db.execute(sql`select
       (select count(*)::int from terminal.watchlist where pnl >= 1000000) as tracked,
       (select count(*) filter (where verified)::int from terminal.wallet_verification) as verified,
-      (select count(*)::int from terminal.wallet_verification) as checked,
+      (select count(*)::int from terminal.wallet_verification v join terminal.watchlist w on w.wallet = v.wallet where w.pnl >= 1000000) as checked,
       (select count(*)::int from terminal.alerts_sent where channel = 'push' and sent_at > ${new Date(now - DAY)}
         and (opp_id like 'mil:%' or opp_id like 'copy:%' or opp_id like 'exit:%' or opp_id like 'drop:%')) as signals`);
   const x = r.rows[0] as { tracked: number; verified: number; checked: number; signals: number };
-  return { tracked: x.tracked > 0 ? x.tracked : null, verified: x.checked > 0 ? x.verified : null, signals24h: x.signals };
+  // Verified only once every tracked wallet has been checked: a partial first pass would understate it.
+  const complete = x.tracked > 0 && x.checked >= x.tracked;
+  return { tracked: x.tracked > 0 ? x.tracked : null, verified: complete ? x.verified : null, signals24h: x.signals };
 }
 
 /** The median seconds from a $1M+ trade's first fill to Insidir seeing it (seen_at − at), last 24 hours; null under 20. */
