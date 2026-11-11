@@ -147,7 +147,7 @@ export async function runProduct(db: Db, d: ProductDeps): Promise<Step[]> {
       await db.insert(positionEvents).values({ id, wallet: MONITOR_WALLET, tier: "pro", marketId: ev.market_id, outcomeSide: "yes", outcome: "Monitor", marketTitle: "Monitor check", eventTitle: "Monitor check",
         category: "world", url: null, kind: "exit", amount: 10_000, price: 0.5, shares: 20_000, heldAfter: 0, at: new Date(at), lastAt: new Date(at) });
       const sent = await poll(async () => ((await db.execute(sql`select 1 from terminal.alerts_sent where user_id = ${MONITOR_USER} and opp_id = ${`apx:${matchId}:${id}`}`)).rowCount ? true : null), MATCH_MS);
-      must(sent, "no exit ping within 10 seconds of the exit");
+      must(sent, "no exit signal within 10 seconds of the exit");
     });
   } finally {
     await cleanup(db).catch(() => undefined);

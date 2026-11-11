@@ -13,7 +13,7 @@ import { isReady } from "@/lib/features";
 import { FORM_FAMILIES, inbox, listsFor, type AlertView, type ListView } from "@/lib/stocks/watchlists";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Watchlists and alerts", robots: { index: false } };
+export const metadata: Metadata = { title: "Watchlists and signals", robots: { index: false } };
 
 const after = (a: AlertView) => (a.latencyMs === null ? null : a.latencyMs < 60_000 ? `${Math.max(1, Math.round(a.latencyMs / 1000))}s after EDGAR` : `${Math.round(a.latencyMs / 60_000)} min after EDGAR`);
 
@@ -22,7 +22,7 @@ export default async function WatchlistsPage() {
   if (!isReady("watchlists")) {
     return (
       <Frame member={paid} current="board" testid="watchlists-page">
-        <SecSoon title="Watchlists and alerts" line="Save tickers and people, and get an in-app alert within minutes of a filing reaching EDGAR." />
+        <SecSoon title="Watchlists and signals" line="Save tickers and people, and get an in-app signal within minutes of a filing reaching EDGAR." />
       </Frame>
     );
   }
@@ -32,10 +32,10 @@ export default async function WatchlistsPage() {
   return (
     <Frame member current="board" testid="watchlists-page">
       <SecPage testid="watchlists">
-        <SecHead current="watchlists" unread={unread} title="Watchlists and alerts" sub="Companies and people you follow. When one of them files, an alert lands here within minutes of the filing reaching EDGAR." />
+        <SecHead current="watchlists" unread={unread} title="Watchlists and signals" sub="Companies and people you follow. When one of them files, a signal lands here within minutes of the filing reaching EDGAR." />
 
         <section className="sec-section" aria-labelledby="inbox-h">
-          <div className="sec-row"><h2 id="inbox-h" className="sec-h2">Alerts{unread ? ` · ${unread} unread` : ""}</h2><MarkAllRead disabled={!unread} /></div>
+          <div className="sec-row"><h2 id="inbox-h" className="sec-h2">Signals{unread ? ` · ${unread} unread` : ""}</h2><MarkAllRead disabled={!unread} /></div>
           {alerts.length ? (
             <div className="sec-wrap">
               <table className="sec-table" data-testid="alerts">
@@ -50,14 +50,14 @@ export default async function WatchlistsPage() {
                 ))}</tbody>
               </table>
             </div>
-          ) : <p className="sec-empty" data-testid="alerts-empty">No alerts yet. Add a company or a person below, and their next filing lands here.</p>}
+          ) : <p className="sec-empty" data-testid="alerts-empty">No signals yet. Add a company or a person below, and their next filing lands here.</p>}
         </section>
 
         <section className="sec-section" aria-labelledby="lists-h">
           <h2 id="lists-h" className="sec-h2">Your watchlists</h2>
           <WatchlistEditor lists={lists} families={Object.entries(FORM_FAMILIES).map(([k, v]) => [k, v.label])} />
         </section>
-        <p className="sec-cov">Alerts are in the app only. Information, not advice.</p>
+        <p className="sec-cov">Signals are in the app only. Information, not advice.</p>
       </SecPage>
     </Frame>
   );

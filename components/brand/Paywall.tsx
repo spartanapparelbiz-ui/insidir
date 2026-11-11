@@ -10,7 +10,7 @@ const DAY = 86_400_000;
 const ET = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 export const chargeDate = (now: number): string => ET.format(new Date(now + TRIAL.days * DAY));
 
-export const PAY_BULLETS = ["Every millionaire trade, live, with the side they took", "A ping the moment a wallet you follow trades"] as const;
+export const PAY_BULLETS = ["Every millionaire trade, live, with the side they took", "A signal the moment a wallet you follow trades"] as const;
 
 export function Timeline({ now }: { now: number }) {
   return (

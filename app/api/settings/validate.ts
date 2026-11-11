@@ -138,7 +138,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   if (has("copyBankroll") || has("copyMax")) {
     const drop = has("copyDrop") ? (String(input.copyDrop ?? "").trim() === "" ? null : input.copyDrop) : current.copy?.dropCents ?? DEFAULT_DROP_CENTS;
     const c = validCopySettings({ bankroll: input.copyBankroll, maxTrade: input.copyMax, dropCents: drop });
-    if (c) s.copy = c; else errors.push(`Enter a bankroll from $${MIN_BANKROLL} up, a max per trade no bigger than your bankroll, and a drop alert of 1–99¢ (or leave it empty).`);
+    if (c) s.copy = c; else errors.push(`Enter a bankroll from $${MIN_BANKROLL} up, a max per trade no bigger than your bankroll, and a drop signal of 1–99¢ (or leave it empty).`);
   }
   if (has("copySize")) {
     const v = Number(input.copySize);
@@ -147,7 +147,7 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   if (has("alertCategories")) s.alertCategories = [...new Set(list(input.alertCategories).filter(c => (CATEGORIES as readonly string[]).includes(c)))];
   if (has("alertSafety")) {
     if (input.alertSafety === "green" || input.alertSafety === "green_yellow") s.alertSafety = input.alertSafety;
-    else errors.push("Pick which safety lights send alerts.");
+    else errors.push("Pick which safety lights send signals.");
   }
   for (const k of ["quietStart", "quietEnd"] as const) {
     if (!has(k)) continue;

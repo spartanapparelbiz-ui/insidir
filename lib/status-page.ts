@@ -57,7 +57,7 @@ const JOBS: Array<[RegExp, string, number]> = [
   [/^sec:backfill$/, "SEC: insider filings, backfill", MIN],
   [/^sec:current$/, "SEC: 8-K, 10-Q, 10-K, 13D/G, live", 2 * MIN],
   [/^sec:companies$/, "SEC: company reports", MIN],
-  [/^sec:alerts$/, "SEC: watchlist alerts", MIN],
+  [/^sec:alerts$/, "SEC: watchlist signals", MIN],
   [/^accuracy:filings$/, "SEC: Form 4 accuracy check", HOUR],
   [/^accuracy:companies$/, "SEC: financials accuracy check", HOUR],
 ];

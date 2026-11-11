@@ -58,6 +58,9 @@ export interface LandingData {
   /** "Flagged in N seconds": the median time from a $1M+ trade's first fill to Insidir seeing it, trades of the last 24 hours (20+
    *  trades with a first-seen time, else null and the line isn't shown). */
   flagged: { seconds: number; n: number } | null;
+  /** The homepage's stats row, each from a live query; null when that query failed or has nothing to count yet
+   *  (the stat is then hidden, never a placeholder). */
+  stats: { tracked: number | null; verified: number | null; signals24h: number | null };
 }
 
 
@@ -100,9 +103,9 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
     safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
     electionDay(now) ? Promise.resolve(null) : safe(electionBoard(db, now, false), null),
   ]);
-  const [verified, verifiedN, flagged] = await Promise.all([safe(verifiedBoard(db, { limit: 5, verifiedOnly: true }), [] as BoardWallet[]), safe(verifiedCount(db), { verified: 0, checked: 0 }), safe(flaggedIn(db, now), null)]);
+  const [stats, verified, verifiedN, flagged] = await Promise.all([homeStats(db, now).catch(() => ({ tracked: null, verified: null, signals24h: null })),safe(verifiedBoard(db, { limit: 5, verifiedOnly: true }), [] as BoardWallet[]), safe(verifiedCount(db), { verified: 0, checked: 0 }), safe(flaggedIn(db, now), null)]);
   return {
-    verified, verifiedCount: verifiedN, flagged, pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
+    stats, verified, verifiedCount: verifiedN, flagged, pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
     now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, record: pr, bestPrice: best,
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
     brief: pool.slice(0, 3),
@@ -121,8 +124,21 @@ export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, topBet: null, race: null, top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, record: null, bestPrice: null,
   pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
-  verified: [], verifiedCount: { verified: 0, checked: 0 }, flagged: null,
+  verified: [], verifiedCount: { verified: 0, checked: 0 }, flagged: null, stats: { tracked: null, verified: null, signals24h: null },
 });
+
+/** Wallets tracked (the watchlist's $1M+ wallets), wallets verified (of those checked; null before the first check), and
+ *  signals sent in the last 24 hours (pushes: followed-wallet entries, exits, price drops and $1M+ position signals). */
+export async function homeStats(db: Db, now: number): Promise<LandingData["stats"]> {
+  const r = await db.execute(sql`select
+      (select count(*)::int from terminal.watchlist where pnl >= 1000000) as tracked,
+      (select count(*) filter (where verified)::int from terminal.wallet_verification) as verified,
+      (select count(*)::int from terminal.wallet_verification) as checked,
+      (select count(*)::int from terminal.alerts_sent where channel = 'push' and sent_at > ${new Date(now - DAY)}
+        and (opp_id like 'mil:%' or opp_id like 'copy:%' or opp_id like 'exit:%' or opp_id like 'drop:%')) as signals`);
+  const x = r.rows[0] as { tracked: number; verified: number; checked: number; signals: number };
+  return { tracked: x.tracked > 0 ? x.tracked : null, verified: x.checked > 0 ? x.verified : null, signals24h: x.signals };
+}
 
 /** The median seconds from a $1M+ trade's first fill to Insidir seeing it (seen_at − at), last 24 hours; null under 20. */
 export async function flaggedIn(db: Db, now: number): Promise<{ seconds: number; n: number } | null> {

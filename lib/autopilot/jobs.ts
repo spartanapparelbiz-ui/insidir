@@ -24,7 +24,7 @@ export async function autopilotOnce(db: Db, kalshi: KalshiClient, now: number, l
     async push(userId, msg) { for (const t of await pushTargets(db, userId)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint); },
     claim: (userId, key) => claimAlert(db, userId, key, "push"),
   });
-  if (r.sent + r.skipped + r.capped + r.exits + r.quiet) log(`autopilot: ${r.sent} sent, ${r.quiet} quiet, ${r.skipped} too late, ${r.capped} capped, ${r.exits} exit pings`);
+  if (r.sent + r.skipped + r.capped + r.exits + r.quiet) log(`autopilot: ${r.sent} sent, ${r.quiet} quiet, ${r.skipped} too late, ${r.capped} capped, ${r.exits} exit signals`);
 }
 
 const STALE_MS = 6 * 3_600_000;

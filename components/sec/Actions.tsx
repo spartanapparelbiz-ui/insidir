@@ -88,7 +88,7 @@ function ListCard({ list, families, act }: { list: ListFull; families: Array<[st
         <h2 className="sec-h2">{list.name}</h2>
         <button type="button" className="sec-ghost" onClick={() => { if (confirm(`Delete "${list.name}"?`)) void act({ action: "delete", list: list.id }, "Deleted."); }}>Delete</button>
       </div>
-      <fieldset className="sec-chips" aria-label="Alert me about">
+      <fieldset className="sec-chips" aria-label="Signal me about">
         {families.map(([k, label]) => (
           <label key={k} className="sec-dim">
             <input type="checkbox" checked={forms.includes(k)} onChange={e => void toggle(k, e.target.checked)} /> {label}

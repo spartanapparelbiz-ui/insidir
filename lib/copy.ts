@@ -6,10 +6,10 @@ import { TRIAL } from "./plans";
 export const ADVICE = "Information, not financial advice.";
 
 /** On every page. */
-export const FOOTER = `${ADVICE} Past results don't predict future results. Not a broker or exchange. Not affiliated with Kalshi or Polymarket.`;
+export const FOOTER = "Information, not advice. Verified wallets lose trades too. 18+.";
 
 /** What Insidir is and isn't, under every page and on /disclosures. */
-export const DATA_COMPANY = "Insidir is a data company. It is not a broker, exchange, sportsbook or investment adviser, and isn't affiliated with Polymarket, Kalshi or the SEC.";
+export const DATA_COMPANY = "Insidir is a data company. We are not a broker, exchange or investment adviser, and we aren't affiliated with Kalshi, Polymarket or the SEC. Past results don't predict future results.";
 /** The data disclaimer, last in every footer: what Insidir is, and isn't. */
 export const DISCLAIMER = "Insidir is a research and data analytics tool. Content is for information only and is not financial or trading advice. Insidir is not a brokerage or exchange and does not take custody of user funds.";
 /** Who builds Insidir. */

@@ -39,7 +39,7 @@ async function BriefCards({ userId, now, watching }: { userId: string; now: numb
         <div className="ai-card__top"><p className="b-label">Watch my trade</p>{watching ? <span className="ai-tag">{watching} watched</span> : null}</div>
         {b && b.watched.length ? (
           <ul className="ai-watch">{b.watched.slice(0, 3).map(w => <li key={w.id}><a href={w.href}><b>{w.title}</b><span>{w.lines[0]}</span><span>{w.lines[1]}</span></a></li>)}</ul>
-        ) : <p className="b-small">Add your trade or your public Polymarket address. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you get an alert with what it means for your trade in dollars.</p>}
+        ) : <p className="b-small">Add your trade or your public Polymarket address. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you get a signal with what it means for your trade in dollars.</p>}
         <Pill href="/watch" kind="ghost">{watching ? "Your watched trades" : "Add a trade"}</Pill>
       </Panel>
     </>

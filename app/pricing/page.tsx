@@ -17,7 +17,7 @@ import { pulse } from "@/lib/millionaires/queries";
 import { PLANS, TRIAL, isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: `See who's trading on Kalshi. Kalshi won't show you. Every millionaire trade live, pings with the Kalshi price, every race, wallet records and copy tickets: $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month.` };
+export const metadata: Metadata = { title: "Pricing", description: `See who's trading on Kalshi. Kalshi won't show you. Every millionaire trade live, signals with the Kalshi price, every race, wallet records and copy tickets: $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/month.` };
 
 
 const COMPARE: Array<[string, string, string]> = [

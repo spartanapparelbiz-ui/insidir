@@ -54,7 +54,7 @@ export function WalletBoard({ rows, now }: { rows: LeaderRow[]; now: number }) {
                 <a className="s-wb__who" href={`/wallet/${r.wallet}`}>
                   <b className="b-num">{short(r.wallet)}</b>
                   {r.proven ? <span className="s-wb__tag s-wb__tag--ok" title="30+ settled trades; not a market maker, high-frequency or arbitrage wallet">Proven</span>
-                    : r.exclusion ? <span className="s-wb__tag" title="Why Insidir doesn't ping on it">{r.exclusion}</span> : null}
+                    : r.exclusion ? <span className="s-wb__tag" title="Why Insidir doesn't signal on it">{r.exclusion}</span> : null}
                 </a>
                 <span className="s-wb__pnl b-num" data-label="All-time"><b>+{dollars(r.pnl)}</b></span>
                 <span className="s-wb__rec" data-label="Record">

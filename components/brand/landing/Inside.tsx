@@ -63,7 +63,7 @@ export async function InsideStage({ d }: { d: LandingData }) {
         </article>
         <article className="b-glass in-card" data-m="settle" style={card(2)}>
           <p className="in-k">Watch my trade</p>
-          <h3 className="in-h">An alert when it matters to you.</h3>
+          <h3 className="in-h">A signal when it matters to you.</h3>
           <p className="in-t">Add your position. When a $1M+ wallet takes the other side, one on your side gets out, or the price moves 5¢, you hear it, with what it means in dollars.</p>
         </article>
         <article className="b-glass in-card" data-m="settle" style={card(3)}>

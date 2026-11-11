@@ -1,8 +1,8 @@
 /* Copy-trading pushes, pure (lib/copies/alert-store.ts reads the database; worker copy:alerts sends them):
- *   entry   a wallet the member follows trades (a buy of $1K+): wallet, market, side, their size, your size, price, and
+ *   entry   a wallet the member follows trades (a buy of $1K+): "[tag], up $X, opened $size on [market] at [price].", then sizing and
  *           the cheaper venue when Kalshi lists it too. Opens the copy ticket.
- *   exit    the wallet a member copied sells or trims that position: "The wallet you copied just sold 60% of its
- *           position at 84¢. You entered at 77¢." Opens the market on the member's venue, to close in one tap.
+ *   exit    the wallet a member copied sells or trims that position: "[tag] closed [market] at 84¢. Result: +9%. You
+ *           entered at 77¢." Opens the market on the member's venue, to close in one tap.
  *   drop    the price falls their set number of cents below their entry. Opens the market the same way.
  * Information, not advice: sizes are matched sizes. The wallet is its short address and profit, never a name. */
 import { dollars } from "@/lib/money";
@@ -23,22 +23,28 @@ export function cheaper(p: VenuePrices): "kalshi" | "polymarket" | null {
   return p.kalshi <= p.polymarket ? "kalshi" : "polymarket";
 }
 
+/** "[Wallet tag], up $[X]M, opened $[size] on [market] at [price]." then the member's sizing and the cheaper venue. */
 export function entryMessage(t: EntryTrade, size: YourSize | null, prices: VenuePrices, appUrl: string): Msg {
-  const who = `${t.verified ? "Verified " : ""}${shortWallet(t.wallet)}${t.pnl !== null ? ` (${t.pnl >= 0 ? "+" : "−"}${dollars(Math.abs(t.pnl))})` : ""}`;
+  const tag = `${t.verified ? "Verified " : ""}${shortWallet(t.wallet)}`;
+  const up = t.pnl !== null && t.pnl > 0 ? `, up ${dollars(t.pnl)}` : "";
   const c = cheaper(prices);
   const where = prices.kalshi !== null && prices.polymarket !== null
     ? ` Kalshi ${cents(prices.kalshi)}, Polymarket ${cents(prices.polymarket)}: ${c === "kalshi" ? "Kalshi" : "Polymarket"} is cheaper.` : "";
-  const yours = size ? ` Their size: ${dollars(t.amount)} (${pctText(size.theirPct)} of their bankroll). Your size: $${size.yours.toLocaleString("en-US")}, ${SIZE_LABEL}.`
-    : ` Their size: ${dollars(t.amount)}. Set your bankroll in Account to get your size.`;
-  return { title: `${who} just traded`, body: `${t.outcome} in “${t.title}” at ${cents(t.price)}.${yours}${where}`, url: `${appUrl}/copy/${encodeURIComponent(t.id)}` };
+  const sizing = size ? ` Sizing: $${size.yours.toLocaleString("en-US")}, ${pctText(size.theirPct)} of your bankroll, as they put in ${pctText(size.theirPct)} of theirs (${SIZE_LABEL}).`
+    : " Set your bankroll in Account to get sizing.";
+  return { title: "Signal", body: `${tag}${up}, opened ${dollars(t.amount)} on ${t.outcome} in “${t.title}” at ${cents(t.price)}.${sizing}${where}`, url: `${appUrl}/copy/${encodeURIComponent(t.id)}` };
 }
 
 export interface ExitEvent { id: string; kind: "trim" | "exit"; sold: number; price: number }
 export interface CopyRef { id: number; outcome: string; title: string; entry: number }
 
-export function exitMessage(e: ExitEvent, c: CopyRef, appUrl: string): Msg {
-  const what = e.kind === "exit" || e.sold >= 0.995 ? "sold its whole position" : `sold ${Math.round(e.sold * 100)}% of its position`;
-  return { title: "The wallet you copied is getting out", body: `The wallet you copied just ${what} in ${c.outcome} (“${c.title}”) at ${cents(e.price)}. You entered at ${cents(c.entry)}.`,
+/** "[Wallet tag] closed [market] at [price]. Result: [+/-X]%." (a trim: "sold 60% of"); the result is the exit price
+ *  against the member's entry. Opens the market on the member's venue. */
+export function exitMessage(e: ExitEvent, c: CopyRef, appUrl: string, wallet?: string | null): Msg {
+  const tag = wallet ? shortWallet(wallet) : "The wallet you copied";
+  const what = e.kind === "exit" || e.sold >= 0.995 ? "closed" : `sold ${Math.round(e.sold * 100)}% of`;
+  const r = c.entry > 0 ? Math.round(((e.price - c.entry) / c.entry) * 100) : null;
+  return { title: "Exit signal", body: `${tag} ${what} ${c.outcome} in “${c.title}” at ${cents(e.price)}.${r !== null ? ` Result: ${r >= 0 ? "+" : "−"}${Math.abs(r)}%.` : ""} You entered at ${cents(c.entry)}.`,
     url: `${appUrl}/api/copies/open?id=${c.id}` };
 }
 
@@ -46,5 +52,5 @@ export function exitMessage(e: ExitEvent, c: CopyRef, appUrl: string): Msg {
 export const dropDue = (entry: number, now: number | null, dropCents: number | null): boolean => dropCents !== null && now !== null && Math.round((entry - now) * 100) >= dropCents;
 
 export function dropMessage(c: CopyRef, now: number, appUrl: string): Msg {
-  return { title: "A copy is down", body: `${c.outcome} (“${c.title}”) is at ${cents(now)}, ${Math.round((c.entry - now) * 100)}¢ under your ${cents(c.entry)} entry.`, url: `${appUrl}/api/copies/open?id=${c.id}` };
+  return { title: "Price signal", body: `${c.outcome} (“${c.title}”) is at ${cents(now)}, ${Math.round((c.entry - now) * 100)}¢ under your ${cents(c.entry)} entry.`, url: `${appUrl}/api/copies/open?id=${c.id}` };
 }

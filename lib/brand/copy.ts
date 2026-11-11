@@ -11,7 +11,7 @@ export const HERO = {
   /** The product, said as what you get: over the live top five. */
   pitch: "Who to copy, how much, and when to get out.",
   /** The three proof points (the bio's second line), each linking to where it's shown. */
-  proof: [["Verified wallets", "/wallets"], ["Live signals", "/board"], ["Public track record", "/record"]] as const,
+  proof: [["Verified", "/wallets"], ["Live signals", "/board"], ["Public track record", "/record"]] as const,
   /** The one contrast line, under the top five. */
   contrast: "Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell.",
   cta: `Start for $${TRIAL.fee}`,
@@ -25,16 +25,23 @@ export const PROBLEM = {
   sub: "You're trading against the wallets that have made millions.",
   rows: [
     ["You can't see who's on the other side.", "Millionaire money on every market, live."],
-    ["Big trades hit X after the price moved.", "A ping the second a millionaire trades."],
+    ["Big trades hit X after the price moved.", "A signal the second a millionaire trades."],
     ["Leaderboards show volume, not winners.", "Every wallet's real all-time profit."],
     ["You might be paying more than you need to.", "The better price, Kalshi vs. Polymarket."],
   ],
 } as const;
 /** How it works: three steps, one sentence each. */
 export const HOW = [
-  { t: "Follow a verified wallet.", d: "Wallets up $1M+ that pass four tests, re-tested daily: 50+ settled trades, profitable in 2 of the last 3 months, no single lucky trade, no hedging." },
-  { t: "Get your size when it trades.", d: "A push within seconds: the market, the side, the price on Kalshi and Polymarket, and your size, the same share of your bankroll as theirs." },
-  { t: "Get pinged when it exits.", d: "When the wallet you copied sells, you hear right away, with your entry next to its exit, and one tap to the market." },
+  { t: "Track.", d: "Every wallet up $1M+, every position, live." },
+  { t: "Verify.", d: "Only wallets that pass our published criteria." },
+  { t: "Signal.", d: "Who moved, how much to size, and when they exit." },
+] as const;
+/** What you get: one sentence each, what it does. */
+export const GET = [
+  { t: "Signals", d: "A push within seconds when a wallet you follow opens a position: the market, the side, the price on Kalshi and Polymarket." },
+  { t: "Sizing", d: "Each signal carries your size: the same share of your bankroll the wallet put in of its own, capped at your max per trade." },
+  { t: "Exit signals", d: "A push when the wallet you copied sells, with its exit price next to your entry and one tap to the market." },
+  { t: "Ledger", d: "Every position you copied, placed or skipped, with entry, price now and your totals by week, month and all time." },
 ] as const;
 
 /** The demo's chapters (qa/record-site.ts → public/media/site-<id>-<desk|phone>.*), what each shows. */
@@ -61,6 +68,9 @@ export const STAGES = {
   faq: ["Questions."],
   why: ["Why Insidir."],
   how: ["How it works."],
+  get: ["What you get."],
+  /** Under the button. */
+  under: `Then $${PLANS.insidir.price}/mo. Cancel in one click.`,
   watch: ["See it work."],
   watchSub: "What members see, recorded with live data: real trades, real money, nothing staged.",
   final: ["The intelligence layer", "for prediction markets."],
@@ -72,11 +82,11 @@ export const FAQ_ALL: Array<{ id: string; q: string; a: string }> = [
   { id: "what", q: "What is Insidir?", a: "We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move: who to copy, your size, and a push when they sell." },
   { id: "verified", q: "What makes a wallet Verified?", a: "It's up $1M+ all time and passes four tests, re-tested every day: 50+ settled trades, profitable in at least 2 of the last 3 months, no single trade over 40% of its profit, and it doesn't regularly hold both sides of a market. Each wallet's page shows every test and its numbers." },
   { id: "size", q: "How is my size worked out?", a: "From the wallet's trade as a share of its bankroll (the most it has held in open positions at once in 90 days): if it put in 2%, your size is 2% of the bankroll you set, never above your max per trade. It's a matched size, not advice." },
-  { id: "kalshi", q: "Kalshi or Polymarket?", a: "Each alert shows the same side's price on both when both list the market, and marks the cheaper one. Copy opens that market on the cheaper app you can use (in the US, Kalshi). You confirm the trade in your own account." },
+  { id: "kalshi", q: "Kalshi or Polymarket?", a: "Each signal shows the same side's price on both when both list the market, and marks the cheaper one. Copy opens that market on the cheaper app you can use (in the US, Kalshi). You confirm the trade in your own account." },
   { id: "place", q: "Do you place trades for me?", a: "Never. Insidir never places a trade, never asks for API keys, wallet keys or exchange logins, and never holds funds." },
   { id: "who-wallet", q: "Do you say who is behind a wallet?", a: "No: a wallet is a short address, never a username, a picture or a person." },
   { id: "advice", q: "Is this financial advice?", a: "No. It's information: Verified wallets lose trades too, every loss stays on the record, and past results don't predict future results." },
-  { id: "record", q: "Where's the record?", a: "Every wallet's page shows its last 10 settled trades and its checks; My copies shows yours, losses included." },
+  { id: "record", q: "Where's the record?", a: "Every wallet's page shows its last 10 settled trades and its checks; Ledger shows yours, losses included." },
   { id: "cancel", q: "How do I cancel?", a: `In Account, one click, effective immediately. It's $${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/mo.` },
 ];
 export const FAQ: Array<{ id: string; q: string; a: string }> = FAQ_ALL.filter(f => ["verified", "size", "kalshi", "place", "advice", "cancel"].includes(f.id));
@@ -89,15 +99,15 @@ export const faqLd = (): string => JSON.stringify({
 /** What members get, said once: the five rows on the landing, the five tabs of their home. */
 export const MEMBERS = [
   { k: "before", when: "Any time", tab: "Search", t: "Search any market, race or wallet, or paste a Polymarket or Kalshi link: who is on each side, and the price now." },
-  { k: "allday", when: "All day", tab: "Board", t: "The live board of every millionaire trade, and a ping the second one lands in your categories. Unusual trades flagged." },
+  { k: "allday", when: "All day", tab: "Board", t: "The live board of every millionaire trade, and a signal the second one lands in your categories. Unusual trades flagged." },
   { k: "morning", when: "Every morning", tab: "Brief", t: "The Daily Brief: the 3 markets with the most millionaire money today, and how yesterday's went." },
-  { k: "overtime", when: "Over time", tab: "Following", t: "Follow a wallet that's up millions and get pinged on every trade it makes. Every result public, losses included." },
+  { k: "overtime", when: "Over time", tab: "Following", t: "Follow a wallet that's up millions and get sent a signal on every trade it makes. Every result public, losses included." },
   { k: "nights", when: "Big nights", tab: "Live", t: "Election night and game nights: a live board pinned to the races and games that matter." },
 ] as const;
 
 /** What a member gets, said once. */
 export const MEMBER_GETS = [
-  "A ping when a millionaire buys, adds, trims or sells out in your categories, with Kalshi's price beside it",
+  "A signal when a millionaire buys, adds, trims or sells out in your categories, with Kalshi's price beside it",
   "Every millionaire trade, live, with the side and the price they paid",
   "Every race: who the millionaires back, and where",
   "Every wallet's record, losses included",

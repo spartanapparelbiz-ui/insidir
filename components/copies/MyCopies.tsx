@@ -91,7 +91,7 @@ export async function MyCopies({ db, viewer, now }: { db: Db | null; viewer: Vie
   const main = pnl[0];
   const net = pnl.reduce((t, p) => t + p.total.net, 0);
   const since = pnl.length ? Math.min(...pnl.map(p => p.copy.since)) : null;
-  const lead = pnl.length && Math.round(net) !== 0 && since ? `My copies are ${net > 0 ? "up" : "down"} ${dollars(Math.abs(net))} since ${DAY.format(since)}.` : null;
+  const lead = pnl.length && Math.round(net) !== 0 && since ? `Ledger are ${net > 0 ? "up" : "down"} ${dollars(Math.abs(net))} since ${DAY.format(since)}.` : null;
   return (
     <div data-testid="my-copies">
       <Stage bg={{ kind: "photo", photo: PHOTOS.cta, dark: 0.55, priority: true }} first testid="copies-result" labelledBy="mycp-h">

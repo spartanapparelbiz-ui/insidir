@@ -34,7 +34,7 @@ const HEADINGS: Record<string, string> = {
   live: "See every position the second it happens.",
   record: "See who wins, and how often.",
   follow: "Follow the traders who win.",
-  alerts: "Alerts on their new positions.",
+  alerts: "Signals on their new positions.",
 };
 
 function LockSheet({ where, unlocks, trialHref, onClose }: { where: string; unlocks: string[]; trialHref: string; onClose: () => void }) {

@@ -142,7 +142,7 @@ export function MembersStage({ d }: { d: LandingData }) {
         <div className="b-ph__row"><span>{t.m.noLabel}</span><b className="b-num">{t.m.millionaire.no.dollars ? dollars(t.m.millionaire.no.dollars) : "no money yet"}</b></div>
       </div>
     ) : <div className="b-ph"><span className="b-ph__small">A market shows here once one has millionaire money.</span></div>,
-    // The live board, a ping sliding in
+    // The live board, a signal sliding in
     <div className="b-ph" data-testid="screen-board" key="board">
       <span className="b-ph__label"><span className="b-dot" aria-hidden="true" /> Live board</span>
       {d.board.length ? d.board.slice(0, 3).map(b => <div key={b.id} className="b-ph__row"><span>{b.title}</span><b className="b-num">{dollars(b.amount)}</b></div>) : <span className="b-ph__small">No millionaire trade in the last hours.</span>}

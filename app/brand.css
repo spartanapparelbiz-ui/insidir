@@ -1897,3 +1897,7 @@ main[data-testid="landing"] .b-pill { border-radius: 999px; font-weight: 500; le
 .lp-proof a { color: var(--ink-muted); text-decoration: none; }
 .lp-proof a:hover { color: var(--ink); }
 .lp-pitch { margin: 0; font-size: clamp(18px, 2.2vw, 22px); font-weight: 500; letter-spacing: -.01em; }
+.lp-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 40px; margin: 22px 0 0; }
+.lp-stats div { display: grid; gap: 2px; justify-items: center; }
+.lp-stats dd { margin: 0; font-size: 26px; font-weight: 600; }
+.lp-stats dt { color: var(--ink-muted); font-size: 12.5px; }

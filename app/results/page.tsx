@@ -25,7 +25,7 @@ import { REPORT_KEY, type RulesReport } from "@/lib/autopilot/report";
 import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "The record", description: "Following the pings on Kalshi, and how every settled millionaire trade did, losses included: won and lost, $100 on every one. Past results, not a promise." };
+export const metadata: Metadata = { title: "The record", description: "Following the signals on Kalshi, and how every settled millionaire trade did, losses included: won and lost, $100 on every one. Past results, not a promise." };
 
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${dollars(Math.abs(v))}`;
 const DAYF = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -83,7 +83,7 @@ export default async function ResultsPage() {
 
       <Stage testid="results-hero" labelledBy="r-h">
         <div className="b-head">
-          <Lines as="h2" id="r-h" lines={["Following the pings", "on Kalshi."]} size={48} />
+          <Lines as="h2" id="r-h" lines={["Following the signals", "on Kalshi."]} size={48} />
           <p className="b-sub" data-m="lift">Every time a $1M+ wallet bought into a market Kalshi also lists, we pinged members with Kalshi&apos;s price. Here is what $100 at that price did.</p>
         </div>
         <Panel className="s-col" testid="results-kalshi">
@@ -95,12 +95,12 @@ export default async function ResultsPage() {
                 : <p className="b-small" data-testid="results-kalshi-building">The ${STAKE}-a-ping line shows from {MIN_SETTLED} settled pings: {kn} so far, {kal.pinged} sent in the last {kal.days} days.</p>}
               <p className="b-small">Kalshi&apos;s price when the ping went out, the same side the wallet bought. {PAST}</p>
             </>
-          ) : <p className="b-empty" data-testid="results-kalshi-empty">{kal && kal.pinged ? `${kal.pinged} ${kal.pinged === 1 ? "ping" : "pings"} on Kalshi markets in the last ${kal.days} days; none has settled yet.` : "No ping on a Kalshi market has settled yet. The record starts with the first one."}</p>}
+          ) : <p className="b-empty" data-testid="results-kalshi-empty">{kal && kal.pinged ? `${kal.pinged} ${kal.pinged === 1 ? "ping" : "pings"} on Kalshi markets in the last ${kal.days} days; none has settled yet.` : "No signal on a Kalshi market has settled yet. The record starts with the first one."}</p>}
         </Panel>
         {kal && kal.latest.length ? (
           <Panel className="s-col s-prose">
             <table data-testid="results-kalshi-rows">
-              <thead><tr><th scope="col">Ping</th><th scope="col">Kalshi then</th><th scope="col">Result</th></tr></thead>
+              <thead><tr><th scope="col">Signal</th><th scope="col">Kalshi then</th><th scope="col">Result</th></tr></thead>
               <tbody>{kal.latest.slice(0, 10).map(p => <tr key={p.id}><th scope="row">{p.kind === "add" ? "Added to" : "Bought"} {p.outcome} · {p.title}</th><td className="b-num">{Math.round(p.kalshiPrice * 100)}¢</td><td>{p.result === "won" ? "Won" : p.result === "lost" ? "Lost" : p.result === "void" ? "Voided" : "Open"}</td></tr>)}</tbody>
             </table>
           </Panel>

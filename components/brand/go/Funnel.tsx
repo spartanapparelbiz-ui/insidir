@@ -98,11 +98,11 @@ function BankrollStep({ onDone }: { onDone: () => void }) {
   };
   return (
     <>
-      <div className="b-head"><Lines as="h1" lines={["Your size."]} size={56} /><p className="b-sub">Each alert matches the wallet: if it puts in 2% of its bankroll, your size is 2% of yours. A matched size, not advice.</p></div>
+      <div className="b-head"><Lines as="h1" lines={["Sizing."]} size={56} /><p className="b-sub">Each signal matches the wallet: if it puts in 2% of its bankroll, your size is 2% of yours. A matched size, not advice.</p></div>
       <div className="b-col">
         <label className="b-glass b-pad go-field" htmlFor="go-bankroll">Your bankroll<span className="b-amount"><span aria-hidden="true">$</span><input id="go-bankroll" inputMode="decimal" value={bankroll} onChange={e => setBankroll(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="2000" data-testid="go-bankroll-input" /></span></label>
         <label className="b-glass b-pad go-field" htmlFor="go-max">Max per trade<span className="b-amount"><span aria-hidden="true">$</span><input id="go-max" inputMode="decimal" value={max} onChange={e => setMax(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="100" data-testid="go-max-input" /></span></label>
-        <p className="b-small">{pct !== null ? `Your size will never be over $${Number(max).toLocaleString("en-US")} (${pct}% of your bankroll). ` : ""}You can change both anytime in Account. Insidir never sees or touches your accounts.</p>
+        <p className="b-small">{pct !== null ? `Your sizing never goes over $${Number(max).toLocaleString("en-US")} (${pct}% of your bankroll). ` : ""}You can change both anytime in Account. Insidir never sees or touches your accounts.</p>
         {err ? <p className="b-msg" role="alert">{err}</p> : null}
       </div>
       <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" disabled={busy || !Number(bankroll) || !Number(max)} onClick={() => void save()} data-testid="go-next">Save<Arrow /></button></div>
@@ -309,7 +309,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
           <div className="b-glass b-pad go-get" {...st(0.3, { width: "100%", maxWidth: 480, textAlign: "left" })} data-testid="go-get">
             <ul className="go-get__list">
               <li>Who to copy: Verified wallets up $1M+, every test shown</li>
-              <li>How much: your size on every alert, matched to your bankroll</li>
+              <li>How much: your size on every signal, matched to your bankroll</li>
               <li>When to get out: a push the moment the wallet you copied sells</li>
             </ul>
             <p className="b-small" data-testid="go-price">${TRIAL.fee} for {TRIAL.days} days, then ${PLANS.insidir.price}/mo from {chargeDate(now)}. Cancel anytime. <b>18+ only.</b></p>

@@ -7,7 +7,7 @@ import { isIdentifier } from "./copy-text";
 
 export const ROOT = join(__dirname, "..");
 const DIRS = ["app", "components", "lib", "worker"];
-const SKIP = /(^|\/)(admin|dev|__tests__)(\/|$)|lib\/db\/schema\.ts$|lib\/db\/migrate|\.css$/;
+const SKIP = /(^|\/)(admin|dev|__tests__)(\/|$)|lib\/db\/schema\.ts$|lib\/db\/migrate|lib\/billing\/(setup|whop)\.ts$|\.css$/; // the last: server logs, never shown to a customer
 const files = (d: string): string[] => readdirSync(d).flatMap(f => { const p = join(d, f); return statSync(p).isDirectory() ? files(p) : /\.(tsx?)$/.test(f) ? [p] : []; });
 
 export interface Piece { file: string; line: number; text: string }

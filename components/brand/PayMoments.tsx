@@ -33,8 +33,8 @@ export function PayMoments({ ctx, now, href = "/go?step=checkout" }: { ctx: PayC
   const afterRead = `See the side on all ${bets}. $${TRIAL.fee} for ${TRIAL.days} days.`;
   // After a free tile (a check, the #1 market, a free bet): name what they just saw.
   const free = ctx.today
-    ? `That was 1 of ${ctx.today} millionaire trades today. See them all live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`
-    : `See every millionaire trade live, with a ping when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`;
+    ? `That was 1 of ${ctx.today} millionaire trades today. See them all live, with a signal when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`
+    : `See every millionaire trade live, with a signal when the next one lands. $${TRIAL.fee} for ${TRIAL.days} days.`;
 
   const show = useCallback((o: NonNullable<Open>, automatic: boolean) => {
     if (automatic) {

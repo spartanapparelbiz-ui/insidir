@@ -29,7 +29,7 @@ export function CopyAction({ betId, outcome, prices, links, best, defaultAmount,
     // The link opens in the same tap (no pop-up blocker); the log rides along with keepalive.
     void fetch("/api/copies/log", { method: "POST", keepalive: true, headers: { "content-type": "application/json" }, body: JSON.stringify({ betId, amount: Number(amount), venue }) })
       .then(async r => { const j = await r.json().catch(() => ({})) as { id?: number; error?: string }; if (r.ok && j.id) setCopy({ id: j.id, status: "copied" }); else setMsg(j.error ?? "That didn't save. Try again."); })
-      .catch(() => setMsg("No connection: your copy wasn't saved."));
+      .catch(() => setMsg("Your copy wasn't saved because the connection dropped. Tap Copy again."));
   };
   const mark = async (status: "placed" | "skipped") => {
     if (!copy) return;
@@ -52,7 +52,7 @@ export function CopyAction({ betId, outcome, prices, links, best, defaultAmount,
         </div>
       ) : null}
       <label className="b-kv s-copyact__amt" htmlFor="copy-amount">
-        <span className="s-strong">Your size</span>
+        <span className="s-strong">Sizing</span>
         <span className="b-amount"><span aria-hidden="true">$</span><input id="copy-amount" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ""))} data-testid="copy-amount" aria-describedby="copy-amount-hint" /></span>
       </label>
       <span className="b-small" id="copy-amount-hint" data-testid="copy-size-note">{sizeNote ?? "Set your bankroll in Account to get a matched size."}</span>
@@ -67,7 +67,7 @@ export function CopyAction({ betId, outcome, prices, links, best, defaultAmount,
             <button type="button" className="b-btn b-panel-pill" onClick={() => void mark("placed")} data-testid="copy-placed">Placed</button>
             <button type="button" className="b-btn b-panel-pill" onClick={() => void mark("skipped")} data-testid="copy-skipped">Skipped</button>
           </div>
-        ) : <p className="b-msg" role="status" data-testid="copy-logged">Marked {copy.status} in <a href="/copies">My copies</a>.{copy.status === "placed" ? " You'll get a push when the wallet sells." : ""}</p>
+        ) : <p className="b-msg" role="status" data-testid="copy-logged">Marked {copy.status} in <a href="/copies">Ledger</a>.{copy.status === "placed" ? " You'll get a push when the wallet sells." : ""}</p>
       ) : null}
       {msg ? <p className="b-msg" role="alert">{msg}</p> : null}
     </div>

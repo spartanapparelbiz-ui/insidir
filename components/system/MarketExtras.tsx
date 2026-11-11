@@ -55,8 +55,8 @@ export function MoveLog({ count, rows, member }: { count: number; rows: MarketMo
       <div className="ml ml--locked" data-testid="market-moves-locked">
         <p className="s-strong"><span className="b-num">{count}</span> big-wallet {count === 1 ? "move" : "moves"} on this market in the last 7 days.</p>
         <ul className="ml__ghost" aria-hidden="true">{Array.from({ length: Math.min(4, count) }, (_, i) => <li key={i}><span /><span /><span /></li>)}</ul>
-        <p className="b-small">Members get each one the second it lands: the wallet, buy or sell, the side and the size, with a push alert.</p>
-        <a className="b-btn b-panel-pill b-delaynote__go" href="/go?step=checkout" data-checkout="market-moves" data-unlock="market-moves">Unlock real-time alerts for ${TRIAL.fee}</a>
+        <p className="b-small">Members get each one the second it lands: the wallet, buy or sell, the side and the size, with a push signal.</p>
+        <a className="b-btn b-panel-pill b-delaynote__go" href="/go?step=checkout" data-checkout="market-moves" data-unlock="market-moves">Unlock real-time signals for ${TRIAL.fee}</a>
       </div>
     );
   }

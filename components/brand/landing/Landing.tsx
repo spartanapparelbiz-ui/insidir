@@ -30,11 +30,19 @@ import { TopVerified } from "@/components/system/VerifiedBoard";
 import { dollars as usd } from "@/lib/money";
 import { StickyStart } from "./StickyStart";
 import { RaceRow } from "./ElectionLive";
-import { HowStage, WatchStage, WhyStage } from "./Why";
+import { GetStage, HowStage, WatchStage, WhyStage } from "./Why";
 import { InsideStage } from "./Inside";
 import { ElectionStage } from "./Value";
 
-function Hero({ d }: { d: Pick<LandingData, "verified" | "verifiedCount" | "flagged"> }) {
+/** The stats row: each number from a live query (lib/brand/landing.ts homeStats); a stat without one is left out. */
+function Stats({ s }: { s: LandingData["stats"] }) {
+  const all: Array<[number | null, string]> = [[s.tracked, "wallets tracked"], [s.verified, "wallets verified"], [s.signals24h, "signals sent in the last 24 hours"]];
+  const items = all.filter((x): x is [number, string] => x[0] !== null);
+  if (!items.length) return null;
+  return <dl className="lp-stats" data-testid="hero-stats">{items.map(([n, k]) => <div key={k}><dd className="b-num">{n.toLocaleString("en-US")}</dd><dt>{k}</dt></div>)}</dl>;
+}
+
+function Hero({ d }: { d: Pick<LandingData, "verified" | "verifiedCount" | "flagged" | "stats"> }) {
   return (
     <Stage bg={{ kind: "globe", dark: 0.15 }} inner={false} testid="hero" labelledBy="hero-h" first>
       <BrandNav motion startHref="/go?step=checkout" />
@@ -45,14 +53,15 @@ function Hero({ d }: { d: Pick<LandingData, "verified" | "verifiedCount" | "flag
         {d.flagged ? <p className="b-small" data-testid="hero-flagged">$1M+ trades flagged in a median of {d.flagged.seconds} seconds (last 24 hours, {d.flagged.n.toLocaleString("en-US")} trades).</p> : null}
         <div className="lp-top" data-m="settle" style={{ "--d": ".7s" } as CSSProperties}>
           <p className="lp-pitch" data-testid="hero-pitch">{HERO.pitch}</p>
-          <p className="b-label">Live top {Math.min(5, d.verified.length) || 5} Verified wallets{d.verifiedCount.checked ? <> · {d.verifiedCount.verified} of {d.verifiedCount.checked} wallets up $1M+ pass today</> : null}</p>
+          <p className="b-label">Verified · live top {Math.min(5, d.verified.length) || 5}{d.verifiedCount.checked ? <> · {d.verifiedCount.verified} of {d.verifiedCount.checked} wallets up $1M+ pass today</> : null}</p>
           {d.verified.length ? <TopVerified rows={d.verified} /> : <p className="b-small" data-testid="top-verified-empty">The daily review is running: the top Verified wallets show here as each one is read.</p>}
           <p className="b-small">Names hidden until you sign up. Profit from each wallet&apos;s public Polymarket record.</p>
         </div>
         <div className="b-ctas">
           <Pill href="/go?step=checkout" delay={0.9} data-testid="hero-start" data-checkout="hero">{HERO.cta}</Pill>
         </div>
-        <p className="b-hero-terms" data-m="quiet" style={{ "--d": "1.05s" } as CSSProperties} data-testid="hero-terms">{STAGES.pricingSub}</p>
+        <p className="b-hero-terms" data-m="quiet" style={{ "--d": "1.05s" } as CSSProperties} data-testid="hero-terms">{STAGES.under}</p>
+        <Stats s={d.stats} />
       </div>
     </Stage>
   );
@@ -168,6 +177,7 @@ function Rest({ d }: { d: LandingData }) {
   return (
     <>
       <HowStage />
+      <GetStage />
       <Contrast />
       <Pricing />
       <FaqStage />

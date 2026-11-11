@@ -325,7 +325,7 @@ describe("move alerts", () => {
     expect(postsAllowed("owner@example.com", {})).toBe(false);
   });
   it("the waitlist email says '[Feature] is live on Insidir.'", () => {
-    expect(liveEmail("alerts_push", "https://insidir.com").subject).toBe("Phone alerts is live on Insidir.");
+    expect(liveEmail("alerts_push", "https://insidir.com").subject).toBe("Phone signals is live on Insidir.");
   });
   it("settings accept Pro rules, cleaned, at most 10, $10k minimum", () => {
     const ok = parseSettings({ moveRules: [{ tab: "sports", league: "NFL", min: 100_000 }, { tab: "weird", league: "XYZ", min: 20_000 }] }, DEFAULT_SETTINGS, null, false);

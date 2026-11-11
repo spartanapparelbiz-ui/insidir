@@ -72,7 +72,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <div className="s-split">
           {paid ? (
             <Panel className="s-form">
-              <h2 className="b-label" id="copy">Your size</h2>
+              <h2 className="b-label" id="copy">Sizing</h2>
               <form method="post" action="/api/settings" className="s-form" data-testid="copy-settings" id="copy-settings">
                 <p className="b-small">Each alert matches the wallet&apos;s size: if it puts in 2% of its bankroll, your size is 2% of yours, never above your max. A matched size, not advice. Insidir never places a trade for you.</p>
                 <label className="s-form b-small" htmlFor="copyBankroll">Your bankroll (dollars)
@@ -87,22 +87,22 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           ) : null}
 
           <Panel className="s-form">
-            <h2 id="alerts" className="b-label">Pings</h2>
+            <h2 id="alerts" className="b-label">Signals</h2>
             {!alertsReady ? (
-              <div className="b-ctas"><ComingSoon feature="alerts_push" className={BTN}>Phone alerts</ComingSoon><ComingSoon feature="alerts_email" className={BTN}>Email alerts</ComingSoon></div>
+              <div className="b-ctas"><ComingSoon feature="alerts_push" className={BTN}>Phone signals</ComingSoon><ComingSoon feature="alerts_email" className={BTN}>Email signals</ComingSoon></div>
             ) : paid ? (
               <>
-                <p className="s-strong">{s.alertPush && devices ? `On for ${devices} ${devices === 1 ? "device" : "devices"}` : s.alertEmail ? "Email alerts on" : "Off"}{s.quietStart && s.quietEnd ? ` · quiet ${s.quietStart}–${s.quietEnd}` : ""}</p>
+                <p className="s-strong">{s.alertPush && devices ? `On for ${devices} ${devices === 1 ? "device" : "devices"}` : s.alertEmail ? "Email signals on" : "Off"}{s.quietStart && s.quietEnd ? ` · quiet ${s.quietStart}–${s.quietEnd}` : ""}</p>
                 <PingSetup variant="panel" />
                 <form method="post" action="/api/settings" className="s-form" data-testid="alert-settings">
-                  <label className="s-form b-small">Email pings
+                  <label className="s-form b-small">Email signals
                     <select name="alertEmail" defaultValue={s.alertEmail ? "on" : "off"} className="s-input"><option value="on">On</option><option value="off">Off</option></select>
                   </label>
                   <div className="s-split">
                     <label className="s-form b-small">Quiet from<input type="time" name="quietStart" defaultValue={s.quietStart ?? ""} className="s-input" /></label>
                     <label className="s-form b-small">Quiet until<input type="time" name="quietEnd" defaultValue={s.quietEnd ?? ""} className="s-input" /></label>
                   </div>
-                  <div><button type="submit" className={BTN}>Save pings</button></div>
+                  <div><button type="submit" className={BTN}>Save signals</button></div>
                 </form>
                 {briefEmailAvailable() ? (
                   <form method="post" action="/api/settings" className="s-form" data-testid="brief-settings">
@@ -113,7 +113,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   </form>
                 ) : null}
               </>
-            ) : <p className="b-small">Pings come with Insidir: within a minute of a $25K+ millionaire trade, or a new trade from a wallet you follow.</p>}
+            ) : <p className="b-small">Signals come with Insidir: within a minute of a $25K+ millionaire trade, or a new trade from a wallet you follow.</p>}
           </Panel>
 
           <Panel className="s-form">

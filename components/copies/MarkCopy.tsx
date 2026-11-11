@@ -13,7 +13,7 @@ export function MarkCopy({ id, status: s0 }: { id: number; status: "copied" | "p
       {(["placed", "skipped"] as const).map(s => (
         <button key={s} type="button" className="b-btn b-panel-pill" aria-pressed={status === s} onClick={() => void mark(s)} data-testid={`mark-${s}`}>{s === "placed" ? "Placed" : "Skipped"}</button>
       ))}
-      {err ? <span className="b-small" role="alert">Didn&apos;t save</span> : null}
+      {err ? <span className="b-small" role="alert">That didn&apos;t save. Tap it again.</span> : null}
     </span>
   );
 }

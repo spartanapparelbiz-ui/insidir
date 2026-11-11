@@ -61,10 +61,10 @@ export async function entryJobs(db: Db, now: number): Promise<Array<{ userId: st
   }));
 }
 
-export async function exitJobs(db: Db, now: number): Promise<Array<{ userId: string; event: ExitEvent; copy: CopyRef }>> {
+export async function exitJobs(db: Db, now: number): Promise<Array<{ userId: string; event: ExitEvent; copy: CopyRef; wallet: string }>> {
   const users = await reachable(db, now);
   if (!users.size) return [];
-  const r = await db.execute(sql`select e.id as event_id, e.kind, e.price::float as price, e.shares::float as shares, e.held_after::float as held_after,
+  const r = await db.execute(sql`select e.id as event_id, e.wallet, e.kind, e.price::float as price, e.shares::float as shares, e.held_after::float as held_after,
       c.id, c.user_id, c.outcome, c.title, c.price::float as entry
     from terminal.position_events e
       join terminal.bet_copies c on c.wallet = e.wallet and c.market_id = e.market_id and c.outcome_side = e.outcome_side
@@ -72,7 +72,7 @@ export async function exitJobs(db: Db, now: number): Promise<Array<{ userId: str
       and c.status <> 'skipped' and c.result is null and c.user_id in (${sql.join([...users.keys()].map(u => sql`${u}`), sql`, `)})
     order by e.at desc limit 200`);
   return (r.rows as Row[]).map(x => ({
-    userId: String(x.user_id),
+    userId: String(x.user_id), wallet: String(x.wallet),
     event: { id: String(x.event_id), kind: x.kind === "exit" ? "exit" as const : "trim" as const, sold: x.kind === "exit" ? 1 : soldShare(Number(x.shares), Number(x.held_after)), price: Number(x.price) },
     copy: { id: Number(x.id), outcome: String(x.outcome), title: String(x.title), entry: Number(x.entry) },
   }));

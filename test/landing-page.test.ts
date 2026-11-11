@@ -50,9 +50,11 @@ describe("V2 landing page", () => {
     expect(copy.HERO.h1.join(" ")).toBe("The intelligence layer for prediction markets.");
     expect(copy.HERO.sub).toBe("We track every Polymarket wallet up $1M+, verify which ones are consistently good, and tell you the moment they move.");
     expect(copy.HERO.pitch).toBe("Who to copy, how much, and when to get out.");
-    expect(copy.HERO.proof.map(([t]) => t)).toEqual(["Verified wallets", "Live signals", "Public track record"]);
+    expect(copy.HERO.proof.map(([t]) => t)).toEqual(["Verified", "Live signals", "Public track record"]);
     expect(copy.HERO.contrast).toBe("Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell.");
-    expect(copy.HOW.map(h => h.t)).toEqual(["Follow a verified wallet.", "Get your size when it trades.", "Get pinged when it exits."]);
+    expect(copy.HOW.map(h => `${h.t} ${h.d}`)).toEqual(["Track. Every wallet up $1M+, every position, live.", "Verify. Only wallets that pass our published criteria.", "Signal. Who moved, how much to size, and when they exit."]);
+    expect(copy.GET.map(g => g.t)).toEqual(["Signals", "Sizing", "Exit signals", "Ledger"]);
+    expect(copy.STAGES.under).toBe("Then $39/mo. Cancel in one click.");
     expect(copy.STAGES.pricingSub).toBe(`$${TRIAL.fee} for ${TRIAL.days} days, then $${PLANS.insidir.price}/mo. Cancel anytime.`);
     expect(copy.STAGES.pricingSub).toBe("$1 for 3 days, then $39/mo. Cancel anytime.");
     const landing = read("components/brand/landing/Landing.tsx");

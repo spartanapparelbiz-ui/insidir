@@ -196,7 +196,7 @@ async function millionairePingsOnce(): Promise<void> {
   if (!bets.length) return;
   const twins = await twinOf(db, [...new Set(bets.map(b => b.marketId).filter((x): x is string => Boolean(x)))]).catch(() => new Map());
   // The Kalshi record (/results) keeps every buy ping on a twinned market at Kalshi's price now, whoever gets it.
-  await recordKalshiPings(db, bets, twins, now).catch(e => console.error("kalshi pings", e instanceof Error ? e.message : e));
+  await recordKalshiPings(db, bets, twins, now).catch(e => console.error("kalshi signals", e instanceof Error ? e.message : e));
   if (!isReady("alerts_push")) return;
   const users = await pingUsers(db, now);
   const jobs = pingJobs(users, bets, now);
@@ -227,7 +227,7 @@ async function copyAlertsOnce(): Promise<void> {
     const prices = await venuePrices(db, entries.map(e => ({ marketId: e.marketId, side: e.side })));
     for (const e of entries) await send(e.userId, `copy:${e.trade.id}`, entryMessage(e.trade, matchedSize(e.trade.amount, e.bankroll, e.mine), prices.get(`${e.marketId}:${e.side}`) ?? { polymarket: null, kalshi: null }, app));
   }
-  for (const x of await exitJobs(db, now)) if (await send(x.userId, `exit:${x.event.id}:${x.copy.id}`, exitMessage(x.event, x.copy, app))) await db.update(betCopies).set({ exitPingedAt: new Date(now) }).where(sql`${betCopies.id} = ${x.copy.id}`);
+  for (const x of await exitJobs(db, now)) if (await send(x.userId, `exit:${x.event.id}:${x.copy.id}`, exitMessage(x.event, x.copy, app, x.wallet))) await db.update(betCopies).set({ exitPingedAt: new Date(now) }).where(sql`${betCopies.id} = ${x.copy.id}`);
   for (const d of await dropJobs(db, now)) if (await send(d.userId, `drop:${d.copy.id}`, dropMessage(d.copy, d.price, app))) await db.update(betCopies).set({ dropPingedAt: new Date(now) }).where(sql`${betCopies.id} = ${d.copy.id}`);
 }
 
@@ -348,7 +348,7 @@ function secJobs(sec: SecClient): Array<() => void> {
     every("sec:alerts", 60_000, async () => {
       const r = await secAlertsOnce(getDb(), Date.now());
       await heartbeat(getDb(), "sec:alerts", true, null, { made: r.made, p50Ms: r.p50Ms ?? -1, maxMs: r.maxMs ?? -1 });
-      if (r.made) log(`sec:alerts: ${r.made} alerts, median ${Math.round((r.p50Ms ?? 0) / 1000)}s after EDGAR, slowest ${Math.round((r.maxMs ?? 0) / 1000)}s`);
+      if (r.made) log(`sec:signals: ${r.made} signals, median ${Math.round((r.p50Ms ?? 0) / 1000)}s after EDGAR, slowest ${Math.round((r.maxMs ?? 0) / 1000)}s`);
     }),
     every("accuracy:companies", ACCURACY_MS, async () => {
       const r = await runCompaniesCheck(getDb(), sec);

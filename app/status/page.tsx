@@ -51,7 +51,7 @@ export default async function StatusPage() {
         <div data-testid="status-money-path">
           {mp?.last ? (
             <ul className="stat__list">
-              <li className="stat__row"><Dot l={mp.last.ok ? "green" : "red"} /><span className="stat__name">Landing → a market → checkout → sign-in → Today → search → Autopilot → exit ping → freshness</span>
+              <li className="stat__row"><Dot l={mp.last.ok ? "green" : "red"} /><span className="stat__name">Landing → a market → checkout → sign-in → Today → search → Autopilot → exit signal → freshness</span>
                 <span className="stat__note">{mp.last.ok ? `Every step passed ${ago(mp.last.at, now)} (${mp.last.ms} ms)` : `Failed ${ago(mp.last.at, now)} at ${mp.last.failedStep}: ${mp.last.detail ?? ""}`}</span><span className="stat__word">{mp.last.ok ? "Working" : "Failing"}</span></li>
               {mp.last.steps.map(st => <li key={st.step} className="stat__row"><Dot l={st.ok ? "green" : "red"} /><span className="stat__name">{st.step}</span><span className="stat__note">{st.ok ? `${st.ms} ms` : st.detail}</span><span className="stat__word" /></li>)}
             </ul>
@@ -68,7 +68,7 @@ export default async function StatusPage() {
         ) : <p>No worker heartbeats recorded yet.</p>}
         <p className="stat__fine" data-testid="status-sec">
           SEC filings: {s.sec.since ? `every Form 3, 4 and 5 filed from ${s.sec.since} on has been read` : "the backfill of insider filings is still reading recent days"}.
-          {" "}{s.sec.alerts ? `Watchlist alerts in the last day: ${s.sec.alerts}, the median made ${s.sec.p50s}s after the filing reached EDGAR, 95% within ${s.sec.p95s}s.` : "No watchlist alerts in the last day."}
+          {" "}{s.sec.alerts ? `Watchlist signals in the last day: ${s.sec.alerts}, the median made ${s.sec.p50s}s after the filing reached EDGAR, 95% within ${s.sec.p95s}s.` : "No watchlist signals in the last day."}
         </p>
         {s.backfill ? (
           <p className="stat__fine" data-testid="status-backfill">

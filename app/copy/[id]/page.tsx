@@ -61,7 +61,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
               : <>
                 {size ? <p className="cp-size" data-testid="copy-size"><b>{sizeLine(size)}</b> <span className="b-small">{SIZE_LABEL[0]!.toUpperCase() + SIZE_LABEL.slice(1)}.</span></p>
                   : mine ? <p className="b-small" data-testid="copy-size-none">We don&apos;t have this wallet&apos;s bankroll yet, so there&apos;s no matched size: enter your own.</p>
-                  : <p className="b-small" data-testid="copy-size-setup"><a href="/settings#copy">Set your bankroll and max per trade</a> to get a matched size on every alert.</p>}
+                  : <p className="b-small" data-testid="copy-size-setup"><a href="/settings#copy">Set your bankroll and max per trade</a> to get a matched size on every signal.</p>}
                 <CopyAction betId={t.betId} outcome={t.outcome} prices={t.prices} links={t.links} best={t.best} defaultAmount={size?.yours ?? Math.min(copySizeOf(viewer.user?.settings), mine?.maxTrade ?? Infinity)}
                   sizeNote={size ? `${sizeLine(size)} ${SIZE_LABEL[0]!.toUpperCase() + SIZE_LABEL.slice(1)}.` : null} logged={logged} />
               </>}

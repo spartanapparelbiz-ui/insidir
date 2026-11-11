@@ -46,7 +46,7 @@ export default async function PersonPage({ params }: { params: Promise<{ cik: st
         <SecHead current="people" unread={unread} title={name} sub={`Reporting owner CIK ${person.cik}. ${person.seats.length} ${person.seats.length === 1 ? "company" : "companies"} on their Forms 3, 4 and 5.`}>
           <div className="sec-actions">
             <a className="sec-link" href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${person.cik}&type=4&owner=include&count=40`} target="_blank" rel="noopener noreferrer">Their filings on EDGAR ↗</a>
-            {isReady("watchlists") ? <WatchButton kind="person" cik={person.cik} label={name} lists={lists.map(l => ({ id: l.id, name: l.name }))} /> : <SoonLine what="Watchlists and alerts" />}
+            {isReady("watchlists") ? <WatchButton kind="person" cik={person.cik} label={name} lists={lists.map(l => ({ id: l.id, name: l.name }))} /> : <SoonLine what="Watchlists and signals" />}
           </div>
         </SecHead>
 

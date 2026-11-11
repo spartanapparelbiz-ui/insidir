@@ -84,9 +84,9 @@ test("copy trading: bankroll, follow, entry push with your size, Copy opens the 
   await runWorker(15_000);
   const entry = pushes().find(p => p.url.endsWith(`/copy/${encodeURIComponent(betId)}`));
   expect(entry, "the entry push").toBeTruthy();
-  expect(entry!.title).toMatch(/^Verified 0xe2e0…0002 \(\+\$2\.4M\) just traded$/);
-  expect(entry!.body).toContain("Player A in “E2E fixture: Tennis match 100” at 55¢.");
-  expect(entry!.body).toContain("Their size: $16K (2% of their bankroll). Your size: $40, matched size, not advice.");
+  expect(entry!.title).toBe("Signal");
+  expect(entry!.body).toContain("Verified 0xe2e0…0002, up $2.4M, opened $16K on Player A in “E2E fixture: Tennis match 100” at 55¢.");
+  expect(entry!.body).toContain("Sizing: $40, 2% of your bankroll, as they put in 2% of theirs (matched size, not advice).");
   expect(entry!.body).toMatch(/Kalshi \d+¢, Polymarket \d+¢: (Kalshi|Polymarket) is cheaper\./);
 
   // 3. The push opens the copy ticket.
@@ -118,9 +118,9 @@ test("copy trading: bankroll, follow, entry push with your size, Copy opens the 
   await q(`insert into terminal.position_events (id, wallet, tier, market_id, outcome_side, outcome, market_title, event_title, category, url, kind, amount, price, shares, held_after, at, last_at)
     values ($1, $2, 'millionaire', '0xe2etennis100', 'yes', 'Player A', 'E2E fixture: Tennis match 100', 'E2E fixture: Tennis match 100', 'tennis', null, 'trim', 10000, 0.84, 600, 400, now(), now())`, [sellId, wallet]);
   await runWorker(15_000);
-  const exit = pushes().find(p => p.title === "The wallet you copied is getting out");
+  const exit = pushes().find(p => p.title === "Exit signal");
   expect(exit, "the exit push").toBeTruthy();
-  expect(exit!.body).toMatch(/^The wallet you copied just sold 60% of its position in Player A \(“E2E fixture: Tennis match 100”\) at 84¢\. You entered at \d+¢\.$/);
+  expect(exit!.body).toMatch(/^0xe2e0…0002 sold 60% of Player A in “E2E fixture: Tennis match 100” at 84¢\. Result: [+−]\d+%\. You entered at \d+¢\.$/);
   expect(exit!.url).toBe(`${APP_URL}/api/copies/open?id=${copy.id}`);
   const go = await page.request.get(exit!.url, { maxRedirects: 0 });
   expect(go.status()).toBe(307);

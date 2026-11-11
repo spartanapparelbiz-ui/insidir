@@ -13,7 +13,7 @@ const DAY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", mon
 export function CopyTotal({ t }: { t: Totals }) {
   return (
     <a className="cl-total" href="/copies" data-testid="copies-total">
-      Your copies this month: <b className={`b-num ${t.month < 0 ? "b-down" : ""}`}>{signed(t.month)}</b>
+      Ledger this month: <b className={`b-num ${t.month < 0 ? "b-down" : ""}`}>{signed(t.month)}</b>
       <span className="b-small"> · this week {signed(t.week)} · all time {signed(t.all)}</span>
     </a>
   );
@@ -43,7 +43,7 @@ export function CopyLedger({ list, totals }: { list: MyCopy[]; totals: Totals })
             </li>
           ))}
         </ol>
-      ) : <p className="b-empty">No copies yet. Tap Copy on an alert or on a wallet&apos;s trade and it shows here.</p>}
+      ) : <p className="b-empty">No positions yet. Copy a signal and it will be tracked here.</p>}
     </div>
   );
 }

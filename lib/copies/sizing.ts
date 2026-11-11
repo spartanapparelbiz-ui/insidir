@@ -35,5 +35,5 @@ export function pctText(p: number): string {
 
 /** "They put in 2%. Your size: $40." */
 export function sizeLine(s: YourSize): string {
-  return `They put in ${pctText(s.theirPct)}. Your size: $${s.yours.toLocaleString("en-US")}${s.capped ? " (your max)" : ""}.`;
+  return `They put in ${pctText(s.theirPct)}. Sizing: $${s.yours.toLocaleString("en-US")}${s.capped ? " (your max)" : ""}.`;
 }

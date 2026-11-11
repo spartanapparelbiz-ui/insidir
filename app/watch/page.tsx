@@ -81,7 +81,7 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
         <Stage first testid="watch-hero" labelledBy="watch-h">
           {intro}
           <div className="b-ctas" style={{ marginTop: 24 }}><Pill href="/go" data-testid="watch-join" data-checkout="watch">{GET_CTA}</Pill></div>
-          <p className="b-small" style={{ marginTop: 16 }}>Members only. Alerts arrive within minutes of the trade we see. Information, not advice.</p>
+          <p className="b-small" style={{ marginTop: 16 }}>Members only. Signals arrive within minutes of the trade we see. Information, not advice.</p>
         </Stage>
       </Frame>
     );
@@ -134,7 +134,7 @@ export default async function WatchPage({ searchParams }: { searchParams: Promis
           </ol>
           {!bets.length ? <p className="b-empty">Nothing watched yet. Add a trade or paste your address above.</p> : null}
           <p className="b-small" style={{ marginTop: 20 }}>
-            Every alert we send is kept, with how it turned out: <a href="/told" data-testid="watch-told-link">What we told you</a>. A wallet is only ever its tier and short address. Alerts arrive within minutes. Information, not advice.
+            Every signal we send is kept, with how it turned out: <a href="/told" data-testid="watch-told-link">What we told you</a>. A wallet is only ever its tier and short address. Signals arrive within minutes. Information, not advice.
           </p>
         </div>
       </Stage>

@@ -26,7 +26,7 @@ import { Tape } from "@/components/system/Tape";
 import { isPaid } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "The board: millionaire trades, live", description: "Every trade of $1K+ by Polymarket wallets with $1M+ in all-time profit, as it happens." };
+export const metadata: Metadata = { title: "Live: positions from wallets up $100K+", description: "Every trade of $1K+ by Polymarket wallets up $100K+ in all-time profit, as it happens." };
 
 const EMPTY_PULSE = { count: 0, window: "hour" as const, wallets: 0, millionaires: 0, today: 0, sinceMidnight: 0, countToday: 0, all: { count: 0, window: "hour" as const, today: 0, sinceMidnight: 0, countToday: 0 } };
 const href = (c: CategorySlug | null, t: "all" | "1m" | "pro") => { const p = new URLSearchParams(); if (c) p.set("cat", c); if (t !== "all") p.set("tier", t); const s = p.toString(); return `/board${s ? `?${s}` : ""}`; };
@@ -62,7 +62,7 @@ export default async function Board({ searchParams }: { searchParams: Promise<{ 
   ].filter(Boolean).join(" · ");
   // One headline, two lines at most: the computed sentence when it fits, else "The board: Golf".
   const computed = member && !pro ? boardInsight(bets.filter(b => b.tier === "millionaire")) : null;
-  const title = `The board${cat ? `: ${categoryInfo(cat).name}` : ""}${pro ? `${cat ? ", $100K–$1M" : ": $100K–$1M"}` : oneM ? `${cat ? ", $1M+" : ": $1M+"}` : ""}.`;
+  const title = `Live${cat ? `: ${categoryInfo(cat).name}` : ""}${pro ? `${cat ? ", $100K–$1M" : ": $100K–$1M"}` : oneM ? `${cat ? ", $1M+" : ": $1M+"}` : ""}.`;
   const headline = computed && headlineLines(computed).length <= 2 ? computed : null;
   const photo = cat ? categoryPhoto(cat) : PHOTOS.baseball;
   return (

@@ -51,7 +51,7 @@ describe("Your size", () => {
     expect(matchedSize(10, 1_000_000, mine)!.yours).toBe(1);
     expect(matchedSize(1_000, null, mine)).toBeNull();
     expect(matchedSize(1_000, 50_000, null)).toBeNull();
-    expect(sizeLine(matchedSize(2_000, 100_000, mine)!)).toBe("They put in 2%. Your size: $40.");
+    expect(sizeLine(matchedSize(2_000, 100_000, mine)!)).toBe("They put in 2%. Sizing: $40.");
     expect([pctText(0.0004), pctText(0.004), pctText(0.25)]).toEqual(["<0.1%", "0.4%", "25%"]);
   });
   it("settings: a bankroll, a max no bigger than it, a drop of 1–99¢ or none", () => {
@@ -66,16 +66,17 @@ describe("Copy pushes", () => {
   it("entry: wallet, market, side, their size, your size, price, and the cheaper venue", () => {
     const m = entryMessage({ id: "pm:1", wallet: "0x" + "b".repeat(40), pnl: 2.4e6, verified: true, title: "Heat vs. Jazz", outcome: "Heat", amount: 12_000, price: 0.55 },
       { theirPct: 0.02, yours: 40, capped: false }, { polymarket: 0.55, kalshi: 0.53 }, "https://insidir.com");
-    expect(m.title).toBe("Verified 0xbbbb…bbbb (+$2.4M) just traded");
-    expect(m.body).toBe("Heat in “Heat vs. Jazz” at 55¢. Their size: $12K (2% of their bankroll). Your size: $40, matched size, not advice. Kalshi 53¢, Polymarket 55¢: Kalshi is cheaper.");
+    expect(m.title).toBe("Signal");
+    expect(m.body).toBe("Verified 0xbbbb…bbbb, up $2.4M, opened $12K on Heat in “Heat vs. Jazz” at 55¢. Sizing: $40, 2% of your bankroll, as they put in 2% of theirs (matched size, not advice). Kalshi 53¢, Polymarket 55¢: Kalshi is cheaper.");
     expect(m.url).toBe("https://insidir.com/copy/pm%3A1");
     expect([cheaper({ polymarket: 0.5, kalshi: null }), cheaper({ polymarket: 0.5, kalshi: 0.51 }), cheaper({ polymarket: null, kalshi: null })]).toEqual(["polymarket", "polymarket", null]);
   });
   it("exit: how much it sold and at what, next to your entry; one tap to the market", () => {
-    const m = exitMessage({ id: "ps:1", kind: "trim", sold: 0.6, price: 0.84 }, { id: 7, outcome: "Heat", title: "Heat vs. Jazz", entry: 0.77 }, "https://insidir.com");
-    expect(m.body).toBe("The wallet you copied just sold 60% of its position in Heat (“Heat vs. Jazz”) at 84¢. You entered at 77¢.");
+    const m = exitMessage({ id: "ps:1", kind: "trim", sold: 0.6, price: 0.84 }, { id: 7, outcome: "Heat", title: "Heat vs. Jazz", entry: 0.77 }, "https://insidir.com", "0x" + "b".repeat(40));
+    expect(m.title).toBe("Exit signal");
+    expect(m.body).toBe("0xbbbb…bbbb sold 60% of Heat in “Heat vs. Jazz” at 84¢. Result: +9%. You entered at 77¢.");
     expect(m.url).toBe("https://insidir.com/api/copies/open?id=7");
-    expect(exitMessage({ id: "x", kind: "exit", sold: 1, price: 0.9 }, { id: 7, outcome: "Heat", title: "T", entry: 0.77 }, "").body).toContain("sold its whole position");
+    expect(exitMessage({ id: "x", kind: "exit", sold: 1, price: 0.6 }, { id: 7, outcome: "Heat", title: "T", entry: 0.77 }, "", "0x" + "b".repeat(40)).body).toBe("0xbbbb…bbbb closed Heat in “T” at 60¢. Result: −22%. You entered at 77¢.");
   });
   it("price drop: due at the set cents under entry, never when off", () => {
     expect([dropDue(0.77, 0.67, 10), dropDue(0.77, 0.68, 10), dropDue(0.77, 0.5, null), dropDue(0.77, null, 10)]).toEqual([true, false, false, false]);

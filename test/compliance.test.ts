@@ -44,7 +44,7 @@ describe("copy compliance", () => {
     }
   });
   it("the footer disclaimer is on every page", () => {
-    expect(FOOTER).toBe("Information, not financial advice. Past results don't predict future results. Not a broker or exchange. Not affiliated with Kalshi or Polymarket.");
+    expect(FOOTER).toBe("Information, not advice. Verified wallets lose trades too. 18+.");
     // Every visitor page is framed by components/brand/app/Frame.tsx (or carries the footer itself), and the footer says it.
     expect(readFileSync(join(ROOT, "components", "brand", "app", "Frame.tsx"), "utf8")).toContain("<BrandFoot");
     expect(readFileSync(join(ROOT, "components", "brand", "Nav.tsx"), "utf8")).toContain("{FOOTER}");

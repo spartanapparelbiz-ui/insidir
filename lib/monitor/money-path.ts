@@ -116,7 +116,7 @@ export async function moneyPathOnce(db: Db, d: MonitorDeps): Promise<{ ok: boole
       ? { title: `Live test failing: ${failed!.step}`, body: (failed!.detail ?? "no detail").slice(0, 180), url: status }
       : { title: "Live tests passing again", body: `Every step passed: ${steps.map(s => `${s.step} ${s.ms} ms`).join(", ")}.`, url: status }).catch(() => "failed" as const);
     if (notified === "no_subscription") d.log?.(`money path: ${breaks ? "failing" : "recovered"}; no owner device subscribed to push (FREE_ACCESS_EMAILS), shown on /status only`);
-    else if (notified === "failed") d.log?.("money path: the push alert didn't go through; shown on /status");
+    else if (notified === "failed") d.log?.("money path: the push signal didn't go through; shown on /status");
   }
   await db.insert(monitorRuns).values({ at: new Date(now), ok, failedStep: failed?.step ?? null, detail: failed?.detail ?? null, ms: Date.now() - t0, steps, notified: notified === "sent" });
   return { ok, steps, notified };
