@@ -132,8 +132,14 @@ test("crawl: every internal link from the home page and every sitemap URL render
 
 test("header, footer and the phone menu: every link goes where it says", async ({ page, context }, info) => {
   await context.addCookies([closed]);
+  // The homepage's own nav and footer: few links, each to its page.
   await page.goto("/");
-  const nav = page.getByTestId("hero").locator("nav").first();
+  for (const a of await page.locator(".lx-nav a, .lx-foot a").evaluateAll(as => as.map(x => (x as HTMLAnchorElement).getAttribute("href") ?? ""))) {
+    if (a.startsWith("/")) expect((await page.request.get(a.split("#")[0]!, { maxRedirects: 0 })).status(), a).toBeLessThan(400);
+  }
+  // Every other page: the brand nav, its phone menu and the full footer.
+  await page.goto("/pricing");
+  const nav = page.getByTestId("brand-nav").locator("nav").first();
   const check = async (loc: ReturnType<Page["locator"]>) => {
     const items = await loc.evaluateAll(as => as.map(a => ({ text: (a.textContent ?? "").trim(), href: (a as HTMLAnchorElement).getAttribute("href") ?? "" })).filter(a => a.href.startsWith("/")));
     for (const it of items) {

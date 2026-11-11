@@ -52,19 +52,19 @@ test("starters with backtests turn on in one tap; a built rule reads back in one
   await two.getByTestId("ap-turn-on").click();
   await expect(page.getByTestId("ap-notice")).toHaveText("Two agree is on.");
   await expect(page.locator('[data-testid="ap-starter"][data-key="consensus"]')).toHaveAttribute("data-on", "1");
-  await expect(page.getByTestId("ap-rule").filter({ hasText: "Two agree" })).toContainText("Proven wallets · bets of $10K+ · 2+ wallets agree · up to 85¢ · $25 a bet");
+  await expect(page.getByTestId("ap-rule").filter({ hasText: "Two agree" })).toContainText("Proven wallets · trades of $10K+ · 2+ wallets agree · up to 85¢ · $25 a trade");
 
   // Build one.
   await page.getByTestId("ap-new").locator("summary").click();
   const f = page.getByTestId("rule-form");
   await f.getByLabel("Name").fill("NBA big");
   await f.getByLabel("NBA").check();
-  await f.getByLabel("Their bet is at least").selectOption("50000");
+  await f.getByLabel("Their trade is at least").selectOption("50000");
   await f.getByLabel("Never pay more than (¢)").fill("70");
   await f.getByTestId("rule-form-save").click();
   await expect(page.getByTestId("ap-notice")).toHaveText("Saved.");
   const nba = page.getByTestId("ap-rule").filter({ hasText: "NBA big" });
-  await expect(nba).toContainText("Proven wallets · bets of $50K+ · NBA · up to 70¢ · $25 a bet");
+  await expect(nba).toContainText("Proven wallets · trades of $50K+ · NBA · up to 70¢ · $25 a trade");
   await expect(nba.getByTestId("ap-paper")).toHaveText("No matches yet. Its paper portfolio starts with the first one.");
 
   // Off, then deleted.

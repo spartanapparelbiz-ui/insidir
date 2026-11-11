@@ -19,7 +19,8 @@ test("landing: final on first paint, the hero's words, one button, the live wind
   const rows = page.getByTestId("live-window-row");
   expect(await rows.count()).toBeGreaterThan(0);
   expect(await rows.count()).toBeLessThanOrEqual(6);
-  await expect(page.getByTestId("live-window")).not.toContainText(/Player A|Chiefs|Bills/);
+  // Sides stay hidden for visitors: every Side cell says Members.
+  for (const side of await rows.locator("td:last-child").allInnerTexts()) expect(side.trim()).toBe("Members");
   // The nav: Methodology, Pricing, Log in.
   if (page.viewportSize()!.width > 640) expect((await page.locator(".lx-nav__links a").allInnerTexts()).map(t => t.trim())).toEqual(["Methodology", "Pricing", "Log in"]);
   for (const href of await page.locator("[data-checkout]").evaluateAll(els => els.map(e => e.getAttribute("href")))) expect(href).toMatch(/^\/go/);
@@ -53,11 +54,11 @@ test("?ref= is kept for attribution only: the same home page, the ref and UTM co
   expect(await (await page.request.get("/sitemaps/pages.xml")).text()).not.toContain("/stocks</loc>");
 });
 
-test("home: the nav's Start for $1 is recorded and opens /go", async ({ page }) => {
+test("home: the hero's Start for $1 is recorded and opens /go", async ({ page }) => {
   const count = async (name: string) => (await q<{ n: number }>("select count(*)::int as n from terminal.events where name = $1", [name]))[0]!.n;
   const before = await count("unlock_click");
   await page.goto("/");
-  await page.getByTestId("nav-start").click();
+  await page.getByTestId("hero-start").click();
   await expect(page).toHaveURL(/\/go(\?|$)/);
   await expect.poll(() => count("unlock_click")).toBe(before + 1);
 });

@@ -27,7 +27,7 @@ test("a US member copying a Polymarket wallet: Open goes to the matched Kalshi m
   await q("update terminal.users set settings = settings - 'copySize' where id = 'user_e2e_insidir'");
   await signIn(context, "insidir");
   await page.goto("/copies");
-  await expect(page.getByRole("heading", { level: 1, name: "Ledger." })).toBeVisible();
+  await expect(page.getByTestId("copy-ledger")).toBeVisible();
   const pnl = page.getByTestId("copy-pnl");
   await expect(pnl.getByTestId("copy-line")).toHaveText("Copying 0xe2…dd · $0 this week");
   await expect(pnl.getByTestId("copy-total")).toHaveText("−$10");

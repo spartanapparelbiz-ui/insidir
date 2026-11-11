@@ -70,12 +70,12 @@ test("/go: one question per screen, the aha, paywall, the mock checkout, unlocke
   await expect(page.getByTestId("aha-open")).toHaveCount(1);
   await expect(page.getByTestId("aha-locked")).toHaveCount(1);
   await expect(page.getByTestId("aha-locked").locator("[data-locked=split]")).toHaveCount(1); // the side drawn from nothing
-  await expect(page.getByTestId("go-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise. Every rule we tested.");
+  await expect(page.getByTestId("go-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a trade, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise. Every rule we tested.");
   await expect(page.getByTestId("go-aha")).not.toContainText("on every");
   await page.screenshot({ path: shotName("go-6-aha", page), fullPage: true });
   await page.getByTestId("go-next").click();
   await expect(page.getByTestId("paywall-headline")).toHaveText("See which side they took in Football and Politics.");
-  await expect(page.getByTestId("paywall-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a bet, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise.");
+  await expect(page.getByTestId("paywall-record")).toHaveText("“Bets of $50K+”: +$412 on $25 a trade, 64 won of 118 settled on Kalshi in 180 days, at the ask + 1¢. Past results, not a promise.");
   await expect(page.getByTestId("paywall-timeline")).toContainText("Today $1");
   await expect(page.getByTestId("paywall-remind")).toBeChecked();
   // The panel fades in (st 0.3s + its own transition): capture it settled, not mid-entrance.
