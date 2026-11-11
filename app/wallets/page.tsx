@@ -18,6 +18,9 @@ import { constellation, walletCards, walletsInsight, type WalletCard } from "@/l
 import { midnightET } from "@/lib/millionaires/queries";
 import { Constellation } from "@/components/system/Constellation";
 import { isPaid } from "@/lib/plans";
+import { verifiedBoard, verifiedCount } from "@/lib/verified/board";
+import { VerifiedBoard } from "@/components/system/VerifiedBoard";
+import { MIN_SETTLED, MAX_ONE_SHARE } from "@/lib/verified/checks";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Wallets: millionaires active today", robots: { index: false } };
@@ -28,6 +31,10 @@ export default async function Wallets() {
   const now = Date.now();
   const db = hasDatabase() ? getDb() : null;
   const userId = viewer.user?.id ?? null;
+  const [vrows, vcount] = await Promise.all([
+    db ? verifiedBoard(db, { userId }).catch(() => []) : Promise.resolve([]),
+    db ? verifiedCount(db).catch(() => ({ verified: 0, checked: 0 })) : Promise.resolve({ verified: 0, checked: 0 }),
+  ]);
   const [{ cards, today }, board, sky] = await Promise.all([
     db ? walletCards(db, now, userId, 6).catch(e => { console.error("wallets", e instanceof Error ? e.message : e); return { cards: [] as WalletCard[], today: true }; }) : Promise.resolve({ cards: [] as WalletCard[], today: true }),
     db ? leaderboard(db, now, userId).catch(e => { console.error("leaderboard", e instanceof Error ? e.message : e); return null; }) : Promise.resolve(null),
@@ -39,9 +46,10 @@ export default async function Wallets() {
     <Frame member current="wallets" testid="wallets-page">
       <Stage first testid="wallets-band" labelledBy="wallets-h">
         <div className="b-head">
-          <h1 id="wallets-h" className="b-h1">{s ? `${s.wallets} wallets up $1M+. Follow the ones that win.` : "Wallets worth following."}</h1>
-          <p className="b-sub">Every Polymarket wallet up $1M+ all-time that Insidir watches: its record, what it&apos;s betting now, and a ping when it bets again. {PAST}</p>
+          <h1 id="wallets-h" className="b-h1">Who to copy.</h1>
+          <p className="b-sub" data-testid="verified-count">{vcount.checked ? `${vcount.verified} of ${vcount.checked} wallets up $1M+ pass every check today.` : "Every wallet up $1M+, checked daily."} Verified means {MIN_SETTLED}+ settled trades, profitable in 2 of the last 3 months, no single trade over {Math.round(MAX_ONE_SHARE * 100)}% of its profit, and no hedging. {PAST}</p>
         </div>
+        <VerifiedBoard rows={vrows} member />
         {s ? (
           <div className={`b-stats ${s.proven > 0 ? "b-stats--4" : "b-stats--3"}`} data-testid="wallets-stats">
             <div className="b-stat"><span className="b-stat__n b-num">{s.wallets}</span><span className="b-small">wallets up $1M+ watched</span></div>

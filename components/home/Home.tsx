@@ -26,6 +26,8 @@ import { Ticket } from "@/components/system/Ticket";
 import { WalletCards } from "@/components/system/WalletCards";
 import { AiDesk } from "./AiDesk";
 import { LiveStrip } from "./LiveStrip";
+import { CopyTotal } from "@/components/copies/CopyLedger";
+import { myCopies } from "@/lib/copies/mine";
 import { WhaleTicker } from "@/components/system/WhaleTicker";
 import { Suspense } from "react";
 import { getDb } from "@/lib/db";
@@ -75,10 +77,17 @@ async function TapeStage({ now }: { now: number }) {
   );
 }
 
+/** Keeping score at the top of the home screen: "Your copies this month: +$212." (placed copies only). */
+async function CopyTotalBar({ userId, now }: { userId: string; now: number }) {
+  const m = await myCopies(getDb(), userId, now).catch(() => null);
+  return m ? <div className="cl-bar"><CopyTotal t={m.totals} /></div> : null;
+}
+
 export function HomePage({ d, search, userId }: { d: Home; search: boolean; userId: string }) {
   const live = d.polledAt !== null && d.now - d.polledAt < 5 * 60_000;
   return (
     <Frame member current="home" testid="member-home">
+      <Suspense fallback={null}><CopyTotalBar userId={userId} now={d.now} /></Suspense>
       <div data-home="stages">
         <Stage bg={{ kind: "photo", photo: d.top ? categoryPhoto(d.top.bet.category) : PHOTOS.hero, dark: 0.5, priority: true }} first id="overview" testid="home-hero" labelledBy="hero-h">
           <div className="b-head">

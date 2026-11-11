@@ -3,6 +3,7 @@
  * sides. Then live previews of what members get (a verdict and prices, board rows and a ping, the Daily Brief's top 3,
  * a followed wallet's last results, tonight's biggest race or game). Anything without data comes back empty and its
  * tile says so or steps aside: no number is ever made up. Server only. */
+import { verifiedBoard, verifiedCount, type BoardWallet } from "@/lib/verified/board";
 import type { Db } from "@/lib/db";
 import { isReady } from "@/lib/features";
 import type { CategorySlug } from "@/lib/brand/categories";
@@ -50,6 +51,9 @@ export interface LandingData {
   lead: BoardBet[];
   stake: StakeRecord | null;
   gaps: PriceGap[];
+  /** The live top Verified wallets (lib/verified/board.ts) and how many pass today, of how many checked. */
+  verified: BoardWallet[];
+  verifiedCount: { verified: number; checked: number };
 }
 
 
@@ -92,8 +96,9 @@ export async function landingData(db: Db, now: number, member: boolean): Promise
     safe(recentBets(db, { now, limit: 8, member, delayMs: member ? 0 : BOARD_DELAY_MS }), [] as BoardBet[]),
     electionDay(now) ? Promise.resolve(null) : safe(electionBoard(db, now, false), null),
   ]);
+  const [verified, verifiedN] = await Promise.all([safe(verifiedBoard(db, { limit: 5, verifiedOnly: true }), [] as BoardWallet[]), safe(verifiedCount(db), { verified: 0, checked: 0 })]);
   return {
-    pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
+    verified, verifiedCount: verifiedN, pulse2, election, spotlight, stake, gaps, lead, topBet, race: (election ?? races)?.free[0] ?? null,
     now, member, pulse: p, top, last3, moreToday: Math.max(0, p.countToday - last3.length), board, categories, record: pr, bestPrice: best,
     biggest: b ? { title: b.title, amount: b.amount, pnl: b.pnl } : null,
     brief: pool.slice(0, 3),
@@ -112,4 +117,5 @@ export const emptyLanding = (now: number): LandingData => ({
   now, member: false, pulse: EMPTY_PULSE, topBet: null, race: null, top: null, last3: [], moreToday: 0, board: [], biggest: null, brief: [], wallet: null, bigNight: null,
   categories: { window: "day", list: [] }, record: null, bestPrice: null,
   pulse2: { today: 0, biggest: null, hottest: null, disagree: { free: null, locked: [] }, unusual: null }, election: null, spotlight: null, stake: null, gaps: [], lead: [],
+  verified: [], verifiedCount: { verified: 0, checked: 0 },
 });

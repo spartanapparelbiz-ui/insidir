@@ -1,10 +1,10 @@
-/* The landing: a scrolling page of stages in the hero spec's language, one story told simply. Each stage is a
- * full-viewport black stage with one background that never animates; its foreground performs once as it enters
- * (components/brand/StageMotion.tsx).
- *   Hero (the globe) · [Election Day board, Nov 3–4 ET only] · Why Insidir (the problem) · How it works (three steps) ·
- *   See it work (recordings of the live site, ./Demo.tsx) · Free right now (a live sample, no account) · The record ·
- *   Pricing · FAQ · Final (the globe again, the footer inside). Stages: ./Why.tsx, ./Value.tsx; scroll motion: ./ScrollFx.tsx.
- * Every number is live (lib/brand/landing.ts); a stage with nothing real to show says so or steps aside. */
+/* The landing: one product, a copy trading system for Kalshi and Polymarket, in a scroll of stages.
+ *   Hero      "Who to copy, how much, and when to get out." · the subhead · the live top five Verified wallets with real
+ *             profit (no names or addresses until signup) · Start for $1 · the price line from lib/plans.ts
+ *   How       Follow a verified wallet · Get your size when it trades · Get pinged when it exits
+ *   Contrast  "Free trackers show you the buy. Insidir shows you who's worth copying, your size, and the sell."
+ *   Pricing · FAQ · Final (the footer inside)
+ * Every number is live (lib/brand/landing.ts, lib/verified); nothing invented: no user counts, reviews or timers. */
 import { electionDay } from "@/lib/brand/pulse";
 import { TRIAL } from "@/lib/plans";
 import type { CSSProperties } from "react";
@@ -24,6 +24,7 @@ import { ViewAs } from "@/components/ViewAs";
 import { ScrollFx } from "./ScrollFx";
 import { ScrollReveal } from "../ScrollReveal";
 import { Intro, INTRO_SCRIPT } from "./Intro";
+import { TopVerified } from "@/components/system/VerifiedBoard";
 import { dollars as usd } from "@/lib/money";
 import { StickyStart } from "./StickyStart";
 import { RaceRow } from "./ElectionLive";
@@ -31,29 +32,31 @@ import { HowStage, WatchStage, WhyStage } from "./Why";
 import { InsideStage } from "./Inside";
 import { ElectionStage } from "./Value";
 
-function Hero({ d }: { d: Pick<LandingData, "pulse"> }) {
+function Hero({ d }: { d: Pick<LandingData, "verified" | "verifiedCount"> }) {
   return (
-    <Stage bg={{ kind: "globe", dark: 0 }} inner={false} testid="hero" labelledBy="hero-h" first>
-      <BrandNav motion startHref="/go?step=checkout" election={electionDay(Date.now())} />
+    <Stage bg={{ kind: "globe", dark: 0.15 }} inner={false} testid="hero" labelledBy="hero-h" first>
+      <BrandNav motion startHref="/go?step=checkout" />
       <div className="b-hero-inner">
-        <a className="b-offer" href="/go?step=checkout" data-checkout="hero-offer" data-testid="hero-offer" data-m="settle" style={{ "--d": ".1s" } as CSSProperties}><b>{`$${TRIAL.fee} for ${TRIAL.days} days`}</b><span>Your AI analyst included</span></a>
         <Lines as="h1" id="hero-h" lines={HERO.h1} />
         <p className="b-sub" data-m="lift" data-testid="hero-sub">{HERO.sub}</p>
-        <HeroLine initial={d.pulse} />
-        {/* Onboarding starts here: the funnel's first question (/go's "What do you bet on?"), answered in one tap. */}
-        <div className="b-heropick" data-m="settle" style={{ "--d": ".8s" } as CSSProperties} data-testid="hero-pick">
-          <span className="b-heropick__q">{HERO.ask}</span>
-          <div className="b-heropick__row">
-            {HERO.picks.map(c => <a key={c} className="b-heropick__chip" href={`/go?step=checkout&cats=${c}`} data-testid="hero-chip" data-checkout="hero-pick">{categoryInfo(c).name}</a>)}
-            <a className="b-heropick__chip b-heropick__chip--more" href="/go?step=checkout" data-testid="hero-chip-more">More</a>
-          </div>
+        <div className="lp-top" data-m="settle" style={{ "--d": ".7s" } as CSSProperties}>
+          <p className="b-label">Live top {Math.min(5, d.verified.length) || 5} Verified wallets{d.verifiedCount.checked ? <> · {d.verifiedCount.verified} of {d.verifiedCount.checked} wallets up $1M+ pass today</> : null}</p>
+          {d.verified.length ? <TopVerified rows={d.verified} /> : <p className="b-small" data-testid="top-verified-empty">The daily check is running: the top Verified wallets show here as each one is read.</p>}
+          <p className="b-small">Names hidden until you sign up. Profit from each wallet&apos;s public Polymarket record.</p>
         </div>
         <div className="b-ctas">
-          <Pill href="/markets" delay={0.9} data-testid="hero-markets">{HERO.ctaMarkets}</Pill>
-          <Pill href="/go?step=checkout" kind="ghost" className="b-hl" delay={0.97} data-testid="hero-start" data-checkout="hero">{HERO.ctaAlerts}</Pill>
+          <Pill href="/go?step=checkout" delay={0.9} data-testid="hero-start" data-checkout="hero">{HERO.cta}</Pill>
         </div>
-        <p className="b-hero-terms" data-m="quiet" style={{ "--d": "1.05s" } as CSSProperties} data-testid="hero-terms">{STAGES.pricingSub} Apple Pay, Google Pay or card.</p>
+        <p className="b-hero-terms" data-m="quiet" style={{ "--d": "1.05s" } as CSSProperties} data-testid="hero-terms">{STAGES.pricingSub}</p>
       </div>
+    </Stage>
+  );
+}
+
+function Contrast() {
+  return (
+    <Stage bg={{ kind: "photo", photo: slotPhoto("space"), dark: 0.7 }} testid="contrast" label="Why Insidir">
+      <div className="b-center"><p className="lp-contrast" data-testid="contrast-line" {...m("lift", 0.3)}>{HERO.contrast}</p></div>
     </Stage>
   );
 }
@@ -126,7 +129,7 @@ function Pricing() {
       <div className="b-center">
         <Lines id="price-h" lines={STAGES.pricing} size={72} />
         <p className="b-sub" {...m("lift", 0.58)} data-testid="price-line">{STAGES.pricingSub}</p>
-        <div className="b-ctas"><Pill href="/go?step=checkout" delay={0.9} data-testid="pricing-cta" data-checkout="pricing">Start for $1</Pill></div>
+        <div className="b-ctas"><Pill href="/go?step=checkout" delay={0.9} data-testid="pricing-cta" data-checkout="pricing">{HERO.cta}</Pill></div>
       </div>
     </Stage>
   );
@@ -148,8 +151,7 @@ function Final() {
       <div className="b-center">
         <Lines id="final-h" lines={STAGES.final} />
         <div className="b-ctas">
-          <Pill href="/go?step=checkout" delay={0.9} data-testid="final-start" data-checkout="final">Start for $1</Pill>
-          <Pill href="/board" kind="ghost" delay={0.97}>See the board</Pill>
+          <Pill href="/go?step=checkout" delay={0.9} data-testid="final-start" data-checkout="final">{HERO.cta}</Pill>
         </div>
       </div>
     </Stage>
@@ -160,20 +162,12 @@ function Final() {
 function Rest({ d }: { d: LandingData }) {
   return (
     <>
-      {/* Election Day (Nov 3–4 ET only) leads; otherwise the story: why, how, see it, try it free, the record. */}
-      {d.election ? <ElectionStage d={d} /> : null}
-      {/* Lead with what members pay for: the AI analyst, then the offer; the proof follows. */}
-      <InsideStage d={d} />
-      <Pricing />
-      <WhyStage />
       <HowStage />
-      <WatchStage />
-      <Free d={d} />
-      <Proof d={d} />
+      <Contrast />
+      <Pricing />
       <FaqStage />
       <Final />
       {d.member ? null : <StickyStart />}
-      {d.member ? null : <PayMoments ctx={{ count: d.pulse.count, window: d.pulse.window, biggest: d.biggest, today: d.pulse.countToday }} now={d.now} />}
     </>
   );
 }
@@ -186,19 +180,11 @@ export function Landing({ d }: { d: LandingData }) {
     <main className="b-root" data-testid="landing">
       {d.member ? null : <>
         <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
-        <Intro lines={d.pulse.today >= 100_000 ? [
-          `${usd(d.pulse.today)} bet in the last 24 hours`,
-          "by wallets that have made $1M+.",
-          "Now you see every bet, before the game.",
-        ] : d.pulse.millionaires > 0 ? [
-          `${d.pulse.millionaires.toLocaleString("en-US")} wallets have made $1M+ betting.`,
-          "We watch every bet they make.",
-          "Now you see them too, before the game.",
-        ] : [
-          "Some wallets have made $1M+ betting.",
-          "We watch every bet they make.",
-          "Now you see them too, before the game.",
-        ]} />
+        <Intro lines={d.verifiedCount.checked ? [
+          `${d.verifiedCount.verified} of ${d.verifiedCount.checked} wallets up $1M+ pass every check today.`,
+          "Insidir tells you who to copy,",
+          "how much, and when to get out.",
+        ] : ["Who to copy,", "how much,", "and when to get out."]} />
       </>}
       <Hero d={d} />
       <Rest d={d} />

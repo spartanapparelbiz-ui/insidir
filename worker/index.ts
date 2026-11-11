@@ -6,6 +6,8 @@ import { sql } from "drizzle-orm";
  *                              a heartbeat per venue. Matching itself never runs in the worker.
  *   alerts    every ALERT_MS:  Price gaps alerts for Pro (only while price_gaps is ready)
  *   moves:alerts every ALERT_MS: push and email for new moves by followed traders, $50k+ in followed markets, Pro rules
+ *   copy:alerts       every 10 s: a followed wallet's new trade with the member's size, the wallet they copied selling, a copy down their set cents
+ *   verified:check    every 10 min: 30 $1M+ wallets' Verified checks (each once in 20 h); followers told when one loses the badge
  *   millionaires:pings every 30 s: a $1M+ wallet opening, adding to, trimming or exiting $25K+ in a member's categories (max 8 a day, quiet hours); the Kalshi ping record
  *   millionaires:screen every 5 min: 15 $1M+ wallets screened (market makers, high frequency, arbitrage, under 30 settled), each daily (lib/millionaires/proven.ts)
  *   twins:bets every 20 min: Kalshi twins for the games millionaires bet on, looked up by game (lib/twins/direct.ts)
@@ -76,6 +78,11 @@ import { alertText, dueAlerts } from "@/lib/alerts/fanout";
 import { ALERT_MAX_AGE_MS, alertJobs, alertMessage } from "@/lib/moves/alerts";
 import { moveAlertUsers, recentMoves } from "@/lib/moves/alert-store";
 import { pingJobs, pingMessageExplained } from "@/lib/millionaires/pings";
+import { dropJobs, entryJobs, exitJobs, venuePrices } from "@/lib/copies/alert-store";
+import { dropMessage, entryMessage, exitMessage } from "@/lib/copies/alerts";
+import { matchedSize } from "@/lib/copies/sizing";
+import { badgeLostMessage, verifiedOnce } from "@/lib/verified/job";
+import { betCopies } from "@/lib/db/schema";
 import { twinsDailyOnce } from "@/lib/twins/daily";
 import { twinsFromBets } from "@/lib/twins/direct";
 import { screenWallets } from "@/lib/millionaires/proven";
@@ -202,6 +209,44 @@ async function millionairePingsOnce(): Promise<void> {
     const msg = pingMessageExplained(b, prices.get(b.id) ?? null, appUrl(), b.marketId ? twins.get(b.marketId) ?? null : null);
     for (const t of await pushTargets(db, j.userId)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
   }
+}
+
+/** Copy-trading pushes (lib/copies/alerts.ts), every 10 seconds: a followed wallet's new trade with the member's size
+ *  ("copy:<bet>"), the wallet they copied selling ("exit:<event>:<copy>"), and a copy down their set cents ("drop:<copy>").
+ *  Once each; members with push on, outside quiet hours. */
+async function copyAlertsOnce(): Promise<void> {
+  if (!isReady("alerts_push")) return;
+  const db = getDb(), now = Date.now(), app = appUrl();
+  const send = async (userId: string, key: string, msg: { title: string; body: string; url: string }) => {
+    if (!(await claimAlert(db, userId, key, "push"))) return false;
+    for (const t of await pushTargets(db, userId)) if ((await sendPush(t, msg)) === "gone") await dropPush(db, t.endpoint);
+    return true;
+  };
+  const entries = await entryJobs(db, now);
+  if (entries.length) {
+    const prices = await venuePrices(db, entries.map(e => ({ marketId: e.marketId, side: e.side })));
+    for (const e of entries) await send(e.userId, `copy:${e.trade.id}`, entryMessage(e.trade, matchedSize(e.trade.amount, e.bankroll, e.mine), prices.get(`${e.marketId}:${e.side}`) ?? { polymarket: null, kalshi: null }, app));
+  }
+  for (const x of await exitJobs(db, now)) if (await send(x.userId, `exit:${x.event.id}:${x.copy.id}`, exitMessage(x.event, x.copy, app))) await db.update(betCopies).set({ exitPingedAt: new Date(now) }).where(sql`${betCopies.id} = ${x.copy.id}`);
+  for (const d of await dropJobs(db, now)) if (await send(d.userId, `drop:${d.copy.id}`, dropMessage(d.copy, d.price, app))) await db.update(betCopies).set({ dropPingedAt: new Date(now) }).where(sql`${betCopies.id} = ${d.copy.id}`);
+}
+
+/** The daily Verified run (lib/verified/job.ts): 30 wallets a run, each re-read once in 20 hours; a wallet that loses the
+ *  badge is pushed to each member who follows it ("badge:<wallet>:<day>"). */
+async function verifiedCheckOnce(): Promise<void> {
+  const db = getDb(), now = Date.now();
+  const r = await verifiedOnce(db, now, {
+    onLost: async (wallet, v) => {
+      if (!isReady("alerts_push")) return;
+      const fol = await db.execute(sql`select user_id from terminal.follows where kind = 'trader' and target = ${wallet}`);
+      for (const f of fol.rows as Array<{ user_id: string }>) {
+        if (!(await claimAlert(db, f.user_id, `badge:${wallet}:${Math.floor(now / 86_400_000)}`, "push"))) continue;
+        for (const t of await pushTargets(db, f.user_id)) if ((await sendPush(t, badgeLostMessage(wallet, v, appUrl()))) === "gone") await dropPush(db, t.endpoint);
+      }
+    },
+  });
+  await heartbeat(db, "verified:check", true, null, r);
+  if (r.checked || r.failed) log(`verified: ${r.checked} checked, ${r.verified} verified, ${r.lost} lost the badge, ${r.failed} failed`);
 }
 
 /** Push alerts for splits flagged in the last half hour ("split:<id>", once per member), to paid members with push on
@@ -365,6 +410,8 @@ export async function main(opts: { runForMs?: number } = {}): Promise<void> {
     every("alerts", ALERT_MS, async () => { if (gaps && isReady("price_gaps")) await alertsOnce(); }),
     every("moves:alerts", ALERT_MS, moveAlertsOnce),
     every("millionaires:pings", 30_000, millionairePingsOnce),
+    every("copy:alerts", 10_000, async () => { await copyAlertsOnce(); await heartbeat(getDb(), "copy:alerts", true, null); }),
+    every("verified:check", 10 * 60_000, verifiedCheckOnce),
     // Twins that approved themselves yesterday: one push to the owners after 9am ET, with a one-click Revoke list.
     // Twins for the games with millionaire bets, found by game (the sweep only sees what's open on both venues now).
     ...(clients.polymarket instanceof PolymarketClient && clients.kalshi instanceof KalshiClient ? [every("twins:bets", 4 * 60_000, async () => {

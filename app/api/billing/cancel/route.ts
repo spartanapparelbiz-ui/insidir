@@ -1,6 +1,6 @@
-/* POST /api/billing/cancel (the form in Account): one reason is required (lib/billing/cancel-reasons.ts), kept in
- * terminal.cancel_reasons, then the membership is cancelled with Whop at the end of the period they paid for; they keep
- * access until then. Without a reason nothing is cancelled. Form posts come back to /settings. */
+/* POST /api/billing/cancel (the button in Account): one click cancels the membership with Whop now (immediate: access
+ * ends and nothing more is charged) and takes paid access away here at once. A reason is optional (kept in
+ * terminal.cancel_reasons when given). Form posts come back to /settings, which confirms it on screen. */
 import { eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 import { appUrl } from "@/lib/app-url";
@@ -11,6 +11,9 @@ import { cancelMembership } from "@/lib/billing/whop";
 import { getDb } from "@/lib/db";
 import { cancelReasons, users } from "@/lib/db/schema";
 
+/** Immediate cancel: paid access ends here at once (Whop's webhook says the same moments later). */
+const CANCELLED_NOW = () => ({ plan: "free" as const, membershipStatus: "canceled", cancelAtPeriodEnd: false, accessUntil: new Date(), planCheckedAt: new Date() });
+
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
@@ -19,14 +22,14 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.redirect(new URL("/login?next=/settings", appUrl()), 303);
   const form = await req.formData().catch(() => null);
   const reason = form?.get("reason");
-  if (!isCancelReason(reason)) return back("?cancel=reason");
   if (!user.membershipId) return back("?cancel=none");
   const detail = String(form?.get("detail") ?? "").trim().slice(0, 500) || null;
   const db = getDb();
-  await db.insert(cancelReasons).values({ userId: user.id, membershipId: user.membershipId, reason, detail });
-  const ok = await cancelMembership(user.membershipId, detail ? `${reasonLabel(reason)}: ${detail}` : reasonLabel(reason)).catch(() => false);
+  const why = isCancelReason(reason) ? reason : null;
+  if (why) await db.insert(cancelReasons).values({ userId: user.id, membershipId: user.membershipId, reason: why, detail });
+  const ok = await cancelMembership(user.membershipId, why ? (detail ? `${reasonLabel(why)}: ${detail}` : reasonLabel(why)) : "Cancelled in Account").catch(() => false);
   if (!ok) return back("?cancel=failed");
-  await db.update(users).set({ cancelAtPeriodEnd: true }).where(eq(users.id, user.id));
-  void recordEvent({ name: "cancel", userId: user.id, props: { reason } }).catch(() => undefined);
+  await db.update(users).set(CANCELLED_NOW()).where(eq(users.id, user.id));
+  void recordEvent({ name: "cancel", userId: user.id, props: { reason: why ?? "none" } }).catch(() => undefined);
   return back("?cancel=done");
 }

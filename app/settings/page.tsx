@@ -21,6 +21,7 @@ import { isPaid, PLANS, TRIAL } from "@/lib/plans";
 import { eq } from "drizzle-orm";
 import { COPY_SIZES, copySizeOf } from "@/lib/copies/size";
 import { CANCEL_REASONS } from "@/lib/billing/cancel-reasons";
+import { DEFAULT_DROP_CENTS } from "@/lib/copies/sizing";
 import { briefEmailAvailable } from "@/lib/brief/email";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +55,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const alertsReady = isReady("alerts_push") || isReady("alerts_email");
   // Notices from the no-JS form fallbacks (saved).
   const cancelNote = q.cancel === "done" ? null : q.cancel === "reason" ? "Pick one reason to cancel." : q.cancel === "failed" ? "The cancellation didn't go through. Try again, or write to hello@aethric.llc and we'll cancel it for you." : q.cancel === "none" ? "We couldn't find your subscription. Write to hello@aethric.llc and we'll cancel it for you." : null;
-  const notice = q.saved ? "Saved." : q.cancel === "done" ? "Cancelled. You keep access until the end of the period you paid for." : null;
+  const notice = q.saved ? "Saved." : q.cancel === "done" ? "Cancelled. Your subscription has ended and you won't be charged again." : null;
   const confirmDelete = q.delete === "confirm";
   const plan = PLANS[viewer.plan];
   const next = paid && m?.renewalPeriodEnd ? (user.cancelAtPeriodEnd ? ` Access ends ${day(m.renewalPeriodEnd)}.` : ` ${m.status === "trialing" ? "Trial ends" : "Next charge"} ${day(m.renewalPeriodEnd)}.`) : "";
@@ -71,13 +72,16 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <div className="s-split">
           {paid ? (
             <Panel className="s-form">
-              <h2 className="b-label">Copy size</h2>
-              <form method="post" action="/api/settings" className="s-form" data-testid="copy-size" id="copy-size">
-                <p className="b-small">The default amount on a copy ticket, and what My copies counts on each move. Insidir never places a bet for you.</p>
-                <div className="s-opts" role="radiogroup" aria-label="Dollars per move">
-                  {COPY_SIZES.map(v => <label key={v} className="s-opt"><input type="radio" name="copySize" value={v} defaultChecked={copySizeOf(s) === v} /> ${v} a move</label>)}
-                </div>
-                <div><button type="submit" className={BTN}>Save size</button></div>
+              <h2 className="b-label" id="copy">Your size</h2>
+              <form method="post" action="/api/settings" className="s-form" data-testid="copy-settings" id="copy-settings">
+                <p className="b-small">Each alert matches the wallet&apos;s size: if it puts in 2% of its bankroll, your size is 2% of yours, never above your max. A matched size, not advice. Insidir never places a trade for you.</p>
+                <label className="s-form b-small" htmlFor="copyBankroll">Your bankroll (dollars)
+                  <input id="copyBankroll" name="copyBankroll" className="s-input" inputMode="decimal" required defaultValue={s.copy?.bankroll ?? ""} placeholder="2000" data-testid="copy-bankroll" /></label>
+                <label className="s-form b-small" htmlFor="copyMax">Max per trade (dollars)
+                  <input id="copyMax" name="copyMax" className="s-input" inputMode="decimal" required defaultValue={s.copy?.maxTrade ?? ""} placeholder="100" data-testid="copy-max" /></label>
+                <label className="s-form b-small" htmlFor="copyDrop">Push me if a copy falls this many cents below my entry (empty: off)
+                  <input id="copyDrop" name="copyDrop" className="s-input" inputMode="numeric" defaultValue={s.copy ? s.copy.dropCents ?? "" : DEFAULT_DROP_CENTS} placeholder="10" data-testid="copy-drop" /></label>
+                <div><button type="submit" className={BTN} data-testid="copy-save">Save</button></div>
               </form>
             </Panel>
           ) : null}
@@ -135,19 +139,18 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   <a className={BTN} href={manage} target="_blank" rel="noopener noreferrer" data-testid="manage-subscription">Change card</a>
                   {viewer.plan === "insidir" ? <a className={BTN} href={unlockHref()} data-unlock="settings-pro">Go Pro</a> : null}
                 </div>
-                <p className="b-small">Cancel below in one step; you keep access until {m?.renewalPeriodEnd ? day(m.renewalPeriodEnd) : "the end of the period you paid for"}.</p>
                 {!user.cancelAtPeriodEnd ? (
-                  <details className="s-details" id="cancel" open={Boolean(cancelNote)}>
-                    <summary className="s-link">Cancel subscription</summary>
-                    <form method="post" action="/api/billing/cancel" className="s-form" data-testid="cancel-form">
+                  <form method="post" action="/api/billing/cancel" className="s-form" data-testid="cancel-form" id="cancel">
+                    <p className="b-small">One click cancels now: access ends right away and you won&apos;t be charged again.</p>
+                    <div><button type="submit" className={BTN} data-testid="cancel-now">Cancel subscription</button></div>
+                    <details className="s-details">
+                      <summary className="b-small">Tell us why (optional)</summary>
                       <fieldset className="s-opts">
-                        <legend className="b-small">Why are you cancelling? Pick one.</legend>
-                        {CANCEL_REASONS.map(([k, label]) => <label key={k} className="s-opt"><input type="radio" name="reason" value={k} required /> {label}</label>)}
+                        {CANCEL_REASONS.map(([k, label]) => <label key={k} className="s-opt"><input type="radio" name="reason" value={k} /> {label}</label>)}
                       </fieldset>
-                      <label className="s-form b-small">Anything to add? (optional)<textarea name="detail" maxLength={500} rows={2} className="s-input" /></label>
-                      <div><button type="submit" className={BTN}>Cancel at the end of this period</button></div>
-                    </form>
-                  </details>
+                      <label className="s-form b-small">Anything to add?<textarea name="detail" maxLength={500} rows={2} className="s-input" /></label>
+                    </details>
+                  </form>
                 ) : null}
               </>
             ) : (

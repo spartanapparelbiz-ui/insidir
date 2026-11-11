@@ -15,7 +15,8 @@ import { CopyAction } from "@/components/brand/CopyTicket";
 import { decidedText } from "@/lib/millionaires/decided";
 import { getViewer } from "@/lib/auth/viewer";
 import { copySizeOf } from "@/lib/copies/size";
-import { hasCopied, ticketFor } from "@/lib/copies/tickets";
+import { copyRow, ticketFor } from "@/lib/copies/tickets";
+import { matchedSize, sizeLine, SIZE_LABEL, validCopySettings } from "@/lib/copies/sizing";
 import { getDb, hasDatabase } from "@/lib/db";
 import { dollars } from "@/lib/money";
 import { agoText } from "@/lib/moves/copy";
@@ -32,7 +33,10 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
   const db = getDb(), member = Boolean(viewer.user) && isPaid(viewer.plan), now = Date.now();
   const t = await ticketFor(db, decodeURIComponent(id), viewer.region).catch(() => null);
   if (!t) notFound();
-  const logged = member && viewer.user ? await hasCopied(db, viewer.user.id, t.betId).catch(() => false) : false;
+  const logged = member && viewer.user ? await copyRow(db, viewer.user.id, t.betId).catch(() => null) : null;
+  // Your size: the same share of your bankroll as the wallet put in of its own, never over your max.
+  const mine = validCopySettings(viewer.user?.settings?.copy ?? null);
+  const size = matchedSize(t.amount, t.walletBankroll, mine);
   const move = t.priceNow !== null ? t.priceNow - t.theirPrice : null;
   // The same chart as the Desk: their entries on this side, the price now (lib/desk/edge.ts).
   const edge = member ? await edgeFor(db, (poly ??= new PolymarketClient()), t.betId, now).catch(() => null) : null;
@@ -54,7 +58,13 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
             </div>
             {edge ? <EntryChart edge={edge} /> : null}
             {t.decided ? <p className="b-msg" data-testid="copy-settled">{decidedText(t.decided, t.outcome)}. Nothing left to copy.</p>
-              : <CopyAction betId={t.betId} open={t.open} defaultAmount={copySizeOf(viewer.user?.settings)} logged={logged} />}
+              : <>
+                {size ? <p className="cp-size" data-testid="copy-size"><b>{sizeLine(size)}</b> <span className="b-small">{SIZE_LABEL[0]!.toUpperCase() + SIZE_LABEL.slice(1)}.</span></p>
+                  : mine ? <p className="b-small" data-testid="copy-size-none">We don&apos;t have this wallet&apos;s bankroll yet, so there&apos;s no matched size: enter your own.</p>
+                  : <p className="b-small" data-testid="copy-size-setup"><a href="/settings#copy">Set your bankroll and max per trade</a> to get a matched size on every alert.</p>}
+                <CopyAction betId={t.betId} outcome={t.outcome} prices={t.prices} links={t.links} best={t.best} defaultAmount={size?.yours ?? Math.min(copySizeOf(viewer.user?.settings), mine?.maxTrade ?? Infinity)}
+                  sizeNote={size ? `${sizeLine(size)} ${SIZE_LABEL[0]!.toUpperCase() + SIZE_LABEL.slice(1)}.` : null} logged={logged} />
+              </>}
           </Panel>
         ) : (
           <Panel className="s-col">

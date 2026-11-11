@@ -24,8 +24,8 @@ import { BrandFoot } from "../Nav";
 type WhopCheckout = { checkout: { create: (o: Record<string, unknown>) => { create: (k: "checkout", p?: Record<string, unknown>) => { mount: (sel: string | HTMLElement) => void } } } };
 declare global { interface Window { WhopElements?: (o?: Record<string, unknown>) => WhopCheckout } }
 
-export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "follow" | "push";
-const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "push", "follow"];
+export type Step = "hook" | "cats" | "where" | "size" | "building" | "aha" | "paywall" | "checkout" | "unlocked" | "save" | "bankroll" | "follow" | "push";
+const ORDER: Step[] = ["hook", "cats", "where", "size", "building", "aha", "paywall", "checkout", "unlocked", "save", "bankroll", "push", "follow"];
 /** Where Back goes from each step before paying ("building" plays by itself, so Back skips it). After paying there's no
  * Back: the steps from "unlocked" on set the account up. The first step's Back is the home page. */
 /** The steps with the picture side (a photo and a live bet beside the question). */
@@ -82,6 +82,31 @@ function Checkout({ elementsUrl, ageConfirmed }: { elementsUrl: string; ageConfi
       <div ref={box} className="b-glass" style={{ overflow: "hidden", padding: 8, background: "#fff", color: "#000", minHeight: state === "ready" ? 320 : 0 }} hidden={state !== "ready"} data-testid="go-checkout-frame" />
       <p className="b-small">Apple Pay, Google Pay or card · Secure checkout · Cancel anytime in Account</p>
     </div>
+  );
+}
+
+/** Your size, set once: the bankroll and the most on one trade (POST /api/settings; both editable in Account). */
+function BankrollStep({ onDone }: { onDone: () => void }) {
+  const [bankroll, setBankroll] = useState(""), [max, setMax] = useState(""), [err, setErr] = useState<string | null>(null), [busy, setBusy] = useState(false);
+  const pct = Number(bankroll) > 0 && Number(max) > 0 ? Math.round((Number(max) / Number(bankroll)) * 1000) / 10 : null;
+  const save = async () => {
+    setBusy(true); setErr(null);
+    const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ copyBankroll: bankroll, copyMax: max }) }).catch(() => null);
+    const j = r ? await r.json().catch(() => ({})) as { errors?: string[] } : null;
+    setBusy(false);
+    if (r?.ok && !j?.errors?.length) onDone(); else setErr(j?.errors?.[0] ?? "That didn't save. Try again.");
+  };
+  return (
+    <>
+      <div className="b-head"><Lines as="h1" lines={["Your size."]} size={56} /><p className="b-sub">Each alert matches the wallet: if it puts in 2% of its bankroll, your size is 2% of yours. A matched size, not advice.</p></div>
+      <div className="b-col">
+        <label className="b-glass b-pad go-field" htmlFor="go-bankroll">Your bankroll<span className="b-amount"><span aria-hidden="true">$</span><input id="go-bankroll" inputMode="decimal" value={bankroll} onChange={e => setBankroll(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="2000" data-testid="go-bankroll-input" /></span></label>
+        <label className="b-glass b-pad go-field" htmlFor="go-max">Max per trade<span className="b-amount"><span aria-hidden="true">$</span><input id="go-max" inputMode="decimal" value={max} onChange={e => setMax(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="100" data-testid="go-max-input" /></span></label>
+        <p className="b-small">{pct !== null ? `Your size will never be over $${Number(max).toLocaleString("en-US")} (${pct}% of your bankroll). ` : ""}You can change both anytime in Account. Insidir never sees or touches your accounts.</p>
+        {err ? <p className="b-msg" role="alert">{err}</p> : null}
+      </div>
+      <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" disabled={busy || !Number(bankroll) || !Number(max)} onClick={() => void save()} data-testid="go-next">Save<Arrow /></button></div>
+    </>
   );
 }
 
@@ -168,7 +193,7 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
     if (step !== "save") return;
     const s = load();
     void fetch("/api/go/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s) })
-      .then(r => { if (r.ok) { void fetchData(s.cats); go("push", "replace"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
+      .then(r => { if (r.ok) { void fetchData(s.cats); go("bankroll", "replace"); } else setMsg("We couldn't save your picks. Try again."); }).catch(() => setMsg("No connection. Try again."));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const progress = (ORDER.indexOf(step) + 1) / ORDER.length;
@@ -317,6 +342,9 @@ export function Funnel({ initial, start, now, elementsUrl, signedIn, ageConfirme
           <div className="b-ctas"><button type="button" className="b-btn b-btn-lg b-primary" onClick={() => { try { localStorage.removeItem(KEY); } catch { /* ok */ } location.assign(a.next ?? "/"); }} data-testid="go-next" {...st(1)}>Continue<Arrow /></button></div>
         </GoStage>
       );
+      break;
+    case "bankroll":
+      body = <GoStage testid="go-bankroll"><BankrollStep onDone={() => go("push")} /></GoStage>;
       break;
     case "push":
       body = (

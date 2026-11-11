@@ -1,30 +1,74 @@
 "use client";
-/* The copy ticket's action: the amount (the member's default), Open on the venue (a new tab, straight to the market),
- * then "I placed it" to log it. Insidir never places the bet: the member buys on Kalshi or Polymarket. */
+/* The copy ticket's action (/copy/<id>): the side's price on Kalshi and Polymarket with the cheaper one marked, the
+ * member's size (the matched size from their bankroll, editable), and "Copy this trade": it logs the copy and opens
+ * that market on the cheaper app the member can use, in a new tab, where they confirm the trade in their own account.
+ * Then they mark it placed or skipped, so their totals stay true. Insidir never places a trade, holds funds or asks
+ * for keys or logins. Neither venue's link takes a side or an amount (tested 2026-11-11), so both are shown here to
+ * enter there. */
 import { useState } from "react";
 import { Arrow } from "./Bits";
 
-export function CopyAction({ betId, open, defaultAmount, logged: was }: { betId: string; open: { venue: "kalshi" | "polymarket"; href: string } | null; defaultAmount: number; logged: boolean }) {
+type Venue = "kalshi" | "polymarket";
+const NAME: Record<Venue, string> = { kalshi: "Kalshi", polymarket: "Polymarket" };
+const cents = (p: number | null) => (p === null ? "No price" : `${Math.round(p * 100)}¢`);
+
+export function CopyAction({ betId, outcome, prices, links, best, defaultAmount, sizeNote, logged: was }: {
+  betId: string; outcome: string; prices: Record<Venue, number | null>; links: Record<Venue, string | null>; best: Venue | null;
+  defaultAmount: number; sizeNote: string | null; logged: { id: number; status: "copied" | "placed" | "skipped" } | null;
+}) {
   const [amount, setAmount] = useState(String(defaultAmount));
-  const [state, setState] = useState<"idle" | "saving" | "logged" | "error">(was ? "logged" : "idle");
+  const [venue, setVenue] = useState<Venue | null>(best);
+  const [copy, setCopy] = useState(was);
   const [msg, setMsg] = useState<string | null>(null);
-  const log = async () => {
-    setState("saving"); setMsg(null);
-    const r = await fetch("/api/copies/log", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ betId, amount: Number(amount) }) }).catch(() => null);
-    const j = r ? await r.json().catch(() => ({})) as { error?: string } : { error: "No connection. Try again." };
-    if (r?.ok) setState("logged"); else { setState("error"); setMsg(j.error ?? "That didn't save. Try again."); }
+  const href = venue ? links[venue] : null;
+  const venues = (["kalshi", "polymarket"] as const).filter(v => prices[v] !== null || links[v]);
+  const cheap = prices.kalshi !== null && prices.polymarket !== null ? (prices.kalshi <= prices.polymarket ? "kalshi" : "polymarket") : null;
+
+  const log = () => {
+    setMsg(null);
+    // The link opens in the same tap (no pop-up blocker); the log rides along with keepalive.
+    void fetch("/api/copies/log", { method: "POST", keepalive: true, headers: { "content-type": "application/json" }, body: JSON.stringify({ betId, amount: Number(amount), venue }) })
+      .then(async r => { const j = await r.json().catch(() => ({})) as { id?: number; error?: string }; if (r.ok && j.id) setCopy({ id: j.id, status: "copied" }); else setMsg(j.error ?? "That didn't save. Try again."); })
+      .catch(() => setMsg("No connection: your copy wasn't saved."));
   };
-  if (state === "logged") return <p className="b-msg" role="status" data-testid="copy-logged">Logged in <a href="/book">your Book</a>. It settles with the market, losses included.</p>;
+  const mark = async (status: "placed" | "skipped") => {
+    if (!copy) return;
+    const r = await fetch("/api/copies/status", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: copy.id, status }) }).catch(() => null);
+    if (r?.ok) setCopy({ ...copy, status }); else setMsg("That didn't save. Try again.");
+  };
+
   return (
     <div className="s-copyact" data-testid="copy-action">
+      {venues.length ? (
+        <div className="cp-venues" role="radiogroup" aria-label="Where to copy it">
+          {venues.map(v => (
+            <button key={v} type="button" role="radio" aria-checked={venue === v} disabled={!links[v]} className="cp-venue" onClick={() => setVenue(v)} data-testid={`copy-venue-${v}`}>
+              <span className="b-small">{outcome} on {NAME[v]}</span>
+              <b className="s-big b-num">{cents(prices[v])}</b>
+              {cheap === v ? <span className="cp-cheap" data-testid="copy-cheaper">Cheaper</span> : null}
+              {!links[v] ? <span className="b-small">Not available where you are</span> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <label className="b-kv s-copyact__amt" htmlFor="copy-amount">
-        <span className="s-strong">Your amount</span>
+        <span className="s-strong">Your size</span>
         <span className="b-amount"><span aria-hidden="true">$</span><input id="copy-amount" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ""))} data-testid="copy-amount" aria-describedby="copy-amount-hint" /></span>
       </label>
-      <span className="b-small" id="copy-amount-hint">Your default is in Account. Insidir never places a bet or holds money: you buy it on {open?.venue === "kalshi" ? "Kalshi" : "Polymarket"}.</span>
-      {open ? <a className="b-btn b-btn-lg b-primary" href={open.href} target="_blank" rel="noopener noreferrer" data-testid="copy-open">Open on {open.venue === "kalshi" ? "Kalshi" : "Polymarket"}<Arrow /></a>
-        : <p className="b-msg" data-testid="copy-view-only">Not on Kalshi yet. In the US we link to Kalshi only, so this one is view-only.</p>}
-      <button type="button" className="s-link" onClick={() => void log()} disabled={state === "saving" || !Number(amount)} data-testid="copy-placed">{state === "saving" ? "Saving…" : "I placed it"}</button>
+      <span className="b-small" id="copy-amount-hint" data-testid="copy-size-note">{sizeNote ?? "Set your bankroll in Account to get a matched size."}</span>
+      {href && venue ? (
+        <a className="b-btn b-btn-lg b-primary" href={href} target="_blank" rel="noopener noreferrer" onClick={log} data-testid="copy-open">Copy this trade on {NAME[venue]}<Arrow /></a>
+      ) : <p className="b-msg" data-testid="copy-view-only">Not on a venue you can use yet, so this one is view-only.</p>}
+      <p className="b-small">Opens the market on {venue ? NAME[venue] : "the venue"}. Pick {outcome} and enter ${amount || "0"} there, then confirm in your own account. Insidir never places a trade or holds funds.</p>
+      {copy ? (
+        copy.status === "copied" ? (
+          <div className="cp-mark" data-testid="copy-mark">
+            <span className="s-strong">Did you place it?</span>
+            <button type="button" className="b-btn b-panel-pill" onClick={() => void mark("placed")} data-testid="copy-placed">Placed</button>
+            <button type="button" className="b-btn b-panel-pill" onClick={() => void mark("skipped")} data-testid="copy-skipped">Skipped</button>
+          </div>
+        ) : <p className="b-msg" role="status" data-testid="copy-logged">Marked {copy.status} in <a href="/copies">My copies</a>.{copy.status === "placed" ? " You'll get a push when the wallet sells." : ""}</p>
+      ) : null}
       {msg ? <p className="b-msg" role="alert">{msg}</p> : null}
     </div>
   );

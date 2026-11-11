@@ -344,6 +344,13 @@
       "when": 1794010001000,
       "tag": "0049_tier_is_profit",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794100001000,
+      "tag": "0050_verified_copy",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 /* Settings validation, shared by POST /api/settings and POST /api/onboarding. Pure.
  *
- * Only the known fields are read; anything else (a "bankroll", say) is ignored and reported back, never stored.
+ * Only the known fields are read; anything else is ignored and reported back, never stored. The copy bankroll, max per
+ * trade and price-drop alert (copyBankroll, copyMax, copyDrop) are numbers the member types; nothing reads their accounts.
  * Venues are always cut to the user's region: US users can only keep Kalshi and Polymarket US. ROI fields arrive
  * as percentages ("1.5" = 1.5%) and are stored as fractions. */
 import { LEAGUES } from "@/lib/moves/types";
@@ -10,6 +11,7 @@ import { REGION_VENUES } from "@/lib/region";
 import type { Region, Venue } from "@/lib/types";
 import { VENUES } from "@/lib/types";
 import { COPY_SIZES, type CopySize } from "@/lib/copies/size";
+import { DEFAULT_DROP_CENTS, MIN_BANKROLL, validCopySettings } from "@/lib/copies/sizing";
 
 /** Categories a user can filter on (the normalised categories in lib/exchanges/categories.ts, minus combos). */
 export const CATEGORIES = ["politics", "sports", "crypto", "economics", "finance", "culture", "weather", "tech", "geopolitics", "mentions", "other"] as const;
@@ -26,7 +28,7 @@ export const MAX_MOVE_RULES = 10;
 export const MAX_SIZE_USD = 10_000_000;
 
 const KNOWN = new Set(["region", "venues", "minRoiPct", "minSizeUsd", "categories", "showYellow", "showRed", "alertPush", "alertEmail", "emailDigest", "soundOnGreen", "alertMinRoiPct",
-  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize", "morningBriefEmail",
+  "alertSafety", "alertCategories", "quietStart", "quietEnd", "timeZone", "moveRules", "alertSplits", "copySize", "morningBriefEmail", "copyBankroll", "copyMax", "copyDrop",
   "form", "action", "next", "skipped"]);
 
 export type SettingsInput = Record<string, unknown>;
@@ -90,6 +92,12 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
     ...(current.moveRules ? { moveRules: [...current.moveRules] } : {}),
     ...(current.alertSplits === false ? { alertSplits: false } : {}),
     ...(current.copySize ? { copySize: current.copySize } : {}),
+    ...(current.copy ? { copy: { ...current.copy } } : {}),
+    // Set elsewhere (onboarding, the paywall, the Book, unsubscribe): kept as they are.
+    ...(current.go !== undefined ? { go: current.go } : {}),
+    ...(current.remindBeforeCharge !== undefined ? { remindBeforeCharge: current.remindBeforeCharge } : {}),
+    ...(current.bookPushAt !== undefined ? { bookPushAt: current.bookPushAt } : {}),
+    ...(current.noLifecycle ? { noLifecycle: true } : {}),
     ...(current.betOn ? { betOn: [...current.betOn] } : {}),
     ...(current.morningBriefEmail ? { morningBriefEmail: true } : {}),
   };
@@ -126,6 +134,11 @@ export function parseSettings(input: SettingsInput, current: UserSettings, curre
   if (has("minSizeUsd")) {
     const v = number(input.minSizeUsd, 0, MAX_SIZE_USD);
     if (v === null) errors.push(SIZE_ERROR); else s.minSizeUsd = v;
+  }
+  if (has("copyBankroll") || has("copyMax")) {
+    const drop = has("copyDrop") ? (String(input.copyDrop ?? "").trim() === "" ? null : input.copyDrop) : current.copy?.dropCents ?? DEFAULT_DROP_CENTS;
+    const c = validCopySettings({ bankroll: input.copyBankroll, maxTrade: input.copyMax, dropCents: drop });
+    if (c) s.copy = c; else errors.push(`Enter a bankroll from $${MIN_BANKROLL} up, a max per trade no bigger than your bankroll, and a drop alert of 1–99¢ (or leave it empty).`);
   }
   if (has("copySize")) {
     const v = Number(input.copySize);

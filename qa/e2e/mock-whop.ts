@@ -115,7 +115,9 @@ export function startMockWhop(o: MockWhopOptions): Promise<Server> {
       if (req.method === "POST" && (m = p.match(/^\/api\/v1\/memberships\/([^/]+)\/cancel$/))) {
         const mem = memberships.find(x => x.id === decodeURIComponent(m![1]!));
         if (!mem) return send(res, 404, { error: "not found" });
-        mem.cancel_at_period_end = true;
+        // cancellation_mode "immediate" ends it now; otherwise (the default) at the end of the period.
+        const mode = (JSON.parse((await body(req)) || "{}") as { cancellation_mode?: string }).cancellation_mode;
+        if (mode === "immediate") { mem.status = "canceled"; mem.cancel_at_period_end = false; } else mem.cancel_at_period_end = true;
         return send(res, 200, mem);
       }
       if (req.method === "GET" && (m = p.match(/^\/api\/v1\/payments\/([^/]+)$/))) {
