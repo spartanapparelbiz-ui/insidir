@@ -4827,6 +4827,17 @@
      "note": "polymarket: source 225×225, under 400px"
     },
     {
+     "abbr": "ccsc",
+     "name": "Columbia College (SC) Koalas",
+     "short": "Columbia College () Koalas",
+     "color": "#683399",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 173×156, under 400px"
+    },
+    {
      "abbr": "cct",
      "name": "Champion Christian College Tigers",
      "short": "Champion Christian College Tigers",
@@ -5258,6 +5269,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_day_60000044.png"
+    },
+    {
+     "abbr": "def",
+     "name": "Defiance Yellow Jackets",
+     "short": "Defiance Yellow Jackets",
+     "color": "#dccc68",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 221×228, under 400px"
     },
     {
      "abbr": "del",
@@ -6114,6 +6136,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_iupui_60000317.png"
     },
     {
+     "abbr": "iw",
+     "name": "St. Joseph's (NY-Brooklyn) Bears",
+     "short": "St. Joseph's (NY-Brooklyn) Bears",
+     "color": "#135085",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "jac",
      "name": "Lindenwood Lions",
      "short": "Lindenwood",
@@ -6559,6 +6592,17 @@
      "note": "polymarket: logo on an opaque background"
     },
     {
+     "abbr": "lwc",
+     "name": "Lindsey Wilson College Blue Raiders",
+     "short": "Lindsey Wilson College Blue Raiders",
+     "color": "#164898",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
+    },
+    {
      "abbr": "lynd",
      "name": "Vermont State-Lyndon Hornets",
      "short": "Vermont State-Lyndon Hornets",
@@ -6600,6 +6644,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_maine_60000017.png"
+    },
+    {
+     "abbr": "malone",
+     "name": "Malone Pioneers",
+     "short": "Malone Pioneers",
+     "color": "#144b8a",
+     "logo": "/teams/cbb/malone",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Malone Pioneers-69947e6cf1.png"
     },
     {
      "abbr": "manh",
@@ -6682,6 +6736,28 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 249×203, under 400px"
+    },
+    {
+     "abbr": "mcla",
+     "name": "Mass College of Liberal Arts Trailblazers",
+     "short": "Mass College of Liberal Arts Trailblazers",
+     "color": "#e4ad3f",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
+     "abbr": "mcmr",
+     "name": "McMurry War Hawks",
+     "short": "McMurry War Hawks",
+     "color": "#912136",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "mcnst",
