@@ -3747,6 +3747,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cfb/_tulsa_50000005.png"
     },
     {
+     "abbr": "tusk",
+     "name": "Golden Tigers",
+     "short": "Golden Tigers",
+     "color": "#a22020",
+     "logo": "/teams/cfb/tusk",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cfb/_tusk_50000665.png"
+    },
+    {
      "abbr": "tx",
      "name": "Longhorns",
      "short": "Texas",
@@ -4226,6 +4236,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_abchr_60000296.png"
     },
     {
+     "abbr": "aintl",
+     "name": "American International Yellow Jackets",
+     "short": "American International Yellow Jackets",
+     "color": "#e2ad32",
+     "logo": "/teams/cbb/aintl",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/American International Yellow Jackets-ab627361aa.png"
+    },
+    {
      "abbr": "airf",
      "name": "Air Force Falcons",
      "short": "Air Force",
@@ -4297,6 +4317,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_albny_60000013.png"
     },
     {
+     "abbr": "alce",
+     "name": "Alice Lloyd College Eagles",
+     "short": "Alice Lloyd College Eagles",
+     "color": "#574750",
+     "logo": "/teams/cbb/alce",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Alice Lloyd College Eagles-bd41659950.png"
+    },
+    {
      "abbr": "alcst",
      "name": "Alcorn State Braves",
      "short": "Alcorn St",
@@ -4347,6 +4377,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_applst_60000331.png"
     },
     {
+     "abbr": "arbap",
+     "name": "Arlington Baptist Patriots",
+     "short": "Arlington Baptist Patriots",
+     "color": "#be1e2b",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
+    },
+    {
      "abbr": "ark",
      "name": "Arkansas Razorbacks",
      "short": "Arkansas",
@@ -4355,6 +4396,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_ark_60000276.png"
+    },
+    {
+     "abbr": "arkba",
+     "name": "Arkansas Baptist Buffaloes",
+     "short": "Arkansas Baptist Buffaloes",
+     "color": "#943d90",
+     "logo": "/teams/cbb/arkba",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Arkansas Baptist Buffaloes-d8e09ffedc.png"
     },
     {
      "abbr": "arkst",
@@ -4427,6 +4478,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_arzst_60000255.png"
     },
     {
+     "abbr": "aub",
+     "name": "Auburn Montgomery Warhawks",
+     "short": "Auburn Montgomery Warhawks",
+     "color": "#e58248",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 860×397, under 400px"
+    },
+    {
      "abbr": "aubrn",
      "name": "Auburn Tigers",
      "short": "Auburn",
@@ -4445,6 +4507,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_ausp_60000242.png"
+    },
+    {
+     "abbr": "avc",
+     "name": "Averett Cougars",
+     "short": "Averett Cougars",
+     "color": "#e5b148",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "ballst",
@@ -4519,6 +4592,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_belm_60000233.png"
     },
     {
+     "abbr": "berm",
+     "name": "Berea College Mountaineers",
+     "short": "Berea College Mountaineers",
+     "color": "#14527b",
+     "logo": "/teams/cbb/berm",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Berea College Mountaineers-42e6fcdf7b.png"
+    },
+    {
      "abbr": "beth",
      "name": "Bethesda Lion Angels",
      "short": "Bethesda Lion Angels",
@@ -4558,6 +4641,28 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 225×225, under 400px"
+    },
+    {
+     "abbr": "blom",
+     "name": "Bloomsburg Huskies",
+     "short": "Bloomsburg Huskies",
+     "color": "#981636",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 181×278, under 400px"
+    },
+    {
+     "abbr": "bloom",
+     "name": "Bloomfield Bears",
+     "short": "Bloomfield Bears",
+     "color": "#574750",
+     "logo": "/teams/cbb/bloom",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Bloomfield Bears-73b2944159.png",
+     "note": "background keyed out"
     },
     {
      "abbr": "blumt",
@@ -4673,6 +4778,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_bryant_60000231.png"
     },
     {
+     "abbr": "bryst",
+     "name": "Bryant & Stratton Bobcats",
+     "short": "Bryant & Stratton Bobcats",
+     "color": "#165b98",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "buck",
      "name": "Bucknell Bison",
      "short": "Bucknell",
@@ -4784,6 +4900,27 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_cark_60000298.png"
     },
     {
+     "abbr": "caro",
+     "name": "Carolina Bruins",
+     "short": "Carolina Bruins",
+     "color": "#dfb920",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
+     "abbr": "cbapm",
+     "name": "Central Baptist College Mustangs",
+     "short": "Central Baptist College Mustangs",
+     "color": "#135083",
+     "logo": "/teams/cbb/cbapm",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Central Baptist College Mustangs-d4a32c6f42.png"
+    },
+    {
      "abbr": "ccar",
      "name": "LaGrange Panthers",
      "short": "LaGrange Panthers",
@@ -4793,6 +4930,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 200×200, under 400px"
+    },
+    {
+     "abbr": "ccc",
+     "name": "Carolina Christian Centurians",
+     "short": "Carolina Christian Centurians",
+     "color": "#dba91f",
+     "logo": "/teams/cbb/ccc",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Carolina Christian Centurians-59edaccfcd.jpg",
+     "note": "background keyed out"
     },
     {
      "abbr": "ccga",
@@ -4928,7 +5076,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "chim",
@@ -4939,7 +5087,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "chist",
@@ -5002,6 +5150,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_cita_60000288.png"
+    },
+    {
+     "abbr": "clint",
+     "name": "Clinton Golden Bears",
+     "short": "Clinton Golden Bears",
+     "color": "#c5996d",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 350×330, under 400px"
     },
     {
      "abbr": "clm",
@@ -5200,6 +5359,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_creigh_60000061.png"
     },
     {
+     "abbr": "crmts",
+     "name": "Carroll (MT) Fighting Saints",
+     "short": "Carroll (MT) Fighting Saints",
+     "color": "#d0ac74",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 359×386, under 400px"
+    },
+    {
      "abbr": "csu",
      "name": "Bakersfield Roadrunners",
      "short": "Bakersfield Roadrunners",
@@ -5269,6 +5439,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_day_60000044.png"
+    },
+    {
+     "abbr": "dcksns",
+     "name": "Dickinson State Blue Hawks",
+     "short": "Dickinson State Blue Hawks",
+     "color": "#204d88",
+     "logo": "/teams/cbb/dcksns",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Dickinson State Blue Hawks-52436accc4.png"
     },
     {
      "abbr": "def",
@@ -5496,6 +5676,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Embry Riddle Eagles-fe022207dc.png"
     },
     {
+     "abbr": "emer",
+     "name": "Emerson Lions",
+     "short": "Emerson Lions",
+     "color": "#e5c348",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "emich",
      "name": "Eastern Michigan Eagles",
      "short": "E Michigan",
@@ -5536,6 +5727,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_etnst_60000282.png"
+    },
+    {
+     "abbr": "eureka",
+     "name": "Eureka Red Devils",
+     "short": "Eureka Red Devils",
+     "color": "#aa8d18",
+     "logo": "/teams/cbb/eureka",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Eureka Red Devils-8a91433d62.png"
     },
     {
      "abbr": "evans",
@@ -5701,6 +5902,17 @@
      "note": "polymarket: source 233×216, under 400px"
     },
     {
+     "abbr": "fred",
+     "name": "Fredonia State Blue Devils",
+     "short": "Fredonia State Blue Devils",
+     "color": "#1a70b7",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 192×263, under 400px"
+    },
+    {
      "abbr": "frest",
      "name": "Fresno State Bulldogs",
      "short": "Fresno St",
@@ -5861,6 +6073,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_gnzg_60000334.png"
+    },
+    {
+     "abbr": "grchr",
+     "name": "Grace Christian Tigers",
+     "short": "Grace Christian Tigers",
+     "color": "#44b7e4",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "great",
@@ -6136,6 +6359,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_iupui_60000317.png"
     },
     {
+     "abbr": "iusb",
+     "name": "IU-South Bend Titans",
+     "short": "IU-South Bend Titans",
+     "color": "#942215",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 176×213, under 400px"
+    },
+    {
      "abbr": "iw",
      "name": "St. Joseph's (NY-Brooklyn) Bears",
      "short": "St. Joseph's (NY-Brooklyn) Bears",
@@ -6218,6 +6452,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: logo on an opaque background"
+    },
+    {
+     "abbr": "just",
+     "name": "Justice College Lions",
+     "short": "Justice College Lions",
+     "color": "#55c945",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 300×300, under 400px"
     },
     {
      "abbr": "kan",
@@ -6355,6 +6600,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_lamon_60000326.png"
     },
     {
+     "abbr": "lane",
+     "name": "Lane Dragons",
+     "short": "Lane Dragons",
+     "color": "#c52033",
+     "logo": "/teams/cbb/lane",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Lane Dragons-d1aed331eb.jpg",
+     "note": "background keyed out"
+    },
+    {
      "abbr": "lasal",
      "name": "La Salle Explorers",
      "short": "La Salle",
@@ -6384,6 +6640,17 @@
      "dark": true,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_lbb_60001001.png"
+    },
+    {
+     "abbr": "lbc",
+     "name": "Lancaster Bible College Chargers",
+     "short": "Lancaster Bible College Chargers",
+     "color": "#99a2ab",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: download failed"
     },
     {
      "abbr": "lbst",
@@ -6664,6 +6931,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_manh_60000171.png"
+    },
+    {
+     "abbr": "mans",
+     "name": "Mansfield Mountaineers",
+     "short": "Mansfield Mountaineers",
+     "color": "#aa182c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 259×194, under 400px"
     },
     {
      "abbr": "marb",
@@ -6954,7 +7232,17 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
+    },
+    {
+     "abbr": "moco",
+     "name": "Montreat College Cavaliers",
+     "short": "Montreat College Cavaliers",
+     "color": "#35439c",
+     "logo": "/teams/cbb/moco",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Montreat College Cavaliers-c08c687ba3.png"
     },
     {
      "abbr": "monm",
@@ -7015,6 +7303,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/California Merced Bobcats-d236adc09f.png"
+    },
+    {
+     "abbr": "mrcm",
+     "name": "Mercy Mavericks",
+     "short": "Mercy Mavericks",
+     "color": "#164a98",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 295×326, under 400px"
     },
     {
      "abbr": "mrcy",
@@ -7261,6 +7560,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_ncw_60000124.png"
     },
     {
+     "abbr": "ncwesl",
+     "name": "North Carolina Wesleyan Battling Bishops",
+     "short": "North Carolina Wesleyan Battling Bishops",
+     "color": "#135087",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "nd",
      "name": "Notre Dame Fighting Irish",
      "short": "Notre Dame",
@@ -7291,6 +7601,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_ndkst_60000318.png"
     },
     {
+     "abbr": "ndmg",
+     "name": "Notre Dame of Maryland Gators",
+     "short": "Notre Dame of Maryland Gators",
+     "color": "#164b99",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 10 teams"
+    },
+    {
      "abbr": "neast",
      "name": "Northeastern Huskies",
      "short": "Northeastern",
@@ -7319,6 +7640,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_neom_60000316.png"
+    },
+    {
+     "abbr": "neum",
+     "name": "Neumann Knights",
+     "short": "Neumann Knights",
+     "color": "#dfbc20",
+     "logo": "/teams/cbb/neum",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Neumann Knights-8ff8ae7aef.png"
     },
     {
      "abbr": "nevada",
@@ -7483,6 +7814,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_no_60000297.png"
     },
     {
+     "abbr": "nopa",
+     "name": "North Park Vikings",
+     "short": "North Park Vikings",
+     "color": "#155693",
+     "logo": "/teams/cbb/nopa",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/North Park Vikings-1fda88ba86.png"
+    },
+    {
      "abbr": "norfst",
      "name": "Norfolk State Spartans",
      "short": "Norfolk St",
@@ -7522,6 +7863,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 300×300, under 400px"
+    },
+    {
+     "abbr": "nwin",
+     "name": "Northwest Indian Eagles",
+     "short": "Northwest Indian Eagles",
+     "color": "#633196",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 336×358, under 400px"
     },
     {
      "abbr": "nwost",
@@ -7663,7 +8015,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "pain",
@@ -7777,6 +8129,28 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_prov_60000063.png"
     },
     {
+     "abbr": "psabi",
+     "name": "Penn State-Abington Nittany Lions",
+     "short": "Penn State-Abington Nittany Lions",
+     "color": "#194a9a",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
+     "abbr": "psbeh",
+     "name": "Penn State-Behrend Lions",
+     "short": "Penn State-Behrend Lions",
+     "color": "#16479c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 4 teams"
+    },
+    {
      "abbr": "psshen",
      "name": "Penn State-Shenango Nittany Lions",
      "short": "Penn State-Shenango Nittany Lions",
@@ -7785,7 +8159,18 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 2 teams"
+     "note": "placeholder image shared by 4 teams"
+    },
+    {
+     "abbr": "psubw",
+     "name": "Penn State-Brandywine Nittany Lions",
+     "short": "Penn State-Brandywine Nittany Lions",
+     "color": "#16479c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 4 teams"
     },
     {
      "abbr": "psusk",
@@ -7796,7 +8181,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 2 teams"
+     "note": "placeholder image shared by 4 teams"
     },
     {
      "abbr": "pur",
@@ -7920,6 +8305,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 300×300, under 400px"
+    },
+    {
+     "abbr": "rit",
+     "name": "RIT Tigers",
+     "short": "RIT Tigers",
+     "color": "#e26f32",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 371×341, under 400px"
     },
     {
      "abbr": "robms",
@@ -8241,7 +8637,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "soumis",
@@ -8262,6 +8658,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_south_60000305.png"
+    },
+    {
+     "abbr": "spald",
+     "name": "Spalding Golden Eagles",
+     "short": "Spalding Golden Eagles",
+     "color": "#353dac",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "sphil",
@@ -8293,7 +8700,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "stbon",
@@ -8459,6 +8866,27 @@
      "note": "polymarket: source 250×250, under 400px"
     },
     {
+     "abbr": "swad",
+     "name": "Southwestern Adventist Knights",
+     "short": "Southwestern Adventist Knights",
+     "color": "#991632",
+     "logo": "/teams/cbb/swad",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Southwestern Adventist Knights-e2641b05f2.png"
+    },
+    {
+     "abbr": "swesle",
+     "name": "Southern Wesleyan Warriors",
+     "short": "Southern Wesleyan Warriors",
+     "color": "#3142ae",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 223×226, under 400px"
+    },
+    {
      "abbr": "syra",
      "name": "Syracuse Orange",
      "short": "Syracuse",
@@ -8620,6 +9048,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_tulsa_60000005.png"
     },
     {
+     "abbr": "tusc",
+     "name": "Tusculum Pioneers",
+     "short": "Tusculum Pioneers",
+     "color": "#df6020",
+     "logo": "/teams/cbb/tusc",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_tusc_60001058.png"
+    },
+    {
      "abbr": "tx",
      "name": "Texas Longhorns",
      "short": "Texas",
@@ -8730,7 +9168,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "uccs",
@@ -8975,6 +9413,16 @@
      "espn": "West Georgia Wolves"
     },
     {
+     "abbr": "uws",
+     "name": "Wisconsin-Stout Blue Devils",
+     "short": "Wisconsin-Stout Blue Devils",
+     "color": "#999eab",
+     "logo": "/teams/cbb/uws",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Wisconsin-Stout Blue Devils-ff7c17f67c.png"
+    },
+    {
      "abbr": "valp",
      "name": "Valparaiso Beacons",
      "short": "Valparaiso",
@@ -9076,6 +9524,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_vtech_60000031.png"
     },
     {
+     "abbr": "vtstr",
+     "name": "Vermont State Randolph Knights",
+     "short": "Vermont State Randolph Knights",
+     "color": "#37b348",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 260×201, under 400px"
+    },
+    {
      "abbr": "vulyn",
      "name": "VU of Lynchburg Dragons",
      "short": "VU of Lynchburg Dragons",
@@ -9084,7 +9543,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 8 teams"
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "wag",
@@ -9105,6 +9564,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_wake_60000034.png"
+    },
+    {
+     "abbr": "warur",
+     "name": "Warner Royals",
+     "short": "Warner Royals",
+     "color": "#e0a629",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 276×308, under 400px"
     },
     {
      "abbr": "warwil",
@@ -9313,6 +9783,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_woff_60000285.png"
     },
     {
+     "abbr": "wrcst",
+     "name": "Worcester State Lancers",
+     "short": "Worcester State Lancers",
+     "color": "#135085",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 212×175, under 400px"
+    },
+    {
      "abbr": "wrght",
      "name": "Wright State Raiders",
      "short": "Wright St",
@@ -9331,6 +9812,17 @@
      "dark": true,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_wvir_60000107.png"
+    },
+    {
+     "abbr": "wvt",
+     "name": "West Virginia Tech Golden Bears",
+     "short": "West Virginia Tech Golden Bears",
+     "color": "#164b99",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 10 teams"
     },
     {
      "abbr": "wyom",
