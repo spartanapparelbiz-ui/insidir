@@ -4890,6 +4890,17 @@
      "note": "polymarket: source 225×225, under 400px"
     },
     {
+     "abbr": "capoll",
+     "name": "Cal Poly-Humboldt Lumberjacks",
+     "short": "Cal Poly-Humboldt Lumberjacks",
+     "color": "#107064",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 250×167, under 400px"
+    },
+    {
      "abbr": "cark",
      "name": "Central Arkansas Bears",
      "short": "C Arkansas",
@@ -5409,6 +5420,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 200×200, under 400px"
+    },
+    {
+     "abbr": "dalcru",
+     "name": "Dallas Crusaders",
+     "short": "Dallas Crusaders",
+     "color": "#154a93",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "dart",
@@ -6349,6 +6371,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_ipfw_60000315.png"
     },
     {
+     "abbr": "iuco",
+     "name": "IU Columbus Crimson Pride",
+     "short": "IU Columbus Crimson Pride",
+     "color": "#ac203c",
+     "logo": "/teams/cbb/iuco",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/IU Columbus Crimson Pride-7b29aad2be.jpg",
+     "note": "background keyed out"
+    },
+    {
      "abbr": "iupui",
      "name": "IU Indy Jaguars",
      "short": "IU Indy Jaguars",
@@ -6546,6 +6579,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 295×256, under 400px"
+    },
+    {
+     "abbr": "kych",
+     "name": "Kentucky Christian Knights",
+     "short": "Kentucky Christian Knights",
+     "color": "#e12d3c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "kywe",
@@ -8099,6 +8143,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_portst_60000076.png"
     },
     {
+     "abbr": "pqt",
+     "name": "Paul Quinn Tigers",
+     "short": "Paul Quinn Tigers",
+     "color": "#77229c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 278×181, under 400px"
+    },
+    {
      "abbr": "presb",
      "name": "Presbyterian Blue Hose",
      "short": "Presbyterian",
@@ -8876,6 +8931,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Southwestern Adventist Knights-e2641b05f2.png"
     },
     {
+     "abbr": "swcu",
+     "name": "Southwestern Christian Eagles",
+     "short": "Southwestern Christian Eagles",
+     "color": "#e85ce8",
+     "logo": "/teams/cbb/swcu",
+     "dark": true,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Southwestern Christian Eagles-67e3303299.png"
+    },
+    {
      "abbr": "swesle",
      "name": "Southern Wesleyan Warriors",
      "short": "Southern Wesleyan Warriors",
@@ -8977,6 +9042,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_tmrt_60000241.png"
     },
     {
+     "abbr": "toccoa",
+     "name": "Toccoa Falls Eagles",
+     "short": "Toccoa Falls Eagles",
+     "color": "#e85c5c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 220×220, under 400px"
+    },
+    {
      "abbr": "toledo",
      "name": "Toledo Rockets",
      "short": "Toledo",
@@ -9006,6 +9082,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_tows_60000127.png"
+    },
+    {
+     "abbr": "trinb",
+     "name": "Trinity Baptist Eagles",
+     "short": "Trinity Baptist Eagles",
+     "color": "#1c48a6",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "troy",
