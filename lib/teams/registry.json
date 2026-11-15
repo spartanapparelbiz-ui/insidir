@@ -7279,6 +7279,17 @@
      "note": "placeholder image shared by 10 teams"
     },
     {
+     "abbr": "mitch",
+     "name": "Mitchell College Mariners",
+     "short": "Mitchell College Mariners",
+     "color": "#99aba0",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "moco",
      "name": "Montreat College Cavaliers",
      "short": "Montreat College Cavaliers",
@@ -8121,6 +8132,17 @@
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/SUNY-Plattsburgh Cardinals-52e41abb13.jpg",
      "note": "background keyed out"
+    },
+    {
+     "abbr": "point",
+     "name": "Point Skyhawks",
+     "short": "Point Skyhawks",
+     "color": "#124e81",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 325×306, under 400px"
     },
     {
      "abbr": "port",
