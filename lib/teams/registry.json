@@ -6149,6 +6149,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_hamp_60000189.png"
     },
     {
+     "abbr": "hartwi",
+     "name": "Hartwick Hawks",
+     "short": "Hartwick Hawks",
+     "color": "#1e58ae",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
+    },
+    {
      "abbr": "harvrd",
      "name": "Harvard Crimson",
      "short": "Harvard",
@@ -8113,6 +8124,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_pepp_60000337.png"
     },
     {
+     "abbr": "perub",
+     "name": "Peru State College Bobcats",
+     "short": "Peru State College Bobcats",
+     "color": "#16679c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 231×219, under 400px"
+    },
+    {
      "abbr": "pitt",
      "name": "Pittsburgh Panthers",
      "short": "Pitt",
@@ -8613,6 +8635,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_sfl_60000011.png"
+    },
+    {
+     "abbr": "sfu",
+     "name": "Simon Fraser Red Leafs",
+     "short": "Simon Fraser Red Leafs",
+     "color": "#d82237",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 170×297, under 400px"
     },
     {
      "abbr": "shen",
