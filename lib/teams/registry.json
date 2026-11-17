@@ -5287,6 +5287,16 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_colst_60000217.png"
     },
     {
+     "abbr": "colu",
+     "name": "Washington Adventist Shock",
+     "short": "Washington Adventist Shock",
+     "color": "#194a8f",
+     "logo": "/teams/cbb/colu",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Washington Adventist Shock-0ed8bf5ed9.png"
+    },
+    {
      "abbr": "concil",
      "name": "Concordia-Chicago Cougars",
      "short": "Concordia-Chicago Cougars",
@@ -6592,6 +6602,16 @@
      "note": "polymarket: source 295×256, under 400px"
     },
     {
+     "abbr": "kuztwn",
+     "name": "Kutztown Golden Bears",
+     "short": "Kutztown Golden Bears",
+     "color": "#c4b682",
+     "logo": "/teams/cbb/kuztwn",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Kutztown Golden Bears-90eeaca0a0.png"
+    },
+    {
      "abbr": "kych",
      "name": "Kentucky Christian Knights",
      "short": "Kentucky Christian Knights",
@@ -6810,6 +6830,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_longwd_60000087.png"
+    },
+    {
+     "abbr": "loras",
+     "name": "Loras Duhawks",
+     "short": "Loras Duhawks",
+     "color": "#553b91",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "lou",
@@ -7038,6 +7069,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_marsh_60000136.png"
+    },
+    {
+     "abbr": "marty",
+     "name": "Mount Marty Lancers",
+     "short": "Mount Marty Lancers",
+     "color": "#154c96",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 300×300, under 400px"
     },
     {
      "abbr": "mary",
@@ -9595,6 +9637,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_vand_60000273.png"
     },
     {
+     "abbr": "vas",
+     "name": "Vassar Brewers",
+     "short": "Vassar Brewers",
+     "color": "#9a1626",
+     "logo": "/teams/cbb/vas",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Vassar Brewers-724cf58723.jpg",
+     "note": "background keyed out"
+    },
+    {
      "abbr": "vcu",
      "name": "VCU Rams",
      "short": "VCU",
@@ -9706,6 +9759,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_wake_60000034.png"
+    },
+    {
+     "abbr": "walw",
+     "name": "Waldorf College Warriors",
+     "short": "Waldorf College Warriors",
+     "color": "#6e24aa",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
     },
     {
      "abbr": "warur",
@@ -9944,6 +10008,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_wrght_60000150.png"
+    },
+    {
+     "abbr": "wss",
+     "name": "Winston-Salem State Rams",
+     "short": "Winston-Salem State Rams",
+     "color": "#b71a37",
+     "logo": "/teams/cbb/wss",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Winston-Salem State Rams-eeea95eb30.png"
     },
     {
      "abbr": "wvir",
