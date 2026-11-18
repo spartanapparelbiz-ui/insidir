@@ -5087,7 +5087,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "chim",
@@ -5098,7 +5098,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "chist",
@@ -5740,6 +5740,17 @@
      "note": "polymarket: source 225×225, under 400px"
     },
     {
+     "abbr": "eor",
+     "name": "Eastern Oregon Mountaineers",
+     "short": "Eastern Oregon Mountaineers",
+     "color": "#164b99",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 11 teams"
+    },
+    {
      "abbr": "ersff",
      "name": "Erskine Flying Fleet",
      "short": "Erskine Flying Fleet",
@@ -6178,6 +6189,16 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_harvrd_60000164.png"
+    },
+    {
+     "abbr": "hask",
+     "name": "Haskell Jayhawks",
+     "short": "Haskell Jayhawks",
+     "color": "#1853a5",
+     "logo": "/teams/cbb/hask",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Haskell Jayhawks-d679493cc4.png"
     },
     {
      "abbr": "hawaii",
@@ -7329,7 +7350,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "mitch",
@@ -7717,7 +7738,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "neast",
@@ -8123,7 +8144,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "pain",
@@ -8175,6 +8196,17 @@
      "source": null,
      "sourceUrl": null,
      "note": "polymarket: source 231×219, under 400px"
+    },
+    {
+     "abbr": "piedmo",
+     "name": "Piedmont Lions",
+     "short": "Piedmont Lions",
+     "color": "#1d6348",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 225×225, under 400px"
     },
     {
      "abbr": "pitt",
@@ -8289,7 +8321,18 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 4 teams"
+     "note": "placeholder image shared by 6 teams"
+    },
+    {
+     "abbr": "psscr",
+     "name": "Penn State-Scranton Nittany Lions",
+     "short": "Penn State-Scranton Nittany Lions",
+     "color": "#16479c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 6 teams"
     },
     {
      "abbr": "psshen",
@@ -8300,7 +8343,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 4 teams"
+     "note": "placeholder image shared by 6 teams"
     },
     {
      "abbr": "psubw",
@@ -8311,7 +8354,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 4 teams"
+     "note": "placeholder image shared by 6 teams"
     },
     {
      "abbr": "psusk",
@@ -8322,7 +8365,18 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 4 teams"
+     "note": "placeholder image shared by 6 teams"
+    },
+    {
+     "abbr": "psy",
+     "name": "Penn State-York Nittany Lions",
+     "short": "Penn State-York Nittany Lions",
+     "color": "#16479c",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "placeholder image shared by 6 teams"
     },
     {
      "abbr": "pur",
@@ -8374,6 +8428,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_radf_60000086.png"
+    },
+    {
+     "abbr": "ran",
+     "name": "Randall Saints",
+     "short": "Randall Saints",
+     "color": "#3941ac",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 360×360, under 400px"
     },
     {
      "abbr": "rand",
@@ -8789,7 +8854,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "soumis",
@@ -8852,7 +8917,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "stbon",
@@ -9352,7 +9417,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "uccs",
@@ -9738,7 +9803,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "wag",
@@ -10038,7 +10103,7 @@
      "dark": false,
      "source": null,
      "sourceUrl": null,
-     "note": "placeholder image shared by 10 teams"
+     "note": "placeholder image shared by 11 teams"
     },
     {
      "abbr": "wyom",
