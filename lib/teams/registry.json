@@ -7648,6 +7648,17 @@
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_ncg_60000286.png"
     },
     {
+     "abbr": "ncmn",
+     "name": "North Central (MN) Rams",
+     "short": "North Central (MN) Rams",
+     "color": "#b7a362",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: logo on an opaque background"
+    },
+    {
      "abbr": "ncol",
      "name": "Northern Colorado Bears",
      "short": "N Colorado",
@@ -8948,6 +8959,17 @@
      "dark": false,
      "source": "polymarket",
      "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/team_logos/football/cbb/_stetsn_60000041.png"
+    },
+    {
+     "abbr": "stfr",
+     "name": "St. Francis (IL) Fighting Saints",
+     "short": "St. Francis (IL) Fighting Saints",
+     "color": "#916e30",
+     "logo": null,
+     "dark": false,
+     "source": null,
+     "sourceUrl": null,
+     "note": "polymarket: source 180×180, under 400px"
     },
     {
      "abbr": "stjoe",
