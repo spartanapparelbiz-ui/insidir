@@ -9859,6 +9859,16 @@
      "note": "polymarket: logo on an opaque background"
     },
     {
+     "abbr": "wart",
+     "name": "Wartburg Knights",
+     "short": "Wartburg Knights",
+     "color": "#e28132",
+     "logo": "/teams/cbb/wart",
+     "dark": false,
+     "source": "polymarket",
+     "sourceUrl": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Wartburg Knights-6e91cc03ad.png"
+    },
+    {
      "abbr": "warur",
      "name": "Warner Royals",
      "short": "Warner Royals",
